@@ -11,11 +11,11 @@ import kotlinx.coroutines.flow.flowOn
 class NewsRepositoryImpl(
     private val networkClient: NetworkClient,
 ) : NewsRepository {
-    override suspend fun getPics(): Flow<Resource<List<String>>> = flow {
+    override suspend fun getPics(): Flow<Resource<String>> = flow {
         when (val response = networkClient.getPics()) {
             is Resource.Data -> {
                 with(response) {
-                    val data = value.imageUrls
+                    val data = value
                     emit(Resource.Data(data))
                 }
             }

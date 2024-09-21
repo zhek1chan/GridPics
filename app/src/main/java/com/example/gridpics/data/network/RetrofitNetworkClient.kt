@@ -4,30 +4,32 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
-import com.example.gridpics.data.dto.PicturesDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.nio.charset.Charset
+
 
 class RetrofitNetworkClient(
     private val context: Context,
     private val api: Api
 ) : NetworkClient {
 
-    override suspend fun getPics(): Resource<PicturesDto> {
-        var news: Resource<PicturesDto>
+    override suspend fun getPics(): Resource<String> {
+        var news: Resource<String>
         if (!isConnected()) return Resource.ConnectionError(DEVICE_IS_OFFLINE)
         withContext(Dispatchers.IO) {
             news = try {
-                api.getNews().body()?.let {
-                    Resource.Data(it)
+                api.getNews().byteStream().use {
+                    val s = it.readBytes().toString(charset = Charset.defaultCharset())
+                    Resource.Data(s)
                 } ?: Resource.NotFound(NOT_FOUND)
             } catch (ex: IOException) {
                 Log.e(REQUEST_ERROR, ex.toString())
                 Resource.ConnectionError(REQUEST_ERROR)
             }
         }
-        Log.d("Retrofit", "$news")
+        Log.d("Retrofit", "${api.getNews()}")
         return news
     }
 

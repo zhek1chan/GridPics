@@ -50,10 +50,11 @@ class HomeFragment : Fragment() {
         //TODO("Not yet implemented")
     }
 
-    private fun showContent(list: List<String>) {
+    private fun showContent(s: String) {
         /*binding.emptyLibrary.visibility = View.GONE
         binding.placeholderMessage.visibility = View.GONE
         binding.recyclerView.visibility = View.VISIBLE*/
+        val list = s.split("\n")
         recyclerView.adapter = PicturesAdapter(list) {
             clickAdapting(it)
         }
@@ -63,13 +64,17 @@ class HomeFragment : Fragment() {
     }
 
     private fun calculateGridSpan(): Int {
+        Log.d("HomeFragment", "Calculate span started")
         val width = Resources.getSystem().displayMetrics.widthPixels
         val height = Resources.getSystem().displayMetrics.heightPixels
         val orientation = this.resources.configuration.orientation
+        val density = requireContext().resources.displayMetrics.density
         return if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-            (width / 100)
+            ((width / density).toInt() / 110)
+            //Log.d("Orientation", "Portrait")
         } else {
-            (height / 100)
+            ((width / density).toInt() / 110)
+            //Log.d("Orientation", "Horizontal")
         }
     }
 

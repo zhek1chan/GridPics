@@ -4,6 +4,6 @@ import com.example.gridpics.data.dto.PicturesDto
 
 interface NetworkClient {
 
-    suspend fun getPics(): Resource<PicturesDto>
+    suspend fun getPics(): Resource<String>
 
 }

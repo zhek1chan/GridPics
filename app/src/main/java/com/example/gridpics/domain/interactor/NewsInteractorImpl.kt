@@ -7,6 +7,6 @@ import kotlinx.coroutines.flow.Flow
 class NewsInteractorImpl(
     private val repository: NewsRepository
 ) : NewsInteractor {
-    override suspend fun getPics(): Flow<Resource<List<String>>> =
+    override suspend fun getPics(): Flow<Resource<String>> =
         repository.getPics()
 }
