@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.pictures
 
-import android.graphics.Bitmap
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView

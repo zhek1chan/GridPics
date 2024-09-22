@@ -42,17 +42,12 @@ class PictureFragment : Fragment() {
         Log.d("HomeFragment", "$state")
         when (state) {
             is PictureState.SearchIsOk -> showContent(state.data)
-            is PictureState.NothingFound -> showEmpty()
+            is PictureState.NothingFound -> Unit
             PictureState.ConnectionError -> Unit
         }
     }
 
-    private fun showEmpty() {
-        //TODO("Not yet implemented")
-    }
-
     private fun showContent(list: List<File>) {
-        Log.d("EXISTS?", "$list")
         recyclerView.adapter = PicturesAdapter(list) {
             clickAdapting(it)
         }
@@ -74,7 +69,6 @@ class PictureFragment : Fragment() {
     }
 
     private fun clickAdapting(item: String) {
-        Log.d("PlaylistFragment", "Click on the playlist")
         val bundle = Bundle()
         bundle.putString("pic", item)
         val navController = findNavController()

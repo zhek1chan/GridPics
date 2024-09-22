@@ -56,13 +56,10 @@ class PicturesViewModel(
         val fileCheck = File(path, numFileName)
         Log.d("EXISTS?", "${fileCheck.exists()}")
         if (fileCheck.exists()) {
-            Log.d("WTF", "FILE EXISTS")
             val file = File(path, numFileName)
             val num = BufferedReader(FileReader(file)).readLine().toInt()
-            Log.d("EXISTS? NUM", "$num")
             val list = mutableListOf<File>()
             for (i in 1..<num+1) {
-                Log.d("EXISTS? CYCLE", "$i.jpg")
                 val fileName = "$i.jpg"
                 val jpg = File(path, fileName)
                 list.add(jpg)
@@ -158,9 +155,7 @@ class PicturesViewModel(
                 e.printStackTrace()
             }
 
-            // Add the image to the system gallery
             galleryAddPic(savedImagePath, context)
-            //Toast.makeText(this, "IMAGE SAVED", Toast.LENGTH_LONG).show() // to make this working, need to manage coroutine, as this execution is something off the main thread
         }
         return savedImagePath
     }
