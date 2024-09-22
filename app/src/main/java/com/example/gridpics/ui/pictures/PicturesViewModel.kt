@@ -3,8 +3,6 @@ package com.example.gridpics.ui.pictures
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.media.Image
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
@@ -16,9 +14,8 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
-import com.example.gridpics.R
 import com.example.gridpics.data.network.Resource
-import com.example.gridpics.domain.interactor.NewsInteractor
+import com.example.gridpics.domain.interactor.ImagesInteractor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
@@ -30,13 +27,10 @@ import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
-import java.nio.file.Files.exists
-import java.nio.file.Path
-import java.nio.file.Paths
 
 
-class HomeViewModel(
-    private val interactor: NewsInteractor
+class PicturesViewModel(
+    private val interactor: ImagesInteractor
 ) : ViewModel() {
 
     private val stateLiveData = MutableLiveData<PictureState>()
@@ -71,11 +65,6 @@ class HomeViewModel(
                 Log.d("EXISTS? CYCLE", "$i.jpg")
                 val fileName = "$i.jpg"
                 val jpg = File(path, fileName)
-                var bitmap = BitmapFactory.decodeFile(jpg.path)
-                if (bitmap == null) {
-                    bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.ic_error_image)
-                    Log.d("BITMAP", "$bitmap")
-                }
                 list.add(jpg)
             }
             stateLiveData.postValue(PictureState.SearchIsOk(list))
@@ -84,6 +73,7 @@ class HomeViewModel(
         }
     }
 
+    //для MVVM надо вынести в другой слой
     private fun getResponseCode(urlString: String): Int {
         try {
             val url = URL(urlString)

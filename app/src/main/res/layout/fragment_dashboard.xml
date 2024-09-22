@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".ui.dashboard.DashboardFragment">
+    tools:context=".ui.details.DetailsFragment">
 
     <ImageView
         android:id="@+id/back_icon"
@@ -13,13 +13,13 @@
         android:layout_marginLeft="12dp"
         android:layout_marginTop="12dp"
         android:background="@drawable/ic_back"
-        android:backgroundTint="@color/black"
+        android:backgroundTint="?attr/colorOnSecondary"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/back_icon"

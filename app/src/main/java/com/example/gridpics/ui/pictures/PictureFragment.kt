@@ -2,8 +2,6 @@ package com.example.gridpics.ui.pictures
 
 import android.content.res.Configuration
 import android.content.res.Resources
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -17,15 +15,14 @@ import com.example.gridpics.R
 import com.example.gridpics.databinding.FragmentHomeBinding
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.io.File
-import java.io.FileInputStream
 
 
-class HomeFragment : Fragment() {
+class PictureFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private lateinit var recyclerView: RecyclerView
-    private val viewModel by viewModel<HomeViewModel>()
+    private val viewModel by viewModel<PicturesViewModel>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,10 +52,6 @@ class HomeFragment : Fragment() {
     }
 
     private fun showContent(list: List<File>) {
-        //Log.d("TEST TEST TEST", "${readFileLineByLineUsingForEachLine()}")
-        /*binding.emptyLibrary.visibility = View.GONE
-        binding.placeholderMessage.visibility = View.GONE
-        binding.recyclerView.visibility = View.VISIBLE*/
         Log.d("EXISTS?", "$list")
         recyclerView.adapter = PicturesAdapter(list) {
             clickAdapting(it)

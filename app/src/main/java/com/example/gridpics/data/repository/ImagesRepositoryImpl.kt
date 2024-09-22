@@ -2,15 +2,15 @@ package com.example.gridpics.data.repository
 
 import com.example.gridpics.data.network.NetworkClient
 import com.example.gridpics.data.network.Resource
-import com.example.gridpics.domain.repository.NewsRepository
+import com.example.gridpics.domain.repository.ImagesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
-class NewsRepositoryImpl(
+class ImagesRepositoryImpl(
     private val networkClient: NetworkClient,
-) : NewsRepository {
+) : ImagesRepository {
     override suspend fun getPics(): Flow<Resource<String>> = flow {
         when (val response = networkClient.getPics()) {
             is Resource.Data -> {
