@@ -12,14 +12,14 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gridpics.R
-import com.example.gridpics.databinding.FragmentHomeBinding
+import com.example.gridpics.databinding.FragmentImagesBinding
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.io.File
 
 
 class PictureFragment : Fragment() {
 
-    private var _binding: FragmentHomeBinding? = null
+    private var _binding: FragmentImagesBinding? = null
     private val binding get() = _binding!!
     private lateinit var recyclerView: RecyclerView
     private val viewModel by viewModel<PicturesViewModel>()
@@ -29,7 +29,7 @@ class PictureFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        _binding = FragmentImagesBinding.inflate(inflater, container, false)
         viewModel.readFiles(requireContext())
         viewModel.observeState().observe(viewLifecycleOwner) {
             render(it)
