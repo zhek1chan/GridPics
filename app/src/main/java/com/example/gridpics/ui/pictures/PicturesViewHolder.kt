@@ -1,7 +1,5 @@
 package com.example.gridpics.ui.pictures
 
-import android.graphics.Bitmap
-import android.net.Uri
 import android.view.View
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
@@ -24,6 +22,7 @@ class PicturesViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             Glide.with(itemView)
                 .asBitmap()
                 .load(s)
+                .placeholder(itemView.resources.getDrawable(R.drawable.ic_error_image))
                 .transform(CenterCrop(), RoundedCorners(cornerPixelSize), CenterCrop())
                 .into(pic)
         }

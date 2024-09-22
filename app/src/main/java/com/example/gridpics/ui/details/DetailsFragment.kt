@@ -25,7 +25,7 @@ class DetailsFragment : Fragment() {
         _binding = FragmentDashboardBinding.inflate(inflater, container, false)
         val root: View = binding.root
         val img = arguments?.getString("pic")!!
-        Log.d("PictureFragment","Image loaded")
+        Log.d("DetailsFragment","$img")
         binding.photoView.setImageURI(Uri.parse(img))
         binding.backIcon.setOnClickListener {
             navigateBack()
