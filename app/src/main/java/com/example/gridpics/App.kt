@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.example.gridpics.di.dataModule
 import com.example.gridpics.di.domainModule
 import com.example.gridpics.di.viewModelModule
+import com.example.gridpics.domain.interactor.SettingsInteractor
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.context.startKoin
@@ -21,8 +22,8 @@ class App : Application(), KoinComponent {
             )
         }
         instance = this
-        /*val settingsInteractor = getKoin().get<SettingsInteractor>()
-        switchTheme(settingsInteractor.isAppThemeDark())*/
+        val settingsInteractor = getKoin().get<SettingsInteractor>()
+        switchTheme(settingsInteractor.isAppThemeDark())
     }
 
     private fun switchTheme(darkThemeIsEnabled: Boolean) {

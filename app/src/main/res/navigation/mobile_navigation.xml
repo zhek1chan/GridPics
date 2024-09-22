@@ -7,19 +7,19 @@
 
     <fragment
         android:id="@+id/navigation_home"
-        android:name="com.example.gridpics.ui.pictures.HomeFragment"
-        android:label="@string/title_home"
-        tools:layout="@layout/fragment_home" />
+        android:name="com.example.gridpics.ui.pictures.PictureFragment"
+        android:label="@string/main"
+        tools:layout="@layout/fragment_images" />
 
     <fragment
         android:id="@+id/navigation_dashboard"
-        android:name="com.example.gridpics.ui.dashboard.DashboardFragment"
-        android:label="@string/title_dashboard"
-        tools:layout="@layout/fragment_dashboard" />
+        android:name="com.example.gridpics.ui.details.DetailsFragment"
+        android:label="@string/settings"
+        tools:layout="@layout/fragment_details" />
 
     <fragment
         android:id="@+id/navigation_notifications"
-        android:name="com.example.gridpics.ui.notifications.NotificationsFragment"
+        android:name="com.example.gridpics.ui.settings.SettingsFragment"
         android:label="@string/title_notifications"
-        tools:layout="@layout/fragment_notifications" />
+        tools:layout="@layout/fragment_settings" />
 </navigation>

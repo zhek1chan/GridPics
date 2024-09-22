@@ -12,24 +12,25 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gridpics.R
-import com.example.gridpics.databinding.FragmentHomeBinding
+import com.example.gridpics.databinding.FragmentImagesBinding
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.io.File
 
 
-class HomeFragment : Fragment() {
+class PictureFragment : Fragment() {
 
-    private var _binding: FragmentHomeBinding? = null
+    private var _binding: FragmentImagesBinding? = null
     private val binding get() = _binding!!
     private lateinit var recyclerView: RecyclerView
-    private val viewModel by viewModel<HomeViewModel>()
+    private val viewModel by viewModel<PicturesViewModel>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        viewModel.getPics()
+        _binding = FragmentImagesBinding.inflate(inflater, container, false)
+        viewModel.readFiles(requireContext())
         viewModel.observeState().observe(viewLifecycleOwner) {
             render(it)
         }
@@ -41,19 +42,12 @@ class HomeFragment : Fragment() {
         Log.d("HomeFragment", "$state")
         when (state) {
             is PictureState.SearchIsOk -> showContent(state.data)
-            is PictureState.NothingFound -> showEmpty()
+            is PictureState.NothingFound -> Unit
             PictureState.ConnectionError -> Unit
         }
     }
 
-    private fun showEmpty() {
-        //TODO("Not yet implemented")
-    }
-
-    private fun showContent(list: List<String>) {
-        /*binding.emptyLibrary.visibility = View.GONE
-        binding.placeholderMessage.visibility = View.GONE
-        binding.recyclerView.visibility = View.VISIBLE*/
+    private fun showContent(list: List<File>) {
         recyclerView.adapter = PicturesAdapter(list) {
             clickAdapting(it)
         }
@@ -63,18 +57,18 @@ class HomeFragment : Fragment() {
     }
 
     private fun calculateGridSpan(): Int {
+        Log.d("HomeFragment", "Calculate span started")
         val width = Resources.getSystem().displayMetrics.widthPixels
-        val height = Resources.getSystem().displayMetrics.heightPixels
         val orientation = this.resources.configuration.orientation
+        val density = requireContext().resources.displayMetrics.density
         return if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-            (width / 100)
+            ((width / density).toInt() / 110)
         } else {
-            (height / 100)
+            ((width / density).toInt() / 110)
         }
     }
 
     private fun clickAdapting(item: String) {
-        Log.d("PlaylistFragment", "Click on the playlist")
         val bundle = Bundle()
         bundle.putString("pic", item)
         val navController = findNavController()
