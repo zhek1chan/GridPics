@@ -3,6 +3,7 @@ import java.util.regex.Pattern.compile
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id("kotlin-kapt")
 }
 
 android {
@@ -56,9 +57,10 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     //coil
     implementation(libs.coil)
-    implementation (libs.glide)
     //glide
+    implementation (libs.glide)
     annotationProcessor(libs.compiler)
+    kapt(libs.compiler)
     //koin
     implementation(libs.koin.android)
     //retrofit
@@ -69,4 +71,5 @@ dependencies {
     //gson
     implementation(libs.gson)
     implementation(libs.converter.gson)
+    implementation(libs.photoview.v230)
 }

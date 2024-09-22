@@ -1,12 +1,22 @@
 package com.example.gridpics.data.network
 
+import android.R.attr.data
+import android.content.ContentResolver
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
+import com.example.gridpics.App
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.nio.charset.Charset
 
 
@@ -22,14 +32,14 @@ class RetrofitNetworkClient(
             news = try {
                 api.getNews().byteStream().use {
                     val s = it.readBytes().toString(charset = Charset.defaultCharset())
-                    Resource.Data(s)
+                    Log.d("Retrofit data", "$s")
+                    return@use Resource.Data(s)
                 } ?: Resource.NotFound(NOT_FOUND)
             } catch (ex: IOException) {
                 Log.e(REQUEST_ERROR, ex.toString())
                 Resource.ConnectionError(REQUEST_ERROR)
             }
         }
-        Log.d("Retrofit", "${api.getNews()}")
         return news
     }
 

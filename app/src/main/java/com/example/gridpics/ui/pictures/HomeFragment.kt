@@ -2,6 +2,8 @@ package com.example.gridpics.ui.pictures
 
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,6 +16,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.gridpics.R
 import com.example.gridpics.databinding.FragmentHomeBinding
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.io.File
+import java.io.FileInputStream
 
 
 class HomeFragment : Fragment() {
@@ -29,7 +33,7 @@ class HomeFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        viewModel.getPics()
+        viewModel.readFiles(requireContext())
         viewModel.observeState().observe(viewLifecycleOwner) {
             render(it)
         }
@@ -50,11 +54,12 @@ class HomeFragment : Fragment() {
         //TODO("Not yet implemented")
     }
 
-    private fun showContent(s: String) {
+    private fun showContent(list: List<File>) {
+        //Log.d("TEST TEST TEST", "${readFileLineByLineUsingForEachLine()}")
         /*binding.emptyLibrary.visibility = View.GONE
         binding.placeholderMessage.visibility = View.GONE
         binding.recyclerView.visibility = View.VISIBLE*/
-        val list = s.split("\n")
+        Log.d("EXISTS?", "$list")
         recyclerView.adapter = PicturesAdapter(list) {
             clickAdapting(it)
         }
@@ -66,15 +71,12 @@ class HomeFragment : Fragment() {
     private fun calculateGridSpan(): Int {
         Log.d("HomeFragment", "Calculate span started")
         val width = Resources.getSystem().displayMetrics.widthPixels
-        val height = Resources.getSystem().displayMetrics.heightPixels
         val orientation = this.resources.configuration.orientation
         val density = requireContext().resources.displayMetrics.density
         return if (orientation == Configuration.ORIENTATION_PORTRAIT) {
             ((width / density).toInt() / 110)
-            //Log.d("Orientation", "Portrait")
         } else {
             ((width / density).toInt() / 110)
-            //Log.d("Orientation", "Horizontal")
         }
     }
 

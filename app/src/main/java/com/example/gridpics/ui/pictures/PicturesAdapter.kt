@@ -1,12 +1,14 @@
 package com.example.gridpics.ui.pictures
 
+import android.graphics.Bitmap
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gridpics.R
+import java.io.File
 
 class PicturesAdapter(
-    private val picsUrls: List<String>,
+    private val picsUrls: List<File>,
     private val clickListener: Click
 ) :
     RecyclerView.Adapter<PicturesViewHolder>() {
@@ -23,7 +25,7 @@ class PicturesAdapter(
     override fun onBindViewHolder(holder: PicturesViewHolder, position: Int) {
         holder.bind(picsUrls[position])
         holder.itemView.setOnClickListener {
-            clickListener.onClick(picsUrls[position])
+            clickListener.onClick(picsUrls[position].toString())
             notifyDataSetChanged()
         }
     }
