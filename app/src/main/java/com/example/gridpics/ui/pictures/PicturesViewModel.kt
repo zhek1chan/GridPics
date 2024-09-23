@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -14,6 +16,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
+import com.example.gridpics.MainActivity
 import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +38,7 @@ class PicturesViewModel(
 
     private val stateLiveData = MutableLiveData<PictureState>()
     fun observeState(): LiveData<PictureState> = stateLiveData
-    fun getPics(context: Context) {
+    private fun getPics(context: Context) {
         viewModelScope.launch {
             interactor.getPics().collect { news ->
                 when (news) {
@@ -53,11 +56,11 @@ class PicturesViewModel(
         val numFileName = "num.txt"
         val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
             .toString()
-        val fileCheck = File(path, numFileName)
-        Log.d("EXISTS?", "${fileCheck.exists()}")
-        if (fileCheck.exists()) {
+        Log.d("EXISTS?", "${File(path, numFileName).exists()}")
+        if (File(path, numFileName).exists()) {
             val file = File(path, numFileName)
             val num = BufferedReader(FileReader(file)).readLine().toInt()
+            Log.d("EXISTS?", "$num")
             val list = mutableListOf<File>()
             for (i in 1..<num+1) {
                 val fileName = "$i.jpg"
@@ -130,12 +133,13 @@ class PicturesViewModel(
                         .get(), i, context
                 )
             }
+            readFiles(context)
         }
     }
 
     private fun saveImage(image: Bitmap, num: Int, context: Context): String? {
         var savedImagePath: String? = null
-        val imageFileName = "$num"
+        val imageFileName = "$num.jpg"
         val storageDir = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
                 .toString()
@@ -146,7 +150,7 @@ class PicturesViewModel(
         }
         if (success) {
             val imageFile = File(storageDir, imageFileName)
-            savedImagePath = imageFile.getAbsolutePath()
+            savedImagePath = imageFile.absolutePath
             try {
                 val fOut: OutputStream = FileOutputStream(imageFile)
                 image.compress(Bitmap.CompressFormat.JPEG, 100, fOut)

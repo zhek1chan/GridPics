@@ -30,6 +30,7 @@ class PictureFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentImagesBinding.inflate(inflater, container, false)
+
         viewModel.readFiles(requireContext())
         viewModel.observeState().observe(viewLifecycleOwner) {
             render(it)

@@ -72,4 +72,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.converter.gson)
     implementation(libs.photoview.v230)
+    //permissions
+    implementation("com.github.permissions-dispatcher:permissionsdispatcher:4.8.0")
+    kapt("com.github.permissions-dispatcher:permissionsdispatcher-processor:4.8.0")
 }

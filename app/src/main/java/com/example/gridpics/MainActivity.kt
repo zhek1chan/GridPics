@@ -1,5 +1,6 @@
 package com.example.gridpics
 
+import android.Manifest
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -19,20 +20,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
-        if (Build.VERSION.SDK_INT >= 30) {
-            if (!Environment.isExternalStorageManager()) {
-                val getpermission = Intent()
-                getpermission.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                startActivity(getpermission)
-            }
-        }
         setContentView(binding.root)
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.nav_host_fragment_activity_main) as NavHostFragment
         val navController = navHostFragment.navController
         navController.addOnDestinationChangedListener { _, destination, _ ->
             if (destination.id == R.id.navigation_dashboard) {
-                 binding.navView.visibility = View.GONE
+                binding.navView.visibility = View.GONE
             } else {
                 binding.navView.visibility = View.VISIBLE
             }
