@@ -7,4 +7,7 @@
     <string name="settings">Настройки</string>
     <string name="main">Главная</string>
     <string name="dark_theme">Тёмная тема</string>
+    <string name="permission_denied">Разрешение отклонено</string>
+    <string name="permission_askagain">Переустановите приложение для корректной работы</string>
+    <string name="permission_rationale">Разрешите доступ, для работы приложения</string>
 </resources>
