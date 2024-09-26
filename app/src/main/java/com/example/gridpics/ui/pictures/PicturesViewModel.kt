@@ -1,35 +1,12 @@
 package com.example.gridpics.ui.pictures
 
-import android.content.Context
-import android.content.Intent
-import android.graphics.Bitmap
-import android.net.Uri
-import android.os.Environment
-import android.util.Log
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.request.RequestListener
-import com.example.gridpics.MainActivity
 import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.BufferedReader
-import java.io.File
-import java.io.FileOutputStream
-import java.io.FileReader
-import java.io.IOException
-import java.io.OutputStream
-import java.net.HttpURLConnection
-import java.net.MalformedURLException
-import java.net.URL
 
 
 class PicturesViewModel(
@@ -38,13 +15,11 @@ class PicturesViewModel(
 
     private val stateLiveData = MutableLiveData<PictureState>()
     fun observeState(): LiveData<PictureState> = stateLiveData
-    private fun getPics(context: Context) {
+    fun getPics() {
         viewModelScope.launch {
             interactor.getPics().collect { news ->
                 when (news) {
-                    is Resource.Data -> {
-                        scopeSave(news.value, context)
-                    }
+                    is Resource.Data -> stateLiveData.postValue(PictureState.SearchIsOk(news.value))
                     is Resource.ConnectionError -> stateLiveData.postValue(PictureState.ConnectionError)
                     is Resource.NotFound -> stateLiveData.postValue(PictureState.NothingFound)
                 }
@@ -52,7 +27,7 @@ class PicturesViewModel(
         }
     }
 
-    fun readFiles(context: Context) {
+    /*fun readFiles(context: Context) {
         val numFileName = "num.txt"
         val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
             .toString()
@@ -72,6 +47,7 @@ class PicturesViewModel(
             getPics(context)
         }
     }
+
 
     //для MVVM надо вынести в другой слой
     private fun getResponseCode(urlString: String): Int {
@@ -172,5 +148,5 @@ class PicturesViewModel(
             mediaScanIntent.data = contentUri
             context.sendBroadcast(mediaScanIntent)
         }
-    }
+    }*/
 }

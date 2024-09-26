@@ -1,5 +1,7 @@
 package com.example.gridpics.ui.pictures
 
+import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.Bundle
@@ -14,15 +16,16 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.gridpics.R
 import com.example.gridpics.databinding.FragmentImagesBinding
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.io.File
 
 
-class PictureFragment : Fragment() {
+class PicturesFragment : Fragment() {
 
     private var _binding: FragmentImagesBinding? = null
     private val binding get() = _binding!!
     private lateinit var recyclerView: RecyclerView
     private val viewModel by viewModel<PicturesViewModel>()
+    private val sharedPrefs: String = "sharedPrefs"
+    private val key: String = "list_of_pics"
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -31,11 +34,17 @@ class PictureFragment : Fragment() {
     ): View {
         _binding = FragmentImagesBinding.inflate(inflater, container, false)
 
-        viewModel.readFiles(requireContext())
-        viewModel.observeState().observe(viewLifecycleOwner) {
-            render(it)
-        }
         recyclerView = binding.rvItems
+        val sharedPreferences = requireContext().getSharedPreferences(sharedPrefs, MODE_PRIVATE)
+        val text = sharedPreferences.getString(key, "")
+        if (!text.isNullOrEmpty()) {
+            showContent(text)
+        } else {
+            viewModel.getPics()
+            viewModel.observeState().observe(viewLifecycleOwner) {
+                render(it)
+            }
+        }
         return binding.root
     }
 
@@ -48,13 +57,23 @@ class PictureFragment : Fragment() {
         }
     }
 
-    private fun showContent(list: List<File>) {
+    private fun showContent(s: String) {
+        val list = s.split("\n")
+        saveToSharedPrefs(requireContext(), s)
+
         recyclerView.adapter = PicturesAdapter(list) {
             clickAdapting(it)
         }
         val spanCount = calculateGridSpan()
         recyclerView.layoutManager = GridLayoutManager(requireContext(), spanCount)
         recyclerView.adapter?.notifyDataSetChanged()
+    }
+
+    fun saveToSharedPrefs(context: Context, s: String) {
+        val sharedPreferences = context.getSharedPreferences(sharedPrefs, MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString(key, s)
+        editor.apply()
     }
 
     private fun calculateGridSpan(): Int {

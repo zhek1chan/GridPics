@@ -1,5 +1,3 @@
-import java.util.regex.Pattern.compile
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -73,6 +71,9 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.photoview.v230)
     //permissions
-    implementation("com.github.permissions-dispatcher:permissionsdispatcher:4.8.0")
-    kapt("com.github.permissions-dispatcher:permissionsdispatcher-processor:4.8.0")
+    implementation(libs.permissionsdispatcher)
+    kapt(libs.permissionsdispatcher.processor)
+    //picasso
+    implementation(libs.picasso)
+    implementation(libs.picasso2.okhttp3.downloader)
 }

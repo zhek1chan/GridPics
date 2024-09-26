@@ -22,7 +22,11 @@ class RequestActivity : AppCompatActivity() {
         binding.request.setOnClickListener {
             navToSettings()
         }
-        navToSettings()
+        val intent = Intent(
+            this,
+            MainActivity::class.java
+        )
+        ContextCompat.startActivity(this, intent, null)
         setContentView(binding.root)
     }
 

@@ -7,7 +7,7 @@ import com.example.gridpics.R
 import java.io.File
 
 class PicturesAdapter(
-    private val picsUrls: List<File>,
+    private val picsUrls: List<String>,
     private val clickListener: Click
 ) :
     RecyclerView.Adapter<PicturesViewHolder>() {
