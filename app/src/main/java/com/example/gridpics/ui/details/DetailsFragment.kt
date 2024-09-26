@@ -10,6 +10,9 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.gridpics.R
 import com.example.gridpics.databinding.FragmentDetailsBinding
+import com.squareup.picasso.Callback
+import com.squareup.picasso.NetworkPolicy
+import com.squareup.picasso.Picasso
 
 class DetailsFragment : Fragment() {
 
@@ -25,8 +28,24 @@ class DetailsFragment : Fragment() {
         _binding = FragmentDetailsBinding.inflate(inflater, container, false)
         val root: View = binding.root
         val img = arguments?.getString("pic")!!
-        Log.d("DetailsFragment","$img")
-        binding.photoView.setImageURI(Uri.parse(img))
+        val pic = binding.photoView
+        Picasso.get().load(img).networkPolicy(NetworkPolicy.OFFLINE).into(pic, object : Callback {
+            override fun onSuccess() {}
+
+            override fun onError(e: Exception?) {
+                Picasso.get()
+                    .load(Uri.parse(img))
+                    .error(R.drawable.ic_error_image)
+                    .into(pic, object : Callback {
+                        override fun onSuccess() {}
+
+                        override fun onError(e: Exception?) {
+                            Log.d("IMAGE EXCEPTION!", img)
+                            Log.d("Picasso", "Could not fetch image: $e")
+                        }
+                    })
+            }
+        })
         binding.backIcon.setOnClickListener {
             navigateBack()
         }

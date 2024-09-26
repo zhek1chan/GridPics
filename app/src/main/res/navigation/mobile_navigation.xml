@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/navigation_home"
-        android:name="com.example.gridpics.ui.pictures.PictureFragment"
+        android:name="com.example.gridpics.ui.pictures.PicturesFragment"
         android:label="@string/main"
         tools:layout="@layout/fragment_images" />
 
