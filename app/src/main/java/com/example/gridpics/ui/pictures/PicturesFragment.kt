@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
@@ -52,8 +53,8 @@ class PicturesFragment : Fragment() {
         Log.d("HomeFragment", "$state")
         when (state) {
             is PictureState.SearchIsOk -> showContent(state.data)
-            is PictureState.NothingFound -> Unit
-            PictureState.ConnectionError -> Unit
+            is PictureState.NothingFound -> showToast(getString(R.string.nothing_found))
+            PictureState.ConnectionError -> showToast(getString(R.string.no_internet))
         }
     }
 
@@ -69,7 +70,11 @@ class PicturesFragment : Fragment() {
         recyclerView.adapter?.notifyDataSetChanged()
     }
 
-    fun saveToSharedPrefs(context: Context, s: String) {
+    private fun showToast(s: String) {
+        Toast.makeText(requireContext(), s, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun saveToSharedPrefs(context: Context, s: String) {
         val sharedPreferences = context.getSharedPreferences(sharedPrefs, MODE_PRIVATE)
         val editor = sharedPreferences.edit()
         editor.putString(key, s)

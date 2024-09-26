@@ -34,6 +34,7 @@ class App : Application(), KoinComponent {
         built.setIndicatorsEnabled(true)
         built.isLoggingEnabled = true
         Picasso.setSingletonInstance(built)
+        Picasso.get().setIndicatorsEnabled(false)
     }
 
     private fun switchTheme(darkThemeIsEnabled: Boolean) {

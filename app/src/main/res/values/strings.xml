@@ -10,4 +10,6 @@
     <string name="permission_denied">Разрешение отклонено</string>
     <string name="permission_askagain">Переустановите приложение для корректной работы</string>
     <string name="permission_rationale">Разрешите доступ, для работы приложения</string>
+    <string name="nothing_found">Ничего не нашлось!\nПопробуйте позже</string>
+    <string name="no_internet">Отсутсвует подключение к интернету</string>
 </resources>
