@@ -12,4 +12,5 @@
     <string name="permission_rationale">Разрешите доступ, для работы приложения</string>
     <string name="nothing_found">Ничего не нашлось!\nПопробуйте позже</string>
     <string name="no_internet">Отсутсвует подключение к интернету</string>
+    <string name="gridpics">GridPics</string>
 </resources>

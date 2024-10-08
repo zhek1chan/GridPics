@@ -6,11 +6,26 @@
     android:fitsSystemWindows="true"
     android:layout_height="match_parent">
 
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            style="@style/settings_text_view"
+            android:text="@string/gridpics"
+            android:textColor="?attr/colorOnSecondary"
+            android:textSize="20sp" />
+    </LinearLayout>
+
     <ScrollView
         android:id="@+id/srl_holder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingBottom="?attr/actionBarSize"
+        android:paddingTop="22dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

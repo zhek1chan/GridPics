@@ -49,6 +49,7 @@ class DetailsFragment : Fragment() {
         binding.backIcon.setOnClickListener {
             navigateBack()
         }
+        binding.url.text = img
         return root
     }
 

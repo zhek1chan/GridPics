@@ -41,6 +41,7 @@ class PicturesFragment : Fragment() {
         if (!text.isNullOrEmpty()) {
             showContent(text)
         } else {
+            viewModel.resume()
             viewModel.getPics()
             viewModel.observeState().observe(viewLifecycleOwner) {
                 render(it)
@@ -50,7 +51,7 @@ class PicturesFragment : Fragment() {
     }
 
     private fun render(state: PictureState) {
-        Log.d("HomeFragment", "$state")
+        Log.d("PictiresFragment", "$state")
         when (state) {
             is PictureState.SearchIsOk -> showContent(state.data)
             is PictureState.NothingFound -> showToast(getString(R.string.nothing_found))
@@ -100,8 +101,21 @@ class PicturesFragment : Fragment() {
         navController.navigate(R.id.navigation_dashboard, bundle)
     }
 
+    override fun onPause() {
+        viewModel.pause()
+        super.onPause()
+    }
+
+    override fun onResume() {
+        Log.d("PicturesFragment", "onResume Call")
+        viewModel.resume()
+        viewModel.getPics()
+        super.onResume()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        viewModel.pause()
         _binding = null
     }
 }
