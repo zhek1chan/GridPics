@@ -36,8 +36,8 @@ class PicturesViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             override fun onError(e: Exception?) {
                 Picasso.get()
                     .load(Uri.parse(s))
+                    .error(R.drawable.ic_error_image)
                     .placeholder(R.drawable.ic_error_image)
-                    .transform(CircleTransform())
                     .into(pic, object : Callback {
                         override fun onSuccess() {
                             val radius = itemView.resources.getDimensionPixelSize(R.dimen.corner_radius_8)
