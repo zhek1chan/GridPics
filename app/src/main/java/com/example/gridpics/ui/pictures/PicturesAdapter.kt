@@ -24,8 +24,7 @@ class PicturesAdapter(
     override fun onBindViewHolder(holder: PicturesViewHolder, position: Int) {
         holder.bind(picsUrls[position])
         holder.itemView.setOnClickListener {
-            clickListener.onClick(picsUrls[position].toString())
-            notifyDataSetChanged()
+            clickListener.onClick(picsUrls[position])
         }
     }
 

@@ -51,7 +51,7 @@ class PicturesFragment : Fragment() {
     }
 
     private fun render(state: PictureState) {
-        Log.d("PictiresFragment", "$state")
+        Log.d("PicturesFragment", "$state")
         when (state) {
             is PictureState.SearchIsOk -> showContent(state.data)
             is PictureState.NothingFound -> showToast(getString(R.string.nothing_found))
@@ -68,7 +68,6 @@ class PicturesFragment : Fragment() {
         }
         val spanCount = calculateGridSpan()
         recyclerView.layoutManager = GridLayoutManager(requireContext(), spanCount)
-        recyclerView.adapter?.notifyDataSetChanged()
     }
 
     private fun showToast(s: String) {
