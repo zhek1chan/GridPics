@@ -78,4 +78,6 @@ dependencies {
     implementation(libs.picasso)
     implementation(libs.picasso2.okhttp3.downloader)
     implementation(libs.picasso.transformations)
+    //splash
+    implementation(libs.androidx.core.splashscreen)
 }
