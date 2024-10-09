@@ -1,5 +1,6 @@
 [versions]
 agp = "8.5.2"
+androidutilslibrary = "1.0.0"
 coil = "2.7.0"
 dexter = "6.2.3"
 glide = "4.15.1"
@@ -31,6 +32,7 @@ swiperefreshlayout = "1.1.0"
 uiGraphicsAndroid = "1.7.3"
 
 [libraries]
+androidutilslibrary = { module = "com.gitlab.developerdeveloperdeveloper:androidutilslibrary", version.ref = "androidutilslibrary" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }

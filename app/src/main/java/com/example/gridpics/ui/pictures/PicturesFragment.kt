@@ -12,14 +12,11 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gridpics.R
 import com.example.gridpics.databinding.FragmentImagesBinding
-import com.example.gridpics.ui.details.DetailsFragment
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
