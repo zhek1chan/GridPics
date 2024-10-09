@@ -3,6 +3,5 @@
     <style name="Theme.SplashScreen" parent="Theme.SplashScreen.IconBackground">
         <item name="android:windowDisablePreview">false</item>
         <item name="android:windowBackground">@drawable/baseline_image_24</item>
-        <item name="postSplashScreenTheme">@style/Theme.GridPics</item>
     </style>
 </resources>
