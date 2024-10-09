@@ -10,7 +10,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -29,12 +31,10 @@ class PicturesFragment : Fragment() {
     private val key: String = "list_of_pics"
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         _binding = FragmentImagesBinding.inflate(inflater, container, false)
-
+        onBackPressed()
         recyclerView = binding.rvItems
         val sharedPreferences = requireContext().getSharedPreferences(sharedPrefs, MODE_PRIVATE)
         val text = sharedPreferences.getString(key, "")
@@ -110,6 +110,21 @@ class PicturesFragment : Fragment() {
         viewModel.resume()
         viewModel.getPics()
         super.onResume()
+    }
+
+    private fun onBackPressed() {
+        requireActivity().onBackPressedDispatcher.addCallback(
+                viewLifecycleOwner,
+                object : OnBackPressedCallback(true) {
+                    override fun handleOnBackPressed() {
+                        Log.d("PicturesFragment", "back button pressed")
+                        fragmentManager?.popBackStack()
+                        if (isEnabled) {
+                            isEnabled = false
+                            requireActivity().onBackPressed()
+                        }
+                    }
+                })
     }
 
     override fun onDestroyView() {
