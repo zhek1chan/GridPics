@@ -7,6 +7,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentTransaction
 import androidx.navigation.fragment.findNavController
 import com.example.gridpics.R
 import com.example.gridpics.databinding.FragmentDetailsBinding
@@ -54,8 +56,7 @@ class DetailsFragment : Fragment() {
     }
 
     private fun navigateBack() {
-        val navController = findNavController()
-        navController.navigate(R.id.navigation_home)
+        requireActivity().onBackPressed()
     }
 
     override fun onDestroyView() {
