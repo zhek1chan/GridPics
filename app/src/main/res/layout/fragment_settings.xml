@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:backgroundTint="?attr/colorOnPrimary"
@@ -22,21 +21,21 @@
 
     <LinearLayout
         style="@style/settings_linear_layout"
-        android:paddingVertical="0dp"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="10dp"
+        android:paddingVertical="0dp">
 
         <TextView
             style="@style/settings_text_view"
-            android:textColor="?attr/colorOnSecondary"
             android:layout_marginVertical="21dp"
-            android:textSize="16sp"
-            android:text="@string/dark_theme" />
+            android:text="@string/dark_theme"
+            android:textColor="?attr/colorOnSecondary"
+            android:textSize="16sp" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
-            android:layout_width="wrap_content"
             android:id="@+id/themeSwitcher"
-            android:switchMinWidth="32dp"
-            android:layout_height="48dp" />
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:switchMinWidth="32dp" />
 
 
     </LinearLayout>

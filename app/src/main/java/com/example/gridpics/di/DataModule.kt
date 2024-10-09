@@ -1,6 +1,7 @@
 package com.example.gridpics.di
 
 import android.content.Context
+import com.example.gridpics.App
 import com.example.gridpics.data.network.Api
 import com.example.gridpics.data.network.NetworkClient
 import com.example.gridpics.data.network.RetrofitNetworkClient
@@ -20,7 +21,8 @@ val dataModule = module {
 
         Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create(gson))
-            .baseUrl("https://it-link.ru/test/")
+            .baseUrl("http://it-link.ru/test/")
+            .client(App.client)
             .build()
             .create(Api::class.java)
 

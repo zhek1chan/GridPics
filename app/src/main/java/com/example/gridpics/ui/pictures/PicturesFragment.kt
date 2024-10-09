@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
@@ -29,18 +30,16 @@ class PicturesFragment : Fragment() {
     private val key: String = "list_of_pics"
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         _binding = FragmentImagesBinding.inflate(inflater, container, false)
-
         recyclerView = binding.rvItems
         val sharedPreferences = requireContext().getSharedPreferences(sharedPrefs, MODE_PRIVATE)
         val text = sharedPreferences.getString(key, "")
         if (!text.isNullOrEmpty()) {
             showContent(text)
         } else {
+            viewModel.resume()
             viewModel.getPics()
             viewModel.observeState().observe(viewLifecycleOwner) {
                 render(it)
@@ -49,8 +48,13 @@ class PicturesFragment : Fragment() {
         return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        onBackPressed()
+        super.onViewCreated(view, savedInstanceState)
+    }
+
     private fun render(state: PictureState) {
-        Log.d("HomeFragment", "$state")
+        Log.d("PicturesFragment", "$state")
         when (state) {
             is PictureState.SearchIsOk -> showContent(state.data)
             is PictureState.NothingFound -> showToast(getString(R.string.nothing_found))
@@ -67,7 +71,6 @@ class PicturesFragment : Fragment() {
         }
         val spanCount = calculateGridSpan()
         recyclerView.layoutManager = GridLayoutManager(requireContext(), spanCount)
-        recyclerView.adapter?.notifyDataSetChanged()
     }
 
     private fun showToast(s: String) {
@@ -100,8 +103,35 @@ class PicturesFragment : Fragment() {
         navController.navigate(R.id.navigation_dashboard, bundle)
     }
 
+    override fun onPause() {
+        viewModel.pause()
+        super.onPause()
+    }
+
+    override fun onResume() {
+        Log.d("PicturesFragment", "onResume Call")
+        viewModel.resume()
+        viewModel.getPics()
+        super.onResume()
+    }
+
+    private fun onBackPressed() {
+        requireActivity().onBackPressedDispatcher.addCallback(
+                viewLifecycleOwner,
+                object : OnBackPressedCallback(true) {
+                    override fun handleOnBackPressed() {
+                        fragmentManager?.popBackStack()
+                        if (isEnabled) {
+                            isEnabled = false
+                            requireActivity().onBackPressed()
+                        }
+                    }
+                })
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        viewModel.pause()
         _binding = null
     }
 }
