@@ -7,6 +7,7 @@
     android:layout_height="match_parent">
 
     <LinearLayout
+        android:id="@+id/app_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -26,12 +27,11 @@
         android:id="@+id/srl_holder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="?attr/actionBarSize"
-        android:paddingTop="30dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:paddingTop="40dp"
+        android:paddingBottom="50dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/app_name"
         app:swipeRefreshLayoutProgressSpinnerBackgroundColor="@color/teal_200">
 
         <androidx.recyclerview.widget.RecyclerView
