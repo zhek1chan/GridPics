@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.details
 
 import android.content.res.Configuration
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.util.DisplayMetrics
@@ -48,6 +49,7 @@ class DetailsFragment : Fragment() {
                         override fun onError(e: Exception?) {
                             Log.d("IMAGE EXCEPTION!", img)
                             Log.d("Picasso", "Could not fetch image: $e")
+                            pic.setImageDrawable(resources.getDrawable(R.drawable.ic_error_image))
                         }
                     })
             }
@@ -80,17 +82,23 @@ class DetailsFragment : Fragment() {
             if (isVisible) {
                 requireActivity().window.setFlags(
                     WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 )
+                requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 binding.backIcon.visibility = View.GONE
                 binding.url.visibility = View.GONE
                 Log.d("PicZOOM", "${pic.isZoomed}")
+                requireActivity().window.navigationBarColor = Color.TRANSPARENT
                 isVisible = false
             } else {
                 isVisible = true
                 requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
                 binding.backIcon.visibility = View.VISIBLE
                 binding.url.visibility = View.VISIBLE
+                requireActivity().window.navigationBarColor = Color.BLACK
+                requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE or
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
             }
         }
 
