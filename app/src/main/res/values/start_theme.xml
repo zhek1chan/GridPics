@@ -3,5 +3,6 @@
     <style name="Theme.SplashScreen" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowDisablePreview">false</item>
         <item name="android:windowBackground">@drawable/toilet</item>
+        <item name="colorPrimaryDark">@android:color/black</item>
     </style>
 </resources>
