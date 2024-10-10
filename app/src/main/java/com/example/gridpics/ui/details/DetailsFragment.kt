@@ -103,6 +103,8 @@ class DetailsFragment : Fragment() {
             }
         }
 
+
+
         binding.layout.setOnClickListener {
             binding.backIcon.visibility = View.VISIBLE
             binding.url.visibility = View.VISIBLE
