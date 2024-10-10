@@ -80,4 +80,6 @@ dependencies {
     implementation(libs.picasso.transformations)
     //splash
     implementation(libs.androidx.core.splashscreen)
+    //touchImageView
+    implementation(libs.touchimageview)
 }
