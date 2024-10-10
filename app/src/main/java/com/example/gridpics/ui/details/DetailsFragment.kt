@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.WindowManager
 import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
 import com.example.gridpics.R
@@ -62,7 +63,7 @@ class DetailsFragment : Fragment() {
         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
             k = dWidth.toFloat() / picWidth.toFloat()
             val imgHeight = (k * picHeight).toInt()
-            binding.photoView.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, imgHeight)
+            binding.photoView.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
         } else {
             k = dWidth.toFloat() / picHeight.toFloat()
             val imgHeight = (k * picHeight).toInt()
@@ -73,27 +74,33 @@ class DetailsFragment : Fragment() {
             navigateBack()
         }
         binding.url.text = img
-        binding.photoView.setOnScaleChangeListener { scaleFactor, _, _ ->
-            pic.scale
-            Log.d("DetailsFragment", "${pic.scale}")
-            if (scaleFactor != 0f) {
-                binding.backIcon.visibility = View.INVISIBLE
-                binding.url.visibility = View.INVISIBLE
+
+        var isVisible = true
+        binding.photoView.setOnClickListener {
+            if (isVisible) {
+                requireActivity().window.setFlags(
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN
+                )
+                binding.backIcon.visibility = View.GONE
+                binding.url.visibility = View.GONE
+                Log.d("PicZOOM", "${pic.isZoomed}")
+                isVisible = false
             } else {
+                isVisible = true
+                requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
                 binding.backIcon.visibility = View.VISIBLE
                 binding.url.visibility = View.VISIBLE
             }
         }
+
+
 
         binding.layout.setOnClickListener {
             binding.backIcon.visibility = View.VISIBLE
             binding.url.visibility = View.VISIBLE
         }
 
-        binding.space.setOnClickListener {
-            binding.backIcon.visibility = View.VISIBLE
-            binding.url.visibility = View.VISIBLE
-        }
         return root
     }
 
