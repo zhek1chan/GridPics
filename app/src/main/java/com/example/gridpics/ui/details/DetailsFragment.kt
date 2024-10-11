@@ -1,182 +1,148 @@
 package com.example.gridpics.ui.details
 
-import android.graphics.Color
-import android.graphics.Point
-import android.graphics.Rect
-import android.net.Uri
 import android.os.Bundle
-import android.util.Log
-import android.view.Display
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
 import android.view.ViewGroup
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.view.Window
 import android.view.WindowManager
-import android.widget.LinearLayout
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
-import com.example.gridpics.R
-import com.example.gridpics.databinding.FragmentDetailsBinding
-import com.squareup.picasso.Callback
-import com.squareup.picasso.NetworkPolicy
-import com.squareup.picasso.Picasso
+import coil3.compose.rememberAsyncImagePainter
+import com.example.gridpics.ui.themes.ComposeTheme
 
 
 class DetailsFragment : Fragment() {
 
-    private var _binding: FragmentDetailsBinding? = null
-
-    private val binding get() = _binding!!
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        requireActivity().window.setFlags(SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN, 0)
-
-    }
+    private var interfaceIsVisible = true
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentDetailsBinding.inflate(inflater, container, false)
-        val root: View = binding.root
         val img = arguments?.getString("pic")!!
-        val pic = binding.photoView
+        return ComposeView(requireContext()).apply {
+            setContent {
+                ShowDetails(img)
+            }
+        }
+    }
 
-        Picasso.get().load(img).networkPolicy(NetworkPolicy.OFFLINE).into(pic, object : Callback {
-            override fun onSuccess() {}
+    @Composable
+    fun ShowDetails(img: String) {
+        ComposeTheme {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                CenterAlignedTopAppBarExample(img)
+            }
+            var scale by remember { mutableStateOf(1f) }
+            var offset by remember { mutableStateOf(Offset(0f, 0f)) }
+            Image(
+                painter = rememberAsyncImagePainter(img),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(0.dp,40.dp,0.dp,0.dp)
+                    .clickable { clickOnImage() }
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            // Update the scale based on zoom gestures.
+                            scale *= zoom
 
-            override fun onError(e: Exception?) {
-                Picasso.get()
-                    .load(Uri.parse(img))
-                    .error(R.drawable.ic_error_image)
-                    .into(pic, object : Callback {
-                        override fun onSuccess() {}
+                            // Limit the zoom levels within a certain range (optional).
+                            scale = scale.coerceIn(1f, 3f)
 
-                        override fun onError(e: Exception?) {
-                            Log.d("IMAGE EXCEPTION!", img)
-                            Log.d("Picasso", "Could not fetch image: $e")
-                            pic.setImageDrawable(resources.getDrawable(R.drawable.ic_error_image))
+                            // Update the offset to implement panning when zoomed.
+                            offset = if (scale == 1f) Offset(0f, 0f) else offset + pan
                         }
-                    })
-            }
-        })
-
-        pic.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-
-
-        binding.backIcon.setOnClickListener {
-            navigateBack()
+                    }
+                    .graphicsLayer(
+                        scaleX = scale, scaleY = scale,
+                        translationX = offset.x, translationY = offset.y
+                    )
+                    .fillMaxSize()
+            )
         }
-        binding.url.text = img
-        return root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        var isVisible = true
-        val pic = binding.photoView
-
-
-        val rectangle = Rect()
-        val window: Window = requireActivity().window
-        window.decorView.getWindowVisibleDisplayFrame(rectangle)
-        val statusBarHeight: Int = rectangle.top
-        val contentViewTop =
-            window.findViewById<View>(Window.ID_ANDROID_CONTENT).top
-        val titleBarHeight = contentViewTop - statusBarHeight
-        Log.d("height of status bar", "$titleBarHeight")
-        val navBarHeight = getNavigationBarHeight()
-        Log.d("height of nav bar", "$navBarHeight")
-        var matrix = 0F
-        pic.setOnTouchImageViewListener {
-            matrix = pic.currentZoom
-            if (isVisible && pic.isZoomed) {
-                binding.layout.setPadding(0, 0, 0, 0)
-                pic.setPadding(0, 0, 0, 0)
-            }
+    private fun clickOnImage() {
+        if (interfaceIsVisible) {
+            requireActivity().window.setFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            )
+            val decorView = requireActivity().window.decorView
+            decorView.systemUiVisibility =
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            interfaceIsVisible = false
+        } else {
+            requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            val window = requireActivity().window.decorView
+            window.systemUiVisibility =
+                View.SYSTEM_UI_FLAG_VISIBLE or
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            interfaceIsVisible = true
         }
+    }
 
-        binding.photoView.setOnClickListener {
-            if (isVisible) {
-                if (!pic.isZoomed) {
-                    pic.setPadding(0, 0, 0, 0)
-                    binding.layout.setPadding(0, 0, 0, -titleBarHeight)
-                    Log.d("TEST1", "1 Is Visible make false, zoomed - ${pic.isZoomed}")
-                } else {
-                    Log.d("TEST2", "2 Is Visible make false, zoomed - ${pic.isZoomed}")
-                    Log.d("WTF", "HIDE INTERFACE ${pic.zoomedRect}")
-                    pic.setZoom(matrix)
-                    binding.layout.setPadding(0, 0, 0, 0)
-                    pic.setPadding(0, 0, 0, 0)
-                    pic.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-                }
-                requireActivity().window.setFlags(
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
+
+    @Composable
+    fun CenterAlignedTopAppBarExample(s: String) {
+        ComposeTheme {
+            @OptIn(ExperimentalMaterial3Api::class)
+            TopAppBar(
+                title = {
+                    Text(
+                        s,
+                        fontSize = 18.sp,
+                        maxLines = 2,
+                        modifier = Modifier.padding(0.dp, 5.dp, 0.dp, 0.dp),
+                        overflow = TextOverflow.Ellipsis,
+
+                        )
+                },
+                navigationIcon = {
+                    IconButton({ requireActivity().onBackPressed() }) {
+                        Icon(
+                            Icons.Filled.ArrowBack,
+                            contentDescription = "back",
+                            modifier = Modifier.padding(0.dp, 10.dp, 0.dp, 0.dp)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
-                window.decorView.systemUiVisibility =
-                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                binding.backIcon.visibility = View.GONE
-                binding.url.visibility = View.GONE
-                requireActivity().window.navigationBarColor = Color.TRANSPARENT
-                isVisible = false
-            } else {
-                window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-
-                matrix = pic.currentZoom
-                pic.setPadding(0, 0, 0, 0)
-                binding.layout.setPadding(0, 0, 0, 0)
-                pic.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-                Log.d("Test3", "Showing Interface")
-                pic.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-                pic.setZoom(matrix)
-                Log.d("WTF", "SHOW INTERFACE ${pic.zoomedRect}")
-
-                binding.backIcon.visibility = View.VISIBLE
-                binding.url.visibility = View.VISIBLE
-                window.navigationBarColor = Color.BLACK
-                window.decorView.systemUiVisibility =
-                    View.SYSTEM_UI_FLAG_VISIBLE or
-                            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                isVisible = true
-            }
+            )
         }
-
-
-
-        binding.layout.setOnClickListener {
-            binding.backIcon.visibility = View.VISIBLE
-            binding.url.visibility = View.VISIBLE
-        }
-    }
-
-    private fun navigateBack() {
-        requireActivity().onBackPressed()
-    }
-
-
-    private fun getNavigationBarHeight(): Int {
-        val display: Display = requireActivity().windowManager.defaultDisplay
-        val point = Point()
-        display.getRealSize(point)
-        val realHeight = point.y
-
-        // Используем Reflection для доступа к скрытому полю
-        val resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
-        if (resourceId > 0) {
-            return resources.getDimensionPixelSize(resourceId)
-        }
-
-        // Если не удалось получить высоту через ресурсы, используем разницу между реальной и видимой высотой
-        return realHeight - display.height
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }

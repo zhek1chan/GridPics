@@ -1,4 +1,4 @@
-package com.example.sportik.presentation.themes
+package com.example.gridpics.ui.themes
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

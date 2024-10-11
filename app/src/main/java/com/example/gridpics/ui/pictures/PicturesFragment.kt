@@ -1,19 +1,25 @@
 package com.example.gridpics.ui.pictures
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -22,7 +28,12 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -40,21 +51,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.RecyclerView
 import coil3.compose.AsyncImage
 import com.example.gridpics.R
-import com.example.gridpics.databinding.FragmentImagesBinding
 import com.example.gridpics.ui.placeholder.NoInternetScreen
-import com.example.sportik.presentation.themes.ComposeTheme
+import com.example.gridpics.ui.themes.ComposeTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import android.content.res.Resources
-import androidx.compose.foundation.layout.Spacer
 
 
 class PicturesFragment : Fragment() {
-    private var _binding: FragmentImagesBinding? = null
-    private val binding get() = _binding!!
-    private lateinit var recyclerView: RecyclerView
     private val viewModel by viewModel<PicturesViewModel>()
     private val sharedPrefs: String = "sharedPrefs"
     private val key: String = "list_of_pics"
@@ -62,14 +66,14 @@ class PicturesFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentImagesBinding.inflate(inflater, container, false)
-        recyclerView = binding.rvItems
+        onBackPressed()
         val sharedPreferences = requireContext().getSharedPreferences(sharedPrefs, MODE_PRIVATE)
         val text = sharedPreferences.getString(key, "")
+        Log.d("PicturesFragment", "Shared prefs - $text")
         if (!text.isNullOrEmpty()) {
             return ComposeView(requireContext()).apply {
                 setContent {
-                    ShowList(text)
+                    ShowPictures(text)
                 }
             }
         } else {
@@ -77,7 +81,7 @@ class PicturesFragment : Fragment() {
             viewModel.getPics()
             return ComposeView(requireContext()).apply {
                 setContent {
-                    ShowList(null)
+                    ShowPictures(null)
                 }
             }
         }
@@ -94,12 +98,12 @@ class PicturesFragment : Fragment() {
                 contentDescription = null,
                 modifier = Modifier
                     .clickable { clickAdapting(item) }
-                    .padding(10.dp, 0.dp)
+                    .padding(10.dp)
                     .size(100.dp)
                     .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop,
                 error = painterResource(R.drawable.ic_error_image),
-                onError = {Log.d("Error", "$it")}
+                onError = { Log.d("Error", "ERROR LOADING $item") }
             )
         }
     }
@@ -118,19 +122,22 @@ class PicturesFragment : Fragment() {
             val value by viewModel.observeState().observeAsState()
             when (value) {
                 is PictureState.SearchIsOk -> {
+                    saveToSharedPrefs(
+                        requireContext(),
+                        (value as PictureState.SearchIsOk).data
+                    )
                     val list = (value as PictureState.SearchIsOk).data.split("\n")
 
                     LazyVerticalGrid(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(0.dp, 45.dp, 0.dp, 50.dp),
                         columns = GridCells.Fixed(count = calculateGridSpan())
 
                     ) {
                         Log.d("PicturesFragmnet", "$list")
                         items(list) {
                             ItemNewsCard(it)
-                            Spacer(
-                                Modifier
-                                    .fillMaxWidth()
-                            )
                         }
                     }
                 }
@@ -162,9 +169,12 @@ class PicturesFragment : Fragment() {
         } else {
             val items = s.split("\n")
             LazyVerticalGrid(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(0.dp, 45.dp, 0.dp, 50.dp),
                 columns = GridCells.Fixed(count = calculateGridSpan())
             ) {
-                Log.d("PicturesFragmnet", "$items")
+                Log.d("PicturesFragment", "$items")
                 items(items) {
                     ItemNewsCard(it)
                 }
@@ -172,6 +182,30 @@ class PicturesFragment : Fragment() {
         }
     }
 
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun ShowPictures(s: String?) {
+        ComposeTheme {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        modifier = Modifier
+                            .height(35.dp)
+                            .padding(0.dp, 10.dp, 0.dp, 0.dp),
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        title = {
+                            Text("GridPics")
+                        }
+                    )
+                },
+            ) {
+                ShowList(s)
+            }
+        }
+    }
 
     @Composable
     fun GradientButton(
@@ -220,6 +254,14 @@ class PicturesFragment : Fragment() {
         }
     }
 
+
+    private fun saveToSharedPrefs(context: Context, s: String) {
+        val sharedPreferences = context.getSharedPreferences(sharedPrefs, MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString(key, s)
+        editor.apply()
+    }
+
     private fun calculateGridSpan(): Int {
         Log.d("HomeFragment", "Calculate span started")
         val width = Resources.getSystem().displayMetrics.widthPixels
@@ -230,6 +272,20 @@ class PicturesFragment : Fragment() {
         } else {
             ((width / density).toInt() / 110)
         }
+    }
+
+    private fun onBackPressed() {
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    fragmentManager?.popBackStack()
+                    if (isEnabled) {
+                        isEnabled = false
+                        requireActivity().onBackPressed()
+                    }
+                }
+            })
     }
 
 }

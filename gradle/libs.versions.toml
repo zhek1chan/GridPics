@@ -38,6 +38,8 @@ constraintlayoutCompose = "1.0.1"
 library = "1.0.0"
 runtimeLivedata = "1.7.1"
 databindingCompiler = "8.7.0"
+zoomable = "1.6.2"
+zoomimageViewCoil = "1.0.0"
 
 
 [libraries]
@@ -47,6 +49,7 @@ androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", versi
 androidx-ui = { module = "androidx.compose.ui:ui", version.ref = "uiGraphicsAndroid" }
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilCompose" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofitVersion" }
 dexter = { module = "com.karumi:dexter", version.ref = "dexter" }
@@ -88,6 +91,8 @@ library = { module = "me.zhanghai.compose.preference:library", version.ref = "li
 androidx-runtime-livedata = { module = "androidx.compose.runtime:runtime-livedata", version.ref = "runtimeLivedata" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "uiGraphicsAndroid" }
 androidx-databinding-compiler = { group = "androidx.databinding", name = "databinding-compiler", version.ref = "databindingCompiler" }
+zoomable = { module = "net.engawapg.lib:zoomable", version.ref = "zoomable" }
+zoomimage-view-coil = { module = "io.github.panpf.zoomimage:zoomimage-view-coil", version.ref = "zoomimageViewCoil" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

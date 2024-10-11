@@ -118,5 +118,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.ui)
     implementation(libs.ui.tooling)
-    implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.0-rc01")
+    implementation(libs.coil.network.okhttp)
+    implementation(libs.zoomable)
+    implementation(libs.zoomimage.view.coil)
 }
