@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.pictures
 
 import android.content.Context.MODE_PRIVATE
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -46,6 +47,8 @@ import com.example.gridpics.databinding.FragmentImagesBinding
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.sportik.presentation.themes.ComposeTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import android.content.res.Resources
+import androidx.compose.foundation.layout.Spacer
 
 
 class PicturesFragment : Fragment() {
@@ -91,7 +94,7 @@ class PicturesFragment : Fragment() {
                 contentDescription = null,
                 modifier = Modifier
                     .clickable { clickAdapting(item) }
-                    .padding(10.dp)
+                    .padding(10.dp, 0.dp)
                     .size(100.dp)
                     .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop,
@@ -118,11 +121,16 @@ class PicturesFragment : Fragment() {
                     val list = (value as PictureState.SearchIsOk).data.split("\n")
 
                     LazyVerticalGrid(
-                        columns = GridCells.Fixed(count = 3)
+                        columns = GridCells.Fixed(count = calculateGridSpan())
+
                     ) {
                         Log.d("PicturesFragmnet", "$list")
                         items(list) {
                             ItemNewsCard(it)
+                            Spacer(
+                                Modifier
+                                    .fillMaxWidth()
+                            )
                         }
                     }
                 }
@@ -154,7 +162,7 @@ class PicturesFragment : Fragment() {
         } else {
             val items = s.split("\n")
             LazyVerticalGrid(
-                columns = GridCells.Fixed(count = 3)
+                columns = GridCells.Fixed(count = calculateGridSpan())
             ) {
                 Log.d("PicturesFragmnet", "$items")
                 items(items) {
@@ -209,6 +217,18 @@ class PicturesFragment : Fragment() {
                     color = Color.White
                 )
             }
+        }
+    }
+
+    private fun calculateGridSpan(): Int {
+        Log.d("HomeFragment", "Calculate span started")
+        val width = Resources.getSystem().displayMetrics.widthPixels
+        val orientation = this.resources.configuration.orientation
+        val density = requireContext().resources.displayMetrics.density
+        return if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+            ((width / density).toInt() / 110)
+        } else {
+            ((width / density).toInt() / 110)
         }
     }
 

@@ -23,6 +23,7 @@ dependencyResolutionManagement {
     }
 }
 
+
 rootProject.name = "GridPics"
 include(":app")
  
