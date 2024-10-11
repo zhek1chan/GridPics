@@ -36,6 +36,11 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.0"
     }
 }
 
@@ -57,7 +62,7 @@ dependencies {
     //coil
     implementation(libs.coil)
     //glide
-    implementation (libs.glide)
+    implementation(libs.glide)
     annotationProcessor(libs.compiler)
     kapt(libs.compiler)
     //koin
@@ -82,4 +87,20 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     //touchImageView
     implementation(libs.touchimageview)
+    //compose
+    val composeBom = platform("androidx.compose:compose-bom:2024.09.00")
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
+    implementation(libs.androidx.material3)
+    implementation(libs.ui)
+    implementation(libs.androidx.adaptive)
+    implementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.tooling)
+    implementation(libs.androidx.constraintlayout.compose)
+    implementation(libs.library)
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.coil.compose)
+    implementation(libs.androidx.ui)
+    implementation(libs.ui.tooling)
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.0-rc01")
 }

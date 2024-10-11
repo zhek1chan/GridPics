@@ -90,8 +90,29 @@ class DetailsFragment : Fragment() {
         Log.d("height of status bar", "$titleBarHeight")
         val navBarHeight = getNavigationBarHeight()
         Log.d("height of nav bar", "$navBarHeight")
+        var matrix = 0F
+        pic.setOnTouchImageViewListener {
+            matrix = pic.currentZoom
+            if (isVisible && pic.isZoomed) {
+                binding.layout.setPadding(0, 0, 0, 0)
+                pic.setPadding(0, 0, 0, 0)
+            }
+        }
+
         binding.photoView.setOnClickListener {
             if (isVisible) {
+                if (!pic.isZoomed) {
+                    pic.setPadding(0, 0, 0, 0)
+                    binding.layout.setPadding(0, 0, 0, -titleBarHeight)
+                    Log.d("TEST1", "1 Is Visible make false, zoomed - ${pic.isZoomed}")
+                } else {
+                    Log.d("TEST2", "2 Is Visible make false, zoomed - ${pic.isZoomed}")
+                    Log.d("WTF", "HIDE INTERFACE ${pic.zoomedRect}")
+                    pic.setZoom(matrix)
+                    binding.layout.setPadding(0, 0, 0, 0)
+                    pic.setPadding(0, 0, 0, 0)
+                    pic.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+                }
                 requireActivity().window.setFlags(
                     WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -101,34 +122,20 @@ class DetailsFragment : Fragment() {
                             View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 binding.backIcon.visibility = View.GONE
                 binding.url.visibility = View.GONE
-                pic.setPadding(0, 0, 0, -titleBarHeight)
-                binding.layout.setPadding(0, 0, 0, 0)
-                Log.d("TEST1", "1 Is Visible make false, zoomed - ${pic.isZoomed}")
-                if ((!pic.isZoomed)) {
-                    pic.setPadding(0, 0, 0, -titleBarHeight)
-                    binding.layout.setPadding(0, 0, 0, 0)
-                    Log.d("TEST1", "1 Is Visible make false, zoomed - ${pic.isZoomed}")
-                } else {
-                    Log.d("TEST2", "2 Is Visible make false, zoomed - ${pic.isZoomed}")
-                    binding.layout.setPadding(0, 0, 0, 0)
-                    pic.setPadding(0, 0, 0, -titleBarHeight)
-                    pic.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-                }
                 requireActivity().window.navigationBarColor = Color.TRANSPARENT
                 isVisible = false
             } else {
                 window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-                if (!pic.isZoomed) {
-                    pic.setPadding(0, 0, 0, 0)
-                    binding.layout.setPadding(0, 0, 0, 0)
-                    pic.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-                    Log.d("Test3", "Showing Interface, zoomed - ${pic.isZoomed}")
-                } else {
-                    Log.d("Test4", "Showing Interface, zoomed - ${pic.isZoomed}")
-                    pic.setPadding(0, 0, 0, 0)
-                    binding.layout.setPadding(0, 0, 0, 0)
-                    pic.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-                }
+
+                matrix = pic.currentZoom
+                pic.setPadding(0, 0, 0, 0)
+                binding.layout.setPadding(0, 0, 0, 0)
+                pic.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+                Log.d("Test3", "Showing Interface")
+                pic.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+                pic.setZoom(matrix)
+                Log.d("WTF", "SHOW INTERFACE ${pic.zoomedRect}")
+
                 binding.backIcon.visibility = View.VISIBLE
                 binding.url.visibility = View.VISIBLE
                 window.navigationBarColor = Color.BLACK
@@ -152,7 +159,7 @@ class DetailsFragment : Fragment() {
     }
 
 
-    fun getNavigationBarHeight(): Int {
+    private fun getNavigationBarHeight(): Int {
         val display: Display = requireActivity().windowManager.defaultDisplay
         val point = Point()
         display.getRealSize(point)
