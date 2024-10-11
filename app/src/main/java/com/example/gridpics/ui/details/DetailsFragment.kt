@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.details
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,7 +26,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -74,9 +72,14 @@ class DetailsFragment : Fragment() {
     @Composable
     fun ShowDetails(img: String) {
         val isVisible = remember { mutableStateOf(true) }
-        val dynamicPadding = remember { mutableStateOf(40.dp) }
+        val dynamicPadding = remember { mutableStateOf(70.dp) }
         ComposeTheme {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp),
+                contentAlignment = Alignment.TopCenter
+            ) {
                 AnimatedVisibility(visible = isVisible.value) {
                     @OptIn(ExperimentalMaterial3Api::class)
                     TopAppBar(
@@ -108,7 +111,9 @@ class DetailsFragment : Fragment() {
                 }
             }
             AnimatedVisibility(visible = !isVisible.value) {
-                Spacer(modifier = Modifier.fillMaxWidth().height(40.dp))
+                Spacer(modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp))
             }
             var scale by remember { mutableStateOf(1f) }
             var offset by remember { mutableStateOf(Offset(0f, 0f)) }
@@ -121,8 +126,8 @@ class DetailsFragment : Fragment() {
                         clickOnImage()
                         isVisible.value = !isVisible.value
                         if (isVisible.value == true) {
-                            dynamicPadding.value = 40.dp
-                        } else dynamicPadding.value = 16.dp
+                            dynamicPadding.value = 70.dp
+                        } else dynamicPadding.value = 46.dp
                     }
                     .pointerInput(Unit) {
                         detectTransformGestures { _, pan, zoom, _ ->

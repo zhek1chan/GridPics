@@ -22,10 +22,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gridpics.R
+import com.example.gridpics.ui.themes.ComposeTheme
 
 @Composable
 fun NoInternetScreen() {
-    //ComposeTheme {
+    ComposeTheme {
         Surface(
             shape = RoundedCornerShape(8.dp),
             color = Color.Unspecified,
@@ -68,5 +69,5 @@ fun NoInternetScreen() {
                     Spacer(modifier = Modifier.height(24.dp))
                 }
             })
-    //}
+    }
 }
