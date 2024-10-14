@@ -2,6 +2,7 @@ package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.util.Log
 import android.view.View
@@ -27,7 +28,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -99,7 +99,8 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 						actionIconContentColor = MaterialTheme.colorScheme.onPrimary
 					)
 				)
-				if (navBack){
+				if(navBack)
+				{
 					navBack = false
 					nc.navigateUp()
 				}
@@ -125,7 +126,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 					{
 						dynamicPadding.value = 70.dp
 					}
-					else dynamicPadding.value = 46.dp
+					else dynamicPadding.value = 70.dp
 				}
 				.pointerInput(Unit) {
 					detectTransformGestures { _, pan, zoom, _ ->
@@ -146,16 +147,15 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 		if(isClicked)
 		{
 			isClicked = false
-			ClickOnImage(vm)
+			clickOnImage(vm, LocalContext.current)
 		}
 	}
 }
 
-@Composable
-private fun ClickOnImage(viewModel: DetailsViewModel)
+private fun clickOnImage(viewModel: DetailsViewModel, context: Context)
 {
-	val activity = LocalContext.current as Activity
-	val interfaceIsVisible = viewModel.observeState().observeAsState().value
+	val activity = context as Activity
+	val interfaceIsVisible = viewModel.observeState().value
 	if(interfaceIsVisible == true)
 	{
 		activity.window.setFlags(
