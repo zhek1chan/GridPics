@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.AndroidFragment
 import com.example.gridpics.R
 import com.example.gridpics.ui.themes.ComposeTheme
 
@@ -148,4 +149,11 @@ class SettingsFragment : Fragment() {
         const val SEARCH_SHARED_PREFS_KEY = "SEARCH_SHARED_PREFS_KEY"
     }
 
+}
+
+@Composable
+fun SettingsScreen(
+)
+{
+    AndroidFragment<SettingsFragment>()
 }
