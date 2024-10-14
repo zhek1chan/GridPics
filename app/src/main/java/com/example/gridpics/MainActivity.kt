@@ -4,9 +4,11 @@ import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.ViewCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.gridpics.databinding.ActivityMainBinding
@@ -36,11 +38,19 @@ class MainActivity : AppCompatActivity() {
 
         binding.navView.setupWithNavController(navController)
         val sharedPref = this.getPreferences(Context.MODE_PRIVATE)
-        changedTheme = sharedPref.getString(getString(R.string.changed_theme), changedTheme).toString()
-        if ((Configuration.UI_MODE_NIGHT_NO == resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) && (changedTheme == "black")){
+        changedTheme =
+            sharedPref.getString(getString(R.string.changed_theme), changedTheme).toString()
+        if ((Configuration.UI_MODE_NIGHT_NO == resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) && (changedTheme == "black")) {
             changeTheme()
-        } else if ((Configuration.UI_MODE_NIGHT_YES == resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) && (changedTheme == "white")){
+        } else if ((Configuration.UI_MODE_NIGHT_YES == resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) && (changedTheme == "white")) {
             changeTheme()
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.container)) { _, insets ->
+            val params = binding.navView.layoutParams as ViewGroup.MarginLayoutParams
+            params.bottomMargin = insets.systemWindowInsetBottom
+            binding.navView.layoutParams = params
+            insets.consumeSystemWindowInsets()
         }
     }
 

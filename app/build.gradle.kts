@@ -121,4 +121,5 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.zoomable)
     implementation(libs.zoomimage.view.coil)
+    implementation(libs.androidx.navigation.compose)
 }
