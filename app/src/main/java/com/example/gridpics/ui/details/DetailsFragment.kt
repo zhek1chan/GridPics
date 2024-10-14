@@ -1,12 +1,9 @@
 package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.util.Log
-import android.view.View
-import android.view.WindowManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -44,6 +41,8 @@ import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.themes.ComposeTheme
+import com.google.accompanist.systemuicontroller.SystemUiController
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import org.koin.androidx.compose.getViewModel
 
 @Composable
@@ -147,34 +146,28 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 		if(isClicked)
 		{
 			isClicked = false
-			clickOnImage(vm, LocalContext.current)
+			ClickOnImage(vm)
 		}
 	}
 }
 
-private fun clickOnImage(viewModel: DetailsViewModel, context: Context)
+@Composable
+private fun ClickOnImage(viewModel: DetailsViewModel)
 {
-	val activity = context as Activity
 	val interfaceIsVisible = viewModel.observeState().value
+	val systemUiController: SystemUiController = rememberSystemUiController()
 	if(interfaceIsVisible == true)
 	{
-		activity.window.setFlags(
-			WindowManager.LayoutParams.FLAG_FULLSCREEN,
-			WindowManager.LayoutParams.FLAG_FULLSCREEN,
-		)
-		val decorView = activity.window.decorView
-		decorView.systemUiVisibility =
-			View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-				View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+		systemUiController.isStatusBarVisible = false // Status bar
+		systemUiController.isNavigationBarVisible = false // Navigation bar
+		systemUiController.isSystemBarsVisible = false // Status & Navigation bars
 		viewModel.setFalseState()
 	}
 	else
 	{
-		activity.window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-		val window = activity.window.decorView
-		window.systemUiVisibility =
-			View.SYSTEM_UI_FLAG_VISIBLE or
-				View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+		systemUiController.isStatusBarVisible = true // Status bar
+		systemUiController.isNavigationBarVisible = true // Navigation bar
+		systemUiController.isSystemBarsVisible = true // Status & Navigation bars
 		viewModel.setTrueState()
 	}
 }

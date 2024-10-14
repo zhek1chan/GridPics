@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility

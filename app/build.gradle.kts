@@ -131,5 +131,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose.v240alpha01)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.koin.androidx.compose)
+    //control sysUi
+    implementation(libs.accompanist.systemuicontroller)
 
 }

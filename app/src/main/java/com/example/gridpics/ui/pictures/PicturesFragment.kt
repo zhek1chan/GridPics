@@ -52,7 +52,6 @@ import coil3.compose.AsyncImage
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
-import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
 import org.koin.androidx.compose.getViewModel
@@ -60,7 +59,7 @@ import org.koin.androidx.compose.getViewModel
 @Composable
 fun PicturesScreen(navController: NavController)
 {
-	val txt = LocalContext.current.getSharedPreferences("shared_prefs", MODE_PRIVATE).getString(PICTURES, null)
+	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 	val viewModel = getViewModel<PicturesViewModel>()
 	if(!txt.isNullOrEmpty())
 	{
@@ -253,6 +252,7 @@ fun GradientButton(
 
 private fun saveToSharedPrefs(context: Context, s: String)
 {
+	Log.d("PicturesScreen", "Saved to SP $s")
 	val sharedPreferences = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
 	val editor = sharedPreferences.edit()
 	editor.putString(PICTURES, s)
