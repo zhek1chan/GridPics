@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.AndroidFragment
 import coil3.compose.rememberAsyncImagePainter
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.themes.ComposeTheme
@@ -173,11 +174,13 @@ class DetailsFragment : Fragment() {
             viewModel.setTrueState()
         }
     }
+}
 
-
-    @Composable
-    fun CenterAlignedTopAppBarExample(s: String) {
-        ComposeTheme {
-        }
-    }
+@Composable
+fun DetailsScreen(
+    modifier: Modifier = Modifier,
+    itemId: String,
+)
+{
+    AndroidFragment<DetailsFragment>()
 }

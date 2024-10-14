@@ -50,9 +50,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.AndroidFragment
 import androidx.navigation.fragment.findNavController
 import coil3.compose.AsyncImage
 import com.example.gridpics.R
+import com.example.gridpics.ui.details.DetailsFragment
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -288,4 +290,11 @@ class PicturesFragment : Fragment() {
             })
     }
 
+}
+
+@Composable
+fun PicturesScreen(
+)
+{
+    AndroidFragment<PicturesFragment>()
 }

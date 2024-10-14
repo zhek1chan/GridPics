@@ -72,7 +72,11 @@ dependencies {
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.androidx.ui.graphics.android)
     implementation(libs.androidx.databinding.compiler)
-    testImplementation(libs.junit)
+	implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.foundation.layout.android)
+	implementation(libs.androidx.fragment.compose)
+	testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     //coil
@@ -122,4 +126,7 @@ dependencies {
     implementation(libs.zoomable)
     implementation(libs.zoomimage.view.coil)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.ui.v100)
+    implementation(libs.androidx.material)
+    implementation(libs.androidx.navigation.compose.v240alpha01)
 }
