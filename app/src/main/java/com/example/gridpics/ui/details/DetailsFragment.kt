@@ -1,9 +1,12 @@
 package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.content.ContextWrapper
 import android.util.Log
+import android.view.View
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -155,9 +158,13 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 private fun ClickOnImage(viewModel: DetailsViewModel)
 {
 	val interfaceIsVisible = viewModel.observeState().value
+	val activity = getActivity()
 	val systemUiController: SystemUiController = rememberSystemUiController()
 	if(interfaceIsVisible == true)
 	{
+		activity.window.decorView.apply {
+			systemUiVisibility = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_FULLSCREEN
+		}
 		systemUiController.isStatusBarVisible = false // Status bar
 		systemUiController.isNavigationBarVisible = false // Navigation bar
 		systemUiController.isSystemBarsVisible = false // Status & Navigation bars
@@ -170,4 +177,14 @@ private fun ClickOnImage(viewModel: DetailsViewModel)
 		systemUiController.isSystemBarsVisible = true // Status & Navigation bars
 		viewModel.setTrueState()
 	}
+}
+
+@Composable
+fun getActivity(): Activity {
+	var context = LocalContext.current
+	while (context is ContextWrapper) {
+		if (context is Activity) return context
+		context = context.baseContext
+	}
+	throw IllegalStateException("no activity")
 }
