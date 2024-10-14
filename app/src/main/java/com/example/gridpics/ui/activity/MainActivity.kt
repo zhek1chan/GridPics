@@ -17,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
-import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -26,6 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.gridpics.R
+import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.themes.ComposeTheme
@@ -38,14 +38,16 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
-		val sharedPref = this.getPreferences(Context.MODE_PRIVATE)
+		val sharedPref = getPreferences(Context.MODE_PRIVATE)
 		val changedTheme =
 			sharedPref.getString(getString(R.string.changed_theme), null).toString()
-		if((Configuration.UI_MODE_NIGHT_NO == resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) && (changedTheme == BLACK))
+		val uiMode = resources.configuration.uiMode
+		val nightMask = Configuration.UI_MODE_NIGHT_MASK
+		if((Configuration.UI_MODE_NIGHT_NO == uiMode and nightMask) && (changedTheme == BLACK))
 		{
 			changeTheme()
 		}
-		else if((Configuration.UI_MODE_NIGHT_YES == resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) && (changedTheme == WHITE))
+		else if((Configuration.UI_MODE_NIGHT_YES == uiMode and nightMask) && (changedTheme == WHITE))
 		{
 			changeTheme()
 		}
@@ -76,12 +78,6 @@ class MainActivity: AppCompatActivity()
 		{
 			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 		}
-	}
-
-	companion object
-	{
-		const val WHITE = "white"
-		const val BLACK = "black"
 	}
 
 	@Composable
@@ -134,11 +130,22 @@ class MainActivity: AppCompatActivity()
 	{
 		NavHost(navController, startDestination = BottomNavItem.Home.route) {
 			composable(BottomNavItem.Home.route) {
-				PicturesScreen()
+				PicturesScreen(navController)
 			}
 			composable(BottomNavItem.Settings.route) {
 				SettingsScreen()
 			}
+			composable(Screen.Details.route) {
+				DetailsScreen(navController)
+			}
 		}
+	}
+
+	companion object
+	{
+		const val PICTURES = "PICTURES_SHARED_PREFS"
+		const val WHITE = "white"
+		const val BLACK = "black"
+		const val PIC = "PIC"
 	}
 }

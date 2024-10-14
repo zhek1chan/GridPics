@@ -129,4 +129,7 @@ dependencies {
     implementation(libs.androidx.ui.v100)
     implementation(libs.androidx.material)
     implementation(libs.androidx.navigation.compose.v240alpha01)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.koin.androidx.compose)
+
 }

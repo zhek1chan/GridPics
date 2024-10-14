@@ -8,6 +8,7 @@ dexter = "6.2.3"
 glide = "4.15.1"
 gson = "2.11.0"
 koinAndroid = "3.5.3"
+koinAndroidxCompose = "3.5.3"
 kotlin = "1.9.0"
 coreKtx = "1.13.1"
 junit = "4.13.2"
@@ -51,6 +52,7 @@ fragmentCompose = "1.8.4"
 androidutilslibrary = { module = "com.gitlab.developerdeveloperdeveloper:androidutilslibrary", version.ref = "androidutilslibrary" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleLivedataKtx" }
 androidx-material = { module = "androidx.compose.material:material", version.ref = "materialVersion" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationFragmentKtx" }
 androidx-navigation-compose-v240alpha01 = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
@@ -69,6 +71,7 @@ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "j
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koinAndroid" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinAndroidxCompose" }
 kpermissions-coroutines = { module = "com.github.fondesa:kpermissions-coroutines", version.ref = "kpermissionsCoroutines" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }

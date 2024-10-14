@@ -1,18 +1,23 @@
 package com.example.gridpics.di
 
 import com.example.gridpics.ui.pictures.PicturesViewModel
-import com.example.gridpics.ui.settings.SettingsViewModel
+import com.example.gridpics.ui.details.DetailsViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.dsl.module
 
 val viewModelModule = module {
 
-    viewModel {
+    single {
         PicturesViewModel(get())
     }
 
-    viewModel {
-        SettingsViewModel()
+    viewModelOf(::PicturesViewModel)
+
+    single {
+        DetailsViewModel()
     }
+
+    viewModelOf(::DetailsViewModel)
 
 }
