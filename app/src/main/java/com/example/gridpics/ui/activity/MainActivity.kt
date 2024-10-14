@@ -7,15 +7,17 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavController
@@ -54,13 +56,12 @@ class MainActivity: AppCompatActivity()
 
 		setContent {
 			ComposeTheme {
-				Surface {
-					val navController = rememberNavController()
-					Scaffold(
-						bottomBar = { BottomNavigationBar(navController) }
-					) {
-						NavigationSetup(navController = navController)
-					}
+				val navController = rememberNavController()
+
+				Scaffold(
+					bottomBar = { BottomNavigationBar(navController) }
+				) {
+					NavigationSetup(navController = navController)
 				}
 			}
 		}
@@ -89,37 +90,59 @@ class MainActivity: AppCompatActivity()
 			BottomNavItem.Home,
 			BottomNavItem.Settings
 		)
-		ComposeTheme {
-			BottomNavigation(backgroundColor = MaterialTheme.colorScheme.onSecondary) {
-				val navBackStackEntry by navController.currentBackStackEntryAsState()
-				val currentRoute = navBackStackEntry?.destination?.route
-				items.forEach { item ->
-					BottomNavigationItem(
-						icon = {
-							Icon(
-								imageVector = item.icon,
-								contentDescription = stringResource(id = item.titleResId)
-							)
-						},
-						label = { Text(text = stringResource(id = item.titleResId)) },
-						selected = currentRoute == item.route,
-						onClick = {
-							navController.navigate(item.route) {
-								// Pop up to the start destination of the graph to
-								// avoid building up a large stack of destinations
-								// on the back stack as users select items
-								navController.graph.startDestinationRoute?.let { route ->
-									popUpTo(route) {
-										saveState = true
+		val bottomBarState = remember { (mutableStateOf(true)) }
+		val navBackStackEntry by navController.currentBackStackEntryAsState()
+		when(navBackStackEntry?.destination?.route)
+		{
+			BottomNavItem.Home.route ->
+			{
+				// Show BottomBar and TopBar
+				bottomBarState.value = true
+			}
+			BottomNavItem.Settings.route ->
+			{
+				// Show BottomBar and TopBar
+				bottomBarState.value = true
+			}
+			Screen.Details.route ->
+			{
+				// Hide BottomBar and TopBar
+				bottomBarState.value = false
+			}
+		}
+		AnimatedVisibility(visible = bottomBarState.value) {
+			ComposeTheme {
+				BottomNavigation(backgroundColor = MaterialTheme.colorScheme.onSecondary) {
+					val navBackStackEntry by navController.currentBackStackEntryAsState()
+					val currentRoute = navBackStackEntry?.destination?.route
+					items.forEach { item ->
+						BottomNavigationItem(
+							icon = {
+								Icon(
+									imageVector = item.icon,
+									contentDescription = stringResource(id = item.titleResId)
+								)
+							},
+							label = { Text(text = stringResource(id = item.titleResId)) },
+							selected = currentRoute == item.route,
+							onClick = {
+								navController.navigate(item.route) {
+									// Pop up to the start destination of the graph to
+									// avoid building up a large stack of destinations
+									// on the back stack as users select items
+									navController.graph.startDestinationRoute?.let { route ->
+										popUpTo(route) {
+											saveState = true
+										}
 									}
+									// Avoid multiple copies of the same destination when re-selecting the same item
+									launchSingleTop = true
+									// Restore state when re-selecting a previously selected item
+									restoreState = true
 								}
-								// Avoid multiple copies of the same destination when re-selecting the same item
-								launchSingleTop = true
-								// Restore state when re-selecting a previously selected item
-								restoreState = true
 							}
-						}
-					)
+						)
+					}
 				}
 			}
 		}
