@@ -13,10 +13,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material3.Icon
@@ -108,12 +110,15 @@ class MainActivity: AppCompatActivity()
 				val navController = rememberNavController()
 
 				Scaffold(modifier = Modifier
-					.fillMaxSize()
-					.windowInsetsPadding(WindowInsets.systemBars),
+					.fillMaxSize(),
 					bottomBar = { BottomNavigationBar(navController) },
-					content = {
-						it
-						NavigationSetup(navController = navController)
+					content = { padding ->
+						Column(
+							modifier = Modifier
+								.padding(padding.calculateTopPadding())
+								.fillMaxSize()) {
+							NavigationSetup(navController = navController)
+						}
 					}
 				)
 			}
@@ -150,7 +155,7 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 		AnimatedVisibility(visible = bottomBarState.value) {
-			BottomNavigation(backgroundColor = MaterialTheme.colorScheme.onSecondary) {
+			BottomNavigation(backgroundColor = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.padding(WindowInsets.systemBars.asPaddingValues())) {
 				val currentRoute = navBackStackEntry?.destination?.route
 				items.forEach { item ->
 					BottomNavigationItem(
