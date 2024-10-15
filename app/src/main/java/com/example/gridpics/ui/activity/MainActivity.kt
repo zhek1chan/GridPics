@@ -1,10 +1,13 @@
 package com.example.gridpics.ui.activity
-
+//noinspection UsingMaterialAndMaterial3Libraries
+//noinspection UsingMaterialAndMaterial3Libraries
 import android.content.Context
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.view.WindowManager
+import android.view.WindowInsets.Type.statusBars
+import android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -47,9 +50,9 @@ class MainActivity: AppCompatActivity()
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		setTheme(R.style.Theme_GridPics)
-		enableEdgeToEdge()
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
+		enableEdgeToEdge()
 		val sharedPref = getPreferences(Context.MODE_PRIVATE)
 		val changedTheme =
 			sharedPref.getString((THEME_SP_KEY), null)
@@ -64,11 +67,21 @@ class MainActivity: AppCompatActivity()
 			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 		}
 
+		@Suppress("DEPRECATION")
 		detailsViewModel.observeState().observe(this) {
 			if(it)
 			{
-				window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-					WindowManager.LayoutParams.FLAG_FULLSCREEN)
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+				{
+					window.insetsController?.hide(statusBars())
+				}
+				else
+				{
+					window.setFlags(
+						FLAG_FULLSCREEN,
+						FLAG_FULLSCREEN
+					)
+				}
 				window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
 				window.decorView.systemUiVisibility =
 					View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
@@ -76,7 +89,14 @@ class MainActivity: AppCompatActivity()
 			}
 			else
 			{
-				window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+				{
+					window.insetsController?.show(statusBars())
+				}
+				else
+				{
+					window.clearFlags(FLAG_FULLSCREEN)
+				}
 				window.decorView.systemUiVisibility =
 					View.SYSTEM_UI_FLAG_VISIBLE or
 						View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY

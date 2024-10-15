@@ -48,6 +48,7 @@ zoomable = "1.6.2"
 zoomimageViewCoil = "1.0.0"
 foundationLayoutAndroid = "1.7.2"
 fragmentCompose = "1.8.4"
+toolsCore = "1.0.0-alpha10"
 
 
 [libraries]
@@ -111,6 +112,7 @@ zoomable = { module = "net.engawapg.lib:zoomable", version.ref = "zoomable" }
 zoomimage-view-coil = { module = "io.github.panpf.zoomimage:zoomimage-view-coil", version.ref = "zoomimageViewCoil" }
 androidx-foundation-layout-android = { group = "androidx.compose.foundation", name = "foundation-layout-android", version.ref = "foundationLayoutAndroid" }
 androidx-fragment-compose = { group = "androidx.fragment", name = "fragment-compose", version.ref = "fragmentCompose" }
+androidx-tools-core = { group = "androidx.privacysandbox.tools", name = "tools-core", version.ref = "toolsCore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
