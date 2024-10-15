@@ -52,7 +52,7 @@ class MainActivity: AppCompatActivity()
 		super.onCreate(savedInstanceState)
 		val sharedPref = getPreferences(Context.MODE_PRIVATE)
 		val changedTheme =
-			sharedPref.getString(getString(R.string.changed_theme), null)
+			sharedPref.getString((THEME_SP_KEY), null)
 		val uiMode = resources.configuration.uiMode
 		val nightMask = Configuration.UI_MODE_NIGHT_MASK
 		if((Configuration.UI_MODE_NIGHT_NO == uiMode and nightMask) && (changedTheme == BLACK))
@@ -186,5 +186,6 @@ class MainActivity: AppCompatActivity()
 		const val WHITE = "white"
 		const val BLACK = "black"
 		const val PIC = "PIC"
+		const val THEME_SP_KEY = "THEME_SHARED_PREFS"
 	}
 }
