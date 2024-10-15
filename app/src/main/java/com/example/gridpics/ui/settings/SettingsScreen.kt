@@ -108,7 +108,7 @@ fun SettingsCompose(changedTheme: String)
 							.fillMaxWidth()
 					)
 					val context = LocalContext.current
-					if(changedTheme == "black")
+					if(changedTheme == BLACK)
 					{
 						GradientSwitch(
 							checked = true,
