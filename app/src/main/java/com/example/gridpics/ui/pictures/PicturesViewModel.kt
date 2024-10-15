@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class PicturesViewModel(
-    private val interactor: ImagesInteractor,
+	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
 	private var isPaused = false
@@ -42,11 +42,6 @@ class PicturesViewModel(
 				}
 			}
 		}
-	}
-
-	fun pause()
-	{
-		isPaused = true
 	}
 
 	fun resume()

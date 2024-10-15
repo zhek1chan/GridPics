@@ -126,7 +126,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				LazyVerticalGrid(
 					modifier = Modifier
 						.fillMaxSize()
-						.padding(0.dp, 45.dp, 0.dp, 50.dp),
+						.padding(0.dp, 45.dp, 0.dp, 0.dp),
 					columns = GridCells.Fixed(count = calculateGridSpan())
 				) {
 					Log.d("PicturesFragment", "$list")
@@ -167,7 +167,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 		LazyVerticalGrid(
 			modifier = Modifier
 				.fillMaxSize()
-				.padding(0.dp, 45.dp, 0.dp, 50.dp),
+				.padding(0.dp, 45.dp, 0.dp, 0.dp),
 			columns = GridCells.Fixed(count = calculateGridSpan())
 		) {
 			Log.d("PicturesFragment", "$items")
