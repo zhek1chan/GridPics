@@ -9,29 +9,32 @@ import com.example.gridpics.R
 import com.example.gridpics.dp2px
 import com.google.android.material.imageview.ShapeableImageView
 
-class ImageView : ShapeableImageView {
-    constructor(context: Context) : super(context)
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
-        context,
-        attrs,
-        defStyleAttr
-    )
+class ImageView: ShapeableImageView
+{
+	constructor(context: Context): super(context)
+	constructor(context: Context, attrs: AttributeSet?): super(context, attrs)
+	constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int): super(
+		context,
+		attrs,
+		defStyleAttr
+	)
 
-    fun setImage(imageUrl: String?) {
-        if (!TextUtils.isEmpty(imageUrl)) {
-            this.load(imageUrl) {
-                crossfade(true)
-                placeholder(R.drawable.ic_error_image)
-                transformations(
-                    RoundedCornersTransformation(
-                        4.dp2px.toFloat(),
-                        4.dp2px.toFloat(),
-                        0f,
-                        0f
-                    )
-                )
-            }
-        }
-    }
+	fun setImage(imageUrl: String?)
+	{
+		if(!TextUtils.isEmpty(imageUrl))
+		{
+			this.load(imageUrl) {
+				crossfade(true)
+				placeholder(R.drawable.ic_error_image)
+				transformations(
+					RoundedCornersTransformation(
+						4.dp2px.toFloat(),
+						4.dp2px.toFloat(),
+						0f,
+						0f
+					)
+				)
+			}
+		}
+	}
 }

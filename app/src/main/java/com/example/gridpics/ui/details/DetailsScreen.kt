@@ -111,7 +111,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 			painter = rememberAsyncImagePainter(img),
 			contentDescription = null,
 			modifier = Modifier
-				.padding(0.dp,40.dp, 0.dp, 0.dp)
+				.padding(0.dp, 40.dp, 0.dp, 0.dp)
 				.clickable {
 					isVisible.value = !isVisible.value
 					vm.changeState()

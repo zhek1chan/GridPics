@@ -11,16 +11,17 @@ class DetailsViewModel: ViewModel()
 {
 	private val stateLiveData = MutableLiveData(false)
 	fun observeState(): LiveData<Boolean> = stateLiveData
-
 	fun changeState()
 	{
 		viewModelScope.launch(Dispatchers.IO) {
-			if (stateLiveData.value == true) {
+			if(stateLiveData.value == true)
+			{
 				stateLiveData.postValue(false)
-			} else {
+			}
+			else
+			{
 				stateLiveData.postValue(true)
 			}
-
 		}
 	}
 }

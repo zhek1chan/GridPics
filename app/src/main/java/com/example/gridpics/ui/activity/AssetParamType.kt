@@ -9,6 +9,7 @@ class AssetParamType: NavType<String>(isNullableAllowed = false)
 	{
 		return bundle.getString(key)
 	}
+
 	override fun parseValue(value: String): String
 	{
 		return "ne znau chto tut dolznho bit'"

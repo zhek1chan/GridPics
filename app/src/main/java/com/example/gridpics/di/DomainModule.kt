@@ -11,19 +11,19 @@ import com.example.gridpics.domain.repository.ImagesRepository
 import org.koin.dsl.module
 
 val domainModule = module {
-    factory<ImagesInteractor> {
-        ImagesInteractorImpl(repository = get())
-    }
+	factory<ImagesInteractor> {
+		ImagesInteractorImpl(repository = get())
+	}
 
-    single<ImagesRepository> {
-        ImagesRepositoryImpl(networkClient = get())
-    }
+	single<ImagesRepository> {
+		ImagesRepositoryImpl(networkClient = get())
+	}
 
-    single<ThemeSettings> {
-        ThemeSettingsImpl(get(), get())
-    }
+	single<ThemeSettings> {
+		ThemeSettingsImpl(get(), get())
+	}
 
-    single<SettingsInteractor> {
-        SettingsInteractorImpl(get())
-    }
+	single<SettingsInteractor> {
+		SettingsInteractorImpl(get())
+	}
 }

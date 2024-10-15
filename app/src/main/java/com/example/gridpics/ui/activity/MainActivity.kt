@@ -15,8 +15,9 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.BottomNavigation
@@ -115,7 +116,8 @@ class MainActivity: AppCompatActivity()
 					content = { padding ->
 						Column(
 							modifier = Modifier
-								.padding(padding.calculateTopPadding())
+								.padding(padding)
+								.consumeWindowInsets(padding)
 								.fillMaxSize()) {
 							NavigationSetup(navController = navController)
 						}
@@ -155,7 +157,7 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 		AnimatedVisibility(visible = bottomBarState.value) {
-			BottomNavigation(backgroundColor = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.padding(WindowInsets.systemBars.asPaddingValues())) {
+			BottomNavigation(windowInsets = WindowInsets.navigationBars, backgroundColor = MaterialTheme.colorScheme.onSecondary) {
 				val currentRoute = navBackStackEntry?.destination?.route
 				items.forEach { item ->
 					BottomNavigationItem(
