@@ -31,6 +31,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.BLACK
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SP_KEY
 import com.example.gridpics.ui.activity.MainActivity.Companion.WHITE
 import com.example.gridpics.ui.themes.ComposeTheme
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 @Composable
 fun SettingsScreen()

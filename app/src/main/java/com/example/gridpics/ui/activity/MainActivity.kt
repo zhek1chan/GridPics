@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavController
@@ -44,6 +44,7 @@ import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.themes.ComposeTheme
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity: AppCompatActivity()
@@ -107,6 +108,10 @@ class MainActivity: AppCompatActivity()
 
 		setContent {
 			ComposeTheme {
+				val systemUiController = rememberSystemUiController()
+				systemUiController.setSystemBarsColor(
+					color = Color.Black
+				)
 				val navController = rememberNavController()
 
 				Scaffold(modifier = Modifier
@@ -156,7 +161,7 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 		AnimatedVisibility(visible = bottomBarState.value) {
-			BottomNavigation(windowInsets = WindowInsets.navigationBars, backgroundColor = MaterialTheme.colorScheme.onSecondary) {
+			BottomNavigation(windowInsets = WindowInsets.navigationBars, backgroundColor = Color.Black) {
 				val currentRoute = navBackStackEntry?.destination?.route
 				items.forEach { item ->
 					BottomNavigationItem(
@@ -168,6 +173,8 @@ class MainActivity: AppCompatActivity()
 						},
 						label = { Text(text = stringResource(id = item.titleResId)) },
 						selected = currentRoute == item.route,
+						selectedContentColor = Color.Green,
+						unselectedContentColor = Color.Transparent,
 						onClick = {
 							navController.navigate(item.route) {
 								// Pop up to the start destination of the graph to
