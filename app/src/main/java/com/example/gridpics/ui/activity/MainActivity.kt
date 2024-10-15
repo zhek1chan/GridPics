@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.activity
-//noinspection UsingMaterialAndMaterial3Libraries
-//noinspection UsingMaterialAndMaterial3Libraries
+
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
@@ -19,7 +18,9 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigation
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -47,6 +48,7 @@ import com.example.gridpics.ui.themes.ComposeTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
+@Suppress("DEPRECATION")
 class MainActivity: AppCompatActivity()
 {
 	private val detailsViewModel by viewModel<DetailsViewModel>()
