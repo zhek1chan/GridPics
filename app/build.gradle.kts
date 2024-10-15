@@ -97,13 +97,6 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.converter.gson)
     implementation(libs.photoview.v230)
-    //permissions
-    implementation(libs.permissionsdispatcher)
-    kapt(libs.permissionsdispatcher.processor)
-    //picasso
-    implementation(libs.picasso)
-    implementation(libs.picasso2.okhttp3.downloader)
-    implementation(libs.picasso.transformations)
     //splash
     implementation(libs.androidx.core.splashscreen)
     //touchImageView
