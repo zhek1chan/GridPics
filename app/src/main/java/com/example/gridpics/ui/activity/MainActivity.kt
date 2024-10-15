@@ -1,10 +1,8 @@
 package com.example.gridpics.ui.activity
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import androidx.activity.compose.setContent
@@ -40,8 +38,6 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class MainActivity: AppCompatActivity()
 {
 	private val detailsViewModel by viewModel<DetailsViewModel>()
-
-	@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		setTheme(R.style.Theme_GridPics)
@@ -49,16 +45,16 @@ class MainActivity: AppCompatActivity()
 		super.onCreate(savedInstanceState)
 		val sharedPref = getPreferences(Context.MODE_PRIVATE)
 		val changedTheme =
-			sharedPref.getString(getString(R.string.changed_theme), null).toString()
+			sharedPref.getString(getString(R.string.changed_theme), null)
 		val uiMode = resources.configuration.uiMode
 		val nightMask = Configuration.UI_MODE_NIGHT_MASK
 		if((Configuration.UI_MODE_NIGHT_NO == uiMode and nightMask) && (changedTheme == BLACK))
 		{
-			changeTheme()
+			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 		}
 		else if((Configuration.UI_MODE_NIGHT_YES == uiMode and nightMask) && (changedTheme == WHITE))
 		{
-			changeTheme()
+			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 		}
 
 		detailsViewModel.observeState().observe(this) {
@@ -85,25 +81,12 @@ class MainActivity: AppCompatActivity()
 				val navController = rememberNavController()
 
 				Scaffold(
-					bottomBar = { BottomNavigationBar(navController) }
-				) {
-					NavigationSetup(navController = navController)
-				}
+					bottomBar = { BottomNavigationBar(navController) },
+					content = {
+						it
+						NavigationSetup(navController = navController)
+					})
 			}
-		}
-	}
-
-	private fun changeTheme()
-	{
-		val darkMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-		val isDarkModeOn = darkMode == Configuration.UI_MODE_NIGHT_YES
-		if(isDarkModeOn)
-		{
-			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-		}
-		else
-		{
-			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 		}
 	}
 
@@ -137,38 +120,35 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 		AnimatedVisibility(visible = bottomBarState.value) {
-			ComposeTheme {
-				BottomNavigation(backgroundColor = MaterialTheme.colorScheme.onSecondary) {
-					val navBackStackEntry by navController.currentBackStackEntryAsState()
-					val currentRoute = navBackStackEntry?.destination?.route
-					items.forEach { item ->
-						BottomNavigationItem(
-							icon = {
-								Icon(
-									imageVector = item.icon,
-									contentDescription = stringResource(id = item.titleResId)
-								)
-							},
-							label = { Text(text = stringResource(id = item.titleResId)) },
-							selected = currentRoute == item.route,
-							onClick = {
-								navController.navigate(item.route) {
-									// Pop up to the start destination of the graph to
-									// avoid building up a large stack of destinations
-									// on the back stack as users select items
-									navController.graph.startDestinationRoute?.let { route ->
-										popUpTo(route) {
-											saveState = true
-										}
+			BottomNavigation(backgroundColor = MaterialTheme.colorScheme.onSecondary) {
+				val currentRoute = navBackStackEntry?.destination?.route
+				items.forEach { item ->
+					BottomNavigationItem(
+						icon = {
+							Icon(
+								imageVector = item.icon,
+								contentDescription = stringResource(id = item.titleResId)
+							)
+						},
+						label = { Text(text = stringResource(id = item.titleResId)) },
+						selected = currentRoute == item.route,
+						onClick = {
+							navController.navigate(item.route) {
+								// Pop up to the start destination of the graph to
+								// avoid building up a large stack of destinations
+								// on the back stack as users select items
+								navController.graph.startDestinationRoute?.let { route ->
+									popUpTo(route) {
+										saveState = true
 									}
-									// Avoid multiple copies of the same destination when re-selecting the same item
-									launchSingleTop = true
-									// Restore state when re-selecting a previously selected item
-									restoreState = true
 								}
+								// Avoid multiple copies of the same destination when re-selecting the same item
+								launchSingleTop = true
+								// Restore state when re-selecting a previously selected item
+								restoreState = true
 							}
-						)
-					}
+						}
+					)
 				}
 			}
 		}
