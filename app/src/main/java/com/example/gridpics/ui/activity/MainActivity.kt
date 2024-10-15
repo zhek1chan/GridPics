@@ -106,8 +106,8 @@ class MainActivity: AppCompatActivity()
 
 		setContent {
 			ComposeTheme {
-				window.statusBarColor = Color.Black.value.toInt()
-				window.navigationBarColor = Color.Black.value.toInt()
+				window.statusBarColor = resources.getColor(R.color.black)
+				window.navigationBarColor = resources.getColor(R.color.black)
 				val navController = rememberNavController()
 				Scaffold(modifier = Modifier
 					.fillMaxSize(),
