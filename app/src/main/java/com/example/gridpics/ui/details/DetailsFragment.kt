@@ -108,21 +108,19 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 		}
 		var scale by remember { mutableFloatStateOf(1f) }
 		var offset by remember { mutableStateOf(Offset(0f, 0f)) }
-		var isClicked by mutableStateOf(false)
 		Image(
 			painter = rememberAsyncImagePainter(img),
 			contentDescription = null,
 			modifier = Modifier
 				.padding(0.dp, dynamicPadding.value, 0.dp, 0.dp)
 				.clickable {
-					isClicked = true
 					isVisible.value = !isVisible.value
 					vm.changeState()
 					if(isVisible.value)
 					{
 						dynamicPadding.value = 70.dp
 					}
-					else dynamicPadding.value = 70.dp
+					else dynamicPadding.value = 45.dp
 				}
 				.pointerInput(Unit) {
 					detectTransformGestures { _, pan, zoom, _ ->
@@ -140,22 +138,5 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 				)
 				.fillMaxSize()
 		)
-		if(isClicked)
-		{
-			isClicked = false
-			//ClickOnImage(vm)
-		}
-	}
-}
-
-@Composable
-private fun ClickOnImage(viewModel: DetailsViewModel)
-{
-	val interfaceIsVisible = viewModel.observeState().value
-	if(interfaceIsVisible == true)
-	{
-	}
-	else
-	{
 	}
 }
