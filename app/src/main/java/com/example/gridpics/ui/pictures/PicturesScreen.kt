@@ -17,9 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -52,16 +49,18 @@ import coil3.compose.AsyncImage
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
-import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
-import org.koin.androidx.compose.getViewModel
+import org.koin.androidx.compose.koinViewModel
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
 
 @Composable
 fun PicturesScreen(navController: NavController)
 {
-	val txt = LocalContext.current.getSharedPreferences("shared_prefs", MODE_PRIVATE).getString(PICTURES, null)
-	val viewModel = getViewModel<PicturesViewModel>()
+	val viewModel = koinViewModel<PicturesViewModel>()
+	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 	if(!txt.isNullOrEmpty())
 	{
 		ShowPictures(txt, viewModel, navController)
@@ -74,7 +73,6 @@ fun PicturesScreen(navController: NavController)
 	}
 }
 
-@SuppressLint("UnrememberedMutableState")
 @Composable
 fun ItemNewsCard(item: String, nc: NavController)
 {
@@ -127,7 +125,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				LazyVerticalGrid(
 					modifier = Modifier
 						.fillMaxSize()
-						.padding(0.dp, 45.dp, 0.dp, 50.dp),
+						.padding(0.dp, 45.dp, 0.dp, 0.dp),
 					columns = GridCells.Fixed(count = calculateGridSpan())
 				) {
 					Log.d("PicturesFragment", "$list")
@@ -168,7 +166,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 		LazyVerticalGrid(
 			modifier = Modifier
 				.fillMaxSize()
-				.padding(0.dp, 45.dp, 0.dp, 50.dp),
+				.padding(0.dp, 45.dp, 0.dp, 0.dp),
 			columns = GridCells.Fixed(count = calculateGridSpan())
 		) {
 			Log.d("PicturesFragment", "$items")
@@ -253,6 +251,7 @@ fun GradientButton(
 
 private fun saveToSharedPrefs(context: Context, s: String)
 {
+	Log.d("PicturesScreen", "Saved to SP $s")
 	val sharedPreferences = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
 	val editor = sharedPreferences.edit()
 	editor.putString(PICTURES, s)

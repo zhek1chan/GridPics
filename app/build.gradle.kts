@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.androidx.foundation.layout.android)
     implementation(libs.androidx.foundation.layout.android)
 	implementation(libs.androidx.fragment.compose)
+	implementation(libs.androidx.tools.core)
 	testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -96,13 +97,6 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.converter.gson)
     implementation(libs.photoview.v230)
-    //permissions
-    implementation(libs.permissionsdispatcher)
-    kapt(libs.permissionsdispatcher.processor)
-    //picasso
-    implementation(libs.picasso)
-    implementation(libs.picasso2.okhttp3.downloader)
-    implementation(libs.picasso.transformations)
     //splash
     implementation(libs.androidx.core.splashscreen)
     //touchImageView
@@ -131,5 +125,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose.v240alpha01)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.koin.androidx.compose)
-
+    //control sysUi
+    implementation(libs.accompanist.systemuicontroller)
+    implementation(libs.androidx.activity.ktx)
 }

@@ -9,19 +9,19 @@ import kotlinx.coroutines.launch
 
 class DetailsViewModel: ViewModel()
 {
-	private val stateLiveData = MutableLiveData(true)
+	private val stateLiveData = MutableLiveData(false)
 	fun observeState(): LiveData<Boolean> = stateLiveData
-	fun setTrueState()
+	fun changeState()
 	{
 		viewModelScope.launch(Dispatchers.IO) {
-			stateLiveData.postValue(true)
-		}
-	}
-
-	fun setFalseState()
-	{
-		viewModelScope.launch(Dispatchers.IO) {
-			stateLiveData.postValue(false)
+			if(stateLiveData.value == true)
+			{
+				stateLiveData.postValue(false)
+			}
+			else
+			{
+				stateLiveData.postValue(true)
+			}
 		}
 	}
 }

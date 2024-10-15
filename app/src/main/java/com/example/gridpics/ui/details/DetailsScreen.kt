@@ -1,12 +1,9 @@
 package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.util.Log
-import android.view.View
-import android.view.WindowManager
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -18,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +25,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,12 +42,21 @@ import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.themes.ComposeTheme
-import org.koin.androidx.compose.getViewModel
 
 @Composable
-fun DetailsScreen(nc: NavController)
+fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 {
-	val viewModel = getViewModel<DetailsViewModel>()
+	BackHandler {
+		if(viewModel.observeState().value == true)
+		{
+			viewModel.changeState()
+			nc.navigateUp()
+		}
+		else
+		{
+			nc.navigateUp()
+		}
+	}
 	val pic = LocalContext.current.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, "null")
 	if(pic != null)
 	{
@@ -63,7 +70,6 @@ fun DetailsScreen(nc: NavController)
 fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 {
 	val isVisible = remember { mutableStateOf(true) }
-	val dynamicPadding = remember { mutableStateOf(70.dp) }
 	ComposeTheme {
 		Box(
 			modifier = Modifier
@@ -87,7 +93,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 					navigationIcon = {
 						IconButton({ navBack = true }) {
 							Icon(
-								Icons.Filled.ArrowBack,
+								Icons.AutoMirrored.Filled.ArrowBack,
 								contentDescription = "back",
 								modifier = Modifier.padding(0.dp, 10.dp, 0.dp, 0.dp)
 							)
@@ -111,22 +117,16 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 				.fillMaxWidth()
 				.height(40.dp))
 		}
-		var scale by remember { mutableStateOf(1f) }
+		var scale by remember { mutableFloatStateOf(1f) }
 		var offset by remember { mutableStateOf(Offset(0f, 0f)) }
-		var isClicked by mutableStateOf(false)
 		Image(
 			painter = rememberAsyncImagePainter(img),
 			contentDescription = null,
 			modifier = Modifier
-				.padding(0.dp, dynamicPadding.value, 0.dp, 0.dp)
+				.padding(0.dp, 40.dp, 0.dp, 0.dp)
 				.clickable {
-					isClicked = true
 					isVisible.value = !isVisible.value
-					if(isVisible.value == true)
-					{
-						dynamicPadding.value = 70.dp
-					}
-					else dynamicPadding.value = 70.dp
+					vm.changeState()
 				}
 				.pointerInput(Unit) {
 					detectTransformGestures { _, pan, zoom, _ ->
@@ -144,37 +144,5 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 				)
 				.fillMaxSize()
 		)
-		if(isClicked)
-		{
-			isClicked = false
-			clickOnImage(vm, LocalContext.current)
-		}
-	}
-}
-
-private fun clickOnImage(viewModel: DetailsViewModel, context: Context)
-{
-	val activity = context as Activity
-	val interfaceIsVisible = viewModel.observeState().value
-	if(interfaceIsVisible == true)
-	{
-		activity.window.setFlags(
-			WindowManager.LayoutParams.FLAG_FULLSCREEN,
-			WindowManager.LayoutParams.FLAG_FULLSCREEN,
-		)
-		val decorView = activity.window.decorView
-		decorView.systemUiVisibility =
-			View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-				View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-		viewModel.setFalseState()
-	}
-	else
-	{
-		activity.window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-		val window = activity.window.decorView
-		window.systemUiVisibility =
-			View.SYSTEM_UI_FLAG_VISIBLE or
-				View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-		viewModel.setTrueState()
 	}
 }

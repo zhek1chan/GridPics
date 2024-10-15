@@ -25,49 +25,50 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.themes.ComposeTheme
 
 @Composable
-fun NoInternetScreen() {
-    ComposeTheme {
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = Color.Unspecified,
-            content = {
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.no_net),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .height(200.dp)
-                            .fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Text(
-                        text = stringResource(R.string.oi_oi),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .padding(top = 20.dp)
-                            .fillMaxWidth(),
-                        letterSpacing = 2.sp,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.fail_no_internet),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .padding(top = 10.dp, start = 25.dp, end = 25.dp)
-                            .fillMaxWidth(),
-                        letterSpacing = 1.sp,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-            })
-    }
+fun NoInternetScreen()
+{
+	ComposeTheme {
+		Surface(
+			shape = RoundedCornerShape(8.dp),
+			color = Color.Unspecified,
+			content = {
+				Column(
+					modifier = Modifier,
+					verticalArrangement = Arrangement.Center,
+					horizontalAlignment = Alignment.CenterHorizontally,
+				) {
+					Image(
+						painter = painterResource(id = R.drawable.no_net),
+						contentDescription = null,
+						modifier = Modifier
+							.height(200.dp)
+							.fillMaxWidth()
+					)
+					Spacer(modifier = Modifier.height(20.dp))
+					Text(
+						text = stringResource(R.string.oi_oi),
+						textAlign = TextAlign.Center,
+						modifier = Modifier
+							.padding(top = 20.dp)
+							.fillMaxWidth(),
+						letterSpacing = 2.sp,
+						fontWeight = FontWeight.Bold,
+						style = MaterialTheme.typography.titleLarge,
+						color = MaterialTheme.colorScheme.onPrimary,
+					)
+					Spacer(modifier = Modifier.height(8.dp))
+					Text(
+						text = stringResource(R.string.fail_no_internet),
+						textAlign = TextAlign.Center,
+						modifier = Modifier
+							.padding(top = 10.dp, start = 25.dp, end = 25.dp)
+							.fillMaxWidth(),
+						letterSpacing = 1.sp,
+						style = MaterialTheme.typography.bodyLarge,
+						color = MaterialTheme.colorScheme.onPrimary,
+					)
+					Spacer(modifier = Modifier.height(24.dp))
+				}
+			})
+	}
 }
