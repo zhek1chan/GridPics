@@ -6,9 +6,14 @@ import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material3.Icon
@@ -19,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavController
@@ -41,6 +47,7 @@ class MainActivity: AppCompatActivity()
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		setTheme(R.style.Theme_GridPics)
+		enableEdgeToEdge()
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
 		val sharedPref = getPreferences(Context.MODE_PRIVATE)
@@ -80,12 +87,15 @@ class MainActivity: AppCompatActivity()
 			ComposeTheme {
 				val navController = rememberNavController()
 
-				Scaffold(
+				Scaffold(modifier = Modifier
+					.fillMaxSize()
+					.windowInsetsPadding(WindowInsets.systemBars),
 					bottomBar = { BottomNavigationBar(navController) },
 					content = {
 						it
 						NavigationSetup(navController = navController)
-					})
+					}
+				)
 			}
 		}
 	}

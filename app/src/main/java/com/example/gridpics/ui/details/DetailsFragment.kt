@@ -58,7 +58,6 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 {
 	val isVisible = remember { mutableStateOf(true) }
-	val dynamicPadding = remember { mutableStateOf(70.dp) }
 	ComposeTheme {
 		Box(
 			modifier = Modifier
@@ -112,15 +111,10 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 			painter = rememberAsyncImagePainter(img),
 			contentDescription = null,
 			modifier = Modifier
-				.padding(0.dp, dynamicPadding.value, 0.dp, 0.dp)
+				.padding(0.dp,40.dp, 0.dp, 0.dp)
 				.clickable {
 					isVisible.value = !isVisible.value
 					vm.changeState()
-					if(isVisible.value)
-					{
-						dynamicPadding.value = 70.dp
-					}
-					else dynamicPadding.value = 45.dp
 				}
 				.pointerInput(Unit) {
 					detectTransformGestures { _, pan, zoom, _ ->

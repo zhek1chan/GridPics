@@ -133,5 +133,5 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     //control sysUi
     implementation(libs.accompanist.systemuicontroller)
-
+    implementation(libs.androidx.activity.ktx)
 }

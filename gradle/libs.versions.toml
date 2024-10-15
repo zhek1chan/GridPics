@@ -1,5 +1,6 @@
 [versions]
 accompanistSystemuicontroller = "0.36.0"
+activityKtx = "1.9.2"
 agp = "8.5.2"
 androidutilslibrary = "1.0.0"
 coil = "2.7.0"
@@ -52,6 +53,7 @@ fragmentCompose = "1.8.4"
 [libraries]
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 androidutilslibrary = { module = "com.gitlab.developerdeveloperdeveloper:androidutilslibrary", version.ref = "androidutilslibrary" }
+androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activityKtx" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleLivedataKtx" }
