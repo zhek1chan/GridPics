@@ -6,6 +6,7 @@ import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -59,8 +60,8 @@ import org.koin.androidx.compose.getViewModel
 @Composable
 fun PicturesScreen(navController: NavController)
 {
-	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 	val viewModel = getViewModel<PicturesViewModel>()
+	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 	if(!txt.isNullOrEmpty())
 	{
 		ShowPictures(txt, viewModel, navController)

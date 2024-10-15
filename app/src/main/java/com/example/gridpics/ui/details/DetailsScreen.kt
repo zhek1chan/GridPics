@@ -3,6 +3,7 @@ package com.example.gridpics.ui.details
 import android.annotation.SuppressLint
 import android.content.Context.MODE_PRIVATE
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -45,6 +46,17 @@ import com.example.gridpics.ui.themes.ComposeTheme
 @Composable
 fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 {
+	BackHandler {
+		if(viewModel.observeState().value == true)
+		{
+			viewModel.changeState()
+			nc.navigateUp()
+		}
+		else
+		{
+			nc.navigateUp()
+		}
+	}
 	val pic = LocalContext.current.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, "null")
 	if(pic != null)
 	{
