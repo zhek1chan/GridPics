@@ -13,13 +13,13 @@ sealed class BottomNavItem(
 	val icon: ImageVector,
 )
 {
-	object Home: BottomNavItem(
+	data object Home: BottomNavItem(
 		route = Screen.Home.route,
 		titleResId = R.string.main,
 		icon = Icons.Default.Home
 	)
 
-	object Settings: BottomNavItem(
+	data object Settings: BottomNavItem(
 		route = Screen.Settings.route,
 		titleResId = R.string.settings,
 		icon = Icons.Default.Settings

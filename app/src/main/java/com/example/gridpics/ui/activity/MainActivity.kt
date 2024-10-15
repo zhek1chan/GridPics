@@ -18,11 +18,9 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-//noinspection UsingMaterialAndMaterial3Libraries
-import androidx.compose.material.BottomNavigation
-//noinspection UsingMaterialAndMaterial3Libraries
-import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,7 +43,6 @@ import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.themes.ComposeTheme
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 @Suppress("DEPRECATION")
@@ -72,7 +69,6 @@ class MainActivity: AppCompatActivity()
 			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 		}
 
-		@Suppress("DEPRECATION")
 		detailsViewModel.observeState().observe(this) {
 			if(it)
 			{
@@ -110,12 +106,9 @@ class MainActivity: AppCompatActivity()
 
 		setContent {
 			ComposeTheme {
-				val systemUiController = rememberSystemUiController()
-				systemUiController.setSystemBarsColor(
-					color = Color.Black
-				)
+				window.statusBarColor = Color.Black.value.toInt()
+				window.navigationBarColor = Color.Black.value.toInt()
 				val navController = rememberNavController()
-
 				Scaffold(modifier = Modifier
 					.fillMaxSize(),
 					bottomBar = { BottomNavigationBar(navController) },
@@ -163,10 +156,10 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 		AnimatedVisibility(visible = bottomBarState.value) {
-			BottomNavigation(windowInsets = WindowInsets.navigationBars, backgroundColor = Color.Black) {
+			NavigationBar(windowInsets = WindowInsets.navigationBars, containerColor = Color.Black) {
 				val currentRoute = navBackStackEntry?.destination?.route
 				items.forEach { item ->
-					BottomNavigationItem(
+					NavigationBarItem(
 						icon = {
 							Icon(
 								imageVector = item.icon,
@@ -175,8 +168,6 @@ class MainActivity: AppCompatActivity()
 						},
 						label = { Text(text = stringResource(id = item.titleResId)) },
 						selected = currentRoute == item.route,
-						selectedContentColor = Color.Green,
-						unselectedContentColor = Color.Transparent,
 						onClick = {
 							navController.navigate(item.route) {
 								// Pop up to the start destination of the graph to

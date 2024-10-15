@@ -41,16 +41,16 @@ fun NoInternetScreen()
 						painter = painterResource(id = R.drawable.no_net),
 						contentDescription = null,
 						modifier = Modifier
-                            .height(200.dp)
-                            .fillMaxWidth()
+							.height(200.dp)
+							.fillMaxWidth()
 					)
 					Spacer(modifier = Modifier.height(20.dp))
 					Text(
 						text = stringResource(R.string.oi_oi),
 						textAlign = TextAlign.Center,
 						modifier = Modifier
-                            .padding(top = 20.dp)
-                            .fillMaxWidth(),
+							.padding(top = 20.dp)
+							.fillMaxWidth(),
 						letterSpacing = 2.sp,
 						fontWeight = FontWeight.Bold,
 						style = MaterialTheme.typography.titleLarge,
@@ -61,8 +61,8 @@ fun NoInternetScreen()
 						text = stringResource(R.string.fail_no_internet),
 						textAlign = TextAlign.Center,
 						modifier = Modifier
-                            .padding(top = 10.dp, start = 25.dp, end = 25.dp)
-                            .fillMaxWidth(),
+							.padding(top = 10.dp, start = 25.dp, end = 25.dp)
+							.fillMaxWidth(),
 						letterSpacing = 1.sp,
 						style = MaterialTheme.typography.bodyLarge,
 						color = MaterialTheme.colorScheme.onPrimary,

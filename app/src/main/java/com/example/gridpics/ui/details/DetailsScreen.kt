@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -93,7 +93,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 					navigationIcon = {
 						IconButton({ navBack = true }) {
 							Icon(
-								Icons.Filled.ArrowBack,
+								Icons.AutoMirrored.Filled.ArrowBack,
 								contentDescription = "back",
 								modifier = Modifier.padding(0.dp, 10.dp, 0.dp, 0.dp)
 							)
