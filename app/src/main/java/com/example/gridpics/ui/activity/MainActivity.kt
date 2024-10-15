@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.activity
 
 import android.content.Context
-import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -59,13 +58,11 @@ class MainActivity: AppCompatActivity()
 		val sharedPref = getPreferences(Context.MODE_PRIVATE)
 		val changedTheme =
 			sharedPref.getString((THEME_SP_KEY), null)
-		val uiMode = resources.configuration.uiMode
-		val nightMask = Configuration.UI_MODE_NIGHT_MASK
-		if((Configuration.UI_MODE_NIGHT_NO == uiMode and nightMask) && (changedTheme == BLACK))
+		if(changedTheme == BLACK)
 		{
 			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 		}
-		else if((Configuration.UI_MODE_NIGHT_YES == uiMode and nightMask) && (changedTheme == WHITE))
+		else if(changedTheme == WHITE)
 		{
 			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 		}
@@ -107,7 +104,7 @@ class MainActivity: AppCompatActivity()
 
 		setContent {
 			ComposeTheme {
-				window.statusBarColor = resources.getColor(R.color.black)
+				window.statusBarColor = resources.getColor(R.color.transparent)
 				window.navigationBarColor = resources.getColor(R.color.black)
 				val navController = rememberNavController()
 				Scaffold(modifier = Modifier
