@@ -1,12 +1,8 @@
 package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Context
 import android.content.Context.MODE_PRIVATE
-import android.content.ContextWrapper
 import android.util.Log
-import android.view.View
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -28,6 +24,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,14 +41,10 @@ import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.themes.ComposeTheme
-import com.google.accompanist.systemuicontroller.SystemUiController
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import org.koin.androidx.compose.getViewModel
 
 @Composable
-fun DetailsScreen(nc: NavController)
+fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 {
-	val viewModel = getViewModel<DetailsViewModel>()
 	val pic = LocalContext.current.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, "null")
 	if(pic != null)
 	{
@@ -113,7 +106,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 				.fillMaxWidth()
 				.height(40.dp))
 		}
-		var scale by remember { mutableStateOf(1f) }
+		var scale by remember { mutableFloatStateOf(1f) }
 		var offset by remember { mutableStateOf(Offset(0f, 0f)) }
 		var isClicked by mutableStateOf(false)
 		Image(
@@ -124,7 +117,8 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 				.clickable {
 					isClicked = true
 					isVisible.value = !isVisible.value
-					if(isVisible.value == true)
+					vm.changeState()
+					if(isVisible.value)
 					{
 						dynamicPadding.value = 70.dp
 					}
@@ -149,7 +143,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 		if(isClicked)
 		{
 			isClicked = false
-			ClickOnImage(vm)
+			//ClickOnImage(vm)
 		}
 	}
 }
@@ -158,33 +152,10 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 private fun ClickOnImage(viewModel: DetailsViewModel)
 {
 	val interfaceIsVisible = viewModel.observeState().value
-	val activity = getActivity()
-	val systemUiController: SystemUiController = rememberSystemUiController()
 	if(interfaceIsVisible == true)
 	{
-		activity.window.decorView.apply {
-			systemUiVisibility = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_FULLSCREEN
-		}
-		systemUiController.isStatusBarVisible = false // Status bar
-		systemUiController.isNavigationBarVisible = false // Navigation bar
-		systemUiController.isSystemBarsVisible = false // Status & Navigation bars
-		viewModel.setFalseState()
 	}
 	else
 	{
-		systemUiController.isStatusBarVisible = true // Status bar
-		systemUiController.isNavigationBarVisible = true // Navigation bar
-		systemUiController.isSystemBarsVisible = true // Status & Navigation bars
-		viewModel.setTrueState()
 	}
-}
-
-@Composable
-fun getActivity(): Activity {
-	var context = LocalContext.current
-	while (context is ContextWrapper) {
-		if (context is Activity) return context
-		context = context.baseContext
-	}
-	throw IllegalStateException("no activity")
 }

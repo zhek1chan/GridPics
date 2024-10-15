@@ -4,9 +4,10 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import android.view.WindowManager
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
@@ -30,12 +31,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.gridpics.R
 import com.example.gridpics.ui.details.DetailsScreen
+import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.themes.ComposeTheme
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity: AppCompatActivity()
 {
+	private val detailsViewModel by viewModel<DetailsViewModel>()
+
 	@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
@@ -54,6 +59,25 @@ class MainActivity: AppCompatActivity()
 		else if((Configuration.UI_MODE_NIGHT_YES == uiMode and nightMask) && (changedTheme == WHITE))
 		{
 			changeTheme()
+		}
+
+		detailsViewModel.observeState().observe(this) {
+			if(it)
+			{
+				window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+					WindowManager.LayoutParams.FLAG_FULLSCREEN)
+				window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
+				window.decorView.systemUiVisibility =
+					View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+						View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+			}
+			else
+			{
+				window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+				window.decorView.systemUiVisibility =
+					View.SYSTEM_UI_FLAG_VISIBLE or
+						View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+			}
 		}
 
 		setContent {
@@ -161,7 +185,7 @@ class MainActivity: AppCompatActivity()
 				SettingsScreen()
 			}
 			composable(Screen.Details.route) {
-				DetailsScreen(navController)
+				DetailsScreen(navController, detailsViewModel)
 			}
 		}
 	}
