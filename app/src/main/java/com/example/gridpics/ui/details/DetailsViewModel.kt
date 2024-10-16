@@ -24,4 +24,6 @@ class DetailsViewModel: ViewModel()
 			}
 		}
 	}
+
+
 }

@@ -1,7 +1,9 @@
 package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -10,20 +12,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,12 +38,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.core.content.ContextCompat.startActivity
 import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
@@ -79,69 +77,88 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 {
 	val isVisible = remember { mutableStateOf(true) }
 	ComposeTheme {
-		ConstraintLayout {
-			val (image, topBar) = createRefs()
-			var scale by remember { mutableFloatStateOf(1f) }
-			var offset by remember { mutableStateOf(Offset(0f, 0f)) }
-			Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.ime), contentAlignment = Alignment.Center) {
-				Image(
-					alignment = Alignment.Center,
-					painter = rememberAsyncImagePainter(img),
-					contentDescription = null,
-					modifier = Modifier
-						.clickable {
-							vm.changeState()
-							isVisible.value = !isVisible.value
-						}
-						.pointerInput(Unit) {
-							detectTransformGestures { _, pan, zoom, _ ->                        // Update the scale based on zoom gestures.
-								scale *= zoom                        // Limit the zoom levels within a certain range (optional).
-								scale = scale.coerceIn(-1f, 3f)                        // Update the offset to implement panning when zoomed.
-								offset = if(scale == 1f) Offset(0f, 0f) else offset + pan
-								if(scale < 0.5f)
+		var scale by remember { mutableFloatStateOf(1f) }
+		var offset by remember { mutableStateOf(Offset(0f, 0f)) }
+		Box(modifier = Modifier
+			.fillMaxSize()
+			.windowInsetsPadding(WindowInsets.ime), contentAlignment = Alignment.Center) {
+			Image(
+				alignment = Alignment.Center,
+				painter = rememberAsyncImagePainter(img),
+				contentDescription = null,
+				modifier = Modifier
+					.clickable {
+						vm.changeState()
+						isVisible.value = !isVisible.value
+					}
+					.pointerInput(Unit) {
+						detectTransformGestures { _, pan, zoom, _ ->                        // Update the scale based on zoom gestures.
+							scale *= zoom                        // Limit the zoom levels within a certain range (optional).
+							scale = scale.coerceIn(-1f, 3f)                        // Update the offset to implement panning when zoomed.
+							offset = if(scale == 1f) Offset(0f, 0f) else offset + pan
+							if(scale < 0.5f)
+							{
+								Log.d("DetailsScreen", "Zoomed out, navigating back")
+								if(vm.observeState().value == true)
 								{
-									Log.d("DetailsScreen", "Zoomed out, navigating back")
-									if(vm.observeState().value == true)
-									{
-										vm.changeState()
-									}
-									nc.navigateUp()
+									vm.changeState()
 								}
+								nc.navigateUp()
 							}
 						}
-						.graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)
-						.fillMaxSize())
-			}
-			AnimatedVisibility(visible = isVisible.value) {
-				Box(
-					modifier = Modifier
-						.fillMaxWidth()
-						.constrainAs(topBar) {
-							top.linkTo(parent.top)
-						}
-						.height(40.dp), contentAlignment = Alignment.TopCenter) {
-					var navBack by remember { mutableStateOf(false) }
-					@OptIn(ExperimentalMaterial3Api::class) TopAppBar(title = {
-						Text(
-							img,
-							fontSize = 18.sp,
-							maxLines = 2,
-							modifier = Modifier.padding(0.dp, 5.dp, 0.dp, 0.dp),
-							overflow = TextOverflow.Ellipsis,
-						)
-					}, navigationIcon = {
+					}
+					.graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)
+					.fillMaxSize())
+		}
+		AnimatedVisibility(visible = isVisible.value) {
+			Box(
+				modifier = Modifier
+					.fillMaxWidth()
+					.height(40.dp)) {
+				var navBack by remember { mutableStateOf(false) }
+				val context = LocalContext.current
+				@OptIn(ExperimentalMaterial3Api::class) TopAppBar(title = {
+					Text(
+						img,
+						fontSize = 18.sp,
+						maxLines = 2,
+						modifier = Modifier.padding(0.dp, 5.dp, 30.dp, 0.dp),
+						overflow = TextOverflow.Ellipsis,
+					)
+				},
+					navigationIcon = {
 						IconButton({ navBack = true }) {
-							Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 10.dp, 0.dp, 0.dp))
+							Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 5.dp, 0.dp, 0.dp))
 						}
 					}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
 						actionIconContentColor = MaterialTheme.colorScheme.onPrimary))
-					if(navBack)
-					{
-						navBack = false
-						nc.navigateUp()
-					}
+				Icon(
+					modifier = Modifier
+						.align(Alignment.TopEnd)
+						.padding(0.dp, 10.dp, 15.dp, 0.dp)
+						.clickable {
+							share(img, context)
+						},
+					painter = rememberVectorPainter(Icons.Default.Share),
+					contentDescription = "share",
+					tint = MaterialTheme.colorScheme.onPrimary
+				)
+				if(navBack)
+				{
+					navBack = false
+					nc.navigateUp()
 				}
 			}
 		}
 	}
+}
+
+fun share(text: String, context: Context)
+{
+	val sendIntent = Intent(Intent.ACTION_SEND).apply {
+		putExtra(Intent.EXTRA_TEXT, text)
+		type = "text/plain"
+	}
+	val shareIntent = Intent.createChooser(sendIntent, null)
+	startActivity(context, shareIntent, null)
 }

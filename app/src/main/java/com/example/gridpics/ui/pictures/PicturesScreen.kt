@@ -21,9 +21,14 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -40,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -74,24 +80,33 @@ fun PicturesScreen(navController: NavController)
 }
 
 @Composable
-fun ItemNewsCard(item: String, nc: NavController)
+fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 {
 	ComposeTheme {
 		var isClicked by remember { mutableStateOf(false) }
-		AsyncImage(
-			model = item,
-			contentDescription = null,
-			modifier = Modifier
-				.clickable {
+		var isError by remember { mutableStateOf(false) }
+		val openAlertDialog = remember { mutableStateOf(false) }
+		val errorMessage = remember { mutableStateOf("") }
+		AsyncImage(model = item, contentDescription = null, modifier = Modifier
+			.clickable {
+				if(!isError)
+				{
 					isClicked = true
+					openAlertDialog.value = false
 				}
-				.padding(10.dp)
-				.size(100.dp)
-				.clip(RoundedCornerShape(8.dp)),
-			contentScale = ContentScale.Crop,
-			error = painterResource(R.drawable.ic_error_image),
-			onError = { Log.d("Error", "ERROR LOADING $item") }
-		)
+				else
+				{
+					openAlertDialog.value = true
+				}
+			}
+			.padding(10.dp)
+			.size(100.dp)
+			.clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop, onSuccess = {
+			isError = false
+		}, error = painterResource(R.drawable.ic_error_image), onError = {
+			isError = true
+			errorMessage.value = it.result.throwable.message.toString()
+		})
 		if(isClicked)
 		{
 			isClicked = false
@@ -100,6 +115,27 @@ fun ItemNewsCard(item: String, nc: NavController)
 			editor.putString(PIC, item)
 			editor.apply()
 			nc.navigate("details_screen")
+		}
+		when
+		{
+			openAlertDialog.value ->
+			{
+				if(isValidUrl(item))
+				{
+					AlertDialogMain(onDismissRequest = { openAlertDialog.value = false }, onConfirmation = {
+						openAlertDialog.value = false
+						println("Confirmation registered")
+						vm.getPics()
+					}, dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = "Ошибка: " + errorMessage.value + "\nПопробовать загрузить повторно?", icon = Icons.Default.Warning)
+				}
+				else
+				{
+					AlertDialogSecondary(onDismissRequest = { openAlertDialog.value = false }, onConfirmation = {
+						openAlertDialog.value = false
+						println("Confirmation registered") // Add logic here to handle confirmation.
+					}, dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
+				}
+			}
 		}
 	}
 }
@@ -115,43 +151,25 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 		{
 			is PictureState.SearchIsOk ->
 			{
-				saveToSharedPrefs(
-					LocalContext.current,
-					(value as PictureState.SearchIsOk).data
-				)
+				saveToSharedPrefs(LocalContext.current, (value as PictureState.SearchIsOk).data)
 				val list = (value as PictureState.SearchIsOk).data.split("\n")
 
-				LazyVerticalGrid(
-					modifier = Modifier
-						.fillMaxSize()
-						.padding(0.dp, 45.dp, 0.dp, 0.dp),
-					columns = GridCells.Fixed(count = calculateGridSpan())
-				) {
+				LazyVerticalGrid(modifier = Modifier
+					.fillMaxSize()
+					.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
-						ItemNewsCard(it, nv)
+						ItemNewsCard(it, nv, vm)
 					}
 				}
 			}
 			PictureState.ConnectionError ->
 			{
 				Log.d("Net", "No internet")
-				Column(
-					horizontalAlignment = Alignment.CenterHorizontally,
-					verticalArrangement = Arrangement.Center
-				) {
+				Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
 					NoInternetScreen()
 					val cornerRadius = 16.dp
 					val gradientColor = listOf(Color.Green, Color.Yellow)
-					GradientButton(
-						gradientColors = gradientColor,
-						cornerRadius = cornerRadius,
-						nameButton = stringResource(R.string.try_again),
-						roundedCornerShape = RoundedCornerShape(
-							topStart = 30.dp,
-							bottomEnd = 30.dp
-						),
-						vm
-					)
+					GradientButton(gradientColors = gradientColor, cornerRadius = cornerRadius, nameButton = stringResource(R.string.try_again), roundedCornerShape = RoundedCornerShape(topStart = 30.dp, bottomEnd = 30.dp), vm)
 				}
 			}
 			PictureState.NothingFound -> Unit
@@ -161,15 +179,12 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 	else
 	{
 		val items = s.split("\n")
-		LazyVerticalGrid(
-			modifier = Modifier
-				.fillMaxSize()
-				.padding(0.dp, 45.dp, 0.dp, 0.dp),
-			columns = GridCells.Fixed(count = calculateGridSpan())
-		) {
+		LazyVerticalGrid(modifier = Modifier
+			.fillMaxSize()
+			.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
-				ItemNewsCard(it, nv)
+				ItemNewsCard(it, nv, vm)
 			}
 		}
 	}
@@ -183,17 +198,11 @@ fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 	ComposeTheme {
 		Scaffold(
 			topBar = {
-				TopAppBar(
-					modifier = Modifier
-						.height(35.dp)
-						.padding(0.dp, 10.dp, 0.dp, 0.dp),
-					colors = TopAppBarDefaults.topAppBarColors(
-						titleContentColor = MaterialTheme.colorScheme.onPrimary
-					),
-					title = {
-						Text("GridPics")
-					}
-				)
+				TopAppBar(modifier = Modifier
+					.height(35.dp)
+					.padding(0.dp, 10.dp, 0.dp, 0.dp), colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary), title = {
+					Text("GridPics")
+				})
 			},
 		) {
 			ShowList(s, vm, nv)
@@ -210,41 +219,81 @@ fun GradientButton(
 	vm: PicturesViewModel,
 )
 {
-	Button(
-		modifier = Modifier
+	Button(modifier = Modifier
+		.fillMaxWidth()
+		.padding(start = 32.dp, end = 32.dp), onClick = {
+		vm.getPics()
+	}, contentPadding = PaddingValues(), colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), shape = RoundedCornerShape(cornerRadius)) {
+		Box(modifier = Modifier
 			.fillMaxWidth()
-			.padding(start = 32.dp, end = 32.dp),
-		onClick = {
-			vm.getPics()
-		},
-		contentPadding = PaddingValues(),
-		colors = ButtonDefaults.buttonColors(
-			containerColor = Color.Transparent
-		),
-		shape = RoundedCornerShape(cornerRadius)
-	) {
-		Box(
-			modifier = Modifier
-				.fillMaxWidth()
-				.background(
-					brush = Brush.horizontalGradient(colors = gradientColors),
-					shape = roundedCornerShape
-				)
-				.clip(roundedCornerShape)
-				.background(
-					brush = Brush.linearGradient(colors = gradientColors),
-					shape = RoundedCornerShape(cornerRadius)
-				)
-				.padding(horizontal = 16.dp, vertical = 8.dp),
-			contentAlignment = Alignment.Center
-		) {
-			Text(
-				text = nameButton,
-				fontSize = 20.sp,
-				color = Color.White
-			)
+			.background(brush = Brush.horizontalGradient(colors = gradientColors), shape = roundedCornerShape)
+			.clip(roundedCornerShape)
+			.background(brush = Brush.linearGradient(colors = gradientColors), shape = RoundedCornerShape(cornerRadius))
+			.padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
+			Text(text = nameButton, fontSize = 20.sp, color = Color.White)
 		}
 	}
+}
+
+@Composable
+fun AlertDialogMain(
+	onDismissRequest: () -> Unit,
+	onConfirmation: () -> Unit,
+	dialogTitle: String,
+	dialogText: String,
+	icon: ImageVector,
+)
+{
+	AlertDialog(icon = {
+		Icon(icon, contentDescription = "Example Icon")
+	}, title = {
+		Text(text = dialogTitle)
+	}, text = {
+		Text(text = dialogText)
+	}, onDismissRequest = {
+		onDismissRequest()
+	}, confirmButton = {
+		Button(colors = ButtonColors(Color.Black, Color.White, Color.Black, Color.White), onClick = {
+			onConfirmation()
+		}) {
+			Text(stringResource(R.string.confirm))
+		}
+	}, dismissButton = {
+		Button(
+			colors = ButtonColors(MaterialTheme.colorScheme.onError, Color.White, Color.Black, Color.White),
+			onClick = {
+				onDismissRequest()
+			},
+		) {
+			Text(stringResource(R.string.cancel))
+		}
+	})
+}
+
+@Composable
+fun AlertDialogSecondary(
+	onDismissRequest: () -> Unit,
+	onConfirmation: () -> Unit,
+	dialogTitle: String,
+	dialogText: String,
+	icon: ImageVector,
+)
+{
+	AlertDialog(icon = {
+		Icon(icon, contentDescription = "Example Icon")
+	}, title = {
+		Text(text = dialogTitle)
+	}, text = {
+		Text(text = dialogText)
+	}, onDismissRequest = {
+		onDismissRequest()
+	}, confirmButton = {
+		Button(colors = ButtonColors(Color.Black, Color.White, Color.Black, Color.White), onClick = {
+			onConfirmation()
+		}) {
+			Text(stringResource(R.string.okey))
+		}
+	})
 }
 
 private fun saveToSharedPrefs(context: Context, s: String)
@@ -254,6 +303,12 @@ private fun saveToSharedPrefs(context: Context, s: String)
 	val editor = sharedPreferences.edit()
 	editor.putString(PICTURES, s)
 	editor.apply()
+}
+
+fun isValidUrl(url: String): Boolean
+{
+	val urlPattern = Regex("^(https?|ftp)://([a-z0-9-]+\\.)+[a-z0-9]{2,6}(:[0-9]+)?(/\\S*)?$")
+	return urlPattern.matches(url)
 }
 
 @Composable
