@@ -9,10 +9,19 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
@@ -69,17 +79,49 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 {
 	val isVisible = remember { mutableStateOf(true) }
 	ComposeTheme {
-		Box(
-			modifier = Modifier
-				.fillMaxWidth()
-				.height(40.dp),
-			contentAlignment = Alignment.TopCenter
-		) {
+		ConstraintLayout {
+			val (image, topBar) = createRefs()
+			var scale by remember { mutableFloatStateOf(1f) }
+			var offset by remember { mutableStateOf(Offset(0f, 0f)) }
+			Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.ime), contentAlignment = Alignment.Center) {
+				Image(
+					alignment = Alignment.Center,
+					painter = rememberAsyncImagePainter(img),
+					contentDescription = null,
+					modifier = Modifier
+						.clickable {
+							vm.changeState()
+							isVisible.value = !isVisible.value
+						}
+						.pointerInput(Unit) {
+							detectTransformGestures { _, pan, zoom, _ ->                        // Update the scale based on zoom gestures.
+								scale *= zoom                        // Limit the zoom levels within a certain range (optional).
+								scale = scale.coerceIn(-1f, 3f)                        // Update the offset to implement panning when zoomed.
+								offset = if(scale == 1f) Offset(0f, 0f) else offset + pan
+								if(scale < 0.5f)
+								{
+									Log.d("DetailsScreen", "Zoomed out, navigating back")
+									if(vm.observeState().value == true)
+									{
+										vm.changeState()
+									}
+									nc.navigateUp()
+								}
+							}
+						}
+						.graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)
+						.fillMaxSize())
+			}
 			AnimatedVisibility(visible = isVisible.value) {
-				var navBack by remember { mutableStateOf(false) }
-				@OptIn(ExperimentalMaterial3Api::class)
-				TopAppBar(
-					title = {
+				Box(
+					modifier = Modifier
+						.fillMaxWidth()
+						.constrainAs(topBar) {
+							top.linkTo(parent.top)
+						}
+						.height(40.dp), contentAlignment = Alignment.TopCenter) {
+					var navBack by remember { mutableStateOf(false) }
+					@OptIn(ExperimentalMaterial3Api::class) TopAppBar(title = {
 						Text(
 							img,
 							fontSize = 18.sp,
@@ -87,64 +129,19 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 							modifier = Modifier.padding(0.dp, 5.dp, 0.dp, 0.dp),
 							overflow = TextOverflow.Ellipsis,
 						)
-					},
-					navigationIcon = {
+					}, navigationIcon = {
 						IconButton({ navBack = true }) {
-							Icon(
-								Icons.AutoMirrored.Filled.ArrowBack,
-								contentDescription = "back",
-								modifier = Modifier.padding(0.dp, 10.dp, 0.dp, 0.dp)
-							)
+							Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 10.dp, 0.dp, 0.dp))
 						}
-					},
-					colors = TopAppBarDefaults.topAppBarColors(
-						titleContentColor = MaterialTheme.colorScheme.onPrimary,
-						navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-						actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-					)
-				)
-				if(navBack)
-				{
-					navBack = false
-					nc.navigateUp()
+					}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+						actionIconContentColor = MaterialTheme.colorScheme.onPrimary))
+					if(navBack)
+					{
+						navBack = false
+						nc.navigateUp()
+					}
 				}
 			}
 		}
-		var scale by remember { mutableFloatStateOf(1f) }
-		var offset by remember { mutableStateOf(Offset(0f, 0f)) }
-		Image(
-			painter = rememberAsyncImagePainter(img),
-			contentDescription = null,
-			modifier = Modifier
-				.padding(0.dp, 40.dp, 0.dp, 0.dp)
-				.clickable {
-					isVisible.value = !isVisible.value
-					vm.changeState()
-				}
-				.pointerInput(Unit) {
-					detectTransformGestures { _, pan, zoom, _ ->
-						// Update the scale based on zoom gestures.
-						scale *= zoom
-						// Limit the zoom levels within a certain range (optional).
-						scale = scale.coerceIn(-1f, 3f)
-						// Update the offset to implement panning when zoomed.
-						offset = if(scale == 1f) Offset(0f, 0f) else offset + pan
-						if(scale < 0.5f)
-						{
-							Log.d("DetailsScreen", "Zoomed out, navigating back")
-							if(vm.observeState().value == true)
-							{
-								vm.changeState()
-							}
-							nc.navigateUp()
-						}
-					}
-				}
-				.graphicsLayer(
-					scaleX = scale, scaleY = scale,
-					translationX = offset.x, translationY = offset.y
-				)
-				.fillMaxSize()
-		)
 	}
 }
