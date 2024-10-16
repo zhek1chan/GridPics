@@ -32,6 +32,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -88,21 +89,22 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val pagerState = rememberPagerState(pageCount = {
 			list.size
 		})
-		var firstPage = true
+		val firstPage = remember { mutableStateOf(true) }
 		val startPage = list.indexOf(img)
-		var currentPage = startPage
+		val currentPage = remember { mutableIntStateOf(startPage) }
 		HorizontalPager(state = pagerState, userScrollEnabled = true) { page ->
 			val scope = rememberCoroutineScope()
-			if(firstPage)
+			if(firstPage.value)
 			{
 				scope.launch {
 					pagerState.scrollToPage(startPage)
-				}
+				}.isActive
 			}
-			firstPage = false
-			currentPage = page
+			firstPage.value = false
+			currentPage.intValue = page
 			var scale by remember { mutableFloatStateOf(1f) }
 			var offset by remember { mutableStateOf(Offset(0f, 0f)) }
+			Log.d("DetailsScreen", "We are on the ${currentPage.intValue} page")
 			Image(
 				painter = rememberAsyncImagePainter(list[page]),
 				contentDescription = null,
@@ -111,17 +113,20 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 					.combinedClickable(
 						onDoubleClick = {
 							scope.launch {
-								pagerState.animateScrollToPage(page - 1)
+								pagerState.scrollToPage(currentPage.intValue - 1)
 							}
 						},
 						onClick = {
 							scope.launch {
-								pagerState.animateScrollToPage(page + 1)
+								pagerState.scrollToPage(currentPage.intValue + 1)
 							}
 						},
 						onLongClick = {
 							vm.changeState()
 							isVisible.value = !isVisible.value
+							scope.launch {
+								pagerState.scrollToPage(currentPage.intValue)
+							}
 						})
 					.pointerInput(Unit) {
 						detectTransformGestures { _, pan, zoom, _ -> // Update the scale based on zoom gestures.
@@ -150,7 +155,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				val context = LocalContext.current
 				@OptIn(ExperimentalMaterial3Api::class) TopAppBar(title = {
 					Text(
-						list[currentPage],
+						list[currentPage.intValue],
 						fontSize = 18.sp,
 						maxLines = 2,
 						modifier = Modifier.padding(0.dp, 5.dp, 30.dp, 0.dp),
@@ -168,7 +173,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						.align(Alignment.TopEnd)
 						.padding(0.dp, 10.dp, 15.dp, 0.dp)
 						.clickable {
-							share(list[currentPage], context)
+							share(list[currentPage.intValue], context)
 						},
 					painter = rememberVectorPainter(Icons.Default.Share),
 					contentDescription = "share",
