@@ -7,17 +7,18 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
@@ -33,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +50,9 @@ import androidx.core.content.ContextCompat.startActivity
 import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
+import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
@@ -64,37 +68,65 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 			nc.navigateUp()
 		}
 	}
-	val pic = LocalContext.current.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, "null")
+	val context = LocalContext.current
+	val pictures = context.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, "null")
+	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, "null")
 	if(pic != null)
 	{
-		ShowDetails(pic, viewModel, nc)
+		ShowDetails(pic, viewModel, nc, pictures!!)
 	}
 }
 
-@SuppressLint("UnrememberedMutableState")
+@OptIn(ExperimentalFoundationApi::class)
+@SuppressLint("UnrememberedMutableState", "CoroutineCreationDuringComposition")
 @Composable
-fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
+fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: String)
 {
 	val isVisible = remember { mutableStateOf(true) }
 	ComposeTheme {
-		var scale by remember { mutableFloatStateOf(1f) }
-		var offset by remember { mutableStateOf(Offset(0f, 0f)) }
-		Box(modifier = Modifier
-			.fillMaxSize()
-			.windowInsetsPadding(WindowInsets.ime), contentAlignment = Alignment.Center) {
+		val list = pictures.split("\n")
+		val pagerState = rememberPagerState(pageCount = {
+			list.size
+		})
+		var firstPage = true
+		val startPage = list.indexOf(img)
+		var currentPage = startPage
+		HorizontalPager(state = pagerState, userScrollEnabled = true) { page ->
+			val scope = rememberCoroutineScope()
+			if(firstPage)
+			{
+				scope.launch {
+					pagerState.scrollToPage(startPage)
+				}
+			}
+			firstPage = false
+			currentPage = page
+			var scale by remember { mutableFloatStateOf(1f) }
+			var offset by remember { mutableStateOf(Offset(0f, 0f)) }
 			Image(
-				alignment = Alignment.Center,
-				painter = rememberAsyncImagePainter(img),
+				painter = rememberAsyncImagePainter(list[page]),
 				contentDescription = null,
 				modifier = Modifier
-					.clickable {
-						vm.changeState()
-						isVisible.value = !isVisible.value
-					}
+					.fillMaxSize()
+					.combinedClickable(
+						onDoubleClick = {
+							scope.launch {
+								pagerState.animateScrollToPage(page - 1)
+							}
+						},
+						onClick = {
+							scope.launch {
+								pagerState.animateScrollToPage(page + 1)
+							}
+						},
+						onLongClick = {
+							vm.changeState()
+							isVisible.value = !isVisible.value
+						})
 					.pointerInput(Unit) {
-						detectTransformGestures { _, pan, zoom, _ ->                        // Update the scale based on zoom gestures.
-							scale *= zoom                        // Limit the zoom levels within a certain range (optional).
-							scale = scale.coerceIn(-1f, 3f)                        // Update the offset to implement panning when zoomed.
+						detectTransformGestures { _, pan, zoom, _ -> // Update the scale based on zoom gestures.
+							scale *= zoom   // Limit the zoom levels within a certain range (optional).
+							scale = scale.coerceIn(-1f, 3f) // Update the offset to implement panning when zoomed.
 							offset = if(scale == 1f) Offset(0f, 0f) else offset + pan
 							if(scale < 0.5f)
 							{
@@ -107,8 +139,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 							}
 						}
 					}
-					.graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)
-					.fillMaxSize())
+					.graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y))
 		}
 		AnimatedVisibility(visible = isVisible.value) {
 			Box(
@@ -119,7 +150,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 				val context = LocalContext.current
 				@OptIn(ExperimentalMaterial3Api::class) TopAppBar(title = {
 					Text(
-						img,
+						list[currentPage],
 						fontSize = 18.sp,
 						maxLines = 2,
 						modifier = Modifier.padding(0.dp, 5.dp, 30.dp, 0.dp),
@@ -137,7 +168,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 						.align(Alignment.TopEnd)
 						.padding(0.dp, 10.dp, 15.dp, 0.dp)
 						.clickable {
-							share(img, context)
+							share(list[currentPage], context)
 						},
 					painter = rememberVectorPainter(Icons.Default.Share),
 					contentDescription = "share",
