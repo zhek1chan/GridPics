@@ -6,6 +6,7 @@ import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -83,6 +84,7 @@ fun PicturesScreen(navController: NavController)
 fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 {
 	ComposeTheme {
+		val context = LocalContext.current
 		var isClicked by remember { mutableStateOf(false) }
 		var isError by remember { mutableStateOf(false) }
 		val openAlertDialog = remember { mutableStateOf(false) }
@@ -110,7 +112,7 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 		if(isClicked)
 		{
 			isClicked = false
-			val sharedPreferences = LocalContext.current.getSharedPreferences(PIC, MODE_PRIVATE)
+			val sharedPreferences = context.getSharedPreferences(PIC, MODE_PRIVATE)
 			val editor = sharedPreferences.edit()
 			editor.putString(PIC, item)
 			editor.apply()
@@ -126,6 +128,7 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 						openAlertDialog.value = false
 						println("Confirmation registered")
 						vm.getPics()
+						Toast.makeText(context, context.getString(R.string.reload), Toast.LENGTH_LONG).show()
 					}, dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = "Ошибка: " + errorMessage.value + "\nПопробовать загрузить повторно?", icon = Icons.Default.Warning)
 				}
 				else
