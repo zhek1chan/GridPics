@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -52,9 +55,6 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
 import org.koin.androidx.compose.koinViewModel
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.items
 
 @Composable
 fun PicturesScreen(navController: NavController)
@@ -78,7 +78,6 @@ fun ItemNewsCard(item: String, nc: NavController)
 {
 	ComposeTheme {
 		var isClicked by remember { mutableStateOf(false) }
-		Log.d("PicturesFragment", "Pic url - $item")
 		AsyncImage(
 			model = item,
 			contentDescription = null,
@@ -128,7 +127,6 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 						.padding(0.dp, 45.dp, 0.dp, 0.dp),
 					columns = GridCells.Fixed(count = calculateGridSpan())
 				) {
-					Log.d("PicturesFragment", "$list")
 					items(list) {
 						ItemNewsCard(it, nv)
 					}

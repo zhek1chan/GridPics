@@ -3,6 +3,7 @@ package com.example.gridpics.ui.activity
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.WindowInsets.Type.statusBars
 import android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN
@@ -66,8 +67,8 @@ class MainActivity: AppCompatActivity()
 		{
 			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 		}
-
 		detailsViewModel.observeState().observe(this) {
+			Log.d("NAEBALOVO", "$it")
 			if(it)
 			{
 				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)

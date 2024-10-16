@@ -9,7 +9,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -62,7 +61,6 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 	{
 		ShowDetails(pic, viewModel, nc)
 	}
-	Log.d("pic", "We are on DetailsScreen $pic")
 }
 
 @SuppressLint("UnrememberedMutableState")
@@ -112,11 +110,6 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 				}
 			}
 		}
-		AnimatedVisibility(visible = !isVisible.value) {
-			Spacer(modifier = Modifier
-				.fillMaxWidth()
-				.height(40.dp))
-		}
 		var scale by remember { mutableFloatStateOf(1f) }
 		var offset by remember { mutableStateOf(Offset(0f, 0f)) }
 		Image(
@@ -133,9 +126,18 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController)
 						// Update the scale based on zoom gestures.
 						scale *= zoom
 						// Limit the zoom levels within a certain range (optional).
-						scale = scale.coerceIn(1f, 3f)
+						scale = scale.coerceIn(-1f, 3f)
 						// Update the offset to implement panning when zoomed.
 						offset = if(scale == 1f) Offset(0f, 0f) else offset + pan
+						if(scale < 0.5f)
+						{
+							Log.d("DetailsScreen", "Zoomed out, navigating back")
+							if(vm.observeState().value == true)
+							{
+								vm.changeState()
+							}
+							nc.navigateUp()
+						}
 					}
 				}
 				.graphicsLayer(
