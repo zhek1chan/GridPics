@@ -15,7 +15,7 @@
     <string name="oi_oi">Ойой!</string>
     <string name="try_again">Попробовать ещё раз</string>
 	<string name="error_ocurred_loading_img">Произошла ошибка при загрузке изображения:</string>
-    <string name="link_is_not_valid">Ссылка оказалось не рабочей</string>
+    <string name="link_is_not_valid">Ссылка оказалась нерабочей</string>
 	<string name="confirm">Подтвердить</string>
     <string name="cancel">Отменить</string>
 	<string name="okey">Okey</string>
