@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -11,10 +12,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -80,6 +91,7 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 	}
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("UnrememberedMutableState", "CoroutineCreationDuringComposition")
 @Composable
 fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: String)
@@ -94,8 +106,35 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val firstPage = remember { mutableStateOf(true) }
 		val startPage = list.indexOf(img)
 		val currentPage = remember { mutableIntStateOf(startPage) }
+		/*val topCalc = WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateBottomPadding()
+		val bottomCalc = WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
+		val bottom = remember { mutableStateOf(0.dp) }
+		val top = remember { mutableStateOf(0.dp) }
+		if(isVisible.value)
+		{
+			bottom.value = 0.dp
+			top.value = 0.dp
+		}
+		else
+		{
+			bottom.value = topCalc
+			top.value = bottomCalc
+			Log.d("Val", "top $topCalc, bottom $bottomCalc")
+		}*/
+		var top = WindowInsets.statusBarsIgnoringVisibility
+		var bottom = WindowInsets.navigationBarsIgnoringVisibility
+		if (isVisible.value) {
+			top = top
+			bottom = bottom
+		} else {
+			top = WindowInsets.statusBarsIgnoringVisibility
+			bottom = WindowInsets.navigationBarsIgnoringVisibility
+		}
+		Log.d("DetailsScreen","$top $bottom")
 		HorizontalPager(state = pagerState, modifier = Modifier
-			.fillMaxSize()) { page ->
+			.fillMaxSize()
+			.padding(0.dp, 0.dp, 0.dp, 0.dp)
+		) { page ->
 			val scope = rememberCoroutineScope()
 			if(firstPage.value)
 			{
@@ -106,7 +145,8 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			firstPage.value = false
 			currentPage.intValue = page
 			val openAlertDialog = remember { mutableStateOf(false) }
-			if (!isValidUrl(list[currentPage.intValue])) {
+			if(!isValidUrl(list[currentPage.intValue]))
+			{
 				openAlertDialog.value = true
 			}
 
