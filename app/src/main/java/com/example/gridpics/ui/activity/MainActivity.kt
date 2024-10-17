@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.WindowInsets.Type.statusBars
+import android.view.WindowManager
 import android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -15,8 +16,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -30,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -55,6 +59,10 @@ class MainActivity: AppCompatActivity()
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
 		enableEdgeToEdge()
+		window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+		window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+		window.statusBarColor = resources.getColor(R.color.grey_transparent)
+		window.navigationBarColor = resources.getColor(R.color.black)
 		val sharedPref = getPreferences(Context.MODE_PRIVATE)
 		val changedTheme =
 			sharedPref.getString((THEME_SP_KEY), null)
@@ -103,11 +111,9 @@ class MainActivity: AppCompatActivity()
 
 		setContent {
 			ComposeTheme {
-				window.statusBarColor = resources.getColor(R.color.transparent)
-				window.navigationBarColor = resources.getColor(R.color.black)
 				val navController = rememberNavController()
 				Scaffold(modifier = Modifier
-					.fillMaxSize(),
+					.fillMaxWidth().width(40.dp),
 					bottomBar = { BottomNavigationBar(navController) },
 					content = { padding ->
 						Column(
