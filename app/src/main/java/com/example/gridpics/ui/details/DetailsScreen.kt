@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
@@ -100,27 +102,8 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val firstPage = remember { mutableStateOf(true) }
 		val startPage = list.indexOf(img)
 		val currentPage = remember { mutableIntStateOf(startPage) }
-		/*val topCalc = WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateBottomPadding()
-		val bottomCalc = WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
-		val bottom = remember { mutableStateOf(0.dp) }
-		val top = remember { mutableStateOf(0.dp) }
-		if(isVisible.value)
-		{
-			bottom.value = 0.dp
-			top.value = 0.dp
-		}
-		else
-		{
-			bottom.value = topCalc
-			top.value = bottomCalc
-			Log.d("Val", "top $topCalc, bottom $bottomCalc")
-		}*/
-		val top = WindowInsets.statusBarsIgnoringVisibility
-		val bottom = WindowInsets.navigationBarsIgnoringVisibility
-		Log.d("DetailsScreen", "$top $bottom")
 		HorizontalPager(state = pagerState, modifier = Modifier
 			.fillMaxSize()
-			.padding(0.dp, 0.dp, 0.dp, 0.dp)
 		) { page ->
 			val scope = rememberCoroutineScope()
 			if(firstPage.value)
