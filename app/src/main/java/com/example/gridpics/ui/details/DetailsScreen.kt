@@ -4,12 +4,13 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,7 +20,8 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,9 +39,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,11 +51,8 @@ import coil3.compose.rememberAsyncImagePainter
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
-import com.example.gridpics.ui.pictures.AlertDialogMain
-import com.example.gridpics.ui.pictures.AlertDialogSecondary
 import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -107,29 +106,37 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			firstPage.value = false
 			currentPage.intValue = page
 			val openAlertDialog = remember { mutableStateOf(false) }
+			if (!isValidUrl(list[currentPage.intValue])) {
+				openAlertDialog.value = true
+			}
+
 			when
 			{
 				openAlertDialog.value ->
 				{
-					if(!isValidUrl(list[currentPage.intValue]))
+					val errorMessage = if(!isValidUrl(list[currentPage.intValue]))
 					{
-						AlertDialogMain(onDismissRequest = {
-							openAlertDialog.value = false
-							scope.launch {
-								pagerState.scrollToPage(currentPage.intValue + 1)
-							}
-						}, onConfirmation = {
-							openAlertDialog.value = false
-						}, dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = "Произошла ошибка при загрузке :(" + "\nПопробовать загрузить повторно?", icon = Icons.Default.Warning)
+						"HTTP error: 404"
 					}
 					else
 					{
-						AlertDialogSecondary(onDismissRequest = { openAlertDialog.value = false }, onConfirmation = {
-							openAlertDialog.value = false
-							scope.launch {
-								pagerState.scrollToPage(currentPage.intValue + 1)
+						context.getString(R.string.link_is_not_valid)
+					}
+					Column(Modifier.fillMaxWidth(),
+						verticalArrangement = Arrangement.Center,
+						horizontalAlignment = Alignment.CenterHorizontally) {
+						Text(text = "Произошла ошибка при загрузке:", modifier = Modifier.padding(5.dp), color = MaterialTheme.colorScheme.onPrimary)
+						Text(text = errorMessage, modifier = Modifier.padding(10.dp), color = MaterialTheme.colorScheme.onPrimary)
+						if(errorMessage != context.getString(R.string.link_is_not_valid))
+						{
+							Button(onClick = {
+								scope.launch {
+									pagerState.scrollToPage(currentPage.intValue)
+								}.isActive
+							}, colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
+								Text("Обновить картинку")
 							}
-						}, dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
+						}
 					}
 				}
 				!openAlertDialog.value ->
@@ -137,10 +144,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 					val zoom = rememberZoomState()
 					Image(
 						painter = rememberAsyncImagePainter(list[page], onError = {
-							scope.launch {
-								delay(1500)
-								openAlertDialog.value = true
-							}
+							openAlertDialog.value = true
 						}, onSuccess = { openAlertDialog.value = false }),
 						contentDescription = null,
 						modifier = Modifier
@@ -149,7 +153,8 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 								vm.changeState()
 								isVisible.value = !isVisible.value
 							}))
-					if (zoom.scale < 0.9) {
+					if(zoom.scale < 0.9)
+					{
 						if(vm.observeState().value == true)
 						{
 							vm.changeState()
