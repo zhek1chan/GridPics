@@ -52,6 +52,7 @@ import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.pictures.AlertDialogSecondary
 import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -133,7 +134,12 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				!openAlertDialog.value ->
 				{
 					Image(
-						painter = rememberAsyncImagePainter(list[page], onError = { openAlertDialog.value = true }, onSuccess = { openAlertDialog.value = false }),
+						painter = rememberAsyncImagePainter(list[page], onError = {
+							scope.launch {
+								delay(1500)
+								openAlertDialog.value = true
+							}
+						}, onSuccess = { openAlertDialog.value = false }),
 						contentDescription = null,
 						modifier = Modifier
 							.fillMaxSize()
