@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -11,10 +12,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -80,6 +85,7 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 	}
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("UnrememberedMutableState", "CoroutineCreationDuringComposition")
 @Composable
 fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: String)
@@ -94,8 +100,12 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val firstPage = remember { mutableStateOf(true) }
 		val startPage = list.indexOf(img)
 		val currentPage = remember { mutableIntStateOf(startPage) }
+		val top = WindowInsets.statusBarsIgnoringVisibility
+		val bottom = WindowInsets.navigationBarsIgnoringVisibility
+		Log.d("DetailsScreen", "$top $bottom")
 		HorizontalPager(state = pagerState, modifier = Modifier
 			.fillMaxSize()
+			.padding(0.dp, 0.dp, 0.dp, 0.dp)
 		) { page ->
 			val scope = rememberCoroutineScope()
 			if(firstPage.value)
