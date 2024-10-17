@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -133,6 +134,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				}
 				!openAlertDialog.value ->
 				{
+					val zoom = rememberZoomState()
 					Image(
 						painter = rememberAsyncImagePainter(list[page], onError = {
 							scope.launch {
@@ -143,10 +145,17 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						contentDescription = null,
 						modifier = Modifier
 							.fillMaxSize()
-							.zoomable(rememberZoomState(), enableOneFingerZoom = false, onTap = {
+							.zoomable(zoom, enableOneFingerZoom = false, onTap = {
 								vm.changeState()
 								isVisible.value = !isVisible.value
 							}))
+					if (zoom.scale < 0.9) {
+						if(vm.observeState().value == true)
+						{
+							vm.changeState()
+						}
+						nc.navigateUp()
+					}
 				}
 			}
 		}
