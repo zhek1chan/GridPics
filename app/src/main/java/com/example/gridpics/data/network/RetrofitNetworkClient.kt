@@ -10,8 +10,8 @@ import java.io.IOException
 import java.nio.charset.Charset
 
 class RetrofitNetworkClient(
-    private val context: Context,
-    private val api: Api,
+	private val context: Context,
+	private val api: Api,
 ): NetworkClient
 {
 	override suspend fun getPics(): Resource<String>
@@ -23,7 +23,7 @@ class RetrofitNetworkClient(
 			{
 				api.getNews().byteStream().use {
 					val s = it.readBytes().toString(charset = Charset.defaultCharset())
-					Log.d("Retrofit data", "$s")
+					Log.d("Retrofit data", s)
 					return@use Resource.Data(s)
 				}
 			}
@@ -58,7 +58,6 @@ class RetrofitNetworkClient(
 	companion object
 	{
 		private const val REQUEST_ERROR = "error_400"
-		private const val NOT_FOUND = "error_404"
 		private const val DEVICE_IS_OFFLINE = "you_are_offline"
 	}
 }
