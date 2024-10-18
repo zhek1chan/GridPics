@@ -87,9 +87,10 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 		val context = LocalContext.current
 		var isClicked by remember { mutableStateOf(false) }
 		var isError by remember { mutableStateOf(false) }
+		var img by remember { mutableStateOf(item) }
 		val openAlertDialog = remember { mutableStateOf(false) }
 		val errorMessage = remember { mutableStateOf("") }
-		AsyncImage(model = item, contentDescription = null, modifier = Modifier
+		AsyncImage(placeholder = painterResource(R.drawable.ic_error_image), model = img, contentDescription = null, modifier = Modifier
 			.clickable {
 				if(!isError)
 				{
@@ -104,11 +105,13 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 			.padding(10.dp)
 			.size(100.dp)
 			.clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop, onSuccess = {
+			img = item
 			isError = false
 		}, error = painterResource(R.drawable.ic_error_image), onError = {
 			isError = true
 			errorMessage.value = it.result.throwable.message.toString()
 		})
+
 		if(isClicked)
 		{
 			isClicked = false
@@ -181,10 +184,11 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 	}
 	else
 	{
-		val items = s.split("\n")
-		LazyVerticalGrid(modifier = Modifier
-			.fillMaxSize()
-			.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+		val items = remember { s.split("\n") }
+		LazyVerticalGrid(
+			modifier = Modifier
+				.fillMaxSize()
+				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
 				ItemNewsCard(it, nv, vm)

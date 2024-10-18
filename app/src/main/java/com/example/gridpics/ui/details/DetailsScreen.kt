@@ -54,6 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.ContextCompat.startActivity
 import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
@@ -186,41 +187,49 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			}
 		}
 		AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
-			Box(
-				modifier = Modifier
-					.fillMaxWidth()
-					.height(40.dp)) {
-				var navBack by remember { mutableStateOf(false) }
-				@OptIn(ExperimentalMaterial3Api::class) TopAppBar(title = {
-					Text(
-						list[pagerState.currentPage],
-						fontSize = 18.sp,
-						maxLines = 2,
-						modifier = Modifier.padding(0.dp, 5.dp, 30.dp, 0.dp),
-						overflow = TextOverflow.Ellipsis,
+			Box(modifier = Modifier
+				.fillMaxWidth()
+				.height(40.dp)
+			) {
+				ConstraintLayout {
+					val (icon) = createRefs()
+					var navBack by remember { mutableStateOf(false) }
+					@OptIn(ExperimentalMaterial3Api::class) TopAppBar(title = {
+						Text(
+							list[pagerState.currentPage],
+							fontSize = 18.sp,
+							maxLines = 2,
+							modifier = Modifier
+								.padding(0.dp, 5.dp, 40.dp, 0.dp),
+							overflow = TextOverflow.Ellipsis,
+						)
+					},
+						navigationIcon = {
+							IconButton({ navBack = true }) {
+								Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 5.dp, 0.dp, 0.dp))
+							}
+						}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+							actionIconContentColor = MaterialTheme.colorScheme.onPrimary))
+					Icon(
+						modifier = Modifier
+							.constrainAs(icon) {
+								end.linkTo(parent.end)
+								top.linkTo(parent.top)
+								bottom.linkTo(parent.bottom)
+							}
+							.padding(0.dp, 0.dp, 20.dp, 0.dp)
+							.clickable {
+								share(list[pagerState.currentPage], context)
+							},
+						painter = rememberVectorPainter(Icons.Default.Share),
+						contentDescription = "share",
+						tint = MaterialTheme.colorScheme.onPrimary
 					)
-				},
-					navigationIcon = {
-						IconButton({ navBack = true }) {
-							Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 5.dp, 0.dp, 0.dp))
-						}
-					}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-						actionIconContentColor = MaterialTheme.colorScheme.onPrimary))
-				Icon(
-					modifier = Modifier
-						.align(Alignment.TopEnd)
-						.padding(0.dp, 10.dp, 15.dp, 0.dp)
-						.clickable {
-							share(list[pagerState.currentPage], context)
-						},
-					painter = rememberVectorPainter(Icons.Default.Share),
-					contentDescription = "share",
-					tint = MaterialTheme.colorScheme.onPrimary
-				)
-				if(navBack)
-				{
-					navBack = false
-					nc.navigateUp()
+					if(navBack)
+					{
+						navBack = false
+						nc.navigateUp()
+					}
 				}
 			}
 		}
