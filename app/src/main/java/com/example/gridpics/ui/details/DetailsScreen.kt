@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -102,10 +104,10 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val currentPage = remember { mutableIntStateOf(startPage) }
 		val top = WindowInsets.statusBarsIgnoringVisibility
 		val bottom = WindowInsets.navigationBarsIgnoringVisibility
-		Log.d("DetailsScreen", "$top $bottom")
+		Log.d("DetailsScreen", "${WindowInsets.safeDrawing}")
 		HorizontalPager(state = pagerState, modifier = Modifier
 			.fillMaxSize()
-			.padding(0.dp, 0.dp, 0.dp, 0.dp)
+			.padding(WindowInsets.safeDrawing.asPaddingValues())
 		) { page ->
 			val scope = rememberCoroutineScope()
 			if(firstPage.value)
