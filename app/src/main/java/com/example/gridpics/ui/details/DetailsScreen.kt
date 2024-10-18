@@ -50,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -114,7 +115,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier =
 		Modifier
 			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
-			.padding(padding)
+			.padding(padding), contentPadding = PaddingValues(0.dp, 30.dp)
 		) { page ->
 			val scope = rememberCoroutineScope()
 			if(firstPage.value)
@@ -131,7 +132,6 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			{
 				openAlertDialog.value = true
 			}
-
 			when
 			{
 				openAlertDialog.value ->
@@ -194,7 +194,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				var navBack by remember { mutableStateOf(false) }
 				@OptIn(ExperimentalMaterial3Api::class) TopAppBar(title = {
 					Text(
-						list[currentPage.intValue],
+						list[pagerState.currentPage],
 						fontSize = 18.sp,
 						maxLines = 2,
 						modifier = Modifier.padding(0.dp, 5.dp, 30.dp, 0.dp),
@@ -212,7 +212,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						.align(Alignment.TopEnd)
 						.padding(0.dp, 10.dp, 15.dp, 0.dp)
 						.clickable {
-							share(list[currentPage.intValue], context)
+							share(list[pagerState.currentPage], context)
 						},
 					painter = rememberVectorPainter(Icons.Default.Share),
 					contentDescription = "share",
