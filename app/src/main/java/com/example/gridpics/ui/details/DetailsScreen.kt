@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.pager.HorizontalPager
@@ -116,9 +115,8 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		else if((!isVisible.value) && (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE))
 		{
 			padding = WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
-
 		}
-		else if(!isVisible.value && configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
+		else if((isVisible.value) && configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
 		{
 			padding = PaddingValues(0.dp)
 		}
