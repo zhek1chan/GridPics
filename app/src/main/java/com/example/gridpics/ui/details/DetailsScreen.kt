@@ -9,6 +9,8 @@ import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -207,7 +209,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				}
 			}
 		}
-		AnimatedVisibility(visible = isVisible.value) {
+		AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 			Box(
 				modifier = Modifier
 					.fillMaxWidth()
