@@ -20,8 +20,8 @@ private val LightColorScheme = darkColorScheme(
 
 @Composable
 fun ComposeTheme(
-    isDarkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit,
+	isDarkTheme: Boolean = isSystemInDarkTheme(),
+	content: @Composable () -> Unit,
 )
 {
 	MaterialTheme(

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.res.Configuration
+import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -53,6 +55,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.startActivity
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.example.gridpics.R
@@ -60,13 +64,18 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 {
+	LocalLifecycleOwner.current.lifecycleScope.launch {
+		delay(500)
+	}
 	BackHandler {
 		if(viewModel.observeState().value == true)
 		{
@@ -94,7 +103,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 {
 	val isVisible = remember { mutableStateOf(true) }
 	ComposeTheme {
-		val list = pictures.split("\n").toMutableList()
+		val list = remember { pictures.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(pageCount = {
 			list.size
 		})
@@ -102,27 +111,30 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val firstPage = remember { mutableStateOf(true) }
 		val startPage = list.indexOf(img)
 		val currentPage = remember { mutableIntStateOf(startPage) }
-		var padding = WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
+		var padding = remember { PaddingValues(0.dp, 0.dp, 0.dp, 0.dp) }
 		val configuration = LocalConfiguration.current
 		if((!isVisible.value) && (configuration.orientation == Configuration.ORIENTATION_PORTRAIT))
 		{
-			padding = WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
+			padding = if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
+			{
+				PaddingValues(0.dp, 0.dp, 0.dp, 24.dp)
+			}
+			else WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
 		}
 		else if(configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
 		{
-			padding = PaddingValues(0.dp)
+			padding = PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
 		}
 		else if((!isVisible.value) && (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE))
 		{
 			padding = WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
 		}
-		else if((isVisible.value) && configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
+		else if(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
 		{
-			padding = PaddingValues(0.dp)
+			padding = PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
 		}
 		Log.d("WINDOW", "$padding")
-		HorizontalPager(state = pagerState, modifier = Modifier
-			.fillMaxSize()
+		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier = Modifier
 			.padding(padding)
 		) { page ->
 			val scope = rememberCoroutineScope()
@@ -145,7 +157,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			{
 				openAlertDialog.value ->
 				{
-					val errorMessage = if(!isValidUrl(list[currentPage.intValue]))
+					val errorMessage = if(isValidUrl(list[currentPage.intValue]))
 					{
 						"HTTP error: 404"
 					}
@@ -162,7 +174,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						{
 							Button(onClick = {
 								scope.launch {
-									pagerState.scrollToPage(currentPage.intValue)
+									pagerState.scrollToPage(page)
 								}
 							}, colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
 								Text("Обновить картинку")
