@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
@@ -19,12 +18,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
@@ -51,14 +50,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.startActivity
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.example.gridpics.R
@@ -66,7 +62,6 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -75,9 +70,6 @@ import net.engawapg.lib.zoomable.zoomable
 @Composable
 fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 {
-	LocalLifecycleOwner.current.lifecycleScope.launch {
-		delay(500)
-	}
 	BackHandler {
 		if(viewModel.observeState().value == true)
 		{
@@ -114,30 +106,15 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val startPage = list.indexOf(img)
 		val currentPage = remember { mutableIntStateOf(startPage) }
 		var padding = remember { PaddingValues(0.dp, 0.dp, 0.dp, 0.dp) }
-		val configuration = LocalConfiguration.current
-		if((!isVisible.value) && (configuration.orientation == Configuration.ORIENTATION_PORTRAIT))
+		if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && !isVisible.value)
 		{
-			padding = if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
-			{
-				PaddingValues(0.dp, 0.dp, 0.dp, 24.dp)
-			}
-			else WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
+			padding = PaddingValues(0.dp, 0.dp, 0.dp, 24.dp)
 		}
-		else if(configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
-		{
-			padding = PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
-		}
-		else if((!isVisible.value) && (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE))
-		{
-			padding = WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
-		}
-		else if(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
-		{
-			padding = PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
-		}
-		Log.d("WINDOW", "$padding")
-		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier = Modifier
-			.padding(padding)
+		Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
+		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier =
+		Modifier
+			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
+			.padding(padding), contentPadding = PaddingValues(0.dp, 30.dp)
 		) { page ->
 			val scope = rememberCoroutineScope()
 			if(firstPage.value)
@@ -154,7 +131,6 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			{
 				openAlertDialog.value = true
 			}
-
 			when
 			{
 				openAlertDialog.value ->
@@ -217,7 +193,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				var navBack by remember { mutableStateOf(false) }
 				@OptIn(ExperimentalMaterial3Api::class) TopAppBar(title = {
 					Text(
-						list[currentPage.intValue],
+						list[pagerState.currentPage],
 						fontSize = 18.sp,
 						maxLines = 2,
 						modifier = Modifier.padding(0.dp, 5.dp, 30.dp, 0.dp),
@@ -235,7 +211,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						.align(Alignment.TopEnd)
 						.padding(0.dp, 10.dp, 15.dp, 0.dp)
 						.clickable {
-							share(list[currentPage.intValue], context)
+							share(list[pagerState.currentPage], context)
 						},
 					painter = rememberVectorPainter(Icons.Default.Share),
 					contentDescription = "share",
