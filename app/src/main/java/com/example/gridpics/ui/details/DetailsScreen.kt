@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.content.res.Configuration
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,8 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -37,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -102,22 +103,40 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val firstPage = remember { mutableStateOf(true) }
 		val startPage = list.indexOf(img)
 		val currentPage = remember { mutableIntStateOf(startPage) }
-		val top = WindowInsets.statusBarsIgnoringVisibility
-		val bottom = WindowInsets.navigationBarsIgnoringVisibility
-		Log.d("DetailsScreen", "${WindowInsets.safeDrawing}")
+		var padding = WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
+		val configuration = LocalConfiguration.current
+		if((!isVisible.value) && (configuration.orientation == Configuration.ORIENTATION_PORTRAIT))
+		{
+			padding = WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
+		}
+		else if(configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
+		{
+			padding = PaddingValues(0.dp)
+		}
+		else if((!isVisible.value) && (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE))
+		{
+			padding = WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
+
+		}
+		else if(!isVisible.value && configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
+		{
+			padding = PaddingValues(0.dp)
+		}
+		Log.d("WINDOW", "$padding")
 		HorizontalPager(state = pagerState, modifier = Modifier
 			.fillMaxSize()
-			.padding(WindowInsets.safeDrawing.asPaddingValues())
+			.padding(padding)
 		) { page ->
 			val scope = rememberCoroutineScope()
 			if(firstPage.value)
 			{
 				scope.launch {
 					pagerState.scrollToPage(startPage)
-				}.isActive
+				}
 			}
 			firstPage.value = false
 			currentPage.intValue = page
+			Log.d("DetailsFragment", "current page ${currentPage.intValue}")
 			val openAlertDialog = remember { mutableStateOf(false) }
 			if(!isValidUrl(list[currentPage.intValue]))
 			{
@@ -146,7 +165,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 							Button(onClick = {
 								scope.launch {
 									pagerState.scrollToPage(currentPage.intValue)
-								}.isActive
+								}
 							}, colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
 								Text("Обновить картинку")
 							}
@@ -178,14 +197,6 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				}
 			}
 		}
-		LaunchedEffect(key1 = Unit, block = {
-			var initPage = Int.MAX_VALUE / 2
-			while(initPage % list.size != 0)
-			{
-				initPage++
-			}
-			pagerState.scrollToPage(initPage)
-		})
 		AnimatedVisibility(visible = isVisible.value) {
 			Box(
 				modifier = Modifier
