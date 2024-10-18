@@ -4,24 +4,35 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.content.res.Configuration
+import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,7 +42,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,25 +49,35 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.startActivity
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
+import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
+import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.engawapg.lib.zoomable.rememberZoomState
+import net.engawapg.lib.zoomable.zoomable
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 {
+	LocalLifecycleOwner.current.lifecycleScope.launch {
+		delay(500)
+	}
 	BackHandler {
 		if(viewModel.observeState().value == true)
 		{
@@ -78,81 +98,123 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 	}
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("UnrememberedMutableState", "CoroutineCreationDuringComposition")
 @Composable
 fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: String)
 {
 	val isVisible = remember { mutableStateOf(true) }
 	ComposeTheme {
-		val list = pictures.split("\n")
+		val list = remember { pictures.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(pageCount = {
 			list.size
 		})
+		val context = LocalContext.current
 		val firstPage = remember { mutableStateOf(true) }
 		val startPage = list.indexOf(img)
 		val currentPage = remember { mutableIntStateOf(startPage) }
-		HorizontalPager(state = pagerState, userScrollEnabled = true) { page ->
+		var padding = remember { PaddingValues(0.dp, 0.dp, 0.dp, 0.dp) }
+		val configuration = LocalConfiguration.current
+		if((!isVisible.value) && (configuration.orientation == Configuration.ORIENTATION_PORTRAIT))
+		{
+			padding = if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
+			{
+				PaddingValues(0.dp, 0.dp, 0.dp, 24.dp)
+			}
+			else WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
+		}
+		else if(configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
+		{
+			padding = PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
+		}
+		else if((!isVisible.value) && (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE))
+		{
+			padding = WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
+		}
+		else if(configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
+		{
+			padding = PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
+		}
+		Log.d("WINDOW", "$padding")
+		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier = Modifier
+			.padding(padding)
+		) { page ->
 			val scope = rememberCoroutineScope()
 			if(firstPage.value)
 			{
 				scope.launch {
 					pagerState.scrollToPage(startPage)
-				}.isActive
+				}
 			}
 			firstPage.value = false
 			currentPage.intValue = page
-			var scale by remember { mutableFloatStateOf(1f) }
-			var offset by remember { mutableStateOf(Offset(0f, 0f)) }
-			Log.d("DetailsScreen", "We are on the ${currentPage.intValue} page")
-			Image(
-				painter = rememberAsyncImagePainter(list[page]),
-				contentDescription = null,
-				modifier = Modifier
-					.fillMaxSize()
-					.combinedClickable(
-						onDoubleClick = {
-							scope.launch {
-								pagerState.scrollToPage(currentPage.intValue - 1)
-							}
-						},
-						onClick = {
-							scope.launch {
-								pagerState.scrollToPage(currentPage.intValue + 1)
-							}
-						},
-						onLongClick = {
-							vm.changeState()
-							isVisible.value = !isVisible.value
-							scope.launch {
-								pagerState.scrollToPage(currentPage.intValue)
-							}
-						})
-					.pointerInput(Unit) {
-						detectTransformGestures { _, pan, zoom, _ -> // Update the scale based on zoom gestures.
-							scale *= zoom   // Limit the zoom levels within a certain range (optional).
-							scale = scale.coerceIn(-1f, 3f) // Update the offset to implement panning when zoomed.
-							offset = if(scale == 1f) Offset(0f, 0f) else offset + pan
-							if(scale < 0.5f)
-							{
-								Log.d("DetailsScreen", "Zoomed out, navigating back")
-								if(vm.observeState().value == true)
-								{
-									vm.changeState()
+			Log.d("DetailsFragment", "current page ${currentPage.intValue}")
+			val openAlertDialog = remember { mutableStateOf(false) }
+			if(!isValidUrl(list[currentPage.intValue]))
+			{
+				openAlertDialog.value = true
+			}
+
+			when
+			{
+				openAlertDialog.value ->
+				{
+					val errorMessage = if(isValidUrl(list[currentPage.intValue]))
+					{
+						"HTTP error: 404"
+					}
+					else
+					{
+						context.getString(R.string.link_is_not_valid)
+					}
+					Column(Modifier.fillMaxWidth(),
+						verticalArrangement = Arrangement.Center,
+						horizontalAlignment = Alignment.CenterHorizontally) {
+						Text(text = "Произошла ошибка при загрузке:", modifier = Modifier.padding(5.dp), color = MaterialTheme.colorScheme.onPrimary)
+						Text(text = errorMessage, modifier = Modifier.padding(10.dp), color = MaterialTheme.colorScheme.onPrimary)
+						if(errorMessage != context.getString(R.string.link_is_not_valid))
+						{
+							Button(onClick = {
+								scope.launch {
+									pagerState.scrollToPage(page)
 								}
-								nc.navigateUp()
+							}, colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
+								Text("Обновить картинку")
 							}
 						}
 					}
-					.graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y))
+				}
+				!openAlertDialog.value ->
+				{
+					val zoom = rememberZoomState()
+					Image(
+						painter = rememberAsyncImagePainter(list[page], onError = {
+							openAlertDialog.value = true
+						}, onSuccess = { openAlertDialog.value = false }),
+						contentDescription = null,
+						modifier = Modifier
+							.fillMaxSize()
+							.zoomable(zoom, enableOneFingerZoom = false, onTap = {
+								vm.changeState()
+								isVisible.value = !isVisible.value
+							}))
+					if(zoom.scale < 0.9)
+					{
+						if(vm.observeState().value == true)
+						{
+							vm.changeState()
+						}
+						nc.navigateUp()
+					}
+				}
+			}
 		}
-		AnimatedVisibility(visible = isVisible.value) {
+		AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 			Box(
 				modifier = Modifier
 					.fillMaxWidth()
 					.height(40.dp)) {
 				var navBack by remember { mutableStateOf(false) }
-				val context = LocalContext.current
 				@OptIn(ExperimentalMaterial3Api::class) TopAppBar(title = {
 					Text(
 						list[currentPage.intValue],

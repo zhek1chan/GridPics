@@ -5,18 +5,24 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.WindowInsets.Type.statusBars
+import android.view.WindowManager
 import android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -30,7 +36,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -55,6 +63,11 @@ class MainActivity: AppCompatActivity()
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
 		enableEdgeToEdge()
+		WindowCompat.setDecorFitsSystemWindows(window, false)
+		window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+		window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+		window.navigationBarColor = resources.getColor(R.color.black)
+		window.statusBarColor = resources.getColor(R.color.grey_transparent)
 		val sharedPref = getPreferences(Context.MODE_PRIVATE)
 		val changedTheme =
 			sharedPref.getString((THEME_SP_KEY), null)
@@ -103,11 +116,10 @@ class MainActivity: AppCompatActivity()
 
 		setContent {
 			ComposeTheme {
-				window.statusBarColor = resources.getColor(R.color.transparent)
-				window.navigationBarColor = resources.getColor(R.color.black)
 				val navController = rememberNavController()
 				Scaffold(modifier = Modifier
-					.fillMaxSize(),
+					.fillMaxWidth()
+					.width(40.dp),
 					bottomBar = { BottomNavigationBar(navController) },
 					content = { padding ->
 						Column(
@@ -152,7 +164,9 @@ class MainActivity: AppCompatActivity()
 				bottomBarState.value = false
 			}
 		}
-		AnimatedVisibility(visible = bottomBarState.value) {
+		AnimatedVisibility(
+			visible = bottomBarState.value, enter = slideInVertically(initialOffsetY = { it }), exit = ExitTransition.None
+		) {
 			NavigationBar(windowInsets = WindowInsets.navigationBars, containerColor = Color.Black) {
 				val currentRoute = navBackStackEntry?.destination?.route
 				items.forEach { item ->
@@ -191,7 +205,12 @@ class MainActivity: AppCompatActivity()
 	@Composable
 	fun NavigationSetup(navController: NavHostController)
 	{
-		NavHost(navController, startDestination = BottomNavItem.Home.route) {
+		NavHost(navController, startDestination = BottomNavItem.Home.route, enterTransition = {
+			EnterTransition.None
+		},
+			exitTransition = {
+				ExitTransition.None
+			}, modifier = Modifier.fillMaxSize()) {
 			composable(BottomNavItem.Home.route) {
 				PicturesScreen(navController)
 			}

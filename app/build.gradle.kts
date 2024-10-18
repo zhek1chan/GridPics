@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId = "com.example.gridpics"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -125,6 +125,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose.v240alpha01)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.koin.androidx.compose)
+    implementation(libs.androidx.paging.compose)
     //control sysUi
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.activity.ktx)

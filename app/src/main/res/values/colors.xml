@@ -17,6 +17,7 @@
     <color name="transparent">#00FFFFFF</color>
     <color name="grey_60_transparent">#804B4A48</color>
     <color name="grey_80_transparent">#CC4B4A48</color>
+    <color name="grey_transparent">#272727</color>
     <color name="orange_primary">#FFC107</color>
     <color name="reddish_pink_transparent">#59BF2323</color>
     <color name="reddish_green_transparent">#CC87D133</color>
