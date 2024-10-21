@@ -12,6 +12,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -112,11 +114,9 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			padding = PaddingValues(0.dp, 0.dp, 0.dp, 24.dp)
 		}
 		Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
-		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier =
-		Modifier
+		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier = Modifier
 			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
-			.padding(padding), contentPadding = PaddingValues(0.dp, 30.dp)
-		) { page ->
+			.padding(padding), contentPadding = PaddingValues(0.dp, 30.dp)) { page ->
 			val scope = rememberCoroutineScope()
 			if(firstPage.value)
 			{
@@ -144,9 +144,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 					{
 						context.getString(R.string.link_is_not_valid)
 					}
-					Column(Modifier.fillMaxWidth(),
-						verticalArrangement = Arrangement.Center,
-						horizontalAlignment = Alignment.CenterHorizontally) {
+					Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
 						Text(text = "Произошла ошибка при загрузке:", modifier = Modifier.padding(5.dp), color = MaterialTheme.colorScheme.onPrimary)
 						Text(text = errorMessage, modifier = Modifier.padding(10.dp), color = MaterialTheme.colorScheme.onPrimary)
 						if(errorMessage != context.getString(R.string.link_is_not_valid))
@@ -164,17 +162,14 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				!openAlertDialog.value ->
 				{
 					val zoom = rememberZoomState()
-					Image(
-						painter = rememberAsyncImagePainter(list[page], onError = {
-							openAlertDialog.value = true
-						}, onSuccess = { openAlertDialog.value = false }),
-						contentDescription = null,
-						modifier = Modifier
-							.fillMaxSize()
-							.zoomable(zoom, enableOneFingerZoom = false, onTap = {
-								vm.changeState()
-								isVisible.value = !isVisible.value
-							}))
+					Image(painter = rememberAsyncImagePainter(list[page], onError = {
+						openAlertDialog.value = true
+					}, onSuccess = { openAlertDialog.value = false }), contentDescription = null, modifier = Modifier
+						.fillMaxSize()
+						.zoomable(zoom, enableOneFingerZoom = false, onTap = {
+							vm.changeState()
+							isVisible.value = !isVisible.value
+						}))
 					if(zoom.scale < 0.9)
 					{
 						if(vm.observeState().value == true)
@@ -189,42 +184,43 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 			Box(modifier = Modifier
 				.fillMaxWidth()
-				.height(40.dp)
-			) {
-				ConstraintLayout {
-					val (icon) = createRefs()
-					var navBack by remember { mutableStateOf(false) }
-					@OptIn(ExperimentalMaterial3Api::class) TopAppBar(title = {
+				.height(40.dp)) {
+				var navBack by remember { mutableStateOf(false) }
+				ConstraintLayout(modifier = Modifier.clickable(onClick = {
+					navBack = true
+				}, interactionSource = remember { MutableInteractionSource() },
+					indication = ripple(color = MaterialTheme.colorScheme.onPrimary, bounded = true))) {
+					val (icon, text) = createRefs()
+					@OptIn(ExperimentalMaterial3Api::class)
+					TopAppBar(title = {
 						Text(
 							list[pagerState.currentPage],
 							fontSize = 18.sp,
 							maxLines = 2,
 							modifier = Modifier
-								.padding(0.dp, 5.dp, 40.dp, 0.dp),
+								.padding(0.dp, 0.dp, 40.dp, 0.dp)
+								.constrainAs(text) {
+									top.linkTo(parent.top)
+									bottom.linkTo(parent.bottom)
+								},
 							overflow = TextOverflow.Ellipsis,
 						)
-					},
-						navigationIcon = {
-							IconButton({ navBack = true }) {
-								Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 5.dp, 0.dp, 0.dp))
-							}
-						}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-							actionIconContentColor = MaterialTheme.colorScheme.onPrimary))
-					Icon(
-						modifier = Modifier
-							.constrainAs(icon) {
-								end.linkTo(parent.end)
-								top.linkTo(parent.top)
-								bottom.linkTo(parent.bottom)
-							}
-							.padding(0.dp, 0.dp, 20.dp, 0.dp)
-							.clickable {
-								share(list[pagerState.currentPage], context)
-							},
-						painter = rememberVectorPainter(Icons.Default.Share),
-						contentDescription = "share",
-						tint = MaterialTheme.colorScheme.onPrimary
-					)
+					}, navigationIcon = {
+						IconButton({ navBack = true }) {
+							Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))
+						}
+					}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+						actionIconContentColor = MaterialTheme.colorScheme.onPrimary, containerColor = MaterialTheme.colorScheme.background))
+
+					IconButton({ share(list[pagerState.currentPage], context) }, modifier = Modifier
+						.constrainAs(icon) {
+							end.linkTo(parent.end)
+							top.linkTo(parent.top)
+							bottom.linkTo(parent.bottom)
+						}
+						.padding(0.dp, 0.dp, 10.dp, 0.dp)) {
+						Icon(painter = rememberVectorPainter(Icons.Default.Share), contentDescription = "share", tint = MaterialTheme.colorScheme.onPrimary)
+					}
 					if(navBack)
 					{
 						navBack = false

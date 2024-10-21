@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -63,11 +62,12 @@ class MainActivity: AppCompatActivity()
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
 		enableEdgeToEdge()
-		WindowCompat.setDecorFitsSystemWindows(window, false)
-		window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-		window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-		window.navigationBarColor = resources.getColor(R.color.black)
-		window.statusBarColor = resources.getColor(R.color.grey_transparent)
+		val activityWindow = window
+		//WindowCompat.setDecorFitsSystemWindows(activityWindow, false)
+		activityWindow.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+		activityWindow.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+		activityWindow.navigationBarColor = resources.getColor(R.color.black)
+		activityWindow.statusBarColor = resources.getColor(R.color.light_grey)
 		val sharedPref = getPreferences(Context.MODE_PRIVATE)
 		val changedTheme =
 			sharedPref.getString((THEME_SP_KEY), null)
@@ -84,17 +84,17 @@ class MainActivity: AppCompatActivity()
 			{
 				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
 				{
-					window.insetsController?.hide(statusBars())
+					activityWindow.insetsController?.hide(statusBars())
 				}
 				else
 				{
-					window.setFlags(
+					activityWindow.setFlags(
 						FLAG_FULLSCREEN,
 						FLAG_FULLSCREEN
 					)
 				}
-				window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
-				window.decorView.systemUiVisibility =
+				activityWindow.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
+				activityWindow.decorView.systemUiVisibility =
 					View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
 						View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
 			}
@@ -102,13 +102,13 @@ class MainActivity: AppCompatActivity()
 			{
 				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
 				{
-					window.insetsController?.show(statusBars())
+					activityWindow.insetsController?.show(statusBars())
 				}
 				else
 				{
-					window.clearFlags(FLAG_FULLSCREEN)
+					activityWindow.clearFlags(FLAG_FULLSCREEN)
 				}
-				window.decorView.systemUiVisibility =
+				activityWindow.decorView.systemUiVisibility =
 					View.SYSTEM_UI_FLAG_VISIBLE or
 						View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
 			}

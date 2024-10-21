@@ -7,6 +7,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -28,6 +30,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -55,7 +58,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
+import coil3.compose.SubcomposeAsyncImage
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
@@ -80,6 +83,7 @@ fun PicturesScreen(navController: NavController)
 	}
 }
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 {
@@ -90,7 +94,7 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 		var img by remember { mutableStateOf(item) }
 		val openAlertDialog = remember { mutableStateOf(false) }
 		val errorMessage = remember { mutableStateOf("") }
-		AsyncImage(placeholder = painterResource(R.drawable.ic_error_image), model = img, contentDescription = null, modifier = Modifier
+		SubcomposeAsyncImage(model = item, contentDescription = null, modifier = Modifier
 			.clickable {
 				if(!isError)
 				{
@@ -104,14 +108,25 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 			}
 			.padding(10.dp)
 			.size(100.dp)
-			.clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop, onSuccess = {
-			img = item
-			isError = false
-		}, error = painterResource(R.drawable.ic_error_image), onError = {
-			isError = true
-			errorMessage.value = it.result.throwable.message.toString()
-		})
-
+			.clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop,
+			onSuccess = {
+				img = item
+				isError = false
+			},
+			loading = {
+				Column (Modifier.size(70.dp), verticalArrangement = Arrangement.Center,
+					horizontalAlignment = Alignment.CenterHorizontally) {
+					CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier
+						.size(70.dp)
+						.progressSemantics())
+				}
+			},
+			error = { Image(painterResource(R.drawable.ic_error_image), contentDescription = null, modifier = Modifier.size(100.dp)) },
+			onError = {
+				isError = true
+				errorMessage.value = it.result.throwable.message.toString()
+			}
+		)
 		if(isClicked)
 		{
 			isClicked = false
