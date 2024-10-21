@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.os.Bundle
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -58,17 +59,19 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
-		enableEdgeToEdge()
-		val activityWindow = window
-		activityWindow.navigationBarColor = getColor(R.color.black)
-		activityWindow.statusBarColor = getColor(R.color.light_grey)
+		enableEdgeToEdge(
+			statusBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black)),
+			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
+		)
 		val changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
 		if(!changedTheme)
 		{
 			settingsViewModel.postValue(this, false)
 		}
 		else
+		{
 			settingsViewModel.postValue(this, true)
+		}
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		this.lifecycleScope.launch {
 			detailsViewModel.observeState().collectLatest {
