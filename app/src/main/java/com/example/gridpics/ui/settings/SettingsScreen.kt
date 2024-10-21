@@ -113,24 +113,13 @@ fun SettingsCompose(changedTheme: String)
 							.fillMaxWidth()
 					)
 					val context = LocalContext.current
-					if(changedTheme.contains(BLACK))
-					{
-						GradientSwitch(
-							checked = true,
-							onCheckedChange = {
-								checkedState = it
-								changeTheme(context)
-							})
-					}
-					else
-					{
-						GradientSwitch(
-							checked = checkedState,
-							onCheckedChange = {
-								checkedState = it
-								changeTheme(context)
-							})
-					}
+					val check = changedTheme.contains(BLACK)
+					GradientSwitch(
+						checked = check,
+						onCheckedChange = {
+							checkedState = it
+							changeTheme(context)
+						})
 				}
 			}
 		}

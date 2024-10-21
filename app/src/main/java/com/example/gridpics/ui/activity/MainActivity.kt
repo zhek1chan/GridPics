@@ -65,8 +65,6 @@ class MainActivity: AppCompatActivity()
 		super.onCreate(savedInstanceState)
 		enableEdgeToEdge()
 		val activityWindow = window
-		activityWindow.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-		activityWindow.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
 		activityWindow.navigationBarColor = resources.getColor(R.color.black)
 		activityWindow.statusBarColor = resources.getColor(R.color.light_grey)
 		val changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getString(THEME_SP_KEY, WHITE)
@@ -119,8 +117,7 @@ class MainActivity: AppCompatActivity()
 			ComposeTheme {
 				val navController = rememberNavController()
 				Scaffold(modifier = Modifier
-					.fillMaxWidth()
-					.width(40.dp),
+					.fillMaxWidth(),
 					bottomBar = { BottomNavigationBar(navController) },
 					content = { padding ->
 						Column(
@@ -211,7 +208,7 @@ class MainActivity: AppCompatActivity()
 		},
 			exitTransition = {
 				ExitTransition.None
-			}, modifier = Modifier.fillMaxSize()) {
+			}) {
 			composable(BottomNavItem.Home.route) {
 				PicturesScreen(navController)
 			}
