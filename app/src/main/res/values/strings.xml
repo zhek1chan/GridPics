@@ -23,4 +23,8 @@
     <string name="reload">Обновляем данные...</string>
     <string name="text_plain">text/plain</string>
     <string name="null_null">null</string>
+    <string name="clear_cache">Очистить кэш изображений</string>
+    <string name="delete_all_question">Вы действительно хотите удалить\nвсе \nзагруженные ранее фото?</string>
+    <string name="delete">Удалить</string>
+    <string name="you_have_cleared_cache">Вы очистили кэш</string>
 </resources>

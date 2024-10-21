@@ -147,7 +147,7 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 						println("Confirmation registered")
 						vm.getPics()
 						Toast.makeText(context, context.getString(R.string.reload), Toast.LENGTH_LONG).show()
-					}, dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = "Ошибка: " + errorMessage.value + "\nПопробовать загрузить повторно?", icon = Icons.Default.Warning)
+					}, dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = "Ошибка: " + errorMessage.value + "\nПопробовать загрузить повторно?", icon = Icons.Default.Warning, stringResource(R.string.cancel), stringResource(R.string.confirm))
 				}
 				else
 				{
@@ -264,6 +264,8 @@ fun AlertDialogMain(
 	dialogTitle: String,
 	dialogText: String,
 	icon: ImageVector,
+	textButtonCancel: String,
+	textButtonConfirm: String
 )
 {
 	AlertDialog(icon = {
@@ -278,7 +280,7 @@ fun AlertDialogMain(
 		Button(colors = ButtonColors(Color.Black, Color.White, Color.Black, Color.White), onClick = {
 			onConfirmation()
 		}) {
-			Text(stringResource(R.string.confirm))
+			Text(textButtonConfirm)
 		}
 	}, dismissButton = {
 		Button(
@@ -287,7 +289,7 @@ fun AlertDialogMain(
 				onDismissRequest()
 			},
 		) {
-			Text(stringResource(R.string.cancel))
+			Text(textButtonCancel)
 		}
 	})
 }
