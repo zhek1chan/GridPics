@@ -65,6 +65,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -73,15 +74,20 @@ import net.engawapg.lib.zoomable.zoomable
 @Composable
 fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 {
+	val scope = rememberCoroutineScope()
 	BackHandler {
-		if(viewModel.observeState().value == true)
-		{
-			viewModel.changeState()
-			nc.navigateUp()
-		}
-		else
-		{
-			nc.navigateUp()
+		scope.launch {
+			viewModel.observeState().collectLatest {
+				if(it)
+				{
+					viewModel.changeState()
+					nc.navigateUp()
+				}
+				else
+				{
+					nc.navigateUp()
+				}
+			}
 		}
 	}
 	val context = LocalContext.current
@@ -172,11 +178,19 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						}))
 					if(zoom.scale < 0.9)
 					{
-						if(vm.observeState().value == true)
-						{
-							vm.changeState()
+						scope.launch {
+							vm.observeState().collectLatest {
+								if(it)
+								{
+									vm.changeState()
+									nc.navigateUp()
+								}
+								else
+								{
+									nc.navigateUp()
+								}
+							}
 						}
-						nc.navigateUp()
 					}
 				}
 			}

@@ -3,6 +3,7 @@ package com.example.gridpics.ui.settings
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
+import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +37,7 @@ import com.example.gridpics.ui.themes.ComposeTheme
 fun SettingsScreen()
 {
 	val changedTheme = LocalContext.current.getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getString(THEME_SP_KEY, WHITE)
+	Log.d("Saved theme is now", "Theme now is $changedTheme")
 	SettingsCompose(changedTheme!!)
 }
 
@@ -43,21 +45,24 @@ private fun changeTheme(context: Context)
 {
 	val darkMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 	val isDarkModeOn = darkMode == Configuration.UI_MODE_NIGHT_YES
+	val sharedPreferences = context.getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE)
+	val editor = sharedPreferences.edit()
 	val whiteOrBlack: String
 	if(isDarkModeOn)
 	{
-		AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 		whiteOrBlack = WHITE
+		editor.putString(THEME_SP_KEY, whiteOrBlack)
+		editor.apply()
+		AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 	}
 	else
 	{
-		AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 		whiteOrBlack = BLACK
+		editor.putString(THEME_SP_KEY, whiteOrBlack)
+		editor.apply()
+		AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 	}
-	val sharedPreferences = context.getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE)
-	val editor = sharedPreferences.edit()
-	editor.putString(THEME_SP_KEY, whiteOrBlack)
-	editor.apply()
+	Log.d("Saved theme", "saved $whiteOrBlack theme")
 }
 
 @Composable

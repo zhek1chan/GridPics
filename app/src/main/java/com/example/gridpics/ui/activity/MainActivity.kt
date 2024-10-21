@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.activity
 
-import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -38,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -50,6 +50,8 @@ import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 @Suppress("DEPRECATION")
@@ -63,14 +65,11 @@ class MainActivity: AppCompatActivity()
 		super.onCreate(savedInstanceState)
 		enableEdgeToEdge()
 		val activityWindow = window
-		//WindowCompat.setDecorFitsSystemWindows(activityWindow, false)
 		activityWindow.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
 		activityWindow.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
 		activityWindow.navigationBarColor = resources.getColor(R.color.black)
 		activityWindow.statusBarColor = resources.getColor(R.color.light_grey)
-		val sharedPref = getPreferences(Context.MODE_PRIVATE)
-		val changedTheme =
-			sharedPref.getString((THEME_SP_KEY), null)
+		val changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getString(THEME_SP_KEY, WHITE)
 		if(changedTheme == BLACK)
 		{
 			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
@@ -79,38 +78,40 @@ class MainActivity: AppCompatActivity()
 		{
 			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 		}
-		detailsViewModel.observeState().observe(this) {
-			if(it)
-			{
-				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+		this.lifecycleScope.launch {
+			detailsViewModel.observeState().collectLatest {
+				if(it)
 				{
-					activityWindow.insetsController?.hide(statusBars())
+					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+					{
+						activityWindow.insetsController?.hide(statusBars())
+					}
+					else
+					{
+						activityWindow.setFlags(
+							FLAG_FULLSCREEN,
+							FLAG_FULLSCREEN
+						)
+					}
+					activityWindow.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
+					activityWindow.decorView.systemUiVisibility =
+						View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+							View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
 				}
 				else
 				{
-					activityWindow.setFlags(
-						FLAG_FULLSCREEN,
-						FLAG_FULLSCREEN
-					)
+					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+					{
+						activityWindow.insetsController?.show(statusBars())
+					}
+					else
+					{
+						activityWindow.clearFlags(FLAG_FULLSCREEN)
+					}
+					activityWindow.decorView.systemUiVisibility =
+						View.SYSTEM_UI_FLAG_VISIBLE or
+							View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
 				}
-				activityWindow.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
-				activityWindow.decorView.systemUiVisibility =
-					View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-						View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-			}
-			else
-			{
-				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-				{
-					activityWindow.insetsController?.show(statusBars())
-				}
-				else
-				{
-					activityWindow.clearFlags(FLAG_FULLSCREEN)
-				}
-				activityWindow.decorView.systemUiVisibility =
-					View.SYSTEM_UI_FLAG_VISIBLE or
-						View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
 			}
 		}
 
