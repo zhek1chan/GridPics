@@ -28,4 +28,6 @@
     <color name="gradient_scale_black">#15181E</color>
     <color name="gradient_scale_orange">#4DB5AA60</color>
     <color name="gradient_scale_secondary_reddish">#4DFF9800</color>
+    <color name="light_grey">#CDCDCD</color>
+    <color name="light_grey_status_bar">#D3D3D3</color>
 </resources>

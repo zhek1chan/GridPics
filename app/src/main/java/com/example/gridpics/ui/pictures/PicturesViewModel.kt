@@ -30,12 +30,6 @@ class PicturesViewModel(
 					{
 						stateLiveData.postValue(PictureState.ConnectionError)
 						withContext(Dispatchers.IO) {
-							if(!isPaused)
-							{
-								delay(3000)
-								Log.d("PicturesViewModel", "3 secs and restart")
-								getPics()
-							}
 						}
 					}
 					is Resource.NotFound -> stateLiveData.postValue(PictureState.NothingFound)
@@ -46,6 +40,6 @@ class PicturesViewModel(
 
 	fun resume()
 	{
-		isPaused = false
+		isPaused = true
 	}
 }

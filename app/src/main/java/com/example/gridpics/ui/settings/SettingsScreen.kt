@@ -1,14 +1,16 @@
 package com.example.gridpics.ui.settings
 
-import android.content.Context
+import android.annotation.SuppressLint
 import android.content.Context.MODE_PRIVATE
-import android.content.res.Configuration
-import androidx.appcompat.app.AppCompatDelegate
+import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -16,10 +18,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -27,44 +29,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.example.gridpics.R
-import com.example.gridpics.ui.activity.MainActivity.Companion.BLACK
-import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SP_KEY
-import com.example.gridpics.ui.activity.MainActivity.Companion.WHITE
+import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
+import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen()
+fun SettingsScreen(vm: SettingsViewModel)
 {
-	val changedTheme = LocalContext.current.getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getString(THEME_SP_KEY, WHITE)
-	SettingsCompose(changedTheme!!)
+	SettingsCompose(vm)
 }
 
-private fun changeTheme(context: Context)
-{
-	val darkMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-	val isDarkModeOn = darkMode == Configuration.UI_MODE_NIGHT_YES
-	val whiteOrBlack: String
-	if(isDarkModeOn)
-	{
-		AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-		whiteOrBlack = WHITE
-	}
-	else
-	{
-		AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-		whiteOrBlack = BLACK
-	}
-	val sharedPreferences = context.getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE)
-	val editor = sharedPreferences.edit()
-	editor.putString(THEME_SP_KEY, whiteOrBlack)
-	editor.apply()
-}
-
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun SettingsCompose(changedTheme: String)
+fun SettingsCompose(vm: SettingsViewModel)
 {
 	ComposeTheme {
-		var checkedState by remember { mutableStateOf(false) }
+		var checkedStateForTheme by remember { mutableStateOf(false) }
+		var showDialog by remember { mutableStateOf(false) }
+		val context = LocalContext.current
 		ConstraintLayout {
 			val (settings, _) = createRefs()
 			Column(modifier = Modifier.constrainAs(settings) {
@@ -83,18 +67,23 @@ fun SettingsCompose(changedTheme: String)
 						fontSize = 21.sp,
 						color = MaterialTheme.colorScheme.onPrimary
 					)
+
 				}
 				Row(
 					verticalAlignment = Alignment.CenterVertically,
 					modifier = Modifier
 						.fillMaxWidth()
 						.padding(16.dp, 10.dp)
+						.clickable {
+							checkedStateForTheme = true
+							vm.changeTheme(context)
+						}
 				) {
 					Icon(
 						modifier = Modifier.padding(0.dp, 0.dp),
 						painter = painterResource(R.drawable.ic_theme),
 						contentDescription = "CommentIcon",
-						tint = Color.Unspecified
+						tint = MaterialTheme.colorScheme.onPrimary
 					)
 					Text(
 						stringResource(R.string.dark_theme),
@@ -107,25 +96,64 @@ fun SettingsCompose(changedTheme: String)
 							.weight(1f)
 							.fillMaxWidth()
 					)
-					val context = LocalContext.current
-					if(changedTheme.contains(BLACK))
-					{
-						GradientSwitch(
-							checked = true,
-							onCheckedChange = {
-								checkedState = it
-								changeTheme(context)
-							})
+					val scope = rememberCoroutineScope()
+					scope.launch {
+						vm.observeTheme().collectLatest {
+							checkedStateForTheme = it
+						}
 					}
-					else
-					{
-						GradientSwitch(
-							checked = checkedState,
-							onCheckedChange = {
-								checkedState = it
-								changeTheme(context)
-							})
-					}
+					GradientSwitch(
+						checked = checkedStateForTheme,
+						onCheckedChange = {
+							checkedStateForTheme = it
+							vm.changeTheme(context)
+						})
+				}
+				Row(
+					verticalAlignment = Alignment.CenterVertically,
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(16.dp, 10.dp)
+						.clickable {
+							showDialog = true
+						}
+				) {
+					Icon(
+						modifier = Modifier.padding(0.dp, 0.dp),
+						painter = painterResource(R.drawable.ic_delete),
+						contentDescription = "CommentIcon",
+						tint = MaterialTheme.colorScheme.onPrimary
+					)
+					Text(
+						stringResource(R.string.clear_cache),
+						fontSize = 18.sp,
+						color = MaterialTheme.colorScheme.onPrimary,
+						modifier = Modifier.padding(16.dp, 0.dp)
+					)
+					Spacer(Modifier
+						.weight(1f)
+						.fillMaxWidth()
+					)
+				}
+				if(showDialog)
+				{
+					AlertDialogMain(
+						dialogText = "",
+						dialogTitle = stringResource(R.string.delete_all_question),
+						onConfirmation = {
+							context.cacheDir.deleteRecursively()
+							val sharedPreferences = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
+							val editor = sharedPreferences.edit()
+							editor.putString(PICTURES, null)
+							editor.apply()
+							showDialog = false
+							Toast.makeText(context, context.getString(R.string.you_have_cleared_cache), Toast.LENGTH_SHORT).show()
+						},
+						onDismissRequest = { showDialog = false },
+						icon = Icons.Default.Delete,
+						textButtonCancel = stringResource(R.string.cancel),
+						textButtonConfirm = stringResource(R.string.delete)
+					)
 				}
 			}
 		}

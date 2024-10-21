@@ -1,29 +1,15 @@
 package com.example.gridpics.ui.details
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class DetailsViewModel: ViewModel()
 {
-	private val stateLiveData = MutableLiveData(false)
-	fun observeState(): LiveData<Boolean> = stateLiveData
+	private val stateLiveData = MutableStateFlow(false)
+	fun observeState(): Flow<Boolean> = stateLiveData
 	fun changeState()
 	{
-		viewModelScope.launch(Dispatchers.IO) {
-			if(stateLiveData.value == true)
-			{
-				stateLiveData.postValue(false)
-			}
-			else
-			{
-				stateLiveData.postValue(true)
-			}
-		}
+		stateLiveData.value = !stateLiveData.value
 	}
-
-
 }
