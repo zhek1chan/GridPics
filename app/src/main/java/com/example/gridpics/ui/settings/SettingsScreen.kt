@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.settings
 
 import android.annotation.SuppressLint
-import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,11 +33,6 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(vm: SettingsViewModel)
 {
 	SettingsCompose(vm)
-}
-
-private fun changeTheme(context: Context, vm: SettingsViewModel)
-{
-	vm.changeTheme(context)
 }
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -100,7 +94,7 @@ fun SettingsCompose(vm: SettingsViewModel)
 						checked = checkedState,
 						onCheckedChange = {
 							checkedState = it
-							changeTheme(context, vm)
+							vm.changeTheme(context)
 						})
 				}
 			}
