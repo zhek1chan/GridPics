@@ -14,17 +14,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -33,12 +37,15 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -114,7 +122,7 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 				isError = false
 			},
 			loading = {
-				Column (Modifier.size(70.dp), verticalArrangement = Arrangement.Center,
+				Column(Modifier.size(70.dp), verticalArrangement = Arrangement.Center,
 					horizontalAlignment = Alignment.CenterHorizontally) {
 					CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier
 						.size(70.dp)
@@ -142,19 +150,32 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 			{
 				if(isValidUrl(item))
 				{
-					AlertDialogMain(onDismissRequest = { openAlertDialog.value = false }, onConfirmation = {
-						openAlertDialog.value = false
-						println("Confirmation registered")
-						vm.getPics()
-						Toast.makeText(context, context.getString(R.string.reload), Toast.LENGTH_LONG).show()
-					}, dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = "Ошибка: " + errorMessage.value + "\nПопробовать загрузить повторно?", icon = Icons.Default.Warning, stringResource(R.string.cancel), stringResource(R.string.confirm))
+					AlertDialogMain(
+						onDismissRequest = { openAlertDialog.value = false },
+						onConfirmation =
+						{
+							openAlertDialog.value = false
+							println("Confirmation registered")
+							vm.getPics()
+							Toast.makeText(context, context.getString(R.string.reload), Toast.LENGTH_LONG).show()
+						},
+						dialogTitle = stringResource(R.string.error_ocurred_loading_img),
+						dialogText = "Ошибка: " + errorMessage.value + "\nПопробовать загрузить повторно?",
+						icon = Icons.Default.Warning,
+						stringResource(R.string.cancel),
+						stringResource(R.string.confirm)
+					)
 				}
 				else
 				{
-					AlertDialogSecondary(onDismissRequest = { openAlertDialog.value = false }, onConfirmation = {
-						openAlertDialog.value = false
-						println("Confirmation registered") // Add logic here to handle confirmation.
-					}, dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
+					AlertDialogSecondary(
+						onDismissRequest = { openAlertDialog.value = false },
+						onConfirmation =
+						{
+							openAlertDialog.value = false
+							println("Confirmation registered")
+						},
+						dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
 				}
 			}
 		}
@@ -164,7 +185,8 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 @Composable
 fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 {
-	Log.d("PicturesFragment", "From cache? ${!s.isNullOrEmpty()}")
+	Log.d("PicturesScreen", "From cache? ${!s.isNullOrEmpty()}")
+	Log.d("We got:", "$s")
 	if(s == null)
 	{
 		val value by vm.observeState().observeAsState()
@@ -199,7 +221,9 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 	}
 	else
 	{
+		saveToSharedPrefs(LocalContext.current, s)
 		val items = remember { s.split("\n") }
+		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			modifier = Modifier
 				.fillMaxSize()
@@ -218,16 +242,46 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 {
 	ComposeTheme {
+		var openAddDialog by remember { mutableStateOf(false) }
+		val editMessage = remember { mutableStateOf("") }
+		var string = s.toString()
+
 		Scaffold(
 			topBar = {
 				TopAppBar(modifier = Modifier
 					.height(35.dp)
 					.padding(0.dp, 10.dp, 0.dp, 0.dp), colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary), title = {
-					Text("GridPics")
+					Row {
+						Text(stringResource(R.string.gridpics))
+						IconButton(
+							onClick = {
+								openAddDialog = false //TODO
+							},
+							modifier = Modifier
+								.align(Alignment.CenterVertically)
+						) {
+							Icon(painter = rememberVectorPainter(Icons.Default.Add), contentDescription = "share", tint = MaterialTheme.colorScheme.onPrimary)
+						}
+					}
 				})
+				if(openAddDialog)
+				{
+					Row(verticalAlignment = Alignment.CenterVertically) {
+						AddDialog(
+							editMessage = editMessage,
+							onSubmit =
+							{
+								string += "\n${editMessage.value}"
+								openAddDialog = false
+								Log.d("WHAT I WROTE:", string)
+							},
+							onDismiss = { openAddDialog = false }
+						)
+					}
+				}
 			},
 		) {
-			ShowList(s, vm, nv)
+			ShowList(string, vm, nv)
 		}
 	}
 }
@@ -265,7 +319,7 @@ fun AlertDialogMain(
 	dialogText: String,
 	icon: ImageVector,
 	textButtonCancel: String,
-	textButtonConfirm: String
+	textButtonConfirm: String,
 )
 {
 	AlertDialog(icon = {
@@ -318,6 +372,55 @@ fun AlertDialogSecondary(
 			Text(stringResource(R.string.okey))
 		}
 	})
+}
+
+@Composable
+fun AddDialog(
+	editMessage: MutableState<String>,
+	onSubmit: () -> Unit,
+	onDismiss: () -> Unit,
+)
+{
+	Column(
+		modifier = Modifier
+			.clip(RoundedCornerShape(4.dp))
+			.background(MaterialTheme.colorScheme.background)
+			.padding(8.dp),
+	) {
+		Column(
+			modifier = Modifier.padding(16.dp),
+		) {
+			Text(text = stringResource(R.string.extract_link))
+
+			Spacer(modifier = Modifier.height(8.dp))
+
+			TextField(
+				value = editMessage.value,
+				onValueChange = { editMessage.value = it },
+				singleLine = true
+			)
+		}
+
+		Spacer(modifier = Modifier.height(8.dp))
+
+		Row(
+			modifier = Modifier.align(Alignment.End)
+		) {
+			Button(
+				onClick = onDismiss
+			) {
+				Text(stringResource(R.string.cancel))
+			}
+
+			Spacer(modifier = Modifier.width(8.dp))
+
+			Button(
+				onClick = onSubmit
+			) {
+				Text(stringResource(R.string.add))
+			}
+		}
+	}
 }
 
 private fun saveToSharedPrefs(context: Context, s: String)

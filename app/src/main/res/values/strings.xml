@@ -27,4 +27,6 @@
     <string name="delete_all_question">Вы действительно хотите удалить\nвсе \nзагруженные ранее фото?</string>
     <string name="delete">Удалить</string>
     <string name="you_have_cleared_cache">Вы очистили кэш</string>
+    <string name="add">Добавить</string>
+    <string name="extract_link">Укажите ссылку на изображение</string>
 </resources>

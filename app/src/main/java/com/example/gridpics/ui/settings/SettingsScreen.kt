@@ -67,6 +67,7 @@ fun SettingsCompose(vm: SettingsViewModel)
 						fontSize = 21.sp,
 						color = MaterialTheme.colorScheme.onPrimary
 					)
+
 				}
 				Row(
 					verticalAlignment = Alignment.CenterVertically,
