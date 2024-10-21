@@ -4,12 +4,10 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.WindowInsets.Type.statusBars
-import android.view.WindowManager
 import android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -21,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -35,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
@@ -49,15 +45,16 @@ import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.settings.SettingsScreen
+import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-@Suppress("DEPRECATION")
 class MainActivity: AppCompatActivity()
 {
 	private val detailsViewModel by viewModel<DetailsViewModel>()
+	private val settingsViewModel by viewModel<SettingsViewModel>()
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		setTheme(R.style.Theme_GridPics)
@@ -65,17 +62,17 @@ class MainActivity: AppCompatActivity()
 		super.onCreate(savedInstanceState)
 		enableEdgeToEdge()
 		val activityWindow = window
-		activityWindow.navigationBarColor = resources.getColor(R.color.black)
-		activityWindow.statusBarColor = resources.getColor(R.color.light_grey)
-		val changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getString(THEME_SP_KEY, WHITE)
-		if(changedTheme == BLACK)
+		activityWindow.navigationBarColor = getColor(R.color.black)
+		activityWindow.statusBarColor = getColor(R.color.light_grey)
+		val changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
+		if(!changedTheme)
 		{
-			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+			settingsViewModel.postValue(this, false)
 		}
-		else if(changedTheme == WHITE)
-		{
-			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-		}
+		else
+			settingsViewModel.postValue(this, true)
+
+		@Suppress("DEPRECATION")
 		this.lifecycleScope.launch {
 			detailsViewModel.observeState().collectLatest {
 				if(it)
@@ -213,7 +210,7 @@ class MainActivity: AppCompatActivity()
 				PicturesScreen(navController)
 			}
 			composable(BottomNavItem.Settings.route) {
-				SettingsScreen()
+				SettingsScreen(settingsViewModel)
 			}
 			composable(Screen.Details.route) {
 				DetailsScreen(navController, detailsViewModel)
@@ -224,8 +221,6 @@ class MainActivity: AppCompatActivity()
 	companion object
 	{
 		const val PICTURES = "PICTURES_SHARED_PREFS"
-		const val WHITE = "white"
-		const val BLACK = "black"
 		const val PIC = "PIC"
 		const val THEME_SP_KEY = "THEME_SHARED_PREFS"
 	}

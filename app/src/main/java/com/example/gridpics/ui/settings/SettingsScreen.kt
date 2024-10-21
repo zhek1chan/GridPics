@@ -1,10 +1,6 @@
 package com.example.gridpics.ui.settings
 
 import android.content.Context
-import android.content.Context.MODE_PRIVATE
-import android.content.res.Configuration
-import android.util.Log
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,45 +25,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.example.gridpics.R
-import com.example.gridpics.ui.activity.MainActivity.Companion.BLACK
-import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SP_KEY
-import com.example.gridpics.ui.activity.MainActivity.Companion.WHITE
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen()
+fun SettingsScreen(vm: SettingsViewModel)
 {
-	val changedTheme = LocalContext.current.getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getString(THEME_SP_KEY, WHITE)
-	Log.d("Saved theme is now", "Theme now is $changedTheme")
-	SettingsCompose(changedTheme!!)
+	SettingsCompose(vm)
 }
 
-private fun changeTheme(context: Context)
+private fun changeTheme(context: Context, vm: SettingsViewModel)
 {
-	val darkMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-	val isDarkModeOn = darkMode == Configuration.UI_MODE_NIGHT_YES
-	val sharedPreferences = context.getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE)
-	val editor = sharedPreferences.edit()
-	val whiteOrBlack: String
-	if(isDarkModeOn)
-	{
-		whiteOrBlack = WHITE
-		editor.putString(THEME_SP_KEY, whiteOrBlack)
-		editor.apply()
-		AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-	}
-	else
-	{
-		whiteOrBlack = BLACK
-		editor.putString(THEME_SP_KEY, whiteOrBlack)
-		editor.apply()
-		AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-	}
-	Log.d("Saved theme", "saved $whiteOrBlack theme")
+	vm.changeTheme(context)
 }
 
 @Composable
-fun SettingsCompose(changedTheme: String)
+fun SettingsCompose(vm: SettingsViewModel)
 {
 	ComposeTheme {
 		var checkedState by remember { mutableStateOf(false) }
@@ -112,13 +87,18 @@ fun SettingsCompose(changedTheme: String)
 							.weight(1f)
 							.fillMaxWidth()
 					)
+					val scope = rememberCoroutineScope()
+					scope.launch {
+						vm.observeTheme().collectLatest {
+							checkedState = it
+						}
+					}
 					val context = LocalContext.current
-					val check = changedTheme.contains(BLACK)
 					GradientSwitch(
-						checked = check,
+						checked = checkedState,
 						onCheckedChange = {
 							checkedState = it
-							changeTheme(context)
+							changeTheme(context, vm)
 						})
 				}
 			}
