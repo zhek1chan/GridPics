@@ -60,7 +60,7 @@ class MainActivity: AppCompatActivity()
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
 		enableEdgeToEdge(
-			statusBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black)),
+			statusBarStyle = SystemBarStyle.light(getColor(R.color.white), getColor(R.color.black)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
 		)
 		val changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
