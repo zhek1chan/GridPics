@@ -187,7 +187,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 {
 	Log.d("PicturesScreen", "From cache? ${!s.isNullOrEmpty()}")
 	Log.d("We got:", "$s")
-	if(s == null)
+	if(s.isNullOrEmpty())
 	{
 		val value by vm.observeState().observeAsState()
 		when(value)
@@ -244,8 +244,12 @@ fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 	ComposeTheme {
 		var openAddDialog by remember { mutableStateOf(false) }
 		val editMessage = remember { mutableStateOf("") }
-		var string = s.toString()
-
+		var string = if (s.isNullOrEmpty()) {
+			""
+		} else
+		{
+			s
+		}
 		Scaffold(
 			topBar = {
 				TopAppBar(modifier = Modifier
@@ -273,7 +277,7 @@ fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 							{
 								string += "\n${editMessage.value}"
 								openAddDialog = false
-								Log.d("WHAT I WROTE:", string)
+								Log.d("WHAT I WROTE:", string.toString())
 							},
 							onDismiss = { openAddDialog = false }
 						)
