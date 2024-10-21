@@ -1,10 +1,6 @@
 package com.example.gridpics.ui.activity
 
-import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.view.WindowInsets.Type.statusBars
-import android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -33,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -71,41 +69,18 @@ class MainActivity: AppCompatActivity()
 		}
 		else
 			settingsViewModel.postValue(this, true)
-
-		@Suppress("DEPRECATION")
+		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		this.lifecycleScope.launch {
 			detailsViewModel.observeState().collectLatest {
 				if(it)
 				{
-					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-					{
-						activityWindow.insetsController?.hide(statusBars())
-					}
-					else
-					{
-						activityWindow.setFlags(
-							FLAG_FULLSCREEN,
-							FLAG_FULLSCREEN
-						)
-					}
-					activityWindow.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
-					activityWindow.decorView.systemUiVisibility =
-						View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-							View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+					controller.hide(WindowInsetsCompat.Type.statusBars())
+					controller.hide(WindowInsetsCompat.Type.navigationBars())
 				}
 				else
 				{
-					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-					{
-						activityWindow.insetsController?.show(statusBars())
-					}
-					else
-					{
-						activityWindow.clearFlags(FLAG_FULLSCREEN)
-					}
-					activityWindow.decorView.systemUiVisibility =
-						View.SYSTEM_UI_FLAG_VISIBLE or
-							View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+					controller.show(WindowInsetsCompat.Type.statusBars())
+					controller.show(WindowInsetsCompat.Type.navigationBars())
 				}
 			}
 		}
