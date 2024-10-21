@@ -1,10 +1,6 @@
 package com.example.gridpics.ui.activity
 
-import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.view.WindowInsets.Type.statusBars
-import android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -33,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
@@ -72,20 +69,18 @@ class MainActivity: AppCompatActivity()
 		}
 		else
 			settingsViewModel.postValue(this, true)
-
-
-		val controller = window.insetsController
+		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		this.lifecycleScope.launch {
 			detailsViewModel.observeState().collectLatest {
 				if(it)
 				{
-					controller?.hide(WindowInsetsCompat.Type.statusBars())
-					controller?.hide(WindowInsetsCompat.Type.navigationBars())
+					controller.hide(WindowInsetsCompat.Type.statusBars())
+					controller.hide(WindowInsetsCompat.Type.navigationBars())
 				}
 				else
 				{
-					controller?.show(WindowInsetsCompat.Type.statusBars())
-					controller?.show(WindowInsetsCompat.Type.navigationBars())
+					controller.show(WindowInsetsCompat.Type.statusBars())
+					controller.show(WindowInsetsCompat.Type.navigationBars())
 				}
 			}
 		}
