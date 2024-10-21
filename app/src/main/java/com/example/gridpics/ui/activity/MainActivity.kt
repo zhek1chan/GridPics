@@ -73,7 +73,7 @@ class MainActivity: AppCompatActivity()
 			settingsViewModel.postValue(this, true)
 		}
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
-		this.lifecycleScope.launch {
+		lifecycleScope.launch {
 			detailsViewModel.observeState().collectLatest {
 				if(it)
 				{

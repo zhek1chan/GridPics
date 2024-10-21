@@ -1,5 +1,6 @@
 package com.example.gridpics.ui.settings
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,6 +41,7 @@ private fun changeTheme(context: Context, vm: SettingsViewModel)
 	vm.changeTheme(context)
 }
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun SettingsCompose(vm: SettingsViewModel)
 {
