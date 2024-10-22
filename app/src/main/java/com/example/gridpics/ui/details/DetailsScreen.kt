@@ -61,7 +61,11 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.ContextCompat.startActivity
 import androidx.navigation.NavController
+import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
@@ -169,9 +173,17 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				!openAlertDialog.value ->
 				{
 					val zoom = rememberZoomState()
-					Image(painter = rememberAsyncImagePainter(list[page], contentScale = ContentScale.Crop, onError = {
-						openAlertDialog.value = true
-					}, onSuccess = { openAlertDialog.value = false }), contentDescription = null, modifier = Modifier
+					val imgRequest = ImageRequest.Builder(LocalContext.current)
+						.data(list[page])
+						.networkCachePolicy(CachePolicy.DISABLED)
+						.build()
+					AsyncImage(model = imgRequest , "",
+						contentScale = ContentScale.Crop,
+						onError = {
+							openAlertDialog.value = true
+						},
+						onSuccess = { openAlertDialog.value = false },
+						modifier = Modifier
 						.fillMaxSize()
 						.padding(0.dp, 30.dp, 0.dp, 0.dp)
 						.zoomable(zoom, enableOneFingerZoom = false, onTap = {

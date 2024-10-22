@@ -254,7 +254,8 @@ class MainActivity: AppCompatActivity()
 		intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
 		val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 		val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-			.setSmallIcon(R.drawable.ic_notifications_black_24dp)
+			.setSmallIcon(R.mipmap.ic_launcher)
+			.setColor(getColor(R.color.green))
 			.setContentTitle("GridPics")
 			.setContentText("Вы видите это уведомление, потому что приложение активно")
 			.setPriority(NotificationCompat.PRIORITY_LOW)
@@ -278,6 +279,7 @@ class MainActivity: AppCompatActivity()
 		}
 		super.onStop()
 	}
+
 	override fun onDestroy()
 	{
 		cancelAllNotifications()
