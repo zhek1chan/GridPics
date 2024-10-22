@@ -1,5 +1,11 @@
 package com.example.gridpics.ui.activity
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -29,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.core.app.NotificationCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -59,6 +66,8 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
+		createNotificationChannel()
+		showNotification()
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.light(getColor(R.color.white), getColor(R.color.black)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
@@ -194,6 +203,36 @@ class MainActivity: AppCompatActivity()
 				DetailsScreen(navController, detailsViewModel)
 			}
 		}
+	}
+
+	private fun createNotificationChannel()
+	{
+		val name = "My Notification Channel"
+		val description = "Channel for my notification"
+		// Создаем канал уведомлений (для Android O и выше)
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+		{
+			val importance = NotificationManager.IMPORTANCE_LOW
+			val channel = NotificationChannel("my_channel_id", name, importance)
+			channel.description = description
+			val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+			notificationManager.createNotificationChannel(channel)
+		}
+	}
+
+	private fun showNotification()
+	{
+		val intent = Intent(this, MainActivity::class.java)
+		intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+		val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+		val builder = NotificationCompat.Builder(this, "my_channel_id")
+			.setSmallIcon(R.drawable.ic_notifications_black_24dp)
+			.setContentTitle("Мое уведомление")
+			.setContentText("Это постоянное уведомление")
+			.setPriority(NotificationCompat.PRIORITY_LOW)
+			.setContentIntent(pendingIntent)
+		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+		notificationManager.notify(1, builder.build())
 	}
 
 	companion object

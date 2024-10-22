@@ -64,6 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.SubcomposeAsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
@@ -90,7 +92,7 @@ fun PicturesScreen(navController: NavController)
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
+fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, cachePolicy: CachePolicy)
 {
 	ComposeTheme {
 		val context = LocalContext.current
@@ -99,7 +101,13 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 		var img by remember { mutableStateOf(item) }
 		val openAlertDialog = remember { mutableStateOf(false) }
 		val errorMessage = remember { mutableStateOf("") }
-		SubcomposeAsyncImage(model = item, contentDescription = null, modifier = Modifier
+		val requestBuilder = ImageRequest.Builder(context)
+			.data(img)
+			.networkCachePolicy(cachePolicy)
+			.diskCacheKey(img)
+			.build()
+		Log.d("watafuck", requestBuilder.toString())
+		SubcomposeAsyncImage(model = requestBuilder, contentDescription = null, modifier = Modifier
 			.clickable {
 				if(!isError)
 				{
@@ -198,7 +206,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					.fillMaxSize()
 					.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
-						ItemNewsCard(it, nv, vm)
+						ItemNewsCard(it, nv, vm, cachePolicy = CachePolicy.ENABLED)
 					}
 				}
 			}
@@ -227,7 +235,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
-				ItemNewsCard(it, nv, vm)
+				ItemNewsCard(it, nv, vm, cachePolicy = CachePolicy.DISABLED)
 			}
 		}
 	}
