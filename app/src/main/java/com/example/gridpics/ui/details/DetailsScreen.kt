@@ -173,6 +173,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						openAlertDialog.value = true
 					}, onSuccess = { openAlertDialog.value = false }), contentDescription = null, modifier = Modifier
 						.fillMaxSize()
+						.padding(0.dp, 30.dp, 0.dp, 0.dp)
 						.zoomable(zoom, enableOneFingerZoom = false, onTap = {
 							vm.changeState()
 							isVisible.value = !isVisible.value
