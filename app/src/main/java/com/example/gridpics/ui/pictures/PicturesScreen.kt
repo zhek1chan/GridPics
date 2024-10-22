@@ -192,7 +192,12 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 {
 	Log.d("PicturesScreen", "From cache? ${!s.isNullOrEmpty()}")
 	Log.d("We got:", "$s")
-	if(s.isNullOrEmpty())
+	var string by remember { mutableStateOf("") }
+	if(s != null)
+	{
+		string = s
+	}
+	if(string.isEmpty())
 	{
 		val value by vm.observeState().observeAsState()
 		when(value)
@@ -209,6 +214,9 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 						ItemNewsCard(it, nv, vm, cachePolicy = CachePolicy.ENABLED)
 					}
 				}
+				string = (value as PictureState.SearchIsOk).data
+				Log.d("okey1", string)
+				vm.postState(string)
 			}
 			PictureState.ConnectionError ->
 			{
@@ -221,13 +229,28 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				}
 			}
 			PictureState.NothingFound -> Unit
+			is PictureState.Loaded -> {
+				saveToSharedPrefs(LocalContext.current, string)
+				val items = (value as PictureState.Loaded).data.split("\n")
+				Log.d("item", items.toString())
+				LazyVerticalGrid(
+					modifier = Modifier
+						.fillMaxSize()
+						.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+					Log.d("PicturesFragment", "$items")
+					items(items) {
+						Log.d("okey2", string)
+						ItemNewsCard(it, nv, vm, cachePolicy = CachePolicy.DISABLED)
+					}
+				}
+			}
 			null -> Unit
 		}
 	}
 	else
 	{
-		saveToSharedPrefs(LocalContext.current, s)
-		val items = remember { s.split("\n") }
+		saveToSharedPrefs(LocalContext.current, string)
+		val items = remember { string.split("\n") }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			modifier = Modifier
@@ -235,6 +258,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
+				Log.d("okey3", string)
 				ItemNewsCard(it, nv, vm, cachePolicy = CachePolicy.DISABLED)
 			}
 		}

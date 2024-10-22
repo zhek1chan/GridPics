@@ -225,14 +225,29 @@ class MainActivity: AppCompatActivity()
 		val intent = Intent(this, MainActivity::class.java)
 		intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
 		val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-		val builder = NotificationCompat.Builder(this, "my_channel_id")
+		val builder = NotificationCompat.Builder(this, CHANNEL_ID)
 			.setSmallIcon(R.drawable.ic_notifications_black_24dp)
-			.setContentTitle("Мое уведомление")
-			.setContentText("Это постоянное уведомление")
+			.setContentTitle("GridPics")
+			.setContentText("Вы видите это уведомление, потому что приложение активно")
 			.setPriority(NotificationCompat.PRIORITY_LOW)
 			.setContentIntent(pendingIntent)
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.notify(1, builder.build())
+	}
+
+	override fun onDestroy()
+	{
+		cancelAllNotifications()
+		super.onDestroy()
+	}
+
+	private fun cancelAllNotifications() {
+		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+		notificationManager.cancelAll()
+		// Или, если вы хотите отменить только для конкретного канала:
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			notificationManager.cancel(CHANNEL_ID, 0) // Отменяет все уведомления для указанного канала
+		}
 	}
 
 	companion object
@@ -240,5 +255,6 @@ class MainActivity: AppCompatActivity()
 		const val PICTURES = "PICTURES_SHARED_PREFS"
 		const val PIC = "PIC"
 		const val THEME_SP_KEY = "THEME_SHARED_PREFS"
+		const val CHANNEL_ID = "GRID_PICS_CHANEL_ID"
 	}
 }

@@ -36,6 +36,11 @@ class PicturesViewModel(
 		}
 	}
 
+	fun postState(s: String)
+	{
+		stateLiveData.postValue(PictureState.Loaded(s))
+	}
+
 	fun resume()
 	{
 		isPaused = true
