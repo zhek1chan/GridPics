@@ -150,7 +150,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 					{
 						context.getString(R.string.link_is_not_valid)
 					}
-					Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+					Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
 						Text(text = stringResource(R.string.error_ocurred_loading_img), modifier = Modifier.padding(5.dp), color = MaterialTheme.colorScheme.onPrimary)
 						Text(text = errorMessage, modifier = Modifier.padding(10.dp), color = MaterialTheme.colorScheme.onPrimary)
 						if(errorMessage != context.getString(R.string.link_is_not_valid))
