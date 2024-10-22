@@ -61,20 +61,24 @@ class App: Application(), KoinComponent, ImageLoaderFactory
 	override fun newImageLoader(): ImageLoader
 	{
 		return ImageLoader(this).newBuilder()
-			.memoryCachePolicy(CachePolicy.ENABLED)
 			.respectCacheHeaders(false)
+			.memoryCachePolicy(CachePolicy.ENABLED)
 			.memoryCache {
 				MemoryCache.Builder(this)
+					.maxSizePercent(0.1)
 					.strongReferencesEnabled(true)
 					.build()
 			}
 			.diskCachePolicy(CachePolicy.ENABLED)
 			.diskCache {
 				DiskCache.Builder()
+					.maxSizePercent(0.03)
 					.directory(cacheDir)
 					.build()
 			}
+			.networkCachePolicy(CachePolicy.WRITE_ONLY)
 			.logger(DebugLogger())
+			.placeholder(R.drawable.ic_error_image)
 			.build()
 	}
 

@@ -8,6 +8,7 @@ import android.content.res.Resources
 import android.util.Log
 import android.widget.Toast
 import android.widget.Toast.LENGTH_LONG
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -69,6 +70,7 @@ import androidx.navigation.NavController
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
@@ -97,7 +99,7 @@ fun PicturesScreen(navController: NavController)
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, cachePolicy: CachePolicy)
+fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, b: Boolean)
 {
 	ComposeTheme {
 		val context = LocalContext.current
@@ -106,15 +108,16 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, cachePo
 		var img by remember { mutableStateOf(item) }
 		val openAlertDialog = remember { mutableStateOf(false) }
 		val errorMessage = remember { mutableStateOf("") }
-		val requestBuilder = ImageRequest.Builder(context)
-			.data(img)
+		var cachePolicy = CachePolicy.ENABLED
+		if (!b) {
+			cachePolicy = CachePolicy.DISABLED
+		}
+		val imgRequest = ImageRequest.Builder(LocalContext.current)
+			.data(item)
+			.placeholder(R.drawable.ic_error_image)
 			.networkCachePolicy(cachePolicy)
-			.diskCacheKey(img)
-			.memoryCachePolicy(CachePolicy.ENABLED)
-			.memoryCacheKey(img)
 			.build()
-		Log.d("watafuck", requestBuilder.toString())
-		SubcomposeAsyncImage(model = requestBuilder, contentDescription = null, modifier = Modifier
+		SubcomposeAsyncImage(model = imgRequest, contentDescription = null, modifier = Modifier
 			.clickable {
 				if(!isError)
 				{
@@ -134,11 +137,14 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, cachePo
 				isError = false
 			},
 			loading = {
-				Column(Modifier.size(70.dp), verticalArrangement = Arrangement.Center,
-					horizontalAlignment = Alignment.CenterHorizontally) {
-					CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier
-						.size(70.dp)
-						.progressSemantics())
+				AnimatedVisibility(b)
+				{
+					Column(Modifier.size(70.dp), verticalArrangement = Arrangement.Center,
+						horizontalAlignment = Alignment.CenterHorizontally) {
+						CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier
+							.size(70.dp)
+							.progressSemantics())
+					}
 				}
 			},
 			error = { Image(painterResource(R.drawable.ic_error_image), contentDescription = null, modifier = Modifier.size(100.dp)) },
@@ -194,6 +200,7 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, cachePo
 	}
 }
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 {
@@ -217,10 +224,10 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan()),
 					state = gridState) {
 					items(list) {
-						ItemNewsCard(it, nv, vm, cachePolicy = CachePolicy.ENABLED)
+						ItemNewsCard(it, nv, vm, true)
 					}
 				}
-				Toast.makeText(LocalContext.current, "Идёт сохранение", LENGTH_LONG)
+				Toast.makeText(LocalContext.current, "Идёт сохранение", LENGTH_LONG).show()
 				scope.launch {
 					delay(4500)
 					Log.d("We got:", "state change")
@@ -240,6 +247,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			PictureState.NothingFound -> Unit
 			is PictureState.Loaded ->
 			{
+				Toast.makeText(LocalContext.current, "Изображения успешно сохранены", LENGTH_LONG).show()
 				Log.d("WHAT IS HAPPENING", "LOADED")
 				val string = (value as PictureState.Loaded).data
 				saveToSharedPrefs(LocalContext.current, string)
@@ -253,7 +261,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					Log.d("PicturesFragment", "$items")
 					items(items) {
 						Log.d("okey2", string)
-						ItemNewsCard(it, nv, vm, cachePolicy = CachePolicy.DISABLED)
+						ItemNewsCard(it, nv, vm, false)
 					}
 				}
 			}
@@ -273,7 +281,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			Log.d("PicturesFragment", "$items")
 			items(items) {
 				Log.d("okey3", s)
-				ItemNewsCard(it, nv, vm, cachePolicy = CachePolicy.DISABLED)
+				ItemNewsCard(it, nv, vm, false)
 			}
 		}
 	}
