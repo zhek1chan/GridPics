@@ -58,6 +58,7 @@ import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -271,7 +272,10 @@ class MainActivity: AppCompatActivity()
 
 	override fun onStop()
 	{
-		cancelAllNotifications()
+		this.lifecycleScope.launch {
+			delay(2000)
+			cancelAllNotifications()
+		}
 		super.onStop()
 	}
 	override fun onDestroy()
