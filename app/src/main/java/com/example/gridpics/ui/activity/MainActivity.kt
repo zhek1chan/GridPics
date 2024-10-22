@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -72,6 +73,7 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
+
 		if(Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU)
 		{
 			if(
@@ -92,7 +94,9 @@ class MainActivity: AppCompatActivity()
 					100
 				)
 			}
-		} else {
+		}
+		else
+		{
 			createNotificationChannel()
 			showNotification()
 		}
@@ -124,6 +128,18 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
+		val isConditionAlreadySet = checkSomeCondition()
+		val callback = object: OnBackPressedCallback(
+			isConditionAlreadySet
+		)
+		{
+			override fun handleOnBackPressed()
+			{
+				cancelAllNotifications()
+				onDestroy()
+			}
+		}
+		onBackPressedDispatcher.addCallback(this, callback)
 
 		setContent {
 			ComposeTheme {
@@ -144,6 +160,8 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 	}
+
+	private fun checkSomeCondition() = false
 
 	@Composable
 	fun BottomNavigationBar(
@@ -280,11 +298,12 @@ class MainActivity: AppCompatActivity()
 		super.onStop()
 	}
 
-
-
 	override fun onDestroy()
 	{
-		cancelAllNotifications()
+		this.lifecycleScope.launch {
+			delay(2000)
+			cancelAllNotifications()
+		}
 		super.onDestroy()
 	}
 
