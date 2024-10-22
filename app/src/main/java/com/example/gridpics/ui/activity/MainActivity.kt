@@ -66,8 +66,8 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
-		createNotificationChannel()
-		showNotification()
+		//createNotificationChannel()
+		//showNotification()
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.light(getColor(R.color.white), getColor(R.color.black)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
@@ -237,7 +237,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
-		cancelAllNotifications()
+		//cancelAllNotifications()
 		super.onDestroy()
 	}
 
