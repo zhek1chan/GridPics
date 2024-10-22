@@ -260,7 +260,6 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					state = gridState) {
 					Log.d("PicturesFragment", "$items")
 					items(items) {
-						Log.d("okey2", string)
 						ItemNewsCard(it, nv, vm, false)
 					}
 				}
@@ -280,7 +279,6 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
-				Log.d("okey3", s)
 				ItemNewsCard(it, nv, vm, false)
 			}
 		}

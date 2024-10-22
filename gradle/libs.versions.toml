@@ -34,6 +34,7 @@ constraintlayoutCompose = "1.0.1"
 library = "1.0.0"
 runtimeLivedata = "1.7.1"
 databindingCompiler = "8.7.0"
+workRuntimeKtx = "2.9.1"
 zoomable = "1.6.2"
 zoomimageViewCoil = "1.0.0"
 foundationLayoutAndroid = "1.7.2"
@@ -54,6 +55,7 @@ androidx-navigation-compose-v240alpha01 = { module = "androidx.navigation:naviga
 androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "pagingCompose" }
 androidx-ui = { module = "androidx.compose.ui:ui", version.ref = "uiGraphicsAndroid" }
 androidx-ui-v100 = { module = "androidx.compose.ui:ui", version.ref = "ui" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilCompose" }

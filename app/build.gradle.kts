@@ -130,4 +130,6 @@ dependencies {
     //control sysUi
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.activity.ktx)
+    //notifications
+    implementation (libs.androidx.work.runtime.ktx)
 }

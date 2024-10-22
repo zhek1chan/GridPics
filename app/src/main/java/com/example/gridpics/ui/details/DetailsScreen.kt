@@ -52,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -168,7 +169,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				!openAlertDialog.value ->
 				{
 					val zoom = rememberZoomState()
-					Image(painter = rememberAsyncImagePainter(list[page], onError = {
+					Image(painter = rememberAsyncImagePainter(list[page], contentScale = ContentScale.Crop, onError = {
 						openAlertDialog.value = true
 					}, onSuccess = { openAlertDialog.value = false }), contentDescription = null, modifier = Modifier
 						.fillMaxSize()

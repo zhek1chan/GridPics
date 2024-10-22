@@ -1,11 +1,14 @@
 package com.example.gridpics.ui.activity
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -35,7 +38,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -66,8 +71,30 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
-		//createNotificationChannel()
-		//showNotification()
+		if(Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU)
+		{
+			if(
+				ContextCompat.checkSelfPermission(
+					this,
+					Manifest.permission.POST_NOTIFICATIONS,
+				) == PackageManager.PERMISSION_GRANTED
+			)
+			{
+				createNotificationChannel()
+				showNotification()
+			}
+			else
+			{
+				ActivityCompat.requestPermissions(
+					this,
+					arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+					100
+				)
+			}
+		} else {
+			createNotificationChannel()
+			showNotification()
+		}
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.light(getColor(R.color.white), getColor(R.color.black)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
@@ -210,10 +237,10 @@ class MainActivity: AppCompatActivity()
 		val name = "My Notification Channel"
 		val description = "Channel for my notification"
 		// Создаем канал уведомлений (для Android O и выше)
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+		if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
 		{
-			val importance = NotificationManager.IMPORTANCE_LOW
-			val channel = NotificationChannel("my_channel_id", name, importance)
+			val importance = NotificationManager.IMPORTANCE_HIGH
+			val channel = NotificationChannel(CHANNEL_ID, name, importance)
 			channel.description = description
 			val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 			notificationManager.createNotificationChannel(channel)
@@ -224,7 +251,7 @@ class MainActivity: AppCompatActivity()
 	{
 		val intent = Intent(this, MainActivity::class.java)
 		intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-		val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+		val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 		val builder = NotificationCompat.Builder(this, CHANNEL_ID)
 			.setSmallIcon(R.drawable.ic_notifications_black_24dp)
 			.setContentTitle("GridPics")
@@ -235,17 +262,31 @@ class MainActivity: AppCompatActivity()
 		notificationManager.notify(1, builder.build())
 	}
 
+	override fun onRestart()
+	{
+		showNotification()
+		createNotificationChannel()
+		super.onRestart()
+	}
+
+	override fun onStop()
+	{
+		cancelAllNotifications()
+		super.onStop()
+	}
 	override fun onDestroy()
 	{
-		//cancelAllNotifications()
+		cancelAllNotifications()
 		super.onDestroy()
 	}
 
-	private fun cancelAllNotifications() {
+	private fun cancelAllNotifications()
+	{
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.cancelAll()
 		// Или, если вы хотите отменить только для конкретного канала:
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+		if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
+		{
 			notificationManager.cancel(CHANNEL_ID, 0) // Отменяет все уведомления для указанного канала
 		}
 	}
