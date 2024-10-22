@@ -7,6 +7,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.util.Log
 import android.widget.Toast
+import android.widget.Toast.LENGTH_LONG
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,6 +50,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +74,8 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -105,6 +110,8 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, cachePo
 			.data(img)
 			.networkCachePolicy(cachePolicy)
 			.diskCacheKey(img)
+			.memoryCachePolicy(CachePolicy.ENABLED)
+			.memoryCacheKey(img)
 			.build()
 		Log.d("watafuck", requestBuilder.toString())
 		SubcomposeAsyncImage(model = requestBuilder, contentDescription = null, modifier = Modifier
@@ -162,7 +169,7 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, cachePo
 							openAlertDialog.value = false
 							println("Confirmation registered")
 							vm.getPics()
-							Toast.makeText(context, context.getString(R.string.reload), Toast.LENGTH_LONG).show()
+							Toast.makeText(context, context.getString(R.string.reload), LENGTH_LONG).show()
 						},
 						dialogTitle = stringResource(R.string.error_ocurred_loading_img),
 						dialogText = "Ошибка: " + errorMessage.value + "\nПопробовать загрузить повторно?",
@@ -192,31 +199,33 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 {
 	Log.d("PicturesScreen", "From cache? ${!s.isNullOrEmpty()}")
 	Log.d("We got:", "$s")
-	var string by remember { mutableStateOf("") }
-	if(s != null)
-	{
-		string = s
-	}
-	if(string.isEmpty())
+	val gridState = rememberLazyGridState()
+	if(s.isNullOrEmpty())
 	{
 		val value by vm.observeState().observeAsState()
 		when(value)
 		{
 			is PictureState.SearchIsOk ->
 			{
-				saveToSharedPrefs(LocalContext.current, (value as PictureState.SearchIsOk).data)
-				val list = (value as PictureState.SearchIsOk).data.split("\n")
-
+				Log.d("WHAT IS HAPPENING", "LOADING")
+				val scope = rememberCoroutineScope()
+				val string = (value as PictureState.SearchIsOk).data
+				val list = string.split("\n")
+				saveToSharedPrefs(LocalContext.current, string)
 				LazyVerticalGrid(modifier = Modifier
 					.fillMaxSize()
-					.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+					.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan()),
+					state = gridState) {
 					items(list) {
 						ItemNewsCard(it, nv, vm, cachePolicy = CachePolicy.ENABLED)
 					}
 				}
-				string = (value as PictureState.SearchIsOk).data
-				Log.d("okey1", string)
-				vm.postState(string)
+				Toast.makeText(LocalContext.current, "Идёт сохранение", LENGTH_LONG)
+				scope.launch {
+					delay(4500)
+					Log.d("We got:", "state change")
+					vm.postState(string)
+				}
 			}
 			PictureState.ConnectionError ->
 			{
@@ -229,14 +238,18 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				}
 			}
 			PictureState.NothingFound -> Unit
-			is PictureState.Loaded -> {
+			is PictureState.Loaded ->
+			{
+				Log.d("WHAT IS HAPPENING", "LOADED")
+				val string = (value as PictureState.Loaded).data
 				saveToSharedPrefs(LocalContext.current, string)
-				val items = (value as PictureState.Loaded).data.split("\n")
+				val items = string.split("\n")
 				Log.d("item", items.toString())
 				LazyVerticalGrid(
 					modifier = Modifier
 						.fillMaxSize()
-						.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+						.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan()),
+					state = gridState) {
 					Log.d("PicturesFragment", "$items")
 					items(items) {
 						Log.d("okey2", string)
@@ -249,8 +262,9 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 	}
 	else
 	{
-		saveToSharedPrefs(LocalContext.current, string)
-		val items = remember { string.split("\n") }
+		Log.d("WHAT IS HAPPENING", "LOAD FROM SP")
+		saveToSharedPrefs(LocalContext.current, s)
+		val items = remember { s.split("\n") }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			modifier = Modifier
@@ -258,7 +272,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
-				Log.d("okey3", string)
+				Log.d("okey3", s)
 				ItemNewsCard(it, nv, vm, cachePolicy = CachePolicy.DISABLED)
 			}
 		}

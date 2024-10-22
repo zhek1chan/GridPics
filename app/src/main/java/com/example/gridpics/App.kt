@@ -62,16 +62,15 @@ class App: Application(), KoinComponent, ImageLoaderFactory
 	{
 		return ImageLoader(this).newBuilder()
 			.memoryCachePolicy(CachePolicy.ENABLED)
+			.respectCacheHeaders(false)
 			.memoryCache {
 				MemoryCache.Builder(this)
-					.maxSizePercent(0.1)
 					.strongReferencesEnabled(true)
 					.build()
 			}
 			.diskCachePolicy(CachePolicy.ENABLED)
 			.diskCache {
 				DiskCache.Builder()
-					.maxSizePercent(0.03)
 					.directory(cacheDir)
 					.build()
 			}
