@@ -10,7 +10,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -62,10 +61,8 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.ContextCompat.startActivity
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
-import coil3.compose.rememberAsyncImagePainter
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
-import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
@@ -125,6 +122,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			padding = PaddingValues(0.dp, 0.dp, 0.dp, 24.dp)
 		}
 		Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
+		var policy = CachePolicy.DISABLED
 		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier = Modifier
 			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
 			.padding(padding), contentPadding = PaddingValues(0.dp, 30.dp)) { page ->
@@ -161,9 +159,8 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						if(errorMessage != context.getString(R.string.link_is_not_valid))
 						{
 							Button(onClick = {
-								scope.launch {
-									pagerState.scrollToPage(page)
-								}
+								policy = CachePolicy.ENABLED
+								openAlertDialog.value = false
 							}, colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
 								Text(stringResource(R.string.update_loading))
 							}
@@ -175,21 +172,21 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 					val zoom = rememberZoomState()
 					val imgRequest = ImageRequest.Builder(LocalContext.current)
 						.data(list[page])
-						.networkCachePolicy(CachePolicy.DISABLED)
+						.networkCachePolicy(policy)
 						.build()
-					AsyncImage(model = imgRequest , "",
+					AsyncImage(model = imgRequest, "",
 						contentScale = ContentScale.Crop,
 						onError = {
 							openAlertDialog.value = true
 						},
 						onSuccess = { openAlertDialog.value = false },
 						modifier = Modifier
-						.fillMaxSize()
-						.padding(0.dp, 30.dp, 0.dp, 0.dp)
-						.zoomable(zoom, enableOneFingerZoom = false, onTap = {
-							vm.changeState()
-							isVisible.value = !isVisible.value
-						}))
+							.fillMaxSize()
+							.padding(0.dp, 30.dp, 0.dp, 0.dp)
+							.zoomable(zoom, enableOneFingerZoom = false, onTap = {
+								vm.changeState()
+								isVisible.value = !isVisible.value
+							}))
 					if(zoom.scale < 0.9)
 					{
 						scope.launch {
@@ -206,6 +203,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 							}
 						}
 					}
+					policy = CachePolicy.DISABLED
 				}
 			}
 		}
