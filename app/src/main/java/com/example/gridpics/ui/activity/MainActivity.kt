@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -72,6 +73,7 @@ class MainActivity: AppCompatActivity()
 	{
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
+		Log.d("NOW", "onCREATE")
 		super.onCreate(savedInstanceState)
 
 		if(Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU)
@@ -135,11 +137,11 @@ class MainActivity: AppCompatActivity()
 		{
 			override fun handleOnBackPressed()
 			{
-				cancelAllNotifications()
-				onDestroy()
+				this.handleOnBackPressed()
 			}
 		}
 		onBackPressedDispatcher.addCallback(this, callback)
+
 
 		setContent {
 			ComposeTheme {
@@ -258,7 +260,7 @@ class MainActivity: AppCompatActivity()
 		// Создаем канал уведомлений (для Android O и выше)
 		if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
 		{
-			val importance = NotificationManager.IMPORTANCE_HIGH
+			val importance = NotificationManager.IMPORTANCE_LOW
 			val channel = NotificationChannel(CHANNEL_ID, name, importance)
 			channel.description = description
 			val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -284,6 +286,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
+		Log.d("NOW", "onRESTART")
 		showNotification()
 		createNotificationChannel()
 		super.onRestart()
@@ -291,8 +294,9 @@ class MainActivity: AppCompatActivity()
 
 	override fun onStop()
 	{
+		Log.d("NOW", "onSTOP")
 		this.lifecycleScope.launch {
-			delay(2000)
+			delay(3000)
 			cancelAllNotifications()
 		}
 		super.onStop()
@@ -300,22 +304,25 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
+		Log.d("NOW", "onDESTROY")
+		cancelAllNotifications()
+		super.onDestroy()
+	}
+
+	override fun onPause()
+	{
+		Log.d("NOW", "onPause")
 		this.lifecycleScope.launch {
-			delay(2000)
+			delay(3000)
 			cancelAllNotifications()
 		}
-		super.onDestroy()
+		super.onPause()
 	}
 
 	private fun cancelAllNotifications()
 	{
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.cancelAll()
-		// Или, если вы хотите отменить только для конкретного канала:
-		if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
-		{
-			notificationManager.cancel(CHANNEL_ID, 0) // Отменяет все уведомления для указанного канала
-		}
 	}
 
 	companion object
