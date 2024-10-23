@@ -10,7 +10,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -73,7 +72,6 @@ class MainActivity: AppCompatActivity()
 	{
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
-		Log.d("NOW", "onCREATE")
 		super.onCreate(savedInstanceState)
 
 		if(Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU)
@@ -286,7 +284,6 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
-		Log.d("NOW", "onRESTART")
 		showNotification()
 		createNotificationChannel()
 		super.onRestart()
@@ -294,7 +291,6 @@ class MainActivity: AppCompatActivity()
 
 	override fun onStop()
 	{
-		Log.d("NOW", "onSTOP")
 		this.lifecycleScope.launch {
 			delay(3000)
 			cancelAllNotifications()
@@ -304,14 +300,12 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
-		Log.d("NOW", "onDESTROY")
 		cancelAllNotifications()
 		super.onDestroy()
 	}
 
 	override fun onPause()
 	{
-		Log.d("NOW", "onPause")
 		this.lifecycleScope.launch {
 			delay(3000)
 			cancelAllNotifications()
