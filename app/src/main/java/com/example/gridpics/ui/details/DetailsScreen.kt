@@ -169,7 +169,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						.networkCachePolicy(policy)
 						.build()
 					AsyncImage(model = imgRequest, "",
-						contentScale = ContentScale.Crop,
+						contentScale = ContentScale.FillWidth,
 						onError = {
 							openAlertDialog.value = true
 						},

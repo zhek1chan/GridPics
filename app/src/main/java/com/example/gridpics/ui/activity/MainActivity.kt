@@ -74,7 +74,7 @@ class MainActivity: AppCompatActivity()
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
 
-		if(Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU)
+		/*if(Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU)
 		{
 			if(
 				ContextCompat.checkSelfPermission(
@@ -99,7 +99,7 @@ class MainActivity: AppCompatActivity()
 		{
 			createNotificationChannel()
 			showNotification()
-		}
+		}*/
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.light(getColor(R.color.white), getColor(R.color.black)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
@@ -284,32 +284,32 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
-		showNotification()
+		//showNotification()
 		createNotificationChannel()
 		super.onRestart()
 	}
 
 	override fun onStop()
 	{
-		this.lifecycleScope.launch {
+		/*this.lifecycleScope.launch {
 			delay(3000)
 			cancelAllNotifications()
-		}
+		}*/
 		super.onStop()
 	}
 
 	override fun onDestroy()
 	{
-		cancelAllNotifications()
+		//cancelAllNotifications()
 		super.onDestroy()
 	}
 
 	override fun onPause()
 	{
-		this.lifecycleScope.launch {
+		/*this.lifecycleScope.launch {
 			delay(3000)
 			cancelAllNotifications()
-		}
+		}*/
 		super.onPause()
 	}
 
