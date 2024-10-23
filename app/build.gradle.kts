@@ -132,4 +132,8 @@ dependencies {
     implementation(libs.androidx.activity.ktx)
     //notifications
     implementation (libs.androidx.work.runtime.ktx)
+    //GLide compose
+    implementation (libs.compose)
+    //accompanist
+    implementation(libs.accompanist.drawablepainter)
 }

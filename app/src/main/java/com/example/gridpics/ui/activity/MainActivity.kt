@@ -52,6 +52,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
+import com.example.gridpics.GlideApp
 import com.example.gridpics.R
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
@@ -140,6 +143,10 @@ class MainActivity: AppCompatActivity()
 		}
 		onBackPressedDispatcher.addCallback(this, callback)
 
+		GlideApp
+			.with(applicationContext)
+			.applyDefaultRequestOptions(
+				RequestOptions().diskCacheStrategy(DiskCacheStrategy.ALL) )
 
 		setContent {
 			ComposeTheme {

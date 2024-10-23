@@ -5,10 +5,10 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.graphics.drawable.Drawable
 import android.util.Log
 import android.widget.Toast
 import android.widget.Toast.LENGTH_LONG
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -36,7 +35,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -61,21 +59,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil3.compose.SubcomposeAsyncImage
-import coil3.request.CachePolicy
-import coil3.request.ImageRequest
-import coil3.request.placeholder
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
+import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -99,66 +98,69 @@ fun PicturesScreen(navController: NavController)
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, b: Boolean)
+fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boolean, i: Int)
 {
 	ComposeTheme {
 		val context = LocalContext.current
 		var isClicked by remember { mutableStateOf(false) }
 		var isError by remember { mutableStateOf(false) }
-		var img by remember { mutableStateOf(item) }
 		val openAlertDialog = remember { mutableStateOf(false) }
-		val errorMessage = remember { mutableStateOf("") }
-		var cachePolicy = CachePolicy.ENABLED
-		if (!b) {
-			cachePolicy = CachePolicy.DISABLED
-		}
-		val imgRequest = ImageRequest.Builder(LocalContext.current)
-			.data(item)
-			.placeholder(R.drawable.ic_error_image)
-			.networkCachePolicy(cachePolicy)
-			.build()
-		SubcomposeAsyncImage(model = imgRequest, contentDescription = null, modifier = Modifier
-			.clickable {
-				if(!isError)
+		var pic by remember { mutableStateOf<Drawable?>(null) }
+		Glide.with(context)
+			.load(image)
+			.placeholder(R.drawable.loading)
+			.onlyRetrieveFromCache(b)
+			.diskCacheStrategy(DiskCacheStrategy.ALL)
+			.apply(RequestOptions().centerCrop())
+			.error(R.drawable.error)
+			.into(object: CustomTarget<Drawable>()
+			{
+				override fun onResourceReady(
+					resource: Drawable,
+					transition: Transition<in Drawable>?,
+				)
 				{
-					isClicked = true
-					openAlertDialog.value = false
+					isError = false
+					pic = resource
+					Log.d("WTF", "onLoadReady")
 				}
-				else
+
+				override fun onLoadCleared(placeholder: Drawable?)
 				{
-					openAlertDialog.value = true
+					Log.d("WTF", "onloadCLEARED")
+					isError = true
 				}
-			}
-			.padding(10.dp)
-			.size(100.dp)
-			.clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop,
-			onSuccess = {
-				img = item
-				isError = false
-			},
-			loading = {
-				AnimatedVisibility(b)
+
+				override fun onLoadFailed(errorDrawable: Drawable?)
 				{
-					Column(Modifier.size(70.dp), verticalArrangement = Arrangement.Center,
-						horizontalAlignment = Alignment.CenterHorizontally) {
-						CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier
-							.size(70.dp)
-							.progressSemantics())
+					pic = errorDrawable
+					isError = true
+				}
+			})
+		if(pic != null)
+		{
+			Image(painter = rememberDrawablePainter(pic), "", modifier = Modifier
+				.clickable {
+					if(!isError)
+					{
+						isClicked = true
+						openAlertDialog.value = false
+					}
+					else
+					{
+						openAlertDialog.value = true
 					}
 				}
-			},
-			error = { Image(painterResource(R.drawable.ic_error_image), contentDescription = null, modifier = Modifier.size(100.dp)) },
-			onError = {
-				isError = true
-				errorMessage.value = it.result.throwable.message.toString()
-			}
-		)
+				.padding(10.dp)
+				.size(100.dp)
+				.clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
+		}
 		if(isClicked)
 		{
 			isClicked = false
 			val sharedPreferences = context.getSharedPreferences(PIC, MODE_PRIVATE)
 			val editor = sharedPreferences.edit()
-			editor.putString(PIC, item)
+			editor.putInt(PIC, i)
 			editor.apply()
 			nc.navigate("details_screen")
 		}
@@ -166,7 +168,7 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, b: Bool
 		{
 			openAlertDialog.value ->
 			{
-				if(isValidUrl(item))
+				if(isValidUrl(image))
 				{
 					AlertDialogMain(
 						onDismissRequest = { openAlertDialog.value = false },
@@ -178,7 +180,7 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, b: Bool
 							Toast.makeText(context, context.getString(R.string.reload), LENGTH_LONG).show()
 						},
 						dialogTitle = stringResource(R.string.error_ocurred_loading_img),
-						dialogText = "Ошибка: " + errorMessage.value + "\nПопробовать загрузить повторно?",
+						dialogText = "Произошла ошибка сервера" + "\nПопробовать загрузить повторно?",
 						icon = Icons.Default.Warning,
 						stringResource(R.string.cancel),
 						stringResource(R.string.confirm)
@@ -207,6 +209,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 	Log.d("PicturesScreen", "From cache? ${!s.isNullOrEmpty()}")
 	Log.d("We got:", "$s")
 	val gridState = rememberLazyGridState()
+	val context = LocalContext.current
 	if(s.isNullOrEmpty())
 	{
 		val value by vm.observeState().observeAsState()
@@ -217,17 +220,20 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				Log.d("WHAT IS HAPPENING", "LOADING")
 				val scope = rememberCoroutineScope()
 				val string = (value as PictureState.SearchIsOk).data
-				val list = string.split("\n")
-				saveToSharedPrefs(LocalContext.current, string)
-				LazyVerticalGrid(modifier = Modifier
-					.fillMaxSize()
-					.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan()),
+				saveToSharedPrefs(context, string)
+				val items = string.split("\n")
+				Log.d("item", items.toString())
+				LazyVerticalGrid(
+					modifier = Modifier
+						.fillMaxSize()
+						.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan()),
 					state = gridState) {
-					items(list) {
-						ItemNewsCard(it, nv, vm, true)
+					Log.d("PicturesFragment", "$items")
+					items(items) {
+						ItemNewsCard(it, nv, vm, false, items.indexOf(it))
 					}
 				}
-				Toast.makeText(LocalContext.current, "Идёт сохранение", LENGTH_LONG).show()
+				Toast.makeText(context, "Идёт сохранение", LENGTH_LONG).show()
 				scope.launch {
 					delay(4500)
 					Log.d("We got:", "state change")
@@ -247,10 +253,10 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			PictureState.NothingFound -> Unit
 			is PictureState.Loaded ->
 			{
-				Toast.makeText(LocalContext.current, "Изображения успешно сохранены", LENGTH_LONG).show()
+				Toast.makeText(context, "Изображения успешно сохранены", LENGTH_LONG).show()
 				Log.d("WHAT IS HAPPENING", "LOADED")
 				val string = (value as PictureState.Loaded).data
-				saveToSharedPrefs(LocalContext.current, string)
+				saveToSharedPrefs(context, string)
 				val items = string.split("\n")
 				Log.d("item", items.toString())
 				LazyVerticalGrid(
@@ -260,7 +266,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					state = gridState) {
 					Log.d("PicturesFragment", "$items")
 					items(items) {
-						ItemNewsCard(it, nv, vm, false)
+						ItemNewsCard(it, nv, vm, true, items.indexOf(it))
 					}
 				}
 			}
@@ -270,16 +276,17 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 	else
 	{
 		Log.d("WHAT IS HAPPENING", "LOAD FROM SP")
-		saveToSharedPrefs(LocalContext.current, s)
+		saveToSharedPrefs(context, s)
 		val items = remember { s.split("\n") }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			modifier = Modifier
 				.fillMaxSize()
-				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan()),
+			state = gridState) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
-				ItemNewsCard(it, nv, vm, false)
+				ItemNewsCard(it, nv, vm, true, items.indexOf(it))
 			}
 		}
 	}
@@ -508,3 +515,5 @@ private fun calculateGridSpan(): Int
 		((width / density).toInt() / 110)
 	}
 }
+
+

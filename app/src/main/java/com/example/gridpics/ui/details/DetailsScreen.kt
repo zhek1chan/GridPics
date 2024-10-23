@@ -4,11 +4,13 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -59,14 +61,17 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.ContextCompat.startActivity
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
-import coil3.request.CachePolicy
-import coil3.request.ImageRequest
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.themes.ComposeTheme
+import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
@@ -93,14 +98,16 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 	}
 	val context = LocalContext.current
 	val pictures = context.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, stringResource(R.string.null_null))
-	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, stringResource(R.string.null_null))
-	if(pic != null)
+	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE).getInt(PIC, 0)
+	if(pictures != null)
 	{
-		ShowDetails(pic, viewModel, nc, pictures!!)
+		val list = pictures.split("\n")
+		val chosenPic = list[pic]
+		ShowDetails(chosenPic, viewModel, nc, pictures)
 	}
 }
 
-@SuppressLint("CoroutineCreationDuringComposition")
+@SuppressLint("CoroutineCreationDuringComposition", "UseCompatLoadingForDrawables")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: String)
@@ -116,11 +123,11 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val startPage = list.indexOf(img)
 		val currentPage = remember { mutableIntStateOf(startPage) }
 		Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
-		var policy = CachePolicy.DISABLED
 		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier = Modifier
 			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility),
 			contentPadding = PaddingValues(0.dp, 30.dp)) { page ->
 			val scope = rememberCoroutineScope()
+			var diskOnly by remember { mutableStateOf(true) }
 			if(firstPage.value)
 			{
 				scope.launch {
@@ -129,7 +136,6 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			}
 			firstPage.value = false
 			currentPage.intValue = page
-			Log.d("DetailsFragment", "current page ${currentPage.intValue}")
 			val openAlertDialog = remember { mutableStateOf(false) }
 			if(!isValidUrl(list[currentPage.intValue]))
 			{
@@ -153,7 +159,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						if(errorMessage != context.getString(R.string.link_is_not_valid))
 						{
 							Button(onClick = {
-								policy = CachePolicy.ENABLED
+								diskOnly = false
 								openAlertDialog.value = false
 							}, colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
 								Text(stringResource(R.string.update_loading))
@@ -164,16 +170,39 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				!openAlertDialog.value ->
 				{
 					val zoom = rememberZoomState()
-					val imgRequest = ImageRequest.Builder(LocalContext.current)
-						.data(list[page])
-						.networkCachePolicy(policy)
-						.build()
-					AsyncImage(model = imgRequest, "",
+					var pic by remember { mutableStateOf<Drawable?>(null) }
+					Glide.with(context)
+						.load(list[page])
+						.placeholder(R.drawable.loading)
+						.onlyRetrieveFromCache(diskOnly)
+						.diskCacheStrategy(DiskCacheStrategy.ALL)
+						.apply(RequestOptions().centerCrop())
+						.error(R.drawable.error)
+						.into(object: CustomTarget<Drawable>()
+						{
+							override fun onResourceReady(
+								resource: Drawable,
+								transition: Transition<in Drawable>?,
+							)
+							{
+								pic = resource
+								openAlertDialog.value = false
+								Log.d("WTF", "onLoadReady")
+							}
+
+							override fun onLoadCleared(placeholder: Drawable?)
+							{
+								Log.d("WTF", "onloadCLEARED")
+							}
+
+							override fun onLoadFailed(errorDrawable: Drawable?)
+							{
+								pic = errorDrawable
+								openAlertDialog.value = true
+							}
+						})
+					Image(painter = rememberDrawablePainter(pic), "",
 						contentScale = ContentScale.FillWidth,
-						onError = {
-							openAlertDialog.value = true
-						},
-						onSuccess = { openAlertDialog.value = false },
 						modifier = Modifier
 							.fillMaxSize()
 							.padding(0.dp, 30.dp, 0.dp, 0.dp)
@@ -197,7 +226,6 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 							}
 						}
 					}
-					policy = CachePolicy.DISABLED
 				}
 			}
 		}

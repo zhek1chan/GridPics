@@ -72,11 +72,11 @@ class App: Application(), KoinComponent, ImageLoaderFactory
 			.diskCachePolicy(CachePolicy.ENABLED)
 			.diskCache {
 				DiskCache.Builder()
-					.maxSizePercent(0.03)
+					.maxSizePercent(0.10)
 					.directory(cacheDir)
 					.build()
 			}
-			.networkCachePolicy(CachePolicy.WRITE_ONLY)
+			.networkCachePolicy(CachePolicy.ENABLED)
 			.logger(DebugLogger())
 			.placeholder(R.drawable.ic_error_image)
 			.build()
