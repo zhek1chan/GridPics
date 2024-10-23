@@ -104,7 +104,7 @@ class MainActivity: AppCompatActivity()
 			showNotification()
 		}*/
 		enableEdgeToEdge(
-			statusBarStyle = SystemBarStyle.light(getColor(R.color.white), getColor(R.color.black)),
+			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
 		)
 		val changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
