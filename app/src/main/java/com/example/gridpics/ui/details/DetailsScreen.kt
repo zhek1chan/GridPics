@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -116,16 +115,11 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val firstPage = remember { mutableStateOf(true) }
 		val startPage = list.indexOf(img)
 		val currentPage = remember { mutableIntStateOf(startPage) }
-		var padding = remember { PaddingValues(0.dp, 0.dp, 0.dp, 0.dp) }
-		if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && !isVisible.value)
-		{
-			padding = PaddingValues(0.dp, 0.dp, 0.dp, 24.dp)
-		}
 		Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
 		var policy = CachePolicy.DISABLED
 		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier = Modifier
-			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
-			.padding(padding), contentPadding = PaddingValues(0.dp, 30.dp)) { page ->
+			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility),
+			contentPadding = PaddingValues(0.dp, 30.dp)) { page ->
 			val scope = rememberCoroutineScope()
 			if(firstPage.value)
 			{
