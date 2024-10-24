@@ -12,13 +12,13 @@ import android.widget.Toast.LENGTH_LONG
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -49,7 +48,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,8 +73,6 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -98,13 +94,12 @@ fun PicturesScreen(navController: NavController)
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boolean, i: Int)
+fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boolean, i: Int, context: Context)
 {
 	ComposeTheme {
-		val context = LocalContext.current
 		var isClicked by remember { mutableStateOf(false) }
 		var isError by remember { mutableStateOf(false) }
-		val openAlertDialog = remember { mutableStateOf(false) }
+		var openAlertDialog by remember { mutableStateOf(false) }
 		var pic by remember { mutableStateOf<Drawable?>(null) }
 		Glide.with(context)
 			.load(image)
@@ -131,14 +126,6 @@ fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boo
 					isError = true
 				}
 
-				override fun onLoadStarted(placeholder: Drawable?)
-				{
-					if(!b)
-					{
-						pic = placeholder
-					}
-				}
-
 				override fun onLoadFailed(errorDrawable: Drawable?)
 				{
 					pic = errorDrawable
@@ -152,11 +139,11 @@ fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boo
 					if(!isError)
 					{
 						isClicked = true
-						openAlertDialog.value = false
+						openAlertDialog = false
 					}
 					else
 					{
-						openAlertDialog.value = true
+						openAlertDialog = true
 					}
 				}
 				.padding(10.dp)
@@ -174,15 +161,15 @@ fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boo
 		}
 		when
 		{
-			openAlertDialog.value ->
+			openAlertDialog ->
 			{
 				if(isValidUrl(image))
 				{
 					AlertDialogMain(
-						onDismissRequest = { openAlertDialog.value = false },
+						onDismissRequest = { openAlertDialog = false },
 						onConfirmation =
 						{
-							openAlertDialog.value = false
+							openAlertDialog = false
 							println("Confirmation registered")
 							vm.getPics()
 							Toast.makeText(context, context.getString(R.string.reload), LENGTH_LONG).show()
@@ -197,10 +184,10 @@ fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boo
 				else
 				{
 					AlertDialogSecondary(
-						onDismissRequest = { openAlertDialog.value = false },
+						onDismissRequest = { openAlertDialog = false },
 						onConfirmation =
 						{
-							openAlertDialog.value = false
+							openAlertDialog = false
 							println("Confirmation registered")
 						},
 						dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
@@ -210,14 +197,14 @@ fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boo
 	}
 }
 
-@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 {
+	Log.d("WHAT IS HAPPENING", "ShowList start")
 	Log.d("PicturesScreen", "From cache? ${!s.isNullOrEmpty()}")
 	Log.d("We got:", "$s")
-	val gridState = rememberLazyGridState()
 	val context = LocalContext.current
+	val gridsNum = calculateGridSpan(context)
 	if(s.isNullOrEmpty())
 	{
 		val value by vm.observeState().observeAsState()
@@ -226,26 +213,18 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			is PictureState.SearchIsOk ->
 			{
 				Log.d("WHAT IS HAPPENING", "LOADING")
-				val scope = rememberCoroutineScope()
 				val string = (value as PictureState.SearchIsOk).data
 				saveToSharedPrefs(context, string)
-				val items = string.split("\n")
+				val items by remember { mutableStateOf(string.split("\n")) }
 				Log.d("item", items.toString())
 				LazyVerticalGrid(
 					modifier = Modifier
-						.fillMaxSize()
-						.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan()),
-					state = gridState) {
+						.padding(0.dp, 45.dp, 0.dp, 0.dp),
+					columns = GridCells.Fixed(count = gridsNum)) {
 					Log.d("PicturesFragment", "$items")
 					items(items) {
-						ItemNewsCard(it, nv, vm, false, items.indexOf(it))
+						ItemNewsCard(it, nv, vm, false, items.indexOf(it), context)
 					}
-				}
-				Toast.makeText(context, "Идёт сохранение", LENGTH_LONG).show()
-				scope.launch {
-					delay(4500)
-					Log.d("We got:", "state change")
-					vm.postState(string)
 				}
 			}
 			PictureState.ConnectionError ->
@@ -261,22 +240,21 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			PictureState.NothingFound -> Unit
 			is PictureState.Loaded ->
 			{
-				Toast.makeText(context, "Изображения успешно сохранены", LENGTH_LONG).show()
+				/*Toast.makeText(context, "Изображения успешно сохранены", LENGTH_LONG).show()
 				Log.d("WHAT IS HAPPENING", "LOADED")
 				val string = (value as PictureState.Loaded).data
-				saveToSharedPrefs(context, string)
-				val items = string.split("\n")
+				val items by remember { mutableStateOf(string.split("\n")) }
 				Log.d("item", items.toString())
 				LazyVerticalGrid(
 					modifier = Modifier
-						.fillMaxSize()
-						.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan()),
-					state = gridState) {
+						.padding(0.dp, 45.dp, 0.dp, 0.dp),
+					columns = GridCells.Fixed(count = gridsNum),
+					flingBehavior = ScrollableDefaults.flingBehavior()) {
 					Log.d("PicturesFragment", "$items")
 					items(items) {
-						ItemNewsCard(it, nv, vm, true, items.indexOf(it))
+						ItemNewsCard(it, nv, vm, false, items.indexOf(it), context)
 					}
-				}
+				}*/
 			}
 			null -> Unit
 		}
@@ -285,16 +263,16 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 	{
 		Log.d("WHAT IS HAPPENING", "LOAD FROM SP")
 		saveToSharedPrefs(context, s)
-		val items = remember { s.split("\n") }
+		val items by remember { mutableStateOf(s.split("\n")) }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			modifier = Modifier
-				.fillMaxSize()
-				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan()),
-			state = gridState) {
+				.padding(0.dp, 45.dp, 0.dp, 0.dp),
+			columns = GridCells.Fixed(count = gridsNum),
+			flingBehavior = ScrollableDefaults.flingBehavior()) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
-				ItemNewsCard(it, nv, vm, true, items.indexOf(it))
+				ItemNewsCard(it, nv, vm, true, items.indexOf(it), context)
 			}
 		}
 	}
@@ -507,13 +485,12 @@ fun isValidUrl(url: String): Boolean
 	return urlPattern.matches(url)
 }
 
-@Composable
-private fun calculateGridSpan(): Int
+private fun calculateGridSpan(context: Context): Int
 {
 	Log.d("HomeFragment", "Calculate span started")
 	val width = Resources.getSystem().displayMetrics.widthPixels
-	val orientation = LocalContext.current.resources.configuration.orientation
-	val density = LocalContext.current.resources.displayMetrics.density
+	val orientation = context.resources.configuration.orientation
+	val density = context.resources.displayMetrics.density
 	return if(orientation == Configuration.ORIENTATION_PORTRAIT)
 	{
 		((width / density).toInt() / 110)
