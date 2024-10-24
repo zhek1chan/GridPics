@@ -98,7 +98,7 @@ fun PicturesScreen(navController: NavController)
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boolean, i: Int)
+fun itemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boolean, i: Int): Int
 {
 	ComposeTheme {
 		val context = LocalContext.current
@@ -129,6 +129,14 @@ fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boo
 				{
 					Log.d("WTF", "onloadCLEARED")
 					isError = true
+				}
+
+				override fun onLoadStarted(placeholder: Drawable?)
+				{
+					if(!b)
+					{
+						pic = placeholder
+					}
 				}
 
 				override fun onLoadFailed(errorDrawable: Drawable?)
@@ -200,6 +208,7 @@ fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boo
 			}
 		}
 	}
+	return 1
 }
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -230,10 +239,11 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					state = gridState) {
 					Log.d("PicturesFragment", "$items")
 					items(items) {
-						ItemNewsCard(it, nv, vm, false, items.indexOf(it))
+						itemNewsCard(it, nv, vm, false, items.indexOf(it))
 					}
 				}
 				Toast.makeText(context, "Идёт сохранение", LENGTH_LONG).show()
+
 				scope.launch {
 					delay(4500)
 					Log.d("We got:", "state change")
@@ -266,7 +276,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					state = gridState) {
 					Log.d("PicturesFragment", "$items")
 					items(items) {
-						ItemNewsCard(it, nv, vm, true, items.indexOf(it))
+						itemNewsCard(it, nv, vm, true, items.indexOf(it))
 					}
 				}
 			}
@@ -286,7 +296,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			state = gridState) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
-				ItemNewsCard(it, nv, vm, true, items.indexOf(it))
+				itemNewsCard(it, nv, vm, true, items.indexOf(it))
 			}
 		}
 	}
