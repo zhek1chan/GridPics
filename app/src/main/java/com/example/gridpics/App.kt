@@ -3,12 +3,6 @@ package com.example.gridpics
 import android.app.Application
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
-import coil.ImageLoader
-import coil.ImageLoaderFactory
-import coil.disk.DiskCache
-import coil.memory.MemoryCache
-import coil.request.CachePolicy
-import coil.util.DebugLogger
 import com.example.gridpics.data.network.getUnsafeOkHttpClient
 import com.example.gridpics.di.dataModule
 import com.example.gridpics.di.domainModule
@@ -19,7 +13,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.context.startKoin
 
-class App: Application(), KoinComponent, ImageLoaderFactory
+class App: Application(), KoinComponent
 {
 	override fun onCreate()
 	{
@@ -56,24 +50,6 @@ class App: Application(), KoinComponent, ImageLoaderFactory
 		{
 			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 		}
-	}
-
-	override fun newImageLoader(): ImageLoader
-	{
-		return ImageLoader(this).newBuilder()
-			.respectCacheHeaders(false)
-			.memoryCachePolicy(CachePolicy.ENABLED)
-			.diskCachePolicy(CachePolicy.ENABLED)
-			.diskCache {
-				DiskCache.Builder()
-					.maxSizePercent(0.10)
-					.directory(cacheDir)
-					.build()
-			}
-			.networkCachePolicy(CachePolicy.DISABLED)
-			.logger(DebugLogger())
-			.placeholder(R.drawable.ic_error_image)
-			.build()
 	}
 
 	companion object

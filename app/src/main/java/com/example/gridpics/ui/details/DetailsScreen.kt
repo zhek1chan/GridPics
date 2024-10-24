@@ -4,13 +4,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
-import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -61,17 +59,14 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.ContextCompat.startActivity
 import androidx.navigation.NavController
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.themes.ComposeTheme
-import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
@@ -98,13 +93,9 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 	}
 	val context = LocalContext.current
 	val pictures = context.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, stringResource(R.string.null_null))
-	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE).getInt(PIC, 0)
-	if(pictures != null)
-	{
-		val list = pictures.split("\n")
-		val chosenPic = list[pic]
-		ShowDetails(chosenPic, viewModel, nc, pictures)
-	}
+	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, stringResource(R.string.null_null))
+	if(pic != null)
+		ShowDetails(pic, viewModel, nc, pictures!!)
 }
 
 @SuppressLint("CoroutineCreationDuringComposition", "UseCompatLoadingForDrawables")
@@ -170,39 +161,16 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				!openAlertDialog.value ->
 				{
 					val zoom = rememberZoomState()
-					var pic by remember { mutableStateOf<Drawable?>(null) }
-					Glide.with(context)
-						.load(list[page])
-						.placeholder(R.drawable.loading)
-						.onlyRetrieveFromCache(diskOnly)
-						.diskCacheStrategy(DiskCacheStrategy.ALL)
-						.apply(RequestOptions().centerCrop())
-						.error(R.drawable.error)
-						.into(object: CustomTarget<Drawable>()
-						{
-							override fun onResourceReady(
-								resource: Drawable,
-								transition: Transition<in Drawable>?,
-							)
-							{
-								pic = resource
-								openAlertDialog.value = false
-								Log.d("WTF", "onLoadReady")
-							}
-
-							override fun onLoadCleared(placeholder: Drawable?)
-							{
-								Log.d("WTF", "onloadCLEARED")
-							}
-
-							override fun onLoadFailed(errorDrawable: Drawable?)
-							{
-								pic = errorDrawable
-								openAlertDialog.value = true
-							}
-						})
-					Image(painter = rememberDrawablePainter(pic), "",
+					val imgRequest = ImageRequest.Builder(LocalContext.current)
+						.data(list[page])
+						.networkCachePolicy(CachePolicy.DISABLED)
+						.build()
+					AsyncImage(model = imgRequest, "",
 						contentScale = ContentScale.FillWidth,
+						onError = {
+							openAlertDialog.value = true
+						},
+						onSuccess = { openAlertDialog.value = false },
 						modifier = Modifier
 							.fillMaxSize()
 							.padding(0.dp, 30.dp, 0.dp, 0.dp)
@@ -232,8 +200,8 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 			Box(modifier = Modifier
 				.fillMaxWidth()
-				.height(60.dp)
-				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)) {
+				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
+				.height(60.dp)) {
 				var navBack by remember { mutableStateOf(false) }
 				ConstraintLayout(modifier = Modifier.clickable(onClick = {
 					navBack = true
