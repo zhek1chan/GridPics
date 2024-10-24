@@ -5,20 +5,18 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
 import android.content.res.Resources
-import android.graphics.drawable.Drawable
 import android.util.Log
 import android.widget.Toast
-import android.widget.Toast.LENGTH_LONG
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,15 +25,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -55,31 +57,29 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
+import coil3.compose.SubcomposeAsyncImage
+import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
-import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun PicturesScreen(navController: NavController)
 {
 	val viewModel = koinViewModel<PicturesViewModel>()
-	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
+	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, "")
 	if(!txt.isNullOrEmpty())
 	{
 		ShowPictures(txt, viewModel, navController)
@@ -94,88 +94,82 @@ fun PicturesScreen(navController: NavController)
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boolean, i: Int, context: Context)
+fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, fromCache: Boolean)
 {
 	ComposeTheme {
+		val context = LocalContext.current
 		var isClicked by remember { mutableStateOf(false) }
 		var isError by remember { mutableStateOf(false) }
-		var openAlertDialog by remember { mutableStateOf(false) }
-		var pic by remember { mutableStateOf<Drawable?>(null) }
-		Glide.with(context)
-			.load(image)
-			.placeholder(R.drawable.loading)
-			.onlyRetrieveFromCache(b)
-			.diskCacheStrategy(DiskCacheStrategy.ALL)
-			.apply(RequestOptions().centerCrop())
-			.error(R.drawable.error)
-			.into(object: CustomTarget<Drawable>()
-			{
-				override fun onResourceReady(
-					resource: Drawable,
-					transition: Transition<in Drawable>?,
-				)
-				{
-					isError = false
-					pic = resource
-					Log.d("WTF", "onLoadReady")
-				}
-
-				override fun onLoadCleared(placeholder: Drawable?)
-				{
-					Log.d("WTF", "onloadCLEARED")
-					isError = true
-				}
-
-				override fun onLoadFailed(errorDrawable: Drawable?)
-				{
-					pic = errorDrawable
-					isError = true
-				}
-			})
-		if(pic != null)
+		var img by remember { mutableStateOf(item) }
+		val openAlertDialog = remember { mutableStateOf(false) }
+		val errorMessage = remember { mutableStateOf("") }
+		if(!fromCache)
 		{
-			Image(painter = rememberDrawablePainter(pic), "", modifier = Modifier
-				.clickable {
-					if(!isError)
-					{
-						isClicked = true
-						openAlertDialog = false
-					}
-					else
-					{
-						openAlertDialog = true
-					}
-				}
-				.padding(10.dp)
-				.size(100.dp)
-				.clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
+			context.imageLoader.defaults.networkCachePolicy.readEnabled
+			context.imageLoader.defaults.networkCachePolicy.writeEnabled
 		}
+		else
+		{
+		}
+		SubcomposeAsyncImage(model = item, contentDescription = null, modifier = Modifier
+			.clickable {
+				if(!isError)
+				{
+					isClicked = true
+					openAlertDialog.value = false
+				}
+				else
+				{
+					openAlertDialog.value = true
+				}
+			}
+			.padding(10.dp)
+			.size(100.dp)
+			.clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop,
+			onSuccess = {
+				img = item
+				isError = false
+			},
+			loading = {
+				Column(Modifier.size(70.dp), verticalArrangement = Arrangement.Center,
+					horizontalAlignment = Alignment.CenterHorizontally) {
+					CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier
+						.size(70.dp)
+						.progressSemantics())
+				}
+			},
+			error = { Image(painterResource(R.drawable.ic_error_image), contentDescription = null, modifier = Modifier.size(100.dp)) },
+			onError = {
+				isError = true
+				errorMessage.value = it.result.throwable.message.toString()
+			}
+		)
 		if(isClicked)
 		{
 			isClicked = false
 			val sharedPreferences = context.getSharedPreferences(PIC, MODE_PRIVATE)
 			val editor = sharedPreferences.edit()
-			editor.putInt(PIC, i)
+			editor.putString(PIC, item)
 			editor.apply()
 			nc.navigate("details_screen")
 		}
 		when
 		{
-			openAlertDialog ->
+			openAlertDialog.value ->
 			{
-				if(isValidUrl(image))
+				if(isValidUrl(item))
 				{
 					AlertDialogMain(
-						onDismissRequest = { openAlertDialog = false },
+						onDismissRequest = { openAlertDialog.value = false },
 						onConfirmation =
 						{
-							openAlertDialog = false
+							openAlertDialog.value = false
 							println("Confirmation registered")
 							vm.getPics()
-							Toast.makeText(context, context.getString(R.string.reload), LENGTH_LONG).show()
+							Toast.makeText(context, context.getString(R.string.reload), Toast.LENGTH_LONG).show()
 						},
 						dialogTitle = stringResource(R.string.error_ocurred_loading_img),
-						dialogText = "Произошла ошибка сервера" + "\nПопробовать загрузить повторно?",
+						dialogText = "Ошибка: " + errorMessage.value + "\nПопробовать загрузить повторно?",
 						icon = Icons.Default.Warning,
 						stringResource(R.string.cancel),
 						stringResource(R.string.confirm)
@@ -184,10 +178,10 @@ fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boo
 				else
 				{
 					AlertDialogSecondary(
-						onDismissRequest = { openAlertDialog = false },
+						onDismissRequest = { openAlertDialog.value = false },
 						onConfirmation =
 						{
-							openAlertDialog = false
+							openAlertDialog.value = false
 							println("Confirmation registered")
 						},
 						dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
@@ -200,30 +194,24 @@ fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boo
 @Composable
 fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 {
-	Log.d("WHAT IS HAPPENING", "ShowList start")
 	Log.d("PicturesScreen", "From cache? ${!s.isNullOrEmpty()}")
 	Log.d("We got:", "$s")
-	val context = LocalContext.current
-	val gridsNum = calculateGridSpan(context)
-	if(s.isNullOrEmpty())
+	if(s == "null" || s.isNullOrEmpty())
 	{
 		val value by vm.observeState().observeAsState()
 		when(value)
 		{
 			is PictureState.SearchIsOk ->
 			{
-				Log.d("WHAT IS HAPPENING", "LOADING")
-				val string = (value as PictureState.SearchIsOk).data
-				saveToSharedPrefs(context, string)
-				val items by remember { mutableStateOf(string.split("\n")) }
-				Log.d("item", items.toString())
-				LazyVerticalGrid(
-					modifier = Modifier
-						.padding(0.dp, 45.dp, 0.dp, 0.dp),
-					columns = GridCells.Fixed(count = gridsNum)) {
-					Log.d("PicturesFragment", "$items")
-					items(items) {
-						ItemNewsCard(it, nv, vm, false, items.indexOf(it), context)
+				Log.d("Now state is", "Loading")
+				saveToSharedPrefs(LocalContext.current, (value as PictureState.SearchIsOk).data)
+				val list = (value as PictureState.SearchIsOk).data.split("\n")
+
+				LazyVerticalGrid(modifier = Modifier
+					.fillMaxSize()
+					.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+					items(list) {
+						ItemNewsCard(it, nv, vm, false)
 					}
 				}
 			}
@@ -238,41 +226,27 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				}
 			}
 			PictureState.NothingFound -> Unit
+			null -> Unit
 			is PictureState.Loaded ->
 			{
-				/*Toast.makeText(context, "Изображения успешно сохранены", LENGTH_LONG).show()
-				Log.d("WHAT IS HAPPENING", "LOADED")
-				val string = (value as PictureState.Loaded).data
-				val items by remember { mutableStateOf(string.split("\n")) }
-				Log.d("item", items.toString())
-				LazyVerticalGrid(
-					modifier = Modifier
-						.padding(0.dp, 45.dp, 0.dp, 0.dp),
-					columns = GridCells.Fixed(count = gridsNum),
-					flingBehavior = ScrollableDefaults.flingBehavior()) {
-					Log.d("PicturesFragment", "$items")
-					items(items) {
-						ItemNewsCard(it, nv, vm, false, items.indexOf(it), context)
-					}
-				}*/
+				Log.d("Now state is", "Loaded")
+				TODO()
 			}
-			null -> Unit
 		}
 	}
 	else
 	{
-		Log.d("WHAT IS HAPPENING", "LOAD FROM SP")
-		saveToSharedPrefs(context, s)
-		val items by remember { mutableStateOf(s.split("\n")) }
+		Log.d("Now state is", "Loaded from sp")
+		saveToSharedPrefs(LocalContext.current, s)
+		val items = remember { s.split("\n") }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			modifier = Modifier
-				.padding(0.dp, 45.dp, 0.dp, 0.dp),
-			columns = GridCells.Fixed(count = gridsNum),
-			flingBehavior = ScrollableDefaults.flingBehavior()) {
+				.fillMaxSize()
+				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
-				ItemNewsCard(it, nv, vm, true, items.indexOf(it), context)
+				ItemNewsCard(it, nv, vm, true)
 			}
 		}
 	}
@@ -286,14 +260,8 @@ fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 	ComposeTheme {
 		var openAddDialog by remember { mutableStateOf(false) }
 		val editMessage = remember { mutableStateOf("") }
-		var string = if(s.isNullOrEmpty())
-		{
-			""
-		}
-		else
-		{
-			s
-		}
+		var string = s.toString()
+
 		Scaffold(
 			topBar = {
 				TopAppBar(modifier = Modifier
@@ -301,7 +269,7 @@ fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 					.padding(0.dp, 10.dp, 0.dp, 0.dp), colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary), title = {
 					Row {
 						Text(stringResource(R.string.gridpics))
-						/*IconButton(
+						IconButton(
 							onClick = {
 								openAddDialog = false //TODO
 							},
@@ -309,7 +277,7 @@ fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 								.align(Alignment.CenterVertically)
 						) {
 							Icon(painter = rememberVectorPainter(Icons.Default.Add), contentDescription = "share", tint = MaterialTheme.colorScheme.onPrimary)
-						}*/
+						}
 					}
 				})
 				if(openAddDialog)
@@ -321,6 +289,7 @@ fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 							{
 								string += "\n${editMessage.value}"
 								openAddDialog = false
+								Log.d("WHAT I WROTE:", string)
 							},
 							onDismiss = { openAddDialog = false }
 						)
@@ -485,12 +454,13 @@ fun isValidUrl(url: String): Boolean
 	return urlPattern.matches(url)
 }
 
-private fun calculateGridSpan(context: Context): Int
+@Composable
+private fun calculateGridSpan(): Int
 {
 	Log.d("HomeFragment", "Calculate span started")
 	val width = Resources.getSystem().displayMetrics.widthPixels
-	val orientation = context.resources.configuration.orientation
-	val density = context.resources.displayMetrics.density
+	val orientation = LocalContext.current.resources.configuration.orientation
+	val density = LocalContext.current.resources.displayMetrics.density
 	return if(orientation == Configuration.ORIENTATION_PORTRAIT)
 	{
 		((width / density).toInt() / 110)
@@ -500,5 +470,3 @@ private fun calculateGridSpan(context: Context): Int
 		((width / density).toInt() / 110)
 	}
 }
-
-

@@ -43,6 +43,7 @@ fragmentCompose = "1.8.4"
 toolsCore = "1.0.0-alpha10"
 activityKtx = "1.9.2"
 accompanistSystemuicontroller = "0.36.0"
+volley = "1.2.1"
 
 [libraries]
 accompanist-drawablepainter = { module = "com.google.accompanist:accompanist-drawablepainter", version.ref = "accompanistSystemuicontroller" }
@@ -100,6 +101,7 @@ zoomimage-view-coil = { module = "io.github.panpf.zoomimage:zoomimage-view-coil"
 androidx-foundation-layout-android = { group = "androidx.compose.foundation", name = "foundation-layout-android", version.ref = "foundationLayoutAndroid" }
 androidx-fragment-compose = { group = "androidx.fragment", name = "fragment-compose", version.ref = "fragmentCompose" }
 androidx-tools-core = { group = "androidx.privacysandbox.tools", name = "tools-core", version.ref = "toolsCore" }
+volley = { group = "com.android.volley", name = "volley", version.ref = "volley" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

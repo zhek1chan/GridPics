@@ -63,12 +63,6 @@ class App: Application(), KoinComponent, ImageLoaderFactory
 		return ImageLoader(this).newBuilder()
 			.respectCacheHeaders(false)
 			.memoryCachePolicy(CachePolicy.ENABLED)
-			.memoryCache {
-				MemoryCache.Builder(this)
-					.maxSizePercent(0.1)
-					.strongReferencesEnabled(true)
-					.build()
-			}
 			.diskCachePolicy(CachePolicy.ENABLED)
 			.diskCache {
 				DiskCache.Builder()
@@ -76,7 +70,7 @@ class App: Application(), KoinComponent, ImageLoaderFactory
 					.directory(cacheDir)
 					.build()
 			}
-			.networkCachePolicy(CachePolicy.ENABLED)
+			.networkCachePolicy(CachePolicy.DISABLED)
 			.logger(DebugLogger())
 			.placeholder(R.drawable.ic_error_image)
 			.build()
