@@ -98,7 +98,7 @@ fun PicturesScreen(navController: NavController)
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun itemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boolean, i: Int): Int
+fun ItemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boolean, i: Int)
 {
 	ComposeTheme {
 		val context = LocalContext.current
@@ -208,7 +208,6 @@ fun itemNewsCard(image: String, nc: NavController, vm: PicturesViewModel, b: Boo
 			}
 		}
 	}
-	return 1
 }
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -239,11 +238,10 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					state = gridState) {
 					Log.d("PicturesFragment", "$items")
 					items(items) {
-						itemNewsCard(it, nv, vm, false, items.indexOf(it))
+						ItemNewsCard(it, nv, vm, false, items.indexOf(it))
 					}
 				}
 				Toast.makeText(context, "Идёт сохранение", LENGTH_LONG).show()
-
 				scope.launch {
 					delay(4500)
 					Log.d("We got:", "state change")
@@ -276,7 +274,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					state = gridState) {
 					Log.d("PicturesFragment", "$items")
 					items(items) {
-						itemNewsCard(it, nv, vm, true, items.indexOf(it))
+						ItemNewsCard(it, nv, vm, true, items.indexOf(it))
 					}
 				}
 			}
@@ -296,7 +294,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			state = gridState) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
-				itemNewsCard(it, nv, vm, true, items.indexOf(it))
+				ItemNewsCard(it, nv, vm, true, items.indexOf(it))
 			}
 		}
 	}
