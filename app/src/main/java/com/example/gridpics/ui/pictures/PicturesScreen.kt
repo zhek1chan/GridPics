@@ -82,7 +82,7 @@ import org.koin.androidx.compose.koinViewModel
 fun PicturesScreen(navController: NavController)
 {
 	val viewModel = koinViewModel<PicturesViewModel>()
-	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, "")
+	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 	if(!txt.isNullOrEmpty())
 	{
 		ShowPictures(txt, viewModel, navController)
@@ -227,7 +227,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					}
 				}
 				scope.launch {
-					delay(10000)
+					delay(1000)
 					vm.postState((value as PictureState.SearchIsOk).data)
 				}
 			}
