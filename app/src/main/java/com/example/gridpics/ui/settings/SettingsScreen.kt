@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import coil3.imageLoader
 import com.example.gridpics.R
+import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.themes.ComposeTheme
@@ -149,6 +150,10 @@ fun SettingsCompose(vm: SettingsViewModel)
 							val editor = sharedPreferences.edit()
 							editor.putString(PICTURES, null)
 							editor.apply()
+							val sharedPreferencesCache = context.getSharedPreferences(CACHE, MODE_PRIVATE)
+							val editorCache = sharedPreferencesCache.edit()
+							editorCache.putBoolean(CACHE, true)
+							editorCache.apply()
 							showDialog = false
 							Toast.makeText(context, context.getString(R.string.you_have_cleared_cache), Toast.LENGTH_SHORT).show()
 						},

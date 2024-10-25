@@ -70,6 +70,7 @@ import coil3.request.ImageRequest
 import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
+import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.placeholder.NoInternetScreen
@@ -83,13 +84,24 @@ fun PicturesScreen(navController: NavController)
 {
 	val viewModel = koinViewModel<PicturesViewModel>()
 	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
-	if(!txt.isNullOrEmpty())
+	val clearedCache = LocalContext.current.getSharedPreferences(CACHE, MODE_PRIVATE).getBoolean(CACHE, false)
+
+	if(!txt.isNullOrEmpty() && !clearedCache)
 	{
+		viewModel.newState()
 		ShowPictures(txt, viewModel, navController)
 	}
-	else
+	else if(!clearedCache && txt.isNullOrEmpty())
+	{
+		viewModel.newState()
+		viewModel.resume()
+		viewModel.getPics()
+		ShowPictures(null, viewModel, navController)
+	}
+	else if(clearedCache || txt.isNullOrEmpty())
 	{
 		viewModel.resume()
+		viewModel.newState()
 		viewModel.getPics()
 		ShowPictures(null, viewModel, navController)
 	}
@@ -214,7 +226,8 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 		{
 			is PictureState.SearchIsOk ->
 			{
-				Toast.makeText(LocalContext.current, "Началась загрузка", Toast.LENGTH_LONG).show()
+				val data = (value as PictureState.SearchIsOk).data
+				Toast.makeText(LocalContext.current, "Началась загрузка", Toast.LENGTH_SHORT).show()
 				Log.d("Now state is", "Loading")
 				saveToSharedPrefs(LocalContext.current, (value as PictureState.SearchIsOk).data)
 				val list = (value as PictureState.SearchIsOk).data.split("\n")
@@ -227,8 +240,8 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					}
 				}
 				scope.launch {
-					delay(1000)
-					vm.postState((value as PictureState.SearchIsOk).data)
+					delay(6000)
+					vm.postState(data)
 				}
 			}
 			PictureState.ConnectionError ->
@@ -466,10 +479,15 @@ fun AddDialog(
 private fun saveToSharedPrefs(context: Context, s: String)
 {
 	Log.d("PicturesScreen", "Saved to SP $s")
-	val sharedPreferences = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
+	val sharedPreferencesPictures = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
+	val editorPictures = sharedPreferencesPictures.edit()
+	editorPictures.putString(PICTURES, s)
+	editorPictures.apply()
+	val sharedPreferences = context.getSharedPreferences(CACHE, MODE_PRIVATE)
 	val editor = sharedPreferences.edit()
-	editor.putString(PICTURES, s)
+	editor.putBoolean(CACHE, false)
 	editor.apply()
+
 }
 
 fun isValidUrl(url: String): Boolean

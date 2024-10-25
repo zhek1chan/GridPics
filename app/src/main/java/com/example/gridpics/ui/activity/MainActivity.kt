@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.app.NotificationCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -66,6 +67,7 @@ class MainActivity: AppCompatActivity()
 {
 	private val detailsViewModel by viewModel<DetailsViewModel>()
 	private val settingsViewModel by viewModel<SettingsViewModel>()
+	private var picturesSharedPrefs: String? = null
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		setTheme(R.style.Theme_GridPics)
@@ -137,10 +139,8 @@ class MainActivity: AppCompatActivity()
 		}
 		onBackPressedDispatcher.addCallback(this, callback)
 
-		GlideApp
-			.with(applicationContext)
-			.applyDefaultRequestOptions(
-				RequestOptions().diskCacheStrategy(DiskCacheStrategy.ALL))
+		picturesSharedPrefs = this.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
+
 
 		setContent {
 			ComposeTheme {
@@ -322,6 +322,7 @@ class MainActivity: AppCompatActivity()
 
 	companion object
 	{
+		const val CACHE = "CACHE"
 		const val PICTURES = "PICTURES_SHARED_PREFS"
 		const val PIC = "PIC"
 		const val THEME_SP_KEY = "THEME_SHARED_PREFS"

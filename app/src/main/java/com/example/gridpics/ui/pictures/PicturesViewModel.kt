@@ -41,6 +41,11 @@ class PicturesViewModel(
 		stateLiveData.postValue(PictureState.Loaded(s))
 	}
 
+	fun newState()
+	{
+		stateLiveData.postValue(PictureState.NothingFound)
+	}
+
 	fun resume()
 	{
 		isPaused = true
