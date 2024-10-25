@@ -144,6 +144,7 @@ fun SettingsCompose(vm: SettingsViewModel)
 						onConfirmation = {
 							val imageLoader = context.imageLoader
 							imageLoader.diskCache?.clear()
+							imageLoader.memoryCache?.clear()
 							val sharedPreferences = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
 							val editor = sharedPreferences.edit()
 							editor.putString(PICTURES, null)
