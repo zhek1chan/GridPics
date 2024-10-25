@@ -151,7 +151,6 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, fromCac
 			},
 			onSuccess = {
 				isError = false
-				Log.d("Gamogay", it.painter.intrinsicSize.toString())
 			},
 		)
 		if(isClicked)

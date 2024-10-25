@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -78,7 +77,7 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 	val scope = rememberCoroutineScope()
 	BackHandler {
 		scope.launch {
-			viewModel.observeState().collectLatest {
+			viewModel.observeFlow().collectLatest {
 				if(it)
 				{
 					viewModel.changeState()
@@ -112,11 +111,19 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val context = LocalContext.current
 		val firstPage = remember { mutableStateOf(true) }
 		val startPage = list.indexOf(img)
+		val padding = if(!isVisible.value)
+		{
+			PaddingValues(0.dp)
+		}
+		else
+		{
+			PaddingValues(0.dp, 30.dp)
+		}
 		val currentPage = remember { mutableIntStateOf(startPage) }
 		Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
 		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier = Modifier
-			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility),
-			contentPadding = PaddingValues(0.dp, 30.dp)) { page ->
+			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
+			.padding(padding)) { page ->
 			val scope = rememberCoroutineScope()
 			var diskOnly by remember { mutableStateOf(true) }
 			if(firstPage.value)
@@ -181,7 +188,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 					if(zoom.scale < 0.9)
 					{
 						scope.launch {
-							vm.observeState().collectLatest {
+							vm.observeFlow().collectLatest {
 								if(it)
 								{
 									vm.changeState()
@@ -200,8 +207,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 			Box(modifier = Modifier
 				.fillMaxWidth()
-				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
-				.height(60.dp)) {
+				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)) {
 				var navBack by remember { mutableStateOf(false) }
 				ConstraintLayout(modifier = Modifier.clickable(onClick = {
 					navBack = true
