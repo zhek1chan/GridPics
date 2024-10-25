@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -117,9 +118,13 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		val context = LocalContext.current
 		val firstPage = remember { mutableStateOf(true) }
 		val startPage = list.indexOf(img)
-		val padding = if(!isVisible.value)
+		val zoom = rememberZoomState()
+		val padding = if(!isVisible.value && zoom.scale>1)
 		{
-			PaddingValues(0.dp)
+			PaddingValues(0.dp, 0.dp)
+		}
+		else if (!isVisible.value){
+			PaddingValues(0.dp, 30.dp)
 		}
 		else
 		{
@@ -174,15 +179,14 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				}
 				!openAlertDialog.value ->
 				{
-					val zoom = rememberZoomState()
+
 					val count = remember { listOf(0).toMutableList() }
-					val height = Resources.getSystem().displayMetrics.heightPixels
 					val countLastFive = remember { listOf(0).toMutableList() }
 					val imgRequest = ImageRequest.Builder(LocalContext.current)
 						.data(list[page])
-						.maxBitmapSize(Size(Size.ORIGINAL.width, height-200))
 						.networkCachePolicy(CachePolicy.DISABLED)
 						.build()
+
 
 					AsyncImage(model = imgRequest, "",
 						contentScale = ContentScale.FillWidth,
@@ -192,7 +196,6 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						onSuccess = { openAlertDialog.value = false },
 						modifier = Modifier
 							.fillMaxSize()
-							.padding(0.dp,35.dp,0.dp,0.dp)
 							.pointerInput(Unit) {
 								awaitEachGesture {
 									while(true)
@@ -235,6 +238,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 			Box(modifier = Modifier
 				.fillMaxWidth()
+				.height(56.dp)
 				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)) {
 				var navBack by remember { mutableStateOf(false) }
 				ConstraintLayout(modifier = Modifier.clickable(onClick = {
