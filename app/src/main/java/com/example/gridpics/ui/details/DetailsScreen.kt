@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.content.res.Resources
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -63,6 +64,8 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import coil3.request.maxBitmapSize
+import coil3.size.Size
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
@@ -120,7 +123,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		}
 		else
 		{
-			PaddingValues(0.dp, 30.dp)
+			PaddingValues(0.dp, 0.dp)
 		}
 		val currentPage = remember { mutableIntStateOf(startPage) }
 		val exit = remember { mutableStateOf(false) }
@@ -173,11 +176,14 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				{
 					val zoom = rememberZoomState()
 					val count = remember { listOf(0).toMutableList() }
+					val height = Resources.getSystem().displayMetrics.heightPixels
 					val countLastFive = remember { listOf(0).toMutableList() }
 					val imgRequest = ImageRequest.Builder(LocalContext.current)
 						.data(list[page])
+						.maxBitmapSize(Size(Size.ORIGINAL.width, height-200))
 						.networkCachePolicy(CachePolicy.DISABLED)
 						.build()
+
 					AsyncImage(model = imgRequest, "",
 						contentScale = ContentScale.FillWidth,
 						onError = {
@@ -186,6 +192,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						onSuccess = { openAlertDialog.value = false },
 						modifier = Modifier
 							.fillMaxSize()
+							.padding(0.dp,35.dp,0.dp,0.dp)
 							.pointerInput(Unit) {
 								awaitEachGesture {
 									while(true)
@@ -197,10 +204,10 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 										if(count.size >= 5)
 										{
 											countLastFive.add(count[count.lastIndex])
-											countLastFive.add(count[count.lastIndex-1])
-											countLastFive.add(count[count.lastIndex-2])
-											countLastFive.add(count[count.lastIndex-3])
-											countLastFive.add(count[count.lastIndex-4])
+											countLastFive.add(count[count.lastIndex - 1])
+											countLastFive.add(count[count.lastIndex - 2])
+											countLastFive.add(count[count.lastIndex - 3])
+											countLastFive.add(count[count.lastIndex - 4])
 										}
 										if(zoom.scale < 0.92.toFloat() && exit.value && countLastFive.max() == 2)
 										{
