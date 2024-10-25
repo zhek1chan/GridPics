@@ -68,8 +68,6 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.ScrollGesturePropagation
@@ -210,67 +208,64 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 					)
 					if(zoom.scale == 0.9.toFloat() && exit.intValue == 2)
 					{
-						scope.launch(Dispatchers.Main) {
-							delay(500)
-							if(!isVisible.value)
-							{
-								vm.changeState()
-							}
-							nc.navigateUp()
+						if(!isVisible.value)
+						{
+							vm.changeState()
 						}
+						nc.navigateUp()
 					}
+				}
 			}
 		}
-	}
-	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
-		Box(modifier = Modifier
-			.fillMaxWidth()
-			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)) {
-			var navBack by remember { mutableStateOf(false) }
-			ConstraintLayout(modifier = Modifier.clickable(onClick = {
-				navBack = true
-			}, interactionSource = remember { MutableInteractionSource() },
-				indication = ripple(color = MaterialTheme.colorScheme.onPrimary, bounded = true))) {
-				val (icon, text) = createRefs()
-				@OptIn(ExperimentalMaterial3Api::class)
-				TopAppBar(title = {
-					Text(
-						list[pagerState.currentPage],
-						fontSize = 18.sp,
-						maxLines = 2,
-						modifier = Modifier
-							.padding(0.dp, 0.dp, 40.dp, 0.dp)
-							.constrainAs(text) {
-								top.linkTo(parent.top)
-								bottom.linkTo(parent.bottom)
-							},
-						overflow = TextOverflow.Ellipsis,
-					)
-				}, navigationIcon = {
-					IconButton({ navBack = true }) {
-						Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))
-					}
-				}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-					actionIconContentColor = MaterialTheme.colorScheme.onPrimary, containerColor = MaterialTheme.colorScheme.background))
+		AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+			Box(modifier = Modifier
+				.fillMaxWidth()
+				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)) {
+				var navBack by remember { mutableStateOf(false) }
+				ConstraintLayout(modifier = Modifier.clickable(onClick = {
+					navBack = true
+				}, interactionSource = remember { MutableInteractionSource() },
+					indication = ripple(color = MaterialTheme.colorScheme.onPrimary, bounded = true))) {
+					val (icon, text) = createRefs()
+					@OptIn(ExperimentalMaterial3Api::class)
+					TopAppBar(title = {
+						Text(
+							list[pagerState.currentPage],
+							fontSize = 18.sp,
+							maxLines = 2,
+							modifier = Modifier
+								.padding(0.dp, 0.dp, 40.dp, 0.dp)
+								.constrainAs(text) {
+									top.linkTo(parent.top)
+									bottom.linkTo(parent.bottom)
+								},
+							overflow = TextOverflow.Ellipsis,
+						)
+					}, navigationIcon = {
+						IconButton({ navBack = true }) {
+							Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))
+						}
+					}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+						actionIconContentColor = MaterialTheme.colorScheme.onPrimary, containerColor = MaterialTheme.colorScheme.background))
 
-				IconButton({ share(list[pagerState.currentPage], context) }, modifier = Modifier
-					.constrainAs(icon) {
-						end.linkTo(parent.end)
-						top.linkTo(parent.top)
-						bottom.linkTo(parent.bottom)
+					IconButton({ share(list[pagerState.currentPage], context) }, modifier = Modifier
+						.constrainAs(icon) {
+							end.linkTo(parent.end)
+							top.linkTo(parent.top)
+							bottom.linkTo(parent.bottom)
+						}
+						.padding(0.dp, 0.dp, 10.dp, 0.dp)) {
+						Icon(painter = rememberVectorPainter(Icons.Default.Share), contentDescription = "share", tint = MaterialTheme.colorScheme.onPrimary)
 					}
-					.padding(0.dp, 0.dp, 10.dp, 0.dp)) {
-					Icon(painter = rememberVectorPainter(Icons.Default.Share), contentDescription = "share", tint = MaterialTheme.colorScheme.onPrimary)
-				}
-				if(navBack)
-				{
-					navBack = false
-					nc.navigateUp()
+					if(navBack)
+					{
+						navBack = false
+						nc.navigateUp()
+					}
 				}
 			}
 		}
 	}
-}
 }
 
 fun share(text: String, context: Context)
