@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.AlertDialogMain
@@ -141,7 +142,8 @@ fun SettingsCompose(vm: SettingsViewModel)
 						dialogText = "",
 						dialogTitle = stringResource(R.string.delete_all_question),
 						onConfirmation = {
-							context.cacheDir.deleteRecursively()
+							val imageLoader = context.imageLoader
+							imageLoader.diskCache?.clear()
 							val sharedPreferences = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
 							val editor = sharedPreferences.edit()
 							editor.putString(PICTURES, null)
