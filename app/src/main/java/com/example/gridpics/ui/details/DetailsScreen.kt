@@ -123,7 +123,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			PaddingValues(0.dp, 30.dp)
 		}
 		val currentPage = remember { mutableIntStateOf(startPage) }
-		val exit = remember { mutableIntStateOf(0) }
+		val exit = remember { mutableStateOf(false) }
 		Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
 		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier = Modifier
 			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
@@ -189,14 +189,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 									while(true)
 									{
 										val event = awaitPointerEvent()
-										if(event.changes.any { it.isConsumed })
-										{
-											exit.intValue = 1
-										}
-										else
-										{
-											exit.intValue = 2
-										}
+										exit.value = !event.changes.any { it.isConsumed }
 									}
 								}
 							}
@@ -206,7 +199,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 								isVisible.value = !isVisible.value
 							}, scrollGesturePropagation = ScrollGesturePropagation.NotZoomed)
 					)
-					if(zoom.scale == 0.9.toFloat() && exit.intValue == 2)
+					if(zoom.scale == 0.9.toFloat() && exit.value)
 					{
 						if(!isVisible.value)
 						{
