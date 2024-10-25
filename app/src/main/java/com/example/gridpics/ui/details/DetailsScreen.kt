@@ -123,7 +123,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		}
 		else
 		{
-			PaddingValues(0.dp, 0.dp)
+			PaddingValues(0.dp, 30.dp)
 		}
 		val currentPage = remember { mutableIntStateOf(startPage) }
 		val exit = remember { mutableStateOf(false) }
