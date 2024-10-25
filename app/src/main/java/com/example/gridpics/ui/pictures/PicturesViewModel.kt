@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.pictures
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -8,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -36,6 +34,11 @@ class PicturesViewModel(
 				}
 			}
 		}
+	}
+
+	fun postState(s: String)
+	{
+		stateLiveData.postValue(PictureState.Loaded(s))
 	}
 
 	fun resume()

@@ -6,10 +6,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 class DetailsViewModel: ViewModel()
 {
-	private val stateLiveData = MutableStateFlow(false)
-	fun observeState(): Flow<Boolean> = stateLiveData
+	private val stateFlow = MutableStateFlow(false)
+	fun observeFlow(): Flow<Boolean> = stateFlow
 	fun changeState()
 	{
-		stateLiveData.value = !stateLiveData.value
+		stateFlow.value = !stateFlow.value
 	}
 }

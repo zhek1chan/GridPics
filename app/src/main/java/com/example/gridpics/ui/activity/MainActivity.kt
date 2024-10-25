@@ -1,6 +1,14 @@
 package com.example.gridpics.ui.activity
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.os.Build.VERSION_CODES
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -29,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.core.app.NotificationCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -39,6 +48,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
+import com.example.gridpics.GlideApp
 import com.example.gridpics.R
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
@@ -59,8 +71,34 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
+		/*if(Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU)
+		{
+			if(
+				ContextCompat.checkSelfPermission(
+					this,
+					Manifest.permission.POST_NOTIFICATIONS,
+				) == PackageManager.PERMISSION_GRANTED
+			)
+			{
+				createNotificationChannel()
+				showNotification()
+			}
+			else
+			{
+				ActivityCompat.requestPermissions(
+					this,
+					arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+					100
+				)
+			}
+		}
+		else
+		{
+			createNotificationChannel()
+			showNotification()
+		}*/
 		enableEdgeToEdge(
-			statusBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black)),
+			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
 		)
 		val changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
@@ -74,7 +112,7 @@ class MainActivity: AppCompatActivity()
 		}
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		lifecycleScope.launch {
-			detailsViewModel.observeState().collectLatest {
+			detailsViewModel.observeFlow().collectLatest {
 				if(it)
 				{
 					controller.hide(WindowInsetsCompat.Type.statusBars())
@@ -87,6 +125,22 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
+		val isConditionAlreadySet = checkSomeCondition()
+		val callback = object: OnBackPressedCallback(
+			isConditionAlreadySet
+		)
+		{
+			override fun handleOnBackPressed()
+			{
+				this.handleOnBackPressed()
+			}
+		}
+		onBackPressedDispatcher.addCallback(this, callback)
+
+		GlideApp
+			.with(applicationContext)
+			.applyDefaultRequestOptions(
+				RequestOptions().diskCacheStrategy(DiskCacheStrategy.ALL))
 
 		setContent {
 			ComposeTheme {
@@ -107,6 +161,8 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 	}
+
+	private fun checkSomeCondition() = false
 
 	@Composable
 	fun BottomNavigationBar(
@@ -196,10 +252,79 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
+	private fun createNotificationChannel()
+	{
+		val name = "My Notification Channel"
+		val description = "Channel for my notification"
+		// Создаем канал уведомлений (для Android O и выше)
+		if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
+		{
+			val importance = NotificationManager.IMPORTANCE_LOW
+			val channel = NotificationChannel(CHANNEL_ID, name, importance)
+			channel.description = description
+			val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+			notificationManager.createNotificationChannel(channel)
+		}
+	}
+
+	private fun showNotification()
+	{
+		val intent = Intent(this, MainActivity::class.java)
+		intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+		val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+		val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+			.setSmallIcon(R.mipmap.ic_launcher)
+			.setColor(getColor(R.color.green))
+			.setContentTitle("GridPics")
+			.setContentText("Вы видите это уведомление, потому что приложение активно")
+			.setPriority(NotificationCompat.PRIORITY_LOW)
+			.setContentIntent(pendingIntent)
+		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+		notificationManager.notify(1, builder.build())
+	}
+
+	override fun onRestart()
+	{
+		//showNotification()
+		createNotificationChannel()
+		super.onRestart()
+	}
+
+	override fun onStop()
+	{
+		/*this.lifecycleScope.launch {
+			delay(3000)
+			cancelAllNotifications()
+		}*/
+		super.onStop()
+	}
+
+	override fun onDestroy()
+	{
+		//cancelAllNotifications()
+		super.onDestroy()
+	}
+
+	override fun onPause()
+	{
+		/*this.lifecycleScope.launch {
+			delay(3000)
+			cancelAllNotifications()
+		}*/
+		super.onPause()
+	}
+
+	private fun cancelAllNotifications()
+	{
+		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+		notificationManager.cancelAll()
+	}
+
 	companion object
 	{
 		const val PICTURES = "PICTURES_SHARED_PREFS"
 		const val PIC = "PIC"
 		const val THEME_SP_KEY = "THEME_SHARED_PREFS"
+		const val CHANNEL_ID = "GRID_PICS_CHANEL_ID"
 	}
 }

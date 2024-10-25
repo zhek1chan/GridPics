@@ -7,7 +7,6 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,19 +24,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -50,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,28 +53,36 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
 import coil3.compose.SubcomposeAsyncImage
+import coil3.disk.DiskCache
+import coil3.disk.directory
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import coil3.request.error
+import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun PicturesScreen(navController: NavController)
 {
 	val viewModel = koinViewModel<PicturesViewModel>()
-	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
+	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, "")
 	if(!txt.isNullOrEmpty())
 	{
 		ShowPictures(txt, viewModel, navController)
@@ -93,47 +97,61 @@ fun PicturesScreen(navController: NavController)
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
+fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, fromCache: Boolean)
 {
 	ComposeTheme {
 		val context = LocalContext.current
 		var isClicked by remember { mutableStateOf(false) }
 		var isError by remember { mutableStateOf(false) }
-		var img by remember { mutableStateOf(item) }
 		val openAlertDialog = remember { mutableStateOf(false) }
 		val errorMessage = remember { mutableStateOf("") }
-		SubcomposeAsyncImage(model = item, contentDescription = null, modifier = Modifier
-			.clickable {
-				if(!isError)
-				{
-					isClicked = true
-					openAlertDialog.value = false
+		SingletonImageLoader.setSafe {
+			ImageLoader.Builder(context)
+				.diskCachePolicy(CachePolicy.ENABLED)
+				.diskCache {
+					DiskCache.Builder()
+						.directory(context.cacheDir.resolve("image_cache"))
+						.build()
 				}
-				else
-				{
-					openAlertDialog.value = true
+				.build()
+		}
+		var pl = R.drawable.loading
+		if(fromCache)
+		{
+			pl = R.drawable.error
+		}
+		val imgRequest = ImageRequest.Builder(LocalContext.current)
+			.data(item)
+			.diskCachePolicy(CachePolicy.ENABLED)
+			.placeholder(pl)
+			.error(R.drawable.error)
+			.build()
+		SubcomposeAsyncImage(
+			model = imgRequest,
+			contentDescription = item,
+			modifier = Modifier
+				.clickable {
+					if(!isError)
+					{
+						isClicked = true
+						openAlertDialog.value = false
+					}
+					else
+					{
+						openAlertDialog.value = true
+					}
 				}
-			}
-			.padding(10.dp)
-			.size(100.dp)
-			.clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop,
-			onSuccess = {
-				img = item
-				isError = false
-			},
-			loading = {
-				Column(Modifier.size(70.dp), verticalArrangement = Arrangement.Center,
-					horizontalAlignment = Alignment.CenterHorizontally) {
-					CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier
-						.size(70.dp)
-						.progressSemantics())
-				}
-			},
-			error = { Image(painterResource(R.drawable.ic_error_image), contentDescription = null, modifier = Modifier.size(100.dp)) },
+				.padding(10.dp)
+				.size(100.dp)
+				.clip(RoundedCornerShape(8.dp)),
+			contentScale = ContentScale.Crop,
 			onError = {
 				isError = true
 				errorMessage.value = it.result.throwable.message.toString()
-			}
+			},
+			onSuccess = {
+				isError = false
+			},
 		)
 		if(isClicked)
 		{
@@ -182,18 +200,22 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel)
 	}
 }
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 {
 	Log.d("PicturesScreen", "From cache? ${!s.isNullOrEmpty()}")
 	Log.d("We got:", "$s")
-	if(s == null)
+	val scope = rememberCoroutineScope()
+	if(s == "null" || s.isNullOrEmpty())
 	{
 		val value by vm.observeState().observeAsState()
 		when(value)
 		{
 			is PictureState.SearchIsOk ->
 			{
+				Toast.makeText(LocalContext.current, "Началась загрузка", Toast.LENGTH_LONG).show()
+				Log.d("Now state is", "Loading")
 				saveToSharedPrefs(LocalContext.current, (value as PictureState.SearchIsOk).data)
 				val list = (value as PictureState.SearchIsOk).data.split("\n")
 
@@ -201,8 +223,12 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					.fillMaxSize()
 					.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
-						ItemNewsCard(it, nv, vm)
+						ItemNewsCard(it, nv, vm, false)
 					}
+				}
+				scope.launch {
+					delay(10000)
+					vm.postState((value as PictureState.SearchIsOk).data)
 				}
 			}
 			PictureState.ConnectionError ->
@@ -217,10 +243,24 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			}
 			PictureState.NothingFound -> Unit
 			null -> Unit
+			is PictureState.Loaded ->
+			{
+				Toast.makeText(LocalContext.current, "Загрузка завершена", Toast.LENGTH_SHORT).show()
+				Log.d("Now state is", "Loaded")
+				val list = (value as PictureState.Loaded).data.split("\n")
+				LazyVerticalGrid(modifier = Modifier
+					.fillMaxSize()
+					.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+					items(list) {
+						ItemNewsCard(it, nv, vm, true)
+					}
+				}
+			}
 		}
 	}
 	else
 	{
+		Log.d("Now state is", "Loaded from sp")
 		saveToSharedPrefs(LocalContext.current, s)
 		val items = remember { s.split("\n") }
 		Log.d("item", items.toString())
@@ -230,7 +270,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
-				ItemNewsCard(it, nv, vm)
+				ItemNewsCard(it, nv, vm, true)
 			}
 		}
 	}
@@ -253,7 +293,7 @@ fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 					.padding(0.dp, 10.dp, 0.dp, 0.dp), colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary), title = {
 					Row {
 						Text(stringResource(R.string.gridpics))
-						IconButton(
+						/*IconButton(
 							onClick = {
 								openAddDialog = false //TODO
 							},
@@ -261,7 +301,7 @@ fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 								.align(Alignment.CenterVertically)
 						) {
 							Icon(painter = rememberVectorPainter(Icons.Default.Add), contentDescription = "share", tint = MaterialTheme.colorScheme.onPrimary)
-						}
+						}*/
 					}
 				})
 				if(openAddDialog)

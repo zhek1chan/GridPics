@@ -78,6 +78,7 @@ dependencies {
 	implementation(libs.androidx.fragment.compose)
 	implementation(libs.androidx.tools.core)
 	implementation(libs.androidx.espresso.core)
+	implementation(libs.volley)
 	testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -130,4 +131,10 @@ dependencies {
     //control sysUi
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.activity.ktx)
+    //notifications
+    implementation (libs.androidx.work.runtime.ktx)
+    //GLide compose
+    implementation (libs.compose)
+    //accompanist
+    implementation(libs.accompanist.drawablepainter)
 }
