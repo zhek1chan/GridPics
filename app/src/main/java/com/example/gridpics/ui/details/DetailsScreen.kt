@@ -66,8 +66,10 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import net.engawapg.lib.zoomable.ScrollGesturePropagation
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
@@ -184,21 +186,25 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 							.zoomable(zoom, enableOneFingerZoom = false, onTap = {
 								vm.changeState()
 								isVisible.value = !isVisible.value
-							}))
-					if(zoom.scale < 0.9)
+							}, scrollGesturePropagation = ScrollGesturePropagation.NotZoomed))
+					Log.d("Zoom", "${zoom.scale} ${zoom.offsetY} ${zoom.offsetY}")
+					if(zoom.scale == 0.9.toFloat())
 					{
+						val exit = remember { mutableIntStateOf(0) }
 						scope.launch {
-							vm.observeFlow().collectLatest {
-								if(it)
-								{
-									vm.changeState()
-									nc.navigateUp()
-								}
-								else
-								{
-									nc.navigateUp()
-								}
+							while((zoom.scale == 0.9.toFloat() && (exit.intValue < 3)))
+							{
+								delay(1500)
+								exit.intValue += 1
 							}
+						}
+						if(exit.intValue == 2)
+						{
+							if(!isVisible.value)
+							{
+								vm.changeState()
+							}
+							nc.navigateUp()
 						}
 					}
 				}
