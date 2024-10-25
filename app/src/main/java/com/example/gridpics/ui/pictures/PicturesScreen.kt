@@ -234,7 +234,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			PictureState.ConnectionError ->
 			{
 				Log.d("Net", "No internet")
-				Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+				Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize()) {
 					NoInternetScreen()
 					val cornerRadius = 16.dp
 					val gradientColor = listOf(Color.Green, Color.Yellow)
