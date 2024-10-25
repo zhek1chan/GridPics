@@ -172,6 +172,8 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				!openAlertDialog.value ->
 				{
 					val zoom = rememberZoomState()
+					val count = remember { listOf(0).toMutableList() }
+					val countLastFive = remember { listOf(0).toMutableList() }
 					val imgRequest = ImageRequest.Builder(LocalContext.current)
 						.data(list[page])
 						.networkCachePolicy(CachePolicy.DISABLED)
@@ -189,7 +191,28 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 									while(true)
 									{
 										val event = awaitPointerEvent()
-										exit.value = !event.changes.any { it.isConsumed }
+										exit.value = !event.changes.any {
+											it.isConsumed
+										}
+										if(count.size >= 5)
+										{
+											countLastFive.add(count[count.lastIndex])
+											countLastFive.add(count[count.lastIndex-1])
+											countLastFive.add(count[count.lastIndex-2])
+											countLastFive.add(count[count.lastIndex-3])
+											countLastFive.add(count[count.lastIndex-4])
+										}
+										if(zoom.scale < 0.92.toFloat() && exit.value && countLastFive.max() == 2)
+										{
+											if(!isVisible.value)
+											{
+												vm.changeState()
+											}
+											nc.navigateUp()
+										}
+										countLastFive.clear()
+										count.add(event.changes.size)
+										Log.d("exit", "${count[count.lastIndex]}")
 									}
 								}
 							}
@@ -199,14 +222,6 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 								isVisible.value = !isVisible.value
 							}, scrollGesturePropagation = ScrollGesturePropagation.NotZoomed)
 					)
-					if(zoom.scale == 0.9.toFloat() && exit.value)
-					{
-						if(!isVisible.value)
-						{
-							vm.changeState()
-						}
-						nc.navigateUp()
-					}
 				}
 			}
 		}
