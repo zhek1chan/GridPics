@@ -10,6 +10,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -66,6 +68,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -122,6 +125,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			PaddingValues(0.dp, 30.dp)
 		}
 		val currentPage = remember { mutableIntStateOf(startPage) }
+		val exit = remember { mutableIntStateOf(0) }
 		Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
 		HorizontalPager(state = pagerState, pageSize = PageSize.Fill, modifier = Modifier
 			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
@@ -182,24 +186,32 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						onSuccess = { openAlertDialog.value = false },
 						modifier = Modifier
 							.fillMaxSize()
+							.pointerInput(Unit) {
+								awaitEachGesture {
+									while(true)
+									{
+										val event = awaitPointerEvent()
+										if(event.changes.any { it.isConsumed })
+										{
+											exit.intValue = 1
+										}
+										else
+										{
+											exit.intValue = 2
+										}
+									}
+								}
+							}
 							.padding(0.dp, 30.dp, 0.dp, 0.dp)
 							.zoomable(zoom, enableOneFingerZoom = false, onTap = {
 								vm.changeState()
 								isVisible.value = !isVisible.value
-							}, scrollGesturePropagation = ScrollGesturePropagation.NotZoomed))
-					Log.d("Zoom", "${zoom.scale} ${zoom.offsetY} ${zoom.offsetY}")
-					if(zoom.scale == 0.9.toFloat())
+							}, scrollGesturePropagation = ScrollGesturePropagation.NotZoomed)
+					)
+					if(zoom.scale == 0.9.toFloat() && exit.intValue == 2)
 					{
-						val exit = remember { mutableIntStateOf(0) }
-						scope.launch {
-							while((zoom.scale == 0.9.toFloat() && (exit.intValue < 3)))
-							{
-								delay(1500)
-								exit.intValue += 1
-							}
-						}
-						if(exit.intValue == 2)
-						{
+						scope.launch(Dispatchers.Main) {
+							delay(500)
 							if(!isVisible.value)
 							{
 								vm.changeState()
@@ -207,58 +219,58 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 							nc.navigateUp()
 						}
 					}
-				}
 			}
 		}
-		AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
-			Box(modifier = Modifier
-				.fillMaxWidth()
-				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)) {
-				var navBack by remember { mutableStateOf(false) }
-				ConstraintLayout(modifier = Modifier.clickable(onClick = {
-					navBack = true
-				}, interactionSource = remember { MutableInteractionSource() },
-					indication = ripple(color = MaterialTheme.colorScheme.onPrimary, bounded = true))) {
-					val (icon, text) = createRefs()
-					@OptIn(ExperimentalMaterial3Api::class)
-					TopAppBar(title = {
-						Text(
-							list[pagerState.currentPage],
-							fontSize = 18.sp,
-							maxLines = 2,
-							modifier = Modifier
-								.padding(0.dp, 0.dp, 40.dp, 0.dp)
-								.constrainAs(text) {
-									top.linkTo(parent.top)
-									bottom.linkTo(parent.bottom)
-								},
-							overflow = TextOverflow.Ellipsis,
-						)
-					}, navigationIcon = {
-						IconButton({ navBack = true }) {
-							Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))
-						}
-					}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-						actionIconContentColor = MaterialTheme.colorScheme.onPrimary, containerColor = MaterialTheme.colorScheme.background))
+	}
+	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+		Box(modifier = Modifier
+			.fillMaxWidth()
+			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)) {
+			var navBack by remember { mutableStateOf(false) }
+			ConstraintLayout(modifier = Modifier.clickable(onClick = {
+				navBack = true
+			}, interactionSource = remember { MutableInteractionSource() },
+				indication = ripple(color = MaterialTheme.colorScheme.onPrimary, bounded = true))) {
+				val (icon, text) = createRefs()
+				@OptIn(ExperimentalMaterial3Api::class)
+				TopAppBar(title = {
+					Text(
+						list[pagerState.currentPage],
+						fontSize = 18.sp,
+						maxLines = 2,
+						modifier = Modifier
+							.padding(0.dp, 0.dp, 40.dp, 0.dp)
+							.constrainAs(text) {
+								top.linkTo(parent.top)
+								bottom.linkTo(parent.bottom)
+							},
+						overflow = TextOverflow.Ellipsis,
+					)
+				}, navigationIcon = {
+					IconButton({ navBack = true }) {
+						Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))
+					}
+				}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+					actionIconContentColor = MaterialTheme.colorScheme.onPrimary, containerColor = MaterialTheme.colorScheme.background))
 
-					IconButton({ share(list[pagerState.currentPage], context) }, modifier = Modifier
-						.constrainAs(icon) {
-							end.linkTo(parent.end)
-							top.linkTo(parent.top)
-							bottom.linkTo(parent.bottom)
-						}
-						.padding(0.dp, 0.dp, 10.dp, 0.dp)) {
-						Icon(painter = rememberVectorPainter(Icons.Default.Share), contentDescription = "share", tint = MaterialTheme.colorScheme.onPrimary)
+				IconButton({ share(list[pagerState.currentPage], context) }, modifier = Modifier
+					.constrainAs(icon) {
+						end.linkTo(parent.end)
+						top.linkTo(parent.top)
+						bottom.linkTo(parent.bottom)
 					}
-					if(navBack)
-					{
-						navBack = false
-						nc.navigateUp()
-					}
+					.padding(0.dp, 0.dp, 10.dp, 0.dp)) {
+					Icon(painter = rememberVectorPainter(Icons.Default.Share), contentDescription = "share", tint = MaterialTheme.colorScheme.onPrimary)
+				}
+				if(navBack)
+				{
+					navBack = false
+					nc.navigateUp()
 				}
 			}
 		}
 	}
+}
 }
 
 fun share(text: String, context: Context)
