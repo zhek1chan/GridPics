@@ -105,8 +105,8 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 		val isVisible = remember { mutableStateOf(true) }
 		Scaffold(
 			modifier = Modifier
-				.fillMaxSize()
-				.windowInsetsPadding(WindowInsets.statusBars),
+				.fillMaxSize(),
+			contentWindowInsets = WindowInsets.statusBars,
 			topBar = { AppBar(isVisible, context, nc, list, pagerState) },
 			content = { padding ->
 				Column(
