@@ -12,8 +12,4 @@ class DetailsViewModel: ViewModel()
 	{
 		stateFlow.value = !stateFlow.value
 	}
-
-	fun postPositive() {
-		stateFlow.value = true
-	}
 }

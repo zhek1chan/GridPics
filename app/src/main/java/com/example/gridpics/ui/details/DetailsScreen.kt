@@ -18,11 +18,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -233,12 +235,14 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				}
 			}
 		}
+		val stableInsetsHolder = remember { StableStatusBarsInsetsHolder() }
 		AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 			Box(modifier = Modifier
 				.fillMaxWidth()
 				.height(56.dp)
-				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
-				.safeContentPadding()
+				.padding(stableInsetsHolder.stableStatusBars
+					.only(WindowInsetsSides.Start + WindowInsetsSides.Horizontal)
+					.asPaddingValues())
 			) {
 				var navBack by remember { mutableStateOf(false) }
 				ConstraintLayout(modifier = Modifier.clickable(onClick = {
@@ -269,7 +273,6 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 
 					IconButton({
 						share(list[pagerState.currentPage], context)
-						vm.postPositive()
 					}, modifier = Modifier
 						.constrainAs(icon) {
 							end.linkTo(parent.end)
