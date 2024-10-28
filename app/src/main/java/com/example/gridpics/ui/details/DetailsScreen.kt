@@ -124,16 +124,23 @@ fun ShowDetails(
 	padding: PaddingValues,
 )
 {
+	Log.d("PADDING", "$padding")
 	val firstPage = remember { mutableStateOf(true) }
 	val startPage = list.indexOf(img)
 	val zoom = rememberZoomState()
 	val currentPage = remember { mutableIntStateOf(startPage) }
 	val exit = remember { mutableStateOf(false) }
 	Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
+	val dynamicPadding = if (!isVisible.value) {
+		PaddingValues(0.dp, 64.dp, 0.dp, 0.dp)
+	} else {
+		PaddingValues(0.dp)
+	}
 	HorizontalPager(
 		state = pagerState,
 		pageSize = PageSize.Fill,
-		contentPadding = padding
+		contentPadding = padding,
+		modifier = Modifier.padding(dynamicPadding)
 	) { page ->
 		val scope = rememberCoroutineScope()
 		if(firstPage.value)
