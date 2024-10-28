@@ -18,13 +18,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -235,14 +233,10 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 				}
 			}
 		}
-		val stableInsetsHolder = remember { StableStatusBarsInsetsHolder() }
 		AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 			Box(modifier = Modifier
 				.fillMaxWidth()
 				.height(56.dp)
-				.padding(stableInsetsHolder.stableStatusBars
-					.only(WindowInsetsSides.Start + WindowInsetsSides.Horizontal)
-					.asPaddingValues())
 			) {
 				var navBack by remember { mutableStateOf(false) }
 				ConstraintLayout(modifier = Modifier.clickable(onClick = {
@@ -251,25 +245,27 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 					indication = ripple(color = MaterialTheme.colorScheme.onPrimary, bounded = true))) {
 					val (icon, text) = createRefs()
 					@OptIn(ExperimentalMaterial3Api::class)
-					TopAppBar(title = {
-						Text(
-							list[pagerState.currentPage],
-							fontSize = 18.sp,
-							maxLines = 2,
-							modifier = Modifier
-								.padding(0.dp, 0.dp, 40.dp, 0.dp)
-								.constrainAs(text) {
-									top.linkTo(parent.top)
-									bottom.linkTo(parent.bottom)
-								},
-							overflow = TextOverflow.Ellipsis,
-						)
-					}, navigationIcon = {
-						IconButton({ navBack = true }) {
-							Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))
-						}
-					}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-						actionIconContentColor = MaterialTheme.colorScheme.onPrimary, containerColor = MaterialTheme.colorScheme.background))
+					TopAppBar(
+						modifier = Modifier.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility),
+						title = {
+							Text(
+								list[pagerState.currentPage],
+								fontSize = 18.sp,
+								maxLines = 2,
+								modifier = Modifier
+									.padding(0.dp, 0.dp, 40.dp, 0.dp)
+									.constrainAs(text) {
+										top.linkTo(parent.top)
+										bottom.linkTo(parent.bottom)
+									},
+								overflow = TextOverflow.Ellipsis,
+							)
+						}, navigationIcon = {
+							IconButton({ navBack = true }) {
+								Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back", modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp))
+							}
+						}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+							actionIconContentColor = MaterialTheme.colorScheme.onPrimary, containerColor = MaterialTheme.colorScheme.background))
 
 					IconButton({
 						share(list[pagerState.currentPage], context)
