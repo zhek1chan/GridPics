@@ -328,5 +328,6 @@ class MainActivity: AppCompatActivity()
 		const val PIC = "PIC"
 		const val THEME_SP_KEY = "THEME_SHARED_PREFS"
 		const val CHANNEL_ID = "GRID_PICS_CHANEL_ID"
+		const val NULL_STRING = "NULL"
 	}
 }
