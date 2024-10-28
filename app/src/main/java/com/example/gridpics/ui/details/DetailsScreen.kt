@@ -12,18 +12,13 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
@@ -77,6 +72,7 @@ import net.engawapg.lib.zoomable.ZoomState
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 {
@@ -105,8 +101,7 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 		val pagerState = rememberPagerState(pageCount = { list.size })
 		val isVisible = remember { mutableStateOf(true) }
 		Scaffold(
-			modifier = Modifier.fillMaxSize(),
-			contentWindowInsets = WindowInsets.statusBars,
+			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 			topBar = { AppBar(isVisible, context, nc, list, pagerState) },
 			content = { padding ->
 				ShowDetails(pic!!, viewModel, nc, isVisible, list, pagerState, context, padding)
@@ -275,7 +270,6 @@ fun showError(context: Context, list: MutableList<String>, currentPage: Int): Bo
 	return !reload
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AppBar(
 	isVisible: MutableState<Boolean>,
@@ -286,61 +280,56 @@ fun AppBar(
 {
 	var navBack by remember { mutableStateOf(false) }
 	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
-		Box(modifier = Modifier
-			.fillMaxWidth()
-		) {
-			@OptIn(ExperimentalMaterial3Api::class)
-			TopAppBar(
-				modifier = Modifier
-					.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
-					.clickable {
-						navBack = true
-					},
-				title = {
-					Text(
-						text = list[pagerState.currentPage],
-						fontSize = 18.sp,
-						maxLines = 2,
-						modifier = Modifier
-							.clickable { navBack = true },
-						overflow = TextOverflow.Ellipsis,
+		@OptIn(ExperimentalMaterial3Api::class)
+		TopAppBar(
+			modifier = Modifier
+				.clickable {
+					navBack = true
+				},
+			title = {
+				Text(
+					text = list[pagerState.currentPage],
+					fontSize = 18.sp,
+					maxLines = 2,
+					modifier = Modifier
+						.clickable { navBack = true },
+					overflow = TextOverflow.Ellipsis,
+				)
+			},
+			navigationIcon = {
+				IconButton({ navBack = true }) {
+					Icon(
+						Icons.AutoMirrored.Filled.ArrowBack,
+						contentDescription = "back"
 					)
-				},
-				navigationIcon = {
-					IconButton({ navBack = true }) {
-						Icon(
-							Icons.AutoMirrored.Filled.ArrowBack,
-							contentDescription = "back"
-						)
-					}
-				},
-				colors = TopAppBarDefaults.topAppBarColors(
-					titleContentColor = MaterialTheme.colorScheme.onPrimary,
-					navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-					actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-					containerColor = MaterialTheme.colorScheme.background
-				),
-				actions = {
-					IconButton(
-						onClick =
-						{
-							share(list[pagerState.currentPage], context)
-						}
-					) {
-						Icon(
-							painter = rememberVectorPainter(Icons.Default.Share),
-							contentDescription = "share",
-							tint = MaterialTheme.colorScheme.onPrimary
-						)
-					}
 				}
-			)
-
-			if(navBack)
-			{
-				navBack = false
-				nc.navigateUp()
+			},
+			colors = TopAppBarDefaults.topAppBarColors(
+				titleContentColor = MaterialTheme.colorScheme.onPrimary,
+				navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+				actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+				containerColor = MaterialTheme.colorScheme.background
+			),
+			actions = {
+				IconButton(
+					onClick =
+					{
+						share(list[pagerState.currentPage], context)
+					}
+				) {
+					Icon(
+						painter = rememberVectorPainter(Icons.Default.Share),
+						contentDescription = "share",
+						tint = MaterialTheme.colorScheme.onPrimary
+					)
+				}
 			}
+		)
+
+		if(navBack)
+		{
+			navBack = false
+			nc.navigateUp()
 		}
 	}
 }
