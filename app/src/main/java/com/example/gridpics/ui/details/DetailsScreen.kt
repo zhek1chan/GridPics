@@ -134,15 +134,19 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 	val currentPage = remember { mutableIntStateOf(startPage) }
 	val exit = remember { mutableStateOf(false) }
 	Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
+	var navBack by remember { mutableStateOf(false) }
 	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(modifier = Modifier
 			.fillMaxWidth()
 			.height(56.dp)
 		) {
-			var navBack by remember { mutableStateOf(false) }
 			@OptIn(ExperimentalMaterial3Api::class)
 			TopAppBar(
-				modifier = Modifier.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility),
+				modifier = Modifier
+					.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
+					.clickable {
+						navBack = true
+					},
 				title = {
 					Text(
 						text = list[pagerState.currentPage],
