@@ -15,18 +15,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -99,17 +98,21 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 	val context = LocalContext.current
 	val pictures = context.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, NULL_STRING)
 	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, NULL_STRING)
-	if(pic != null)
+	if(pic != NULL_STRING && pictures != NULL_STRING)
 	{
-		Scaffold(modifier = Modifier
-			.fillMaxWidth()
-			.windowInsetsPadding(WindowInsets.systemBars),
+		val list = remember { pictures!!.split("\n").toMutableList() }
+		val pagerState = rememberPagerState(pageCount = { list.size })
+		val isVisible = remember { mutableStateOf(true) }
+		Scaffold(
+			modifier = Modifier
+				.fillMaxSize()
+				.windowInsetsPadding(WindowInsets.statusBars),
+			topBar = { AppBar(isVisible, context, nc, list, pagerState) },
 			content = { padding ->
 				Column(
 					modifier = Modifier
-						.padding(padding)
-						.fillMaxSize()) {
-					ShowDetails(pic, viewModel, nc, pictures!!)
+						.padding(padding)) {
+					ShowDetails(pic!!, viewModel, nc, isVisible, list, pagerState, context)
 				}
 			}
 		)
@@ -119,105 +122,25 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 @SuppressLint("CoroutineCreationDuringComposition", "UseCompatLoadingForDrawables")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: String)
+fun ShowDetails(
+	img: String,
+	vm: DetailsViewModel,
+	nc: NavController,
+	isVisible: MutableState<Boolean>,
+	list: MutableList<String>,
+	pagerState: PagerState,
+	context: Context,
+)
 {
-	val isVisible = remember { mutableStateOf(true) }
-	val list = remember { pictures.split("\n").toMutableList() }
-	val pagerState = rememberPagerState(pageCount = { list.size })
-	val context = LocalContext.current
 	val firstPage = remember { mutableStateOf(true) }
 	val startPage = list.indexOf(img)
 	val zoom = rememberZoomState()
-	val padding = if(!isVisible.value && zoom.scale > 1)
-	{
-		PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
-	}
-	else if(!isVisible.value)
-	{
-		PaddingValues(0.dp, 60.dp, 0.dp, 0.dp)
-	}
-	else if(isVisible.value && zoom.scale > 1)
-	{
-		PaddingValues(0.dp, 30.dp, 0.dp, 0.dp)
-	}
-	else if(isVisible.value && zoom.scale == 1f)
-	{
-		PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
-	}
-	else
-	{
-		PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
-	}
 	val currentPage = remember { mutableIntStateOf(startPage) }
 	val exit = remember { mutableStateOf(false) }
 	Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
-	var navBack by remember { mutableStateOf(false) }
-	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
-		Box(modifier = Modifier
-			.fillMaxWidth()
-			.height(60.dp)
-		) {
-			@OptIn(ExperimentalMaterial3Api::class)
-			TopAppBar(
-				modifier = Modifier
-					.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
-					.clickable {
-						navBack = true
-					},
-				title = {
-					Text(
-						text = list[pagerState.currentPage],
-						fontSize = 18.sp,
-						maxLines = 2,
-						modifier = Modifier
-							.clickable { navBack = true },
-						overflow = TextOverflow.Ellipsis,
-					)
-				},
-				navigationIcon = {
-					IconButton({ navBack = true }) {
-						Icon(
-							Icons.AutoMirrored.Filled.ArrowBack,
-							contentDescription = "back"
-						)
-					}
-				},
-				colors = TopAppBarDefaults.topAppBarColors(
-					titleContentColor = MaterialTheme.colorScheme.onPrimary,
-					navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-					actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-					containerColor = MaterialTheme.colorScheme.background
-				),
-				actions = {
-					IconButton(
-						onClick =
-						{
-							share(list[pagerState.currentPage], context)
-						}
-					) {
-						Icon(
-							painter = rememberVectorPainter(Icons.Default.Share),
-							contentDescription = "share",
-							tint = MaterialTheme.colorScheme.onPrimary
-						)
-					}
-				}
-			)
-
-			if(navBack)
-			{
-				navBack = false
-				nc.navigateUp()
-			}
-		}
-	}
 	HorizontalPager(
 		state = pagerState,
-		pageSize = PageSize.Fill,
-		modifier = Modifier
-			.fillMaxSize()
-			.padding(padding)
-			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
+		pageSize = PageSize.Fill
 	) { page ->
 		val scope = rememberCoroutineScope()
 		if(firstPage.value)
@@ -352,6 +275,76 @@ fun showError(context: Context, list: MutableList<String>, currentPage: Int): Bo
 		}
 	}
 	return !reload
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun AppBar(
+	isVisible: MutableState<Boolean>,
+	context: Context, nc: NavController,
+	list: MutableList<String>,
+	pagerState: PagerState,
+)
+{
+	var navBack by remember { mutableStateOf(false) }
+	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+		Box(modifier = Modifier
+			.fillMaxWidth()
+		) {
+			@OptIn(ExperimentalMaterial3Api::class)
+			TopAppBar(
+				modifier = Modifier
+					.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
+					.clickable {
+						navBack = true
+					},
+				title = {
+					Text(
+						text = list[pagerState.currentPage],
+						fontSize = 18.sp,
+						maxLines = 2,
+						modifier = Modifier
+							.clickable { navBack = true },
+						overflow = TextOverflow.Ellipsis,
+					)
+				},
+				navigationIcon = {
+					IconButton({ navBack = true }) {
+						Icon(
+							Icons.AutoMirrored.Filled.ArrowBack,
+							contentDescription = "back"
+						)
+					}
+				},
+				colors = TopAppBarDefaults.topAppBarColors(
+					titleContentColor = MaterialTheme.colorScheme.onPrimary,
+					navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+					actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+					containerColor = MaterialTheme.colorScheme.background
+				),
+				actions = {
+					IconButton(
+						onClick =
+						{
+							share(list[pagerState.currentPage], context)
+						}
+					) {
+						Icon(
+							painter = rememberVectorPainter(Icons.Default.Share),
+							contentDescription = "share",
+							tint = MaterialTheme.colorScheme.onPrimary
+						)
+					}
+				}
+			)
+
+			if(navBack)
+			{
+				navBack = false
+				nc.navigateUp()
+			}
+		}
+	}
 }
 
 fun share(text: String, context: Context)
