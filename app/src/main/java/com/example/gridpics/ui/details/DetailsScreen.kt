@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -104,16 +105,11 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 		val pagerState = rememberPagerState(pageCount = { list.size })
 		val isVisible = remember { mutableStateOf(true) }
 		Scaffold(
-			modifier = Modifier
-				.fillMaxSize(),
+			modifier = Modifier.fillMaxSize(),
 			contentWindowInsets = WindowInsets.statusBars,
 			topBar = { AppBar(isVisible, context, nc, list, pagerState) },
 			content = { padding ->
-				Column(
-					modifier = Modifier
-						.padding(padding)) {
-					ShowDetails(pic!!, viewModel, nc, isVisible, list, pagerState, context)
-				}
+				ShowDetails(pic!!, viewModel, nc, isVisible, list, pagerState, context, padding)
 			}
 		)
 	}
@@ -130,6 +126,7 @@ fun ShowDetails(
 	list: MutableList<String>,
 	pagerState: PagerState,
 	context: Context,
+	padding: PaddingValues,
 )
 {
 	val firstPage = remember { mutableStateOf(true) }
@@ -140,7 +137,8 @@ fun ShowDetails(
 	Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
 	HorizontalPager(
 		state = pagerState,
-		pageSize = PageSize.Fill
+		pageSize = PageSize.Fill,
+		contentPadding = padding
 	) { page ->
 		val scope = rememberCoroutineScope()
 		if(firstPage.value)
