@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -236,7 +237,9 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 			Box(modifier = Modifier
 				.fillMaxWidth()
 				.height(56.dp)
-				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)) {
+				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
+				.safeContentPadding()
+			) {
 				var navBack by remember { mutableStateOf(false) }
 				ConstraintLayout(modifier = Modifier.clickable(onClick = {
 					navBack = true
@@ -264,7 +267,10 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 					}, colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary, navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
 						actionIconContentColor = MaterialTheme.colorScheme.onPrimary, containerColor = MaterialTheme.colorScheme.background))
 
-					IconButton({ share(list[pagerState.currentPage], context) }, modifier = Modifier
+					IconButton({
+						share(list[pagerState.currentPage], context)
+						vm.postPositive()
+					}, modifier = Modifier
 						.constrainAs(icon) {
 							end.linkTo(parent.end)
 							top.linkTo(parent.top)
