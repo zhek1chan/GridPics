@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -70,6 +71,7 @@ import coil3.request.ImageRequest
 import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
+import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
@@ -85,26 +87,37 @@ fun PicturesScreen(navController: NavController)
 	val viewModel = koinViewModel<PicturesViewModel>()
 	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 	val clearedCache = LocalContext.current.getSharedPreferences(CACHE, MODE_PRIVATE).getBoolean(CACHE, false)
-
-	if(!txt.isNullOrEmpty() && !clearedCache)
-	{
-		viewModel.newState()
-		ShowPictures(txt, viewModel, navController)
-	}
-	else if(!clearedCache && txt.isNullOrEmpty())
-	{
-		viewModel.newState()
-		viewModel.resume()
-		viewModel.getPics()
-		ShowPictures(null, viewModel, navController)
-	}
-	else if(clearedCache || txt.isNullOrEmpty())
-	{
-		viewModel.resume()
-		viewModel.newState()
-		viewModel.getPics()
-		ShowPictures(null, viewModel, navController)
-	}
+	Scaffold(modifier = Modifier
+		.fillMaxWidth(),
+		bottomBar = { BottomNavigationBar(navController) },
+		content = { padding ->
+			Column(
+				modifier = Modifier
+					.padding(padding)
+					.consumeWindowInsets(padding)
+					.fillMaxSize()) {
+				if(!txt.isNullOrEmpty() && !clearedCache)
+				{
+					viewModel.newState()
+					ShowPictures(txt, viewModel, navController)
+				}
+				else if(!clearedCache && txt.isNullOrEmpty())
+				{
+					viewModel.newState()
+					viewModel.resume()
+					viewModel.getPics()
+					ShowPictures(null, viewModel, navController)
+				}
+				else if(clearedCache || txt.isNullOrEmpty())
+				{
+					viewModel.resume()
+					viewModel.newState()
+					viewModel.getPics()
+					ShowPictures(null, viewModel, navController)
+				}
+			}
+		}
+	)
 }
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -487,7 +500,6 @@ private fun saveToSharedPrefs(context: Context, s: String)
 	val editor = sharedPreferences.edit()
 	editor.putBoolean(CACHE, false)
 	editor.apply()
-
 }
 
 fun isValidUrl(url: String): Boolean

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -36,6 +37,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -99,7 +101,18 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, NULL_STRING)
 	if(pic != null)
 	{
-		ShowDetails(pic, viewModel, nc, pictures!!)
+		Scaffold(modifier = Modifier
+			.fillMaxWidth()
+			.windowInsetsPadding(WindowInsets.systemBars),
+			content = { padding ->
+				Column(
+					modifier = Modifier
+						.padding(padding)
+						.fillMaxSize()) {
+					ShowDetails(pic, viewModel, nc, pictures!!)
+				}
+			}
+		)
 	}
 }
 
@@ -117,19 +130,23 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 	val zoom = rememberZoomState()
 	val padding = if(!isVisible.value && zoom.scale > 1)
 	{
-		PaddingValues(0.dp, 0.dp)
+		PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
 	}
 	else if(!isVisible.value)
 	{
-		PaddingValues(0.dp, 30.dp)
+		PaddingValues(0.dp, 60.dp, 0.dp, 0.dp)
 	}
 	else if(isVisible.value && zoom.scale > 1)
 	{
-		PaddingValues(0.dp, 90.dp)
+		PaddingValues(0.dp, 30.dp, 0.dp, 0.dp)
+	}
+	else if(isVisible.value && zoom.scale == 1f)
+	{
+		PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
 	}
 	else
 	{
-		PaddingValues(0.dp, 30.dp)
+		PaddingValues(0.dp, 0.dp, 0.dp, 0.dp)
 	}
 	val currentPage = remember { mutableIntStateOf(startPage) }
 	val exit = remember { mutableStateOf(false) }
@@ -138,7 +155,7 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(modifier = Modifier
 			.fillMaxWidth()
-			.height(56.dp)
+			.height(60.dp)
 		) {
 			@OptIn(ExperimentalMaterial3Api::class)
 			TopAppBar(
@@ -155,7 +172,6 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 						modifier = Modifier
 							.clickable { navBack = true },
 						overflow = TextOverflow.Ellipsis,
-
 					)
 				},
 				navigationIcon = {
@@ -200,8 +216,9 @@ fun ShowDetails(img: String, vm: DetailsViewModel, nc: NavController, pictures: 
 		pageSize = PageSize.Fill,
 		modifier = Modifier
 			.fillMaxSize()
+			.padding(padding)
 			.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
-			.padding(padding)) { page ->
+	) { page ->
 		val scope = rememberCoroutineScope()
 		if(firstPage.value)
 		{
@@ -280,7 +297,7 @@ fun showAsynchImage(list: MutableList<String>, page: Int, vm: DetailsViewModel, 
 					}
 				}
 			}
-			.padding(0.dp, 30.dp, 0.dp, 0.dp)
+			.padding(0.dp, 0.dp, 0.dp, 0.dp)
 			.zoomable(
 				zoomState = zoom,
 				enableOneFingerZoom = false,
