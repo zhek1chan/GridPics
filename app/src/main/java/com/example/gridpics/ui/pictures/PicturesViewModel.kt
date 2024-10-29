@@ -16,6 +16,7 @@ class PicturesViewModel(
 {
 	private var isPaused = false
 	private val stateLiveData = MutableLiveData<PictureState>()
+	private val errorsList: MutableList<String> = mutableListOf()
 	fun observeState(): LiveData<PictureState> = stateLiveData
 	fun getPics()
 	{
@@ -49,5 +50,20 @@ class PicturesViewModel(
 	fun resume()
 	{
 		isPaused = true
+	}
+
+	fun addError(s: String)
+	{
+		errorsList.add(s)
+	}
+
+	fun checkOnErrorExists(s: String): Boolean
+	{
+		return errorsList.contains(s)
+	}
+
+	fun clearErrors()
+	{
+		errorsList.clear()
 	}
 }

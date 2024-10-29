@@ -3,6 +3,12 @@ package com.example.gridpics
 import android.app.Application
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
+import coil3.disk.DiskCache
+import coil3.disk.directory
+import coil3.request.CachePolicy
+import coil3.request.allowHardware
 import com.example.gridpics.data.network.getUnsafeOkHttpClient
 import com.example.gridpics.di.dataModule
 import com.example.gridpics.di.domainModule
@@ -29,6 +35,19 @@ class App: Application(), KoinComponent
 		instance = this
 		val settingsInteractor = getKoin().get<SettingsInteractor>()
 		switchTheme(settingsInteractor.isAppThemeDark())
+		SingletonImageLoader.setSafe {
+			ImageLoader.Builder(this)
+				.allowHardware(true)
+				.networkCachePolicy(CachePolicy.ENABLED)
+				.memoryCachePolicy(CachePolicy.ENABLED)
+				.diskCachePolicy(CachePolicy.ENABLED)
+				.diskCache {
+					DiskCache.Builder()
+						.directory(this.cacheDir.resolve("image_cache"))
+						.build()
+				}
+				.build()
+		}
 		//Check android vers
 		client = if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
 		{

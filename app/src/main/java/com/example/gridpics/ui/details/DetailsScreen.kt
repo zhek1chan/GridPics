@@ -135,19 +135,10 @@ fun ShowDetails(
 	val exit = remember { mutableStateOf(false) }
 	val topBarHeight = 64.dp
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
-	val dynamicPadding = if(isVisible.value)
-	{
-		PaddingValues(0.dp, topBarHeight + statusBarHeightFixed, 0.dp, 0.dp)
-	}
-	else
-	{
-		PaddingValues(0.dp, topBarHeight + statusBarHeightFixed, 0.dp, 0.dp)
-	}
-	Log.d("Padding sum", "$topBarHeight + $statusBarHeightFixed")
 	HorizontalPager(
 		state = pagerState,
 		pageSize = PageSize.Fill,
-		contentPadding = dynamicPadding
+		contentPadding = PaddingValues(0.dp, topBarHeight + statusBarHeightFixed, 0.dp, 0.dp)
 	) { page ->
 		val scope = rememberCoroutineScope()
 		if(firstPage.value)
