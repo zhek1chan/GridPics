@@ -9,21 +9,24 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -137,7 +140,6 @@ fun ShowDetails(
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
 	HorizontalPager(
 		state = pagerState,
-		pageSize = PageSize.Fill,
 		contentPadding = PaddingValues(0.dp, topBarHeight + statusBarHeightFixed, 0.dp, 0.dp)
 	) { page ->
 		val scope = rememberCoroutineScope()
@@ -275,7 +277,7 @@ fun showError(context: Context, list: MutableList<String>, currentPage: Int): Bo
 	return !reload
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AppBar(
 	isVisible: MutableState<Boolean>,
@@ -286,10 +288,16 @@ fun AppBar(
 {
 	var navBack by remember { mutableStateOf(false) }
 	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
-		@OptIn(ExperimentalMaterial3Api::class)
+		Box(
+			modifier = Modifier
+				.background(MaterialTheme.colorScheme.background)
+				.height(WindowInsets.systemBarsIgnoringVisibility
+					.asPaddingValues()
+					.calculateTopPadding())
+				.fillMaxWidth())
 		TopAppBar(
 			modifier = Modifier
-				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
+				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
 				.clickable {
 					navBack = true
 				},
