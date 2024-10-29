@@ -130,17 +130,33 @@ fun ShowDetails(
 	padding: PaddingValues,
 )
 {
-	Log.d("PADDING", "isVisible = ${isVisible.value}, padding = $padding")
+	padding.calculateBottomPadding()
 	val firstPage = remember { mutableStateOf(true) }
 	val startPage = list.indexOf(img)
 	val zoom = rememberZoomState()
 	val currentPage = remember { mutableIntStateOf(startPage) }
 	val exit = remember { mutableStateOf(false) }
+	val canScroll = remember { mutableStateOf(false) }
 	val topBarHeight = 64.dp
+	val modifierForHorizontalPager =
+		Modifier
+			.zoomable(
+				zoomState = zoom,
+				enableOneFingerZoom = false,
+				onTap =
+				{
+					vm.changeState()
+					isVisible.value = !isVisible.value
+				},
+				scrollGesturePropagation = ScrollGesturePropagation.NotZoomed
+			)
+	Log.d("CAN WE SCROLL", "scroll - ${canScroll.value}")
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
 	HorizontalPager(
 		state = pagerState,
-		contentPadding = PaddingValues(0.dp, topBarHeight + statusBarHeightFixed, 0.dp, 0.dp)
+		contentPadding = PaddingValues(0.dp, topBarHeight + statusBarHeightFixed, 0.dp, 0.dp),
+		modifier = modifierForHorizontalPager,
+		userScrollEnabled = canScroll.value
 	) { page ->
 		val scope = rememberCoroutineScope()
 		if(firstPage.value)
@@ -149,8 +165,36 @@ fun ShowDetails(
 				pagerState.scrollToPage(startPage)
 			}
 		}
+		//Log.d("windowSize", "${}")
+		Log.d("offset", "offset x ${zoom.offsetX} zoomScale ${zoom.scale}")
 		firstPage.value = false
 		currentPage.intValue = page
+		if(zoom.scale > 1)
+		{
+			when(zoom.offsetX)
+			{
+				-810f ->
+				{
+					canScroll.value = true
+				}
+				810f ->
+				{
+					canScroll.value = true
+				}
+				else ->
+				{
+					canScroll.value = false
+				}
+			}
+		}
+		else if(zoom.scale == 1f)
+		{
+			canScroll.value = true
+		}
+		else
+		{
+			canScroll.value = false
+		}
 		val openAlertDialog = remember { mutableStateOf(false) }
 		if(!isValidUrl(list[currentPage.intValue]))
 		{
@@ -160,18 +204,29 @@ fun ShowDetails(
 		{
 			openAlertDialog.value ->
 			{
-				openAlertDialog.value = showError(context, list, currentPage.intValue)
+				openAlertDialog.value = showError(context, list, page)
 			}
 			!openAlertDialog.value ->
 			{
-				isVisible.value = showAsynchImage(list, page, vm, zoom, openAlertDialog, nc, isVisible, exit)
+				ShowAsynchImage(
+					list = list,
+					page = page,
+					vm = vm,
+					zoom = zoom,
+					openAlertDialog = openAlertDialog,
+					nc = nc,
+					isVisible = isVisible,
+					exit = exit
+				)
 			}
 		}
 	}
 }
 
 @Composable
-fun showAsynchImage(list: MutableList<String>, page: Int, vm: DetailsViewModel, zoom: ZoomState, openAlertDialog: MutableState<Boolean>, nc: NavController, isVisible: MutableState<Boolean>, exit: MutableState<Boolean>): Boolean
+fun ShowAsynchImage(
+	list: MutableList<String>, page: Int, vm: DetailsViewModel, zoom: ZoomState, openAlertDialog: MutableState<Boolean>, nc: NavController, isVisible: MutableState<Boolean>, exit: MutableState<Boolean>,
+)
 {
 	val count = remember { listOf(0).toMutableList() }
 	val countLastFive = remember { listOf(0).toMutableList() }
@@ -179,8 +234,6 @@ fun showAsynchImage(list: MutableList<String>, page: Int, vm: DetailsViewModel, 
 		.data(list[page])
 		.networkCachePolicy(CachePolicy.DISABLED)
 		.build()
-
-
 	AsyncImage(
 		model = imgRequest, "",
 		contentScale = ContentScale.FillWidth,
@@ -198,6 +251,7 @@ fun showAsynchImage(list: MutableList<String>, page: Int, vm: DetailsViewModel, 
 						exit.value = !event.changes.any {
 							it.isConsumed
 						}
+
 						if(count.size >= 5)
 						{
 							countLastFive.add(count[count.lastIndex])
@@ -216,23 +270,10 @@ fun showAsynchImage(list: MutableList<String>, page: Int, vm: DetailsViewModel, 
 						}
 						countLastFive.clear()
 						count.add(event.changes.size)
-						Log.d("exit", "${count[count.lastIndex]}")
 					}
 				}
 			}
-			.padding(0.dp, 0.dp, 0.dp, 0.dp)
-			.zoomable(
-				zoomState = zoom,
-				enableOneFingerZoom = false,
-				onTap =
-				{
-					vm.changeState()
-					isVisible.value = !isVisible.value
-				},
-				scrollGesturePropagation = ScrollGesturePropagation.NotZoomed
-			)
 	)
-	return isVisible.value
 }
 
 @Composable
