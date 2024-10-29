@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
@@ -283,6 +284,7 @@ fun showError(context: Context, list: MutableList<String>, currentPage: Int): Bo
 	return !reload
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AppBar(
 	isVisible: MutableState<Boolean>,
@@ -296,6 +298,7 @@ fun AppBar(
 		@OptIn(ExperimentalMaterial3Api::class)
 		TopAppBar(
 			modifier = Modifier
+				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
 				.clickable {
 					navBack = true
 				},
