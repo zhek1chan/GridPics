@@ -16,8 +16,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
@@ -110,7 +112,7 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 	}
 }
 
-@SuppressLint("CoroutineCreationDuringComposition", "UseCompatLoadingForDrawables")
+@SuppressLint("CoroutineCreationDuringComposition", "UseCompatLoadingForDrawaСловbles")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ShowDetails(
@@ -124,23 +126,27 @@ fun ShowDetails(
 	padding: PaddingValues,
 )
 {
-	Log.d("PADDING", "$padding")
+	Log.d("PADDING", "isVisible = ${isVisible.value}, padding = $padding")
 	val firstPage = remember { mutableStateOf(true) }
 	val startPage = list.indexOf(img)
 	val zoom = rememberZoomState()
 	val currentPage = remember { mutableIntStateOf(startPage) }
 	val exit = remember { mutableStateOf(false) }
-	Log.d("WINDOW", "${WindowInsets.systemBarsIgnoringVisibility}")
-	val dynamicPadding = if (!isVisible.value) {
-		PaddingValues(0.dp, 64.dp, 0.dp, 0.dp)
-	} else {
-		PaddingValues(0.dp)
+	val topBarHeight = 64.dp
+	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
+	Log.d("Padding sum", "$topBarHeight + $statusBarHeightFixed")
+	val dynamicPadding = if(!isVisible.value)
+	{
+		PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding())
+	}
+	else
+	{
+		PaddingValues(0.dp, padding.calculateTopPadding(), 0.dp, padding.calculateBottomPadding())
 	}
 	HorizontalPager(
 		state = pagerState,
 		pageSize = PageSize.Fill,
-		contentPadding = padding,
-		modifier = Modifier.padding(dynamicPadding)
+		modifier = Modifier
 	) { page ->
 		val scope = rememberCoroutineScope()
 		if(firstPage.value)
