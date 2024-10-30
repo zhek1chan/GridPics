@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
-import android.util.Log
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -150,7 +150,17 @@ fun ShowDetails(
 				},
 				scrollGesturePropagation = ScrollGesturePropagation.NotZoomed
 			)
-	Log.d("CAN WE SCROLL", "scroll - ${canScroll.value}")
+	val displayMetrics = context.resources.displayMetrics
+	val dpHeight = displayMetrics.heightPixels / displayMetrics.density
+	val orientation: Int = context.resources.configuration.orientation
+	val dpWidth = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
+	{
+		dpHeight
+	}
+	else
+	{
+		displayMetrics.widthPixels / displayMetrics.density
+	}
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
 	HorizontalPager(
 		state = pagerState,
@@ -165,36 +175,19 @@ fun ShowDetails(
 				pagerState.scrollToPage(startPage)
 			}
 		}
-		//Log.d("windowSize", "${}")
-		Log.d("offset", "offset x ${zoom.offsetX} zoomScale ${zoom.scale}")
-		firstPage.value = false
-		currentPage.intValue = page
+		//Scroll only from border feature
 		if(zoom.scale > 1)
 		{
-			when(zoom.offsetX)
-			{
-				-810f ->
-				{
-					canScroll.value = true
-				}
-				810f ->
-				{
-					canScroll.value = true
-				}
-				else ->
-				{
-					canScroll.value = false
-				}
-			}
+			val picInfo = ImageInfo(dpWidth.toInt(), zoom.offsetX, zoom.scale)
+			canScroll.value = isAtRightEdge(picInfo) || isAtLeftEdge(picInfo)
 		}
 		else if(zoom.scale == 1f)
 		{
 			canScroll.value = true
 		}
-		else
-		{
-			canScroll.value = false
-		}
+
+		firstPage.value = false
+		currentPage.intValue = page
 		val openAlertDialog = remember { mutableStateOf(false) }
 		if(!isValidUrl(list[currentPage.intValue]))
 		{
@@ -388,6 +381,53 @@ fun AppBar(
 			nc.navigateUp()
 		}
 	}
+}
+
+data class ImageInfo(val width: Int, val zoomOffsetX: Float, val zoomScale: Float)
+
+fun isAtLeftEdge(image: ImageInfo): Boolean
+{
+	val k = if(image.zoomScale > 1.65)
+	{
+		2
+	}
+	else if(image.zoomScale > 1.34)
+	{
+		3
+	}
+	else if(image.zoomScale > 1.1)
+	{
+		9
+	}
+	else
+	{
+		20
+	}
+	val zoomedWidth = image.width * image.zoomScale
+	// Если смещение влево больше половины зумированной ширины, то мы у левого края
+	return image.zoomOffsetX < -zoomedWidth / k
+}
+
+fun isAtRightEdge(image: ImageInfo): Boolean
+{
+	val k = if(image.zoomScale > 1.65)
+	{
+		2
+	}
+	else if(image.zoomScale > 1.34)
+	{
+		3
+	}
+	else if(image.zoomScale > 1.1)
+	{
+		9
+	}
+	else
+	{
+		20
+	}
+	val zoomedWidth = image.width * image.zoomScale
+	return image.zoomOffsetX > zoomedWidth / k
 }
 
 fun share(text: String, context: Context)
