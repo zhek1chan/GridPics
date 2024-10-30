@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
@@ -141,7 +142,7 @@ fun ShowDetails(
 	HorizontalPager(
 		state = pagerState,
 		pageSize = PageSize.Fill,
-		contentPadding = PaddingValues(0.dp, topBarHeight + statusBarHeightFixed, 0.dp, 0.dp),
+		contentPadding = PaddingValues(0.dp, topBarHeight + statusBarHeightFixed, 0.dp, WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateBottomPadding()),
 		userScrollEnabled = true
 	) { page ->
 		if(firstPage.value)
@@ -193,7 +194,7 @@ fun ShowAsynchImage(
 	}
 	val zoom = rememberZoomState()
 	val count = remember { listOf(0).toMutableList() }
-	val countLastFive = remember { listOf(0).toMutableList() }
+	val countLastThree = remember { listOf(0).toMutableList() }
 	val imgRequest = ImageRequest.Builder(LocalContext.current)
 		.data(list[page])
 		.networkCachePolicy(CachePolicy.DISABLED)
@@ -216,14 +217,13 @@ fun ShowAsynchImage(
 						exit.value = !event.changes.any {
 							it.isConsumed
 						}
-
 						if(count.size >= 3)
 						{
-							countLastFive.add(count[count.lastIndex])
-							countLastFive.add(count[count.lastIndex - 1])
-							countLastFive.add(count[count.lastIndex - 2])
+							countLastThree.add(count[count.lastIndex])
+							countLastThree.add(count[count.lastIndex - 1])
+							countLastThree.add(count[count.lastIndex - 2])
 						}
-						if(zoom.scale < 0.92.toFloat() && exit.value && countLastFive.max() == 2 && count[count.lastIndex] < 2)
+						if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2 && count[count.lastIndex] <= 2)
 						{
 							if(!isVisible.value)
 							{
@@ -231,7 +231,7 @@ fun ShowAsynchImage(
 							}
 							nc.navigateUp()
 						}
-						countLastFive.clear()
+						countLastThree.clear()
 						count.add(event.changes.size)
 					}
 				}
