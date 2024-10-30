@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -45,7 +46,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -70,25 +70,25 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.NULL_STRING
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
+import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.pictures.isValidUrl
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import net.engawapg.lib.zoomable.ScrollGesturePropagation
-import net.engawapg.lib.zoomable.ZoomState
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
+fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: PicturesViewModel)
 {
 	val scope = rememberCoroutineScope()
 	BackHandler {
 		scope.launch {
-			viewModel.observeFlow().collectLatest {
+			vmDetails.observeFlow().collectLatest {
 				if(it)
 				{
-					viewModel.changeState()
+					vmDetails.changeState()
 					nc.navigateUp()
 				}
 				else
@@ -110,13 +110,13 @@ fun DetailsScreen(nc: NavController, viewModel: DetailsViewModel)
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 			topBar = { AppBar(isVisible, context, nc, list, pagerState) },
 			content = { padding ->
-				ShowDetails(pic!!, viewModel, nc, isVisible, list, pagerState, context, padding)
+				ShowDetails(pic!!, vmDetails, nc, isVisible, list, pagerState, context, padding, vmPictures)
 			}
 		)
 	}
 }
 
-@SuppressLint("CoroutineCreationDuringComposition", "UseCompatLoadingForDrawaСловbles")
+@SuppressLint("CoroutineCreationDuringComposition", "UseCompatLoadingForDrawables")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ShowDetails(
@@ -128,85 +128,41 @@ fun ShowDetails(
 	pagerState: PagerState,
 	context: Context,
 	padding: PaddingValues,
+	vmPictures: PicturesViewModel,
 )
 {
 	padding.calculateBottomPadding()
 	val firstPage = remember { mutableStateOf(true) }
 	val startPage = list.indexOf(img)
-	val zoom = rememberZoomState()
-	val currentPage = remember { mutableIntStateOf(startPage) }
 	val exit = remember { mutableStateOf(false) }
-	val canScroll = remember { mutableStateOf(false) }
 	val topBarHeight = 64.dp
-	val modifierForHorizontalPager =
-		Modifier
-			.zoomable(
-				zoomState = zoom,
-				enableOneFingerZoom = false,
-				onTap =
-				{
-					vm.changeState()
-					isVisible.value = !isVisible.value
-				},
-				scrollGesturePropagation = ScrollGesturePropagation.NotZoomed
-			)
-	val displayMetrics = context.resources.displayMetrics
-	val dpHeight = displayMetrics.heightPixels / displayMetrics.density
-	val orientation: Int = context.resources.configuration.orientation
-	val dpWidth = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
-	{
-		dpHeight
-	}
-	else
-	{
-		displayMetrics.widthPixels / displayMetrics.density
-	}
+	val scope = rememberCoroutineScope()
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
 	HorizontalPager(
 		state = pagerState,
+		pageSize = PageSize.Fill,
 		contentPadding = PaddingValues(0.dp, topBarHeight + statusBarHeightFixed, 0.dp, 0.dp),
-		modifier = modifierForHorizontalPager,
-		userScrollEnabled = canScroll.value
+		userScrollEnabled = true
 	) { page ->
-		val scope = rememberCoroutineScope()
 		if(firstPage.value)
 		{
-			scope.launch {
+			scope.launch(Dispatchers.Main) {
 				pagerState.scrollToPage(startPage)
 			}
 		}
-		//Scroll only from border feature
-		if(zoom.scale > 1)
-		{
-			val picInfo = ImageInfo(dpWidth.toInt(), zoom.offsetX, zoom.scale)
-			canScroll.value = isAtRightEdge(picInfo) || isAtLeftEdge(picInfo)
-		}
-		else if(zoom.scale == 1f)
-		{
-			canScroll.value = true
-		}
-
 		firstPage.value = false
-		currentPage.intValue = page
-		val openAlertDialog = remember { mutableStateOf(false) }
-		if(!isValidUrl(list[currentPage.intValue]))
-		{
-			openAlertDialog.value = true
-		}
 		when
 		{
-			openAlertDialog.value ->
+			vmPictures.checkOnErrorExists(list[page]) ->
 			{
-				openAlertDialog.value = showError(context, list, page)
+				ShowError(context, list, page)
 			}
-			!openAlertDialog.value ->
+			!vmPictures.checkOnErrorExists(list[page]) ->
 			{
 				ShowAsynchImage(
 					list = list,
 					page = page,
 					vm = vm,
-					zoom = zoom,
-					openAlertDialog = openAlertDialog,
 					nc = nc,
 					isVisible = isVisible,
 					exit = exit
@@ -218,9 +174,24 @@ fun ShowDetails(
 
 @Composable
 fun ShowAsynchImage(
-	list: MutableList<String>, page: Int, vm: DetailsViewModel, zoom: ZoomState, openAlertDialog: MutableState<Boolean>, nc: NavController, isVisible: MutableState<Boolean>, exit: MutableState<Boolean>,
+	list: MutableList<String>,
+	page: Int,
+	vm: DetailsViewModel,
+	nc: NavController,
+	isVisible: MutableState<Boolean>,
+	exit: MutableState<Boolean>,
 )
 {
+	val orientation = LocalContext.current.resources.configuration.orientation
+	val scale = if(orientation == Configuration.ORIENTATION_PORTRAIT)
+	{
+		ContentScale.FillWidth
+	}
+	else
+	{
+		ContentScale.FillHeight
+	}
+	val zoom = rememberZoomState()
 	val count = remember { listOf(0).toMutableList() }
 	val countLastFive = remember { listOf(0).toMutableList() }
 	val imgRequest = ImageRequest.Builder(LocalContext.current)
@@ -228,14 +199,15 @@ fun ShowAsynchImage(
 		.networkCachePolicy(CachePolicy.DISABLED)
 		.build()
 	AsyncImage(
-		model = imgRequest, "",
-		contentScale = ContentScale.FillWidth,
-		onError = {
-			openAlertDialog.value = true
-		},
-		onSuccess = { openAlertDialog.value = false },
+		model = imgRequest,
+		contentDescription = "",
+		contentScale = scale,
 		modifier = Modifier
 			.fillMaxSize()
+			.zoomable(zoom, enableOneFingerZoom = false, onTap = {
+				vm.changeState()
+				isVisible.value = !isVisible.value
+			})
 			.pointerInput(Unit) {
 				awaitEachGesture {
 					while(true)
@@ -245,15 +217,13 @@ fun ShowAsynchImage(
 							it.isConsumed
 						}
 
-						if(count.size >= 5)
+						if(count.size >= 3)
 						{
 							countLastFive.add(count[count.lastIndex])
 							countLastFive.add(count[count.lastIndex - 1])
 							countLastFive.add(count[count.lastIndex - 2])
-							countLastFive.add(count[count.lastIndex - 3])
-							countLastFive.add(count[count.lastIndex - 4])
 						}
-						if(zoom.scale < 0.92.toFloat() && exit.value && countLastFive.max() == 2)
+						if(zoom.scale < 0.92.toFloat() && exit.value && countLastFive.max() == 2 && count[count.lastIndex] < 2)
 						{
 							if(!isVisible.value)
 							{
@@ -270,9 +240,12 @@ fun ShowAsynchImage(
 }
 
 @Composable
-fun showError(context: Context, list: MutableList<String>, currentPage: Int): Boolean
+fun ShowError(
+	context: Context,
+	list: MutableList<String>,
+	currentPage: Int,
+)
 {
-	var reload by remember { mutableStateOf(false) }
 	val errorMessage = if(isValidUrl(list[currentPage]))
 	{
 		"HTTP error: 404"
@@ -301,14 +274,12 @@ fun showError(context: Context, list: MutableList<String>, currentPage: Int): Bo
 			Button(
 				onClick =
 				{
-					reload = true
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
 				Text(stringResource(R.string.update_loading))
 			}
 		}
 	}
-	return !reload
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -381,53 +352,6 @@ fun AppBar(
 			nc.navigateUp()
 		}
 	}
-}
-
-data class ImageInfo(val width: Int, val zoomOffsetX: Float, val zoomScale: Float)
-
-fun isAtLeftEdge(image: ImageInfo): Boolean
-{
-	val k = if(image.zoomScale > 1.65)
-	{
-		2
-	}
-	else if(image.zoomScale > 1.34)
-	{
-		3
-	}
-	else if(image.zoomScale > 1.1)
-	{
-		9
-	}
-	else
-	{
-		20
-	}
-	val zoomedWidth = image.width * image.zoomScale
-	// Если смещение влево больше половины зумированной ширины, то мы у левого края
-	return image.zoomOffsetX < -zoomedWidth / k
-}
-
-fun isAtRightEdge(image: ImageInfo): Boolean
-{
-	val k = if(image.zoomScale > 1.65)
-	{
-		2
-	}
-	else if(image.zoomScale > 1.34)
-	{
-		3
-	}
-	else if(image.zoomScale > 1.1)
-	{
-		9
-	}
-	else
-	{
-		20
-	}
-	val zoomedWidth = image.width * image.zoomScale
-	return image.zoomOffsetX > zoomedWidth / k
 }
 
 fun share(text: String, context: Context)

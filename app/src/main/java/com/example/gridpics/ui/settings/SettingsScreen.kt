@@ -39,11 +39,12 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: SettingsViewModel, navController: NavController)
+fun SettingsScreen(vm: SettingsViewModel, changedTheme: Boolean, navController: NavController)
 {
 	Scaffold(modifier = Modifier
 		.fillMaxWidth(),
@@ -54,7 +55,7 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController)
 					.padding(padding)
 					.consumeWindowInsets(padding)
 					.fillMaxSize()) {
-				SettingsCompose(vm)
+				SettingsCompose(vm, changedTheme)
 			}
 		}
 	)
@@ -62,10 +63,18 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController)
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun SettingsCompose(vm: SettingsViewModel)
+fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 {
 	ComposeTheme {
-		var checkedStateForTheme by remember { mutableStateOf(false) }
+		var enabled = !changedTheme
+		val scope = rememberCoroutineScope()
+		val checkedStateForTheme = remember { mutableStateOf(enabled) }
+		scope.launch(Dispatchers.Main) {
+			vm.observeTheme().collectLatest {
+				enabled = it
+				checkedStateForTheme.value = it
+			}
+		}
 		var showDialog by remember { mutableStateOf(false) }
 		val context = LocalContext.current
 		ConstraintLayout {
@@ -86,7 +95,6 @@ fun SettingsCompose(vm: SettingsViewModel)
 						fontSize = 21.sp,
 						color = MaterialTheme.colorScheme.onPrimary
 					)
-
 				}
 				Row(
 					verticalAlignment = Alignment.CenterVertically,
@@ -94,7 +102,7 @@ fun SettingsCompose(vm: SettingsViewModel)
 						.fillMaxWidth()
 						.padding(16.dp, 10.dp)
 						.clickable {
-							checkedStateForTheme = true
+							checkedStateForTheme.value = true
 							vm.changeTheme(context)
 						}
 				) {
@@ -115,17 +123,11 @@ fun SettingsCompose(vm: SettingsViewModel)
 							.weight(1f)
 							.fillMaxWidth()
 					)
-					val scope = rememberCoroutineScope()
-					scope.launch {
-						vm.observeTheme().collectLatest {
-							checkedStateForTheme = it
-						}
-					}
 					GradientSwitch(
-						checked = checkedStateForTheme,
+						checked = checkedStateForTheme.value,
 						onCheckedChange = {
-							checkedStateForTheme = it
 							vm.changeTheme(context)
+							checkedStateForTheme.value = it
 						})
 				}
 				Row(

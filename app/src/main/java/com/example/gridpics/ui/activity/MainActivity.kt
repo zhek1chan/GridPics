@@ -29,6 +29,7 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
+import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.themes.ComposeTheme
@@ -40,7 +41,9 @@ class MainActivity: AppCompatActivity()
 {
 	private val detailsViewModel by viewModel<DetailsViewModel>()
 	private val settingsViewModel by viewModel<SettingsViewModel>()
+	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var picturesSharedPrefs: String? = null
+	private var changedTheme: Boolean? = null
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		setTheme(R.style.Theme_GridPics)
@@ -74,10 +77,10 @@ class MainActivity: AppCompatActivity()
 		}*/
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
-			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
+			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
-		val changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
-		if(!changedTheme)
+		changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
+		if(!changedTheme!!)
 		{
 			settingsViewModel.postValue(this, false)
 		}
@@ -135,13 +138,13 @@ class MainActivity: AppCompatActivity()
 				ExitTransition.None
 			}) {
 			composable(BottomNavItem.Home.route) {
-				PicturesScreen(navController)
+				PicturesScreen(navController, picturesViewModel)
 			}
 			composable(BottomNavItem.Settings.route) {
-				SettingsScreen(settingsViewModel, navController)
+				SettingsScreen(settingsViewModel, changedTheme!!, navController)
 			}
 			composable(Screen.Details.route) {
-				DetailsScreen(navController, detailsViewModel)
+				DetailsScreen(navController, detailsViewModel, picturesViewModel)
 			}
 		}
 	}

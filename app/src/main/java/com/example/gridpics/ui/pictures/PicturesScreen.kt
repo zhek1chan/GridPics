@@ -79,12 +79,10 @@ import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun PicturesScreen(navController: NavController)
+fun PicturesScreen(navController: NavController, viewModel: PicturesViewModel)
 {
-	val viewModel = koinViewModel<PicturesViewModel>()
 	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 	val clearedCache = LocalContext.current.getSharedPreferences(CACHE, MODE_PRIVATE).getBoolean(CACHE, false)
 	Scaffold(modifier = Modifier

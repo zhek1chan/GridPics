@@ -6,6 +6,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemColors
@@ -51,11 +52,12 @@ fun BottomNavigationBar(
 	AnimatedVisibility(
 		visible = bottomBarState.value, enter = slideInVertically(initialOffsetY = { it }), exit = ExitTransition.None
 	) {
-		NavigationBar(windowInsets = WindowInsets.navigationBars, containerColor = Color.Black) {
+		NavigationBar(windowInsets = WindowInsets.navigationBars, containerColor = MaterialTheme.colorScheme.background) {
 			val currentRoute = navBackStackEntry?.destination?.route
 			items.forEach { item ->
 				NavigationBarItem(
-					colors = NavigationBarItemColors(Color.White, Color.White, Color.Gray, Color.White, Color.White, Color.White, Color.White),
+					colors = NavigationBarItemColors(MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary, Color.Gray, MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary,
+						MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary),
 					icon = {
 						Icon(
 							imageVector = item.icon,
