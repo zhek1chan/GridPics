@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.res.Configuration
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -223,13 +224,17 @@ fun ShowAsynchImage(
 							countLastThree.add(count[count.lastIndex - 1])
 							countLastThree.add(count[count.lastIndex - 2])
 						}
-						if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2 && count[count.lastIndex] <= 2)
+						if(event.changes.any { !it.pressed })
 						{
-							if(!isVisible.value)
+							Log.d("g", "G")
+							if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2)
 							{
-								vm.changeState()
+								if(!isVisible.value)
+								{
+									vm.changeState()
+								}
+								nc.navigateUp()
 							}
-							nc.navigateUp()
 						}
 						countLastThree.clear()
 						count.add(event.changes.size)
