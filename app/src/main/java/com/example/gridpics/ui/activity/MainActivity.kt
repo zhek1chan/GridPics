@@ -1,10 +1,13 @@
 package com.example.gridpics.ui.activity
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
@@ -16,7 +19,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -50,7 +55,7 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
-		/*if(Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU)
+		if(Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU)
 		{
 			if(
 				ContextCompat.checkSelfPermission(
@@ -75,7 +80,7 @@ class MainActivity: AppCompatActivity()
 		{
 			createNotificationChannel()
 			showNotification()
-		}*/
+		}
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
@@ -117,7 +122,6 @@ class MainActivity: AppCompatActivity()
 		onBackPressedDispatcher.addCallback(this, callback)
 
 		picturesSharedPrefs = this.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
-
 
 		setContent {
 			ComposeTheme {
@@ -181,34 +185,56 @@ class MainActivity: AppCompatActivity()
 		notificationManager.notify(1, builder.build())
 	}
 
+	override fun onConfigurationChanged(newConfig: Configuration)
+	{
+		super.onConfigurationChanged(newConfig)
+		checkMultiWindowMode()
+	}
+
+	private fun checkMultiWindowMode()
+	{
+		if(isInMultiWindowMode || isInPictureInPictureMode)
+		{
+			detailsViewModel.postState(true)
+		}
+		else
+		{
+			detailsViewModel.postState(false)
+		}
+	}
+
 	override fun onRestart()
 	{
-		//showNotification()
-		//createNotificationChannel()
+		showNotification()
+		createNotificationChannel()
 		super.onRestart()
 	}
 
 	override fun onStop()
 	{
-		/*this.lifecycleScope.launch {
+		this.lifecycleScope.launch {
 			delay(3000)
 			cancelAllNotifications()
-		}*/
+		}
 		super.onStop()
 	}
 
 	override fun onDestroy()
 	{
-		//cancelAllNotifications()
+		cancelAllNotifications()
+		val vis = getSharedPreferences(WE_WERE_HERE_BEFORE, MODE_PRIVATE)
+		val editorVis = vis.edit()
+		editorVis.putBoolean(WE_WERE_HERE_BEFORE, false)
+		editorVis.apply()
 		super.onDestroy()
 	}
 
 	override fun onPause()
 	{
-		/*this.lifecycleScope.launch {
+		this.lifecycleScope.launch {
 			delay(3000)
 			cancelAllNotifications()
-		}*/
+		}
 		super.onPause()
 	}
 
@@ -227,5 +253,6 @@ class MainActivity: AppCompatActivity()
 		const val CHANNEL_ID = "GRID_PICS_CHANEL_ID"
 		const val NULL_STRING = "NULL"
 		const val TOP_BAR_VISABILITY = "TOP_BAR_VISABILITY"
+		const val WE_WERE_HERE_BEFORE = "WE_WERE_HERE_BEFORE"
 	}
 }
