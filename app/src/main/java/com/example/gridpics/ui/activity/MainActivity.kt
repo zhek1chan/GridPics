@@ -33,6 +33,7 @@ import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -225,5 +226,6 @@ class MainActivity: AppCompatActivity()
 		const val THEME_SP_KEY = "THEME_SHARED_PREFS"
 		const val CHANNEL_ID = "GRID_PICS_CHANEL_ID"
 		const val NULL_STRING = "NULL"
+		const val TOP_BAR_VISABILITY = "TOP_BAR_VISABILITY"
 	}
 }

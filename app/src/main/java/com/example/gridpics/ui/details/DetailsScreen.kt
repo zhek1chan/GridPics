@@ -72,6 +72,7 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.NULL_STRING
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
+import com.example.gridpics.ui.activity.MainActivity.Companion.TOP_BAR_VISABILITY
 import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.pictures.isValidUrl
 import kotlinx.coroutines.Dispatchers
@@ -103,11 +104,12 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 	val context = LocalContext.current
 	val pictures = context.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, NULL_STRING)
 	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, NULL_STRING)
+	val visible = context.getSharedPreferences(TOP_BAR_VISABILITY, MODE_PRIVATE).getBoolean(TOP_BAR_VISABILITY, true)
 	if(pic != NULL_STRING && pictures != NULL_STRING)
 	{
 		val list = remember { pictures!!.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(pageCount = { list.size })
-		val isVisible = remember { mutableStateOf(true) }
+		val isVisible = remember { mutableStateOf(visible) }
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 			topBar = { AppBar(isVisible, context, nc, list, pagerState) },
@@ -171,6 +173,8 @@ fun ShowDetails(
 				)
 			}
 		}
+		Log.d("S", "Real Saved page $page")
+		saveToSharedPrefs(context, list[pagerState.currentPage], isVisible.value)
 	}
 }
 
@@ -357,6 +361,19 @@ fun AppBar(
 			nc.navigateUp()
 		}
 	}
+}
+
+private fun saveToSharedPrefs(context: Context, s: String, vBoolean: Boolean)
+{
+	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE)
+	val editor = pic.edit()
+	editor.putString(PIC, s)
+	editor.apply()
+
+	val vis = context.getSharedPreferences(TOP_BAR_VISABILITY, MODE_PRIVATE)
+	val editorVis = vis.edit()
+	editorVis.putBoolean(TOP_BAR_VISABILITY, vBoolean)
+	editorVis.apply()
 }
 
 fun share(text: String, context: Context)
