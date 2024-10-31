@@ -29,6 +29,7 @@ retrofit = "2.11.0"
 retrofitVersion = "2.3.0"
 swiperefreshlayout = "1.1.0"
 touchimageview = "1.4.1"
+transformations = "2.0.3"
 ui = "1.0.0"
 uiGraphicsAndroid = "1.7.3"
 constraintlayoutCompose = "1.0.1"
@@ -87,6 +88,7 @@ retrofit-v230 = { module = "com.squareup.retrofit2:retrofit", version.ref = "ret
 androidx-ui-graphics-android = { group = "androidx.compose.ui", name = "ui-graphics-android", version.ref = "uiGraphicsAndroid" }
 touchimageview = { module = "com.github.MikeOrtiz:TouchImageView", version.ref = "touchimageview" }
 androidx-material3 = { module = "androidx.compose.material3:material3" }
+transformations = { module = "com.github.Commit451.coil-transformations:transformations", version.ref = "transformations" }
 ui = { module = "androidx.compose.ui:ui" }
 androidx-adaptive = { module = "androidx.compose.material3.adaptive:adaptive" }
 androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }

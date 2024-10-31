@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -60,74 +62,94 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil3.ImageLoader
-import coil3.SingletonImageLoader
-import coil3.compose.SubcomposeAsyncImage
-import coil3.disk.DiskCache
-import coil3.disk.directory
+import coil3.compose.AsyncImage
+import coil3.network.NetworkHeaders
+import coil3.network.httpHeaders
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import coil3.request.allowHardware
 import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
+import com.example.gridpics.ui.activity.BottomNavigationBar
+import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun PicturesScreen(navController: NavController)
+fun PicturesScreen(navController: NavController, viewModel: PicturesViewModel)
 {
-	val viewModel = koinViewModel<PicturesViewModel>()
-	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, "")
-	if(!txt.isNullOrEmpty())
-	{
-		ShowPictures(txt, viewModel, navController)
-	}
-	else
-	{
-		viewModel.resume()
-		viewModel.getPics()
-		ShowPictures(null, viewModel, navController)
-	}
+	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
+	val clearedCache = LocalContext.current.getSharedPreferences(CACHE, MODE_PRIVATE).getBoolean(CACHE, false)
+	Scaffold(modifier = Modifier
+		.fillMaxWidth(),
+		bottomBar = { BottomNavigationBar(navController) },
+		content = { padding ->
+			Column(
+				modifier = Modifier
+					.padding(padding)
+					.consumeWindowInsets(padding)
+					.fillMaxSize()) {
+				if(!txt.isNullOrEmpty() && !clearedCache)
+				{
+					viewModel.newState()
+					ShowPictures(txt, viewModel, navController)
+				}
+				else if(!clearedCache && txt.isNullOrEmpty())
+				{
+					viewModel.newState()
+					viewModel.resume()
+					viewModel.getPics()
+					ShowPictures(null, viewModel, navController)
+				}
+				else if(clearedCache || txt.isNullOrEmpty())
+				{
+					viewModel.resume()
+					viewModel.newState()
+					viewModel.getPics()
+					ShowPictures(null, viewModel, navController)
+				}
+			}
+		}
+	)
 }
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, fromCache: Boolean)
+fun itemNewsCard(item: String, nc: NavController, vm: PicturesViewModel): Boolean
 {
+	var isError by remember { mutableStateOf(false) }
 	ComposeTheme {
 		val context = LocalContext.current
 		var isClicked by remember { mutableStateOf(false) }
-		var isError by remember { mutableStateOf(false) }
 		val openAlertDialog = remember { mutableStateOf(false) }
 		val errorMessage = remember { mutableStateOf("") }
-		SingletonImageLoader.setSafe {
-			ImageLoader.Builder(context)
-				.diskCachePolicy(CachePolicy.ENABLED)
-				.diskCache {
-					DiskCache.Builder()
-						.directory(context.cacheDir.resolve("image_cache"))
-						.build()
-				}
-				.build()
-		}
 		var pl = R.drawable.loading
-		if(fromCache)
+		if(vm.checkOnErrorExists(item))
 		{
 			pl = R.drawable.error
 		}
-		val imgRequest = ImageRequest.Builder(LocalContext.current)
-			.data(item)
-			.diskCachePolicy(CachePolicy.ENABLED)
-			.placeholder(pl)
-			.error(R.drawable.error)
+		val headers = NetworkHeaders.Builder()
+			.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
 			.build()
-		SubcomposeAsyncImage(
-			model = imgRequest,
+		val imgRequest = remember(item) {
+			ImageRequest.Builder(context)
+				.data(item)
+				.httpHeaders(headers)
+				.allowHardware(true)
+				.networkCachePolicy(CachePolicy.ENABLED)
+				.memoryCachePolicy(CachePolicy.ENABLED)
+				.diskCachePolicy(CachePolicy.ENABLED)
+				.placeholder(pl)
+				.error(R.drawable.error)
+				.build()
+		}
+		AsyncImage(
+			model = (imgRequest),
 			contentDescription = item,
 			modifier = Modifier
 				.clickable {
@@ -148,6 +170,7 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, fromCac
 			onError = {
 				isError = true
 				errorMessage.value = it.result.throwable.message.toString()
+				vm.addError(item)
 			},
 			onSuccess = {
 				isError = false
@@ -198,6 +221,7 @@ fun ItemNewsCard(item: String, nc: NavController, vm: PicturesViewModel, fromCac
 			}
 		}
 	}
+	return isError
 }
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -207,34 +231,39 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 	Log.d("PicturesScreen", "From cache? ${!s.isNullOrEmpty()}")
 	Log.d("We got:", "$s")
 	val scope = rememberCoroutineScope()
+	val listState = rememberLazyGridState()
 	if(s == "null" || s.isNullOrEmpty())
 	{
+		vm.clearErrors()
 		val value by vm.observeState().observeAsState()
 		when(value)
 		{
 			is PictureState.SearchIsOk ->
 			{
-				Toast.makeText(LocalContext.current, "Началась загрузка", Toast.LENGTH_LONG).show()
+				val data = (value as PictureState.SearchIsOk).data
+				Toast.makeText(LocalContext.current, "Началась загрузка", Toast.LENGTH_SHORT).show()
 				Log.d("Now state is", "Loading")
 				saveToSharedPrefs(LocalContext.current, (value as PictureState.SearchIsOk).data)
 				val list = (value as PictureState.SearchIsOk).data.split("\n")
 
-				LazyVerticalGrid(modifier = Modifier
-					.fillMaxSize()
-					.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+				LazyVerticalGrid(
+					state = listState,
+					modifier = Modifier
+						.fillMaxSize()
+						.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
-						ItemNewsCard(it, nv, vm, false)
+						itemNewsCard(it, nv, vm)
 					}
 				}
 				scope.launch {
-					delay(10000)
-					vm.postState((value as PictureState.SearchIsOk).data)
+					delay(6000)
+					vm.postState(data)
 				}
 			}
 			PictureState.ConnectionError ->
 			{
 				Log.d("Net", "No internet")
-				Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+				Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize()) {
 					NoInternetScreen()
 					val cornerRadius = 16.dp
 					val gradientColor = listOf(Color.Green, Color.Yellow)
@@ -248,11 +277,13 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 				Toast.makeText(LocalContext.current, "Загрузка завершена", Toast.LENGTH_SHORT).show()
 				Log.d("Now state is", "Loaded")
 				val list = (value as PictureState.Loaded).data.split("\n")
-				LazyVerticalGrid(modifier = Modifier
-					.fillMaxSize()
-					.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+				LazyVerticalGrid(
+					state = listState,
+					modifier = Modifier
+						.fillMaxSize()
+						.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
-						ItemNewsCard(it, nv, vm, true)
+						itemNewsCard(it, nv, vm)
 					}
 				}
 			}
@@ -265,12 +296,13 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 		val items = remember { s.split("\n") }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
+			state = listState,
 			modifier = Modifier
 				.fillMaxSize()
 				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
-				ItemNewsCard(it, nv, vm, true)
+				itemNewsCard(it, nv, vm)
 			}
 		}
 	}
@@ -465,10 +497,13 @@ fun AddDialog(
 
 private fun saveToSharedPrefs(context: Context, s: String)
 {
-	Log.d("PicturesScreen", "Saved to SP $s")
-	val sharedPreferences = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
+	val sharedPreferencesPictures = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
+	val editorPictures = sharedPreferencesPictures.edit()
+	editorPictures.putString(PICTURES, s)
+	editorPictures.apply()
+	val sharedPreferences = context.getSharedPreferences(CACHE, MODE_PRIVATE)
 	val editor = sharedPreferences.edit()
-	editor.putString(PICTURES, s)
+	editor.putBoolean(CACHE, false)
 	editor.apply()
 }
 

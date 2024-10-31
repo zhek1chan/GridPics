@@ -7,12 +7,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,26 +31,51 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.navigation.NavController
 import coil3.imageLoader
 import com.example.gridpics.R
+import com.example.gridpics.ui.activity.BottomNavigationBar
+import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: SettingsViewModel)
+fun SettingsScreen(vm: SettingsViewModel, changedTheme: Boolean, navController: NavController)
 {
-	SettingsCompose(vm)
+	Scaffold(modifier = Modifier
+		.fillMaxWidth(),
+		bottomBar = { BottomNavigationBar(navController) },
+		content = { padding ->
+			Column(
+				modifier = Modifier
+					.padding(padding)
+					.consumeWindowInsets(padding)
+					.fillMaxSize()) {
+				SettingsCompose(vm, changedTheme)
+			}
+		}
+	)
 }
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun SettingsCompose(vm: SettingsViewModel)
+fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 {
 	ComposeTheme {
-		var checkedStateForTheme by remember { mutableStateOf(false) }
+		var enabled = !changedTheme
+		val scope = rememberCoroutineScope()
+		val checkedStateForTheme = remember { mutableStateOf(enabled) }
+		scope.launch(Dispatchers.Main) {
+			vm.observeTheme().collectLatest {
+				enabled = it
+				checkedStateForTheme.value = it
+			}
+		}
 		var showDialog by remember { mutableStateOf(false) }
 		val context = LocalContext.current
 		ConstraintLayout {
@@ -68,7 +96,6 @@ fun SettingsCompose(vm: SettingsViewModel)
 						fontSize = 21.sp,
 						color = MaterialTheme.colorScheme.onPrimary
 					)
-
 				}
 				Row(
 					verticalAlignment = Alignment.CenterVertically,
@@ -76,8 +103,11 @@ fun SettingsCompose(vm: SettingsViewModel)
 						.fillMaxWidth()
 						.padding(16.dp, 10.dp)
 						.clickable {
-							checkedStateForTheme = true
-							vm.changeTheme(context)
+							scope.launch(Dispatchers.Main) {
+								checkedStateForTheme.value = !checkedStateForTheme.value
+								delay(150)
+								vm.changeTheme(context)
+							}
 						}
 				) {
 					Icon(
@@ -97,17 +127,14 @@ fun SettingsCompose(vm: SettingsViewModel)
 							.weight(1f)
 							.fillMaxWidth()
 					)
-					val scope = rememberCoroutineScope()
-					scope.launch {
-						vm.observeTheme().collectLatest {
-							checkedStateForTheme = it
-						}
-					}
 					GradientSwitch(
-						checked = checkedStateForTheme,
+						checked = checkedStateForTheme.value,
 						onCheckedChange = {
-							checkedStateForTheme = it
-							vm.changeTheme(context)
+							scope.launch(Dispatchers.Main) {
+								checkedStateForTheme.value = it
+								delay(150)
+								vm.changeTheme(context)
+							}
 						})
 				}
 				Row(
@@ -144,10 +171,15 @@ fun SettingsCompose(vm: SettingsViewModel)
 						onConfirmation = {
 							val imageLoader = context.imageLoader
 							imageLoader.diskCache?.clear()
+							imageLoader.memoryCache?.clear()
 							val sharedPreferences = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
 							val editor = sharedPreferences.edit()
 							editor.putString(PICTURES, null)
 							editor.apply()
+							val sharedPreferencesCache = context.getSharedPreferences(CACHE, MODE_PRIVATE)
+							val editorCache = sharedPreferencesCache.edit()
+							editorCache.putBoolean(CACHE, true)
+							editorCache.apply()
 							showDialog = false
 							Toast.makeText(context, context.getString(R.string.you_have_cleared_cache), Toast.LENGTH_SHORT).show()
 						},

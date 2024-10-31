@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.gridpics"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.gridpics"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -128,6 +128,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.koin.androidx.compose)
     implementation(libs.androidx.paging.compose)
+    implementation(libs.transformations)
     //control sysUi
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.activity.ktx)
