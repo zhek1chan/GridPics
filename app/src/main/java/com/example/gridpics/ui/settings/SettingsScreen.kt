@@ -40,6 +40,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -102,8 +103,11 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 						.fillMaxWidth()
 						.padding(16.dp, 10.dp)
 						.clickable {
-							checkedStateForTheme.value = true
-							vm.changeTheme(context)
+							scope.launch(Dispatchers.Main) {
+								checkedStateForTheme.value = !checkedStateForTheme.value
+								delay(150)
+								vm.changeTheme(context)
+							}
 						}
 				) {
 					Icon(
@@ -126,8 +130,11 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 					GradientSwitch(
 						checked = checkedStateForTheme.value,
 						onCheckedChange = {
-							vm.changeTheme(context)
-							checkedStateForTheme.value = it
+							scope.launch(Dispatchers.Main) {
+								checkedStateForTheme.value = it
+								delay(150)
+								vm.changeTheme(context)
+							}
 						})
 				}
 				Row(
