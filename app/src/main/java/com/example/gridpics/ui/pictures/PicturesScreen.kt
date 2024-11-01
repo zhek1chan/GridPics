@@ -7,6 +7,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -85,6 +86,12 @@ fun PicturesScreen(navController: NavController, viewModel: PicturesViewModel)
 {
 	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 	val clearedCache = LocalContext.current.getSharedPreferences(CACHE, MODE_PRIVATE).getBoolean(CACHE, false)
+
+	BackHandler {
+		viewModel.backNavButtonPress(true)
+	}
+
+
 	Scaffold(modifier = Modifier
 		.fillMaxWidth(),
 		bottomBar = { BottomNavigationBar(navController) },

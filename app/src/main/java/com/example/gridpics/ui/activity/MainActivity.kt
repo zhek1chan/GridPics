@@ -11,7 +11,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
-import androidx.activity.OnBackPressedCallback
+import android.util.Log
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -50,41 +50,18 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var picturesSharedPrefs: String? = null
 	private var changedTheme: Boolean? = null
+	private var idCounter = 0
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		super.onCreate(savedInstanceState)
-		if(Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU)
-		{
-			if(
-				ContextCompat.checkSelfPermission(
-					this,
-					Manifest.permission.POST_NOTIFICATIONS,
-				) == PackageManager.PERMISSION_GRANTED
-			)
-			{
-				createNotificationChannel()
-				showNotification()
-			}
-			else
-			{
-				ActivityCompat.requestPermissions(
-					this,
-					arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-					100
-				)
-			}
-		}
-		else
-		{
-			createNotificationChannel()
-			showNotification()
-		}
+
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
+
 		changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
 		if(!changedTheme!!)
 		{
@@ -109,20 +86,20 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-		val isConditionAlreadySet = checkSomeCondition()
-		val callback = object: OnBackPressedCallback(
-			isConditionAlreadySet
-		)
-		{
-			override fun handleOnBackPressed()
-			{
-				this.handleOnBackPressed()
+
+		lifecycleScope.launch {
+			picturesViewModel.observeBackNav().collectLatest {
+				if(it)
+				{
+					cancelNotification(idCounter)
+					picturesViewModel.backNavButtonPress(false)
+					this@MainActivity.finish()
+				}
 			}
 		}
-		onBackPressedDispatcher.addCallback(this, callback)
 
 		picturesSharedPrefs = this.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
-
+		idCounter = getSharedPreferences(ID_COUNTER, MODE_PRIVATE).getInt(ID_COUNTER, 0)
 		setContent {
 			ComposeTheme {
 				val navController = rememberNavController()
@@ -130,8 +107,6 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 	}
-
-	private fun checkSomeCondition() = false
 
 	@Composable
 	fun NavigationSetup(navController: NavHostController)
@@ -161,7 +136,7 @@ class MainActivity: AppCompatActivity()
 		// Создаем канал уведомлений (для Android O и выше)
 		if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
 		{
-			val importance = NotificationManager.IMPORTANCE_LOW
+			val importance = NotificationManager.IMPORTANCE_HIGH
 			val channel = NotificationChannel(CHANNEL_ID, name, importance)
 			channel.description = description
 			val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -175,14 +150,18 @@ class MainActivity: AppCompatActivity()
 		intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
 		val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 		val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+			.setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_DEFERRED)
+			.setContentIntent(null)
+			.setAutoCancel(true)
+			.setOngoing(true)
 			.setSmallIcon(R.mipmap.ic_launcher)
 			.setColor(getColor(R.color.green))
 			.setContentTitle("GridPics")
 			.setContentText("Вы видите это уведомление, потому что приложение активно")
-			.setPriority(NotificationCompat.PRIORITY_LOW)
 			.setContentIntent(pendingIntent)
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-		notificationManager.notify(1, builder.build())
+		notificationManager.notify(idCounter, builder.build())
+		Log.d("lifecycle", "show notification $idCounter")
 	}
 
 	override fun onConfigurationChanged(newConfig: Configuration)
@@ -203,25 +182,69 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
+	override fun onStart()
+	{
+		Log.d("lifecycle", "onStart()")
+		if(Build.VERSION.SDK_INT >= VERSION_CODES.TIRAMISU)
+		{
+			if(
+				ContextCompat.checkSelfPermission(
+					this,
+					Manifest.permission.POST_NOTIFICATIONS,
+				) == PackageManager.PERMISSION_GRANTED
+			)
+			{
+				createNotificationChannel()
+				showNotification()
+			}
+			else
+			{
+				ActivityCompat.requestPermissions(
+					this,
+					arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+					100
+				)
+			}
+		}
+		else
+		{
+			createNotificationChannel()
+			showNotification()
+		}
+		super.onStart()
+	}
+
 	override fun onRestart()
 	{
-		showNotification()
+		idCounter += 1
+		Log.d("lifecycle", "onRestart()")
 		createNotificationChannel()
+		showNotification()
 		super.onRestart()
 	}
 
 	override fun onStop()
 	{
+		Log.d("lifecycle", "onStop()")
 		this.lifecycleScope.launch {
 			delay(3000)
-			cancelAllNotifications()
+			cancelNotification(idCounter)
 		}
 		super.onStop()
 	}
 
 	override fun onDestroy()
 	{
-		cancelAllNotifications()
+		Log.d("lifecycle", "onDestroy()")
+		val count = getSharedPreferences(ID_COUNTER, MODE_PRIVATE)
+		val editor = count.edit()
+		editor.putInt(ID_COUNTER, 0)
+		editor.apply()
+		this.lifecycleScope.launch {
+			delay(3000)
+			cancelNotification(idCounter)
+		}
+		cancelNotification(idCounter)
 		val vis = getSharedPreferences(WE_WERE_HERE_BEFORE, MODE_PRIVATE)
 		val editorVis = vis.edit()
 		editorVis.putBoolean(WE_WERE_HERE_BEFORE, false)
@@ -231,21 +254,24 @@ class MainActivity: AppCompatActivity()
 
 	override fun onPause()
 	{
+		Log.d("lifecycle", "onPause()")
 		this.lifecycleScope.launch {
 			delay(3000)
-			cancelAllNotifications()
+			cancelNotification(idCounter)
 		}
 		super.onPause()
 	}
 
-	private fun cancelAllNotifications()
+	private fun cancelNotification(id: Int)
 	{
+		Log.d("lifecycle", "canceling notification $id")
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-		notificationManager.cancelAll()
+		notificationManager.cancel(id)
 	}
 
 	companion object
 	{
+		const val ID_COUNTER = "ID_COUNTER"
 		const val CACHE = "CACHE"
 		const val PICTURES = "PICTURES_SHARED_PREFS"
 		const val PIC = "PIC"
