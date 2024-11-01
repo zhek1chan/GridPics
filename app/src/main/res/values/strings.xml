@@ -29,4 +29,7 @@
     <string name="you_have_cleared_cache">Вы очистили кэш</string>
     <string name="add">Добавить</string>
     <string name="extract_link">Укажите ссылку на изображение</string>
+	<string name="notification_content_text">Вы видите это уведомление, потому что приложение активно</string>
+    <string name="my_notification_channel">My Notification Channel</string>
+    <string name="channel_for_my_notification">Channel for my notification</string>
 </resources>
