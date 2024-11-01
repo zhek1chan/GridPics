@@ -51,11 +51,12 @@ class MainActivity: AppCompatActivity()
 	private var serviceIntent = Intent()
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
+		super.onCreate(savedInstanceState)
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
-		super.onCreate(savedInstanceState)
 		serviceIntent = Intent(this, NotificationService::class.java)
+
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
 		{
 			if(
@@ -69,17 +70,11 @@ class MainActivity: AppCompatActivity()
 			}
 			else
 			{
-				while(ContextCompat.checkSelfPermission(
-						this,
-						Manifest.permission.POST_NOTIFICATIONS,
-					) != PackageManager.PERMISSION_GRANTED)
-				{
-					ActivityCompat.requestPermissions(
-						this,
-						arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-						100
-					)
-				}
+				ActivityCompat.requestPermissions(
+					this,
+					arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+					100
+				)
 			}
 		}
 		else
@@ -162,6 +157,25 @@ class MainActivity: AppCompatActivity()
 		checkMultiWindowMode()
 	}
 
+	override fun onRequestPermissionsResult(
+		requestCode: Int,
+		permissions: Array<out String>,
+		grantResults: IntArray,
+	)
+	{
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+		if(requestCode == 100)
+		{
+			if(ContextCompat.checkSelfPermission(
+					this,
+					Manifest.permission.POST_NOTIFICATIONS,
+				) == PackageManager.PERMISSION_GRANTED)
+			{
+				startService(serviceIntent)
+			}
+		}
+	}
+
 	private fun checkMultiWindowMode()
 	{
 		if(isInMultiWindowMode || isInPictureInPictureMode)
@@ -183,8 +197,9 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
-		lifecycleScope.cancel()
 		super.onRestart()
+		lifecycleScope.cancel()
+		super.onStart()
 		Log.d("lifecycle", "onRestart()")
 	}
 

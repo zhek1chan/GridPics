@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
@@ -59,6 +60,12 @@ class NotificationService: Service()
 		super.onDestroy()
 		val manager: NotificationManager = getSystemService(NotificationManager::class.java)
 		manager.cancel(NOTIFICATION_ID)
+	}
+
+	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
+	{
+		Log.d("service", "service onStartCommand")
+		return super.onStartCommand(intent, flags, startId)
 	}
 
 	@Nullable

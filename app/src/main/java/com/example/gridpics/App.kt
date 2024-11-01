@@ -2,7 +2,6 @@ package com.example.gridpics
 
 import android.app.Application
 import android.os.Build
-import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
