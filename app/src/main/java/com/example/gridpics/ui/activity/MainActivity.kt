@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.app.Application
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -50,31 +51,25 @@ class MainActivity: AppCompatActivity()
 	private var picturesSharedPrefs: String? = null
 	private var changedTheme: Boolean? = null
 	private var serviceIntent = Intent()
-	private var notifService: NotificationService? = null
+	private var notifyService: NotificationService? = null
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(name: ComponentName?, service: IBinder?)
 		{
 			val binder = service as NotificationService.NetworkServiceBinder
-			notifService = binder.get()
+			notifyService = binder.get()
 		}
 
 		override fun onServiceDisconnected(name: ComponentName?)
 		{
-			notifService = null
-		}
-
-		override fun onBindingDied(name: ComponentName?)
-		{
-			notifService?.onDestroy()
-			super.onBindingDied(name)
+			notifyService = null
 		}
 	}
 
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
-		connectionCompanion = connection
+
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
@@ -140,7 +135,7 @@ class MainActivity: AppCompatActivity()
 			picturesViewModel.observeBackNav().collectLatest {
 				if(it)
 				{
-					stopService(serviceIntent)
+					unbindService(connection)
 					this@MainActivity.finish()
 				}
 			}
@@ -247,7 +242,6 @@ class MainActivity: AppCompatActivity()
 
 	companion object
 	{
-		lateinit var connectionCompanion: ServiceConnection
 		const val NOTIFICATION_ID = 1337
 		const val CACHE = "CACHE"
 		const val PICTURES = "PICTURES_SHARED_PREFS"
