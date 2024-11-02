@@ -1,6 +1,7 @@
 package com.example.gridpics
 
 import android.app.Application
+import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import coil3.ImageLoader
@@ -14,6 +15,7 @@ import com.example.gridpics.di.dataModule
 import com.example.gridpics.di.domainModule
 import com.example.gridpics.di.viewModelModule
 import com.example.gridpics.domain.interactor.SettingsInteractor
+import com.example.gridpics.ui.services.NotificationService
 import okhttp3.OkHttpClient
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.component.KoinComponent
@@ -32,6 +34,7 @@ class App: Application(), KoinComponent
 				viewModelModule
 			)
 		}
+
 		instance = this
 		val settingsInteractor = getKoin().get<SettingsInteractor>()
 		switchTheme(settingsInteractor.isAppThemeDark())

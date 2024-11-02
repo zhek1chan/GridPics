@@ -192,14 +192,19 @@ class MainActivity: AppCompatActivity()
 	{
 		Log.d("lifecycle", "onStart()")
 		super.onStart()
-		startService(serviceIntent)
+		if(ContextCompat.checkSelfPermission(
+				this,
+				Manifest.permission.POST_NOTIFICATIONS,
+			) == PackageManager.PERMISSION_GRANTED)
+		{
+			startService(serviceIntent)
+		}
 	}
 
 	override fun onRestart()
 	{
 		super.onRestart()
 		lifecycleScope.cancel()
-		super.onStart()
 		Log.d("lifecycle", "onRestart()")
 	}
 
