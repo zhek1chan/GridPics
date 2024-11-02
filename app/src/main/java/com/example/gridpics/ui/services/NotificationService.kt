@@ -81,7 +81,7 @@ class NotificationService: Service()
 		Log.d("service", "service onUnbind")
 		if(subscriberCount == 0)
 		{
-			startTimer(1000L, 1000L) {
+			startTimer(2000L, 1000L) {
 				Log.d("service", "times has gone")
 			}
 		}

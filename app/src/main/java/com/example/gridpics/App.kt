@@ -2,7 +2,6 @@ package com.example.gridpics
 
 import android.app.Activity
 import android.app.Application
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -18,7 +17,6 @@ import com.example.gridpics.di.dataModule
 import com.example.gridpics.di.domainModule
 import com.example.gridpics.di.viewModelModule
 import com.example.gridpics.domain.interactor.SettingsInteractor
-import com.example.gridpics.ui.services.NotificationService
 import okhttp3.OkHttpClient
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.component.KoinComponent
