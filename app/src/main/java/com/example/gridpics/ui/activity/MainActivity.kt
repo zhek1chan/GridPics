@@ -1,11 +1,15 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -19,7 +23,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -35,8 +38,6 @@ import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -49,9 +50,31 @@ class MainActivity: AppCompatActivity()
 	private var picturesSharedPrefs: String? = null
 	private var changedTheme: Boolean? = null
 	private var serviceIntent = Intent()
+	private var notifService: NotificationService? = null
+	private val connection = object: ServiceConnection
+	{
+		override fun onServiceConnected(name: ComponentName?, service: IBinder?)
+		{
+			val binder = service as NotificationService.NetworkServiceBinder
+			notifService = binder.get()
+		}
+
+		override fun onServiceDisconnected(name: ComponentName?)
+		{
+			notifService = null
+		}
+
+		override fun onBindingDied(name: ComponentName?)
+		{
+			notifService?.onDestroy()
+			super.onBindingDied(name)
+		}
+	}
+
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
+		connectionCompanion = connection
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
@@ -66,7 +89,8 @@ class MainActivity: AppCompatActivity()
 				) == PackageManager.PERMISSION_GRANTED
 			)
 			{
-				startService(serviceIntent)
+				val intent = Intent(this, NotificationService::class.java)
+				bindService(intent, connection, Context.BIND_AUTO_CREATE)
 			}
 			else
 			{
@@ -79,7 +103,8 @@ class MainActivity: AppCompatActivity()
 		}
 		else
 		{
-			startService(serviceIntent)
+			val intent = Intent(this, NotificationService::class.java)
+			bindService(intent, connection, Context.BIND_AUTO_CREATE)
 		}
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
@@ -171,7 +196,8 @@ class MainActivity: AppCompatActivity()
 					Manifest.permission.POST_NOTIFICATIONS,
 				) == PackageManager.PERMISSION_GRANTED)
 			{
-				startService(serviceIntent)
+				val intent = Intent(this, NotificationService::class.java)
+				bindService(intent, connection, Context.BIND_AUTO_CREATE)
 			}
 		}
 	}
@@ -197,25 +223,16 @@ class MainActivity: AppCompatActivity()
 				Manifest.permission.POST_NOTIFICATIONS,
 			) == PackageManager.PERMISSION_GRANTED)
 		{
-			startService(serviceIntent)
+			val intent = Intent(this, NotificationService::class.java)
+			bindService(intent, connection, Context.BIND_AUTO_CREATE)
 		}
 	}
 
-	override fun onRestart()
+	override fun onPause()
 	{
-		super.onRestart()
-		lifecycleScope.cancel()
-		Log.d("lifecycle", "onRestart()")
-	}
-
-	override fun onStop()
-	{
-		Log.d("lifecycle", "onStop()")
-		super.onStop()
-		lifecycleScope.launch {
-			delay(3000)
-			stopService(serviceIntent)
-		}
+		Log.d("lifecycle", "onPause()")
+		super.onPause()
+		unbindService(connection)
 	}
 
 	override fun onDestroy()
@@ -226,11 +243,11 @@ class MainActivity: AppCompatActivity()
 		val editorVis = vis.edit()
 		editorVis.putBoolean(WE_WERE_HERE_BEFORE, false)
 		editorVis.apply()
-		stopService(serviceIntent)
 	}
 
 	companion object
 	{
+		lateinit var connectionCompanion: ServiceConnection
 		const val NOTIFICATION_ID = 1337
 		const val CACHE = "CACHE"
 		const val PICTURES = "PICTURES_SHARED_PREFS"

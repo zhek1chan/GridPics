@@ -1,8 +1,11 @@
 package com.example.gridpics
 
+import android.app.Activity
 import android.app.Application
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -60,6 +63,39 @@ class App: Application(), KoinComponent
 		{
 			OkHttpClient()
 		}
+
+		registerActivityLifecycleCallbacks(object: ActivityLifecycleCallbacks
+		{
+			override fun onActivityCreated(p0: Activity, p1: Bundle?)
+			{
+			}
+
+			override fun onActivityStarted(p0: Activity)
+			{
+			}
+
+			override fun onActivityResumed(p0: Activity)
+			{
+			}
+
+			override fun onActivityPaused(p0: Activity)
+			{
+			}
+
+			override fun onActivityStopped(p0: Activity)
+			{
+			}
+
+			override fun onActivitySaveInstanceState(p0: Activity, p1: Bundle)
+			{
+			}
+
+			override fun onActivityDestroyed(p0: Activity)
+			{
+				activityIsDestroyed = true
+				Log.d("lifecycle", "activity died")
+			}
+		})
 	}
 
 	private fun switchTheme(darkThemeIsEnabled: Boolean)
@@ -76,6 +112,7 @@ class App: Application(), KoinComponent
 
 	companion object
 	{
+		var activityIsDestroyed = false
 		lateinit var instance: App
 		lateinit var client: OkHttpClient
 	}
