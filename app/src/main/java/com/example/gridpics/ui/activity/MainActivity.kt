@@ -1,7 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.app.Application
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -39,12 +39,14 @@ import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity: AppCompatActivity()
 {
+	private var isActive: Boolean = false
 	private val detailsViewModel by viewModel<DetailsViewModel>()
 	private val settingsViewModel by viewModel<SettingsViewModel>()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
@@ -73,6 +75,7 @@ class MainActivity: AppCompatActivity()
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
+
 		serviceIntent = Intent(this, NotificationService::class.java)
 
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
@@ -135,8 +138,9 @@ class MainActivity: AppCompatActivity()
 			picturesViewModel.observeBackNav().collectLatest {
 				if(it)
 				{
-					unbindService(connection)
-					this@MainActivity.finish()
+					val manager: NotificationManager = getSystemService(NotificationManager::class.java)
+					manager.cancel(NOTIFICATION_ID)
+					this@MainActivity.finishAffinity()
 				}
 			}
 		}
@@ -211,8 +215,6 @@ class MainActivity: AppCompatActivity()
 
 	override fun onStart()
 	{
-		Log.d("lifecycle", "onStart()")
-		super.onStart()
 		if(ContextCompat.checkSelfPermission(
 				this,
 				Manifest.permission.POST_NOTIFICATIONS,
@@ -221,6 +223,9 @@ class MainActivity: AppCompatActivity()
 			val intent = Intent(this, NotificationService::class.java)
 			bindService(intent, connection, Context.BIND_AUTO_CREATE)
 		}
+		isActive = true
+		Log.d("lifecycle", "onStart()")
+		super.onStart()
 	}
 
 	override fun onPause()
@@ -228,20 +233,24 @@ class MainActivity: AppCompatActivity()
 		Log.d("lifecycle", "onPause()")
 		super.onPause()
 		unbindService(connection)
+		isActive = false
 	}
 
 	override fun onDestroy()
 	{
 		Log.d("lifecycle", "onDestroy()")
-		super.onDestroy()
 		val vis = getSharedPreferences(WE_WERE_HERE_BEFORE, MODE_PRIVATE)
 		val editorVis = vis.edit()
 		editorVis.putBoolean(WE_WERE_HERE_BEFORE, false)
 		editorVis.apply()
+		val manager: NotificationManager = getSystemService(NotificationManager::class.java)
+		manager.cancel(NOTIFICATION_ID)
+		super.onDestroy()
 	}
 
 	companion object
 	{
+		val jobForNotifications = Job()
 		const val NOTIFICATION_ID = 1337
 		const val CACHE = "CACHE"
 		const val PICTURES = "PICTURES_SHARED_PREFS"

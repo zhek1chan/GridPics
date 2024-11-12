@@ -14,16 +14,20 @@ import androidx.core.app.NotificationCompat
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
+import com.example.gridpics.ui.activity.MainActivity.Companion.jobForNotifications
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class NotificationService: Service()
 {
 	private val binder = NetworkServiceBinder()
-	private var isBound = false
-
+	private var isActive = true
+	private var job = jobForNotifications
+	private var scope = CoroutineScope(Dispatchers.IO + job)
 	override fun onCreate()
 	{
 		Log.d("service", "service onCreate")
@@ -49,7 +53,6 @@ class NotificationService: Service()
 	{
 		// Создаем уведомление
 		val builder = NotificationCompat.Builder(this, MainActivity.CHANNEL_ID)
-			.setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_DEFERRED)
 			.setContentIntent(null)
 			.setAutoCancel(true)
 			.setOngoing(true)
@@ -69,25 +72,45 @@ class NotificationService: Service()
 
 	override fun onBind(intent: Intent?): IBinder
 	{
-		isBound = true
+		isActive = true
+		job.cancelChildren()
 		createNotificationChannel()
 		showNotification()
 		Log.d("service", "service onBind")
 		return binder
 	}
 
-	@OptIn(DelicateCoroutinesApi::class)
 	override fun onUnbind(intent: Intent?): Boolean
 	{
-		isBound = false
-		GlobalScope.launch {
-			delay(2000)
-			if(!isBound)
+		Log.d("service", "service onUnBind")
+		isActive = false
+		launchNewJob()
+		return super.onUnbind(intent)
+	}
+
+	private fun launchNewJob()
+	{
+		scope.launch {
+			Log.d("service", "work has been started")
+			for(i in 0 .. 10)
 			{
-				hideNotification()
+				delay(200)
+				if(isActive)
+				{
+					cancel()
+				}
+				else if(i == 10)
+				{
+					hideNotification()
+				}
 			}
 		}
-		return super.onUnbind(intent)
+	}
+
+	override fun onDestroy()
+	{
+		Log.d("service", "service onDestroy")
+		super.onDestroy()
 	}
 
 	private fun hideNotification()
