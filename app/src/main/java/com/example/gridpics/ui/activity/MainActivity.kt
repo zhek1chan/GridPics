@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.app.ActivityManager
 import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
@@ -38,8 +39,11 @@ import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -232,10 +236,26 @@ class MainActivity: AppCompatActivity()
 	{
 		Log.d("lifecycle", "onPause()")
 		super.onPause()
-		unbindService(connection)
+		if(isServiceRunning(NotificationService::class.java))
+		{
+			unbindService(connection)
+		}
 		isActive = false
 	}
 
+	//КОД ДОБАВЛЕН ДЛЯ ТЕСТА НА САМСУНГАХ
+	@OptIn(DelicateCoroutinesApi::class)
+	override fun onStop()
+	{
+		GlobalScope.launch {
+			delay(600)
+			val manager: NotificationManager = getSystemService(NotificationManager::class.java)
+			manager.cancel(NOTIFICATION_ID)
+		}
+		super.onStop()
+	}
+
+	@OptIn(DelicateCoroutinesApi::class)
 	override fun onDestroy()
 	{
 		Log.d("lifecycle", "onDestroy()")
@@ -243,14 +263,35 @@ class MainActivity: AppCompatActivity()
 		val editorVis = vis.edit()
 		editorVis.putBoolean(WE_WERE_HERE_BEFORE, false)
 		editorVis.apply()
-		val manager: NotificationManager = getSystemService(NotificationManager::class.java)
-		manager.cancel(NOTIFICATION_ID)
+		GlobalScope.launch {
+			val manager: NotificationManager = getSystemService(NotificationManager::class.java)
+			manager.cancel(NOTIFICATION_ID)
+		}
+		if(countExitNavigation >= 1)
+		{
+			this@MainActivity.finishAffinity()
+		}
 		super.onDestroy()
+	}
+
+	@Suppress("DEPRECATION")
+	private fun isServiceRunning(serviceClass: Class<*>): Boolean
+	{
+		val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+		for(service in manager.getRunningServices(Int.MAX_VALUE))
+		{
+			if(serviceClass.name == service.service.className)
+			{
+				return true
+			}
+		}
+		return false
 	}
 
 	companion object
 	{
 		val jobForNotifications = Job()
+		var countExitNavigation = 0
 		const val NOTIFICATION_ID = 1337
 		const val CACHE = "CACHE"
 		const val PICTURES = "PICTURES_SHARED_PREFS"

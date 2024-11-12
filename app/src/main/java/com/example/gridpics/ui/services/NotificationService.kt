@@ -14,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
+import com.example.gridpics.ui.activity.MainActivity.Companion.countExitNavigation
 import com.example.gridpics.ui.activity.MainActivity.Companion.jobForNotifications
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +42,14 @@ class NotificationService: Service()
 
 		if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
 		{
-			val importance = NotificationManager.IMPORTANCE_HIGH
+			val importance = if(countExitNavigation < 1)
+			{
+				NotificationManager.IMPORTANCE_MAX
+			}
+			else
+			{
+				NotificationManager.IMPORTANCE_DEFAULT
+			}
 			val channel = NotificationChannel(MainActivity.CHANNEL_ID, name, importance)
 			channel.description = description
 			val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -85,6 +93,7 @@ class NotificationService: Service()
 		Log.d("service", "service onUnBind")
 		isActive = false
 		launchNewJob()
+		countExitNavigation++
 		return super.onUnbind(intent)
 	}
 
@@ -117,6 +126,12 @@ class NotificationService: Service()
 	{
 		val manager: NotificationManager = getSystemService(NotificationManager::class.java)
 		manager.cancel(NOTIFICATION_ID)
+	}
+
+	override fun onTaskRemoved(rootIntent: Intent?)
+	{
+		stopSelf()
+		super.onTaskRemoved(rootIntent)
 	}
 
 	inner class NetworkServiceBinder: Binder()
