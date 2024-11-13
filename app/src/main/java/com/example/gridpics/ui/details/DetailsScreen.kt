@@ -70,6 +70,7 @@ import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.example.gridpics.R
+import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.NULL_STRING
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
@@ -201,6 +202,7 @@ fun ShowDetails(
 		}
 		vm.postUrl(list[pagerState.currentPage])
 		serviceIntent.putExtra("description", list[pagerState.currentPage])
+		MainActivity.countExitNavigation++
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 		{
 			context.startForegroundService(serviceIntent)
