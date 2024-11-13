@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.media.RingtoneManager
 import android.os.Binder
 import android.os.Build
 import android.os.Build.VERSION_CODES
@@ -23,7 +24,6 @@ class NotificationService: Service()
 	private val binder = NetworkServiceBinder()
 	private var isActive = true
 	private var job = jobForNotifications
-
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
 		isActive = true
@@ -63,11 +63,20 @@ class NotificationService: Service()
 
 	private fun showNotification()
 	{
+		val useSound = if(countExitNavigation > 1)
+		{
+			null
+		}
+		else
+		{
+			RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+		}
 		// Создаем уведомление
 		val builder = NotificationCompat.Builder(this, MainActivity.CHANNEL_ID)
 			.setContentIntent(null)
 			.setAutoCancel(true)
 			.setOngoing(true)
+			.setSound(useSound)
 			.setSmallIcon(R.mipmap.ic_launcher)
 			.setColor(getColor(R.color.green))
 			.setContentTitle(getString(R.string.gridpics))
