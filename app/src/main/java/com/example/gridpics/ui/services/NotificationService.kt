@@ -63,7 +63,7 @@ class NotificationService: Service()
 
 	private fun showNotification()
 	{
-		val useSound = if(countExitNavigation > 1)
+		val useSound = if(countExitNavigation > 0)
 		{
 			null
 		}
