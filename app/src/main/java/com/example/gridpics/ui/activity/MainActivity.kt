@@ -165,6 +165,16 @@ class MainActivity: AppCompatActivity()
 			}) {
 			composable(BottomNavItem.Home.route) {
 				PicturesScreen(navController, picturesViewModel)
+				val newIntent = serviceIntent
+				newIntent.putExtra("description", "default")
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				{
+					startForegroundService(newIntent)
+				}
+				else
+				{
+					startService(newIntent)
+				}
 			}
 			composable(BottomNavItem.Settings.route) {
 				SettingsScreen(settingsViewModel, changedTheme!!, navController)
