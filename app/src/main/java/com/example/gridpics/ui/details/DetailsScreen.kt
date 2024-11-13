@@ -200,9 +200,9 @@ fun ShowDetails(
 				)
 			}
 		}
+		MainActivity.countExitNavigation++
 		vm.postUrl(list[pagerState.currentPage])
 		serviceIntent.putExtra("description", list[pagerState.currentPage])
-		MainActivity.countExitNavigation++
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 		{
 			context.startForegroundService(serviceIntent)

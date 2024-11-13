@@ -16,7 +16,10 @@ import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.countExitNavigation
 import com.example.gridpics.ui.activity.MainActivity.Companion.jobForNotifications
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.launch
 
 class MainNotificationService: Service()
 {
@@ -29,17 +32,19 @@ class MainNotificationService: Service()
 		isActive = true
 		job.cancelChildren()
 		Log.d("service", "service onStartCommand")
-		val extras = intent?.extras
-		contentText = if(!extras?.getString("description").isNullOrEmpty() && extras?.getString("description") != "default")
-		{
-			extras!!.getString("description")!!
+		CoroutineScope(Dispatchers.IO).launch {
+			val extras = intent?.extras
+			contentText = if(!extras?.getString("description").isNullOrEmpty() && extras?.getString("description") != "default")
+			{
+				extras!!.getString("description")!!
+			}
+			else
+			{
+				getString(R.string.notification_content_text)
+			}
+			createNotificationChannel()
+			showNotification()
 		}
-		else
-		{
-			getString(R.string.notification_content_text)
-		}
-		createNotificationChannel()
-		showNotification()
 		return START_NOT_STICKY
 	}
 

@@ -142,6 +142,18 @@ class MainActivity: AppCompatActivity()
 		picturesSharedPrefs = this.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 		lifecycleScope.launch(Dispatchers.IO) {
 			detailsViewModel.observeUrlFlow().collectLatest {
+				if (it=="default") {
+					val newIntent = serviceIntent
+					newIntent.putExtra("description", "default")
+					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+					{
+						startForegroundService(newIntent)
+					}
+					else
+					{
+						startService(newIntent)
+					}
+				}
 				description = it
 				Log.d("description", description)
 			}
@@ -165,16 +177,6 @@ class MainActivity: AppCompatActivity()
 			}) {
 			composable(BottomNavItem.Home.route) {
 				PicturesScreen(navController, picturesViewModel)
-				val newIntent = serviceIntent
-				newIntent.putExtra("description", "default")
-				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-				{
-					startForegroundService(newIntent)
-				}
-				else
-				{
-					startService(newIntent)
-				}
 			}
 			composable(BottomNavItem.Settings.route) {
 				SettingsScreen(settingsViewModel, changedTheme!!, navController)
