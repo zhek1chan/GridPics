@@ -5,6 +5,7 @@ import android.app.Application
 import android.app.NotificationManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -65,8 +66,7 @@ class App: Application(), KoinComponent
 
 			override fun onActivityDestroyed(p0: Activity)
 			{
-				val manager: NotificationManager = getSystemService(NotificationManager::class.java)
-				manager.cancel(NOTIFICATION_ID)
+				Toast.makeText(baseContext, "onDestroy() was called", Toast.LENGTH_SHORT).show()
 			}
 		})
 

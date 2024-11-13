@@ -2,12 +2,14 @@ package com.example.gridpics.ui.activity
 
 import android.Manifest
 import android.app.ActivityManager
+import android.app.Notification
 import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -16,11 +18,16 @@ import android.util.Log
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat
+import androidx.core.app.ServiceCompat
+import androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE
+import androidx.core.app.ServiceCompat.startForeground
+import androidx.core.app.ServiceCompat.stopForeground
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -48,6 +55,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 class MainActivity: AppCompatActivity()
 {
 	private var isActive: Boolean = false
@@ -58,6 +66,7 @@ class MainActivity: AppCompatActivity()
 	private var changedTheme: Boolean? = null
 	private var serviceIntent = Intent()
 	private var notifyService: NotificationService? = null
+	private val notifServiceReady = NotificationService()
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(name: ComponentName?, service: IBinder?)
@@ -75,7 +84,7 @@ class MainActivity: AppCompatActivity()
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
-
+		connection
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
@@ -91,8 +100,7 @@ class MainActivity: AppCompatActivity()
 				) == PackageManager.PERMISSION_GRANTED
 			)
 			{
-				val intent = Intent(this, NotificationService::class.java)
-				bindService(intent, connection, Context.BIND_AUTO_CREATE)
+				startForegroundService(serviceIntent)
 			}
 			else
 			{
@@ -105,8 +113,7 @@ class MainActivity: AppCompatActivity()
 		}
 		else
 		{
-			val intent = Intent(this, NotificationService::class.java)
-			bindService(intent, connection, Context.BIND_AUTO_CREATE)
+			startForegroundService(serviceIntent)
 		}
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
@@ -142,8 +149,7 @@ class MainActivity: AppCompatActivity()
 			picturesViewModel.observeBackNav().collectLatest {
 				if(it)
 				{
-					val manager: NotificationManager = getSystemService(NotificationManager::class.java)
-					manager.cancel(NOTIFICATION_ID)
+					//stopForeground(notifServiceReady, STOP_FOREGROUND_REMOVE)
 					this@MainActivity.finishAffinity()
 				}
 			}
@@ -199,8 +205,7 @@ class MainActivity: AppCompatActivity()
 					Manifest.permission.POST_NOTIFICATIONS,
 				) == PackageManager.PERMISSION_GRANTED)
 			{
-				val intent = Intent(this, NotificationService::class.java)
-				bindService(intent, connection, Context.BIND_AUTO_CREATE)
+				startForegroundService(serviceIntent)
 			}
 		}
 	}
@@ -224,8 +229,7 @@ class MainActivity: AppCompatActivity()
 				Manifest.permission.POST_NOTIFICATIONS,
 			) == PackageManager.PERMISSION_GRANTED)
 		{
-			val intent = Intent(this, NotificationService::class.java)
-			bindService(intent, connection, Context.BIND_AUTO_CREATE)
+			startForegroundService(serviceIntent)
 		}
 		isActive = true
 		Log.d("lifecycle", "onStart()")
@@ -238,22 +242,22 @@ class MainActivity: AppCompatActivity()
 		super.onPause()
 		if(isServiceRunning(NotificationService::class.java))
 		{
-			unbindService(connection)
 		}
 		isActive = false
 	}
 
 	//КОД ДОБАВЛЕН ДЛЯ ТЕСТА НА САМСУНГАХ
-	@OptIn(DelicateCoroutinesApi::class)
+	/*@OptIn(DelicateCoroutinesApi::class)
 	override fun onStop()
 	{
 		GlobalScope.launch {
 			delay(600)
+			stopService(serviceIntent)
 			val manager: NotificationManager = getSystemService(NotificationManager::class.java)
 			manager.cancel(NOTIFICATION_ID)
 		}
 		super.onStop()
-	}
+	}*/
 
 	@OptIn(DelicateCoroutinesApi::class)
 	override fun onDestroy()
@@ -264,8 +268,6 @@ class MainActivity: AppCompatActivity()
 		editorVis.putBoolean(WE_WERE_HERE_BEFORE, false)
 		editorVis.apply()
 		GlobalScope.launch {
-			val manager: NotificationManager = getSystemService(NotificationManager::class.java)
-			manager.cancel(NOTIFICATION_ID)
 		}
 		if(countExitNavigation >= 1)
 		{
