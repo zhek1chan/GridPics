@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -17,6 +19,8 @@ class PicturesViewModel(
 	private var isPaused = false
 	private val stateLiveData = MutableLiveData<PictureState>()
 	private val errorsList: MutableList<String> = mutableListOf()
+	private val backNav = MutableStateFlow(false)
+	fun observeBackNav(): Flow<Boolean> = backNav
 	fun observeState(): LiveData<PictureState> = stateLiveData
 	fun getPics()
 	{
@@ -65,5 +69,10 @@ class PicturesViewModel(
 	fun clearErrors()
 	{
 		errorsList.clear()
+	}
+
+	fun backNavButtonPress(b: Boolean)
+	{
+		backNav.value = b
 	}
 }

@@ -32,6 +32,7 @@ class App: Application(), KoinComponent
 				viewModelModule
 			)
 		}
+
 		instance = this
 		val settingsInteractor = getKoin().get<SettingsInteractor>()
 		switchTheme(settingsInteractor.isAppThemeDark())
@@ -48,7 +49,7 @@ class App: Application(), KoinComponent
 				}
 				.build()
 		}
-		//Check android vers
+
 		client = if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
 		{
 			getUnsafeOkHttpClient()

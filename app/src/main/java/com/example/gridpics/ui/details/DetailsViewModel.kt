@@ -12,4 +12,11 @@ class DetailsViewModel: ViewModel()
 	{
 		stateFlow.value = !stateFlow.value
 	}
+
+	private val stateMultiWindowFlow = MutableStateFlow(false)
+	fun observeMultiWindowFlow(): Flow<Boolean> = stateMultiWindowFlow
+	fun postState(b: Boolean)
+	{
+		stateMultiWindowFlow.value = b
+	}
 }

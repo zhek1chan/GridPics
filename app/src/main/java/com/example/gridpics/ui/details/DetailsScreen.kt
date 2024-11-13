@@ -73,6 +73,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.NULL_STRING
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.activity.MainActivity.Companion.TOP_BAR_VISABILITY
+import com.example.gridpics.ui.activity.MainActivity.Companion.WE_WERE_HERE_BEFORE
 import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.pictures.isValidUrl
 import kotlinx.coroutines.Dispatchers
@@ -81,16 +82,19 @@ import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
+@SuppressLint("RestrictedApi", "CommitPrefEdits", "ApplySharedPref")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: PicturesViewModel)
 {
+	val context = LocalContext.current
 	val scope = rememberCoroutineScope()
 	BackHandler {
-		scope.launch {
+		scope.launch(Dispatchers.Main) {
 			vmDetails.observeFlow().collectLatest {
 				if(it)
 				{
+					Log.d("we are out", "We are out")
 					vmDetails.changeState()
 					nc.navigateUp()
 				}
@@ -101,10 +105,19 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 			}
 		}
 	}
-	val context = LocalContext.current
 	val pictures = context.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, NULL_STRING)
 	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, NULL_STRING)
-	val visible = context.getSharedPreferences(TOP_BAR_VISABILITY, MODE_PRIVATE).getBoolean(TOP_BAR_VISABILITY, true)
+	var visible = context.getSharedPreferences(TOP_BAR_VISABILITY, MODE_PRIVATE).getBoolean(TOP_BAR_VISABILITY, true)
+	val weWereHere = context.getSharedPreferences(WE_WERE_HERE_BEFORE, MODE_PRIVATE).getBoolean(WE_WERE_HERE_BEFORE, false)
+	if(weWereHere)
+	{
+		Log.d("We were", "We were here")
+		visible = true
+	}
+	val vis = context.getSharedPreferences(WE_WERE_HERE_BEFORE, MODE_PRIVATE)
+	val editorVis = vis.edit()
+	editorVis.putBoolean(WE_WERE_HERE_BEFORE, true)
+	editorVis.apply()
 	if(pic != NULL_STRING && pictures != NULL_STRING)
 	{
 		val list = remember { pictures!!.split("\n").toMutableList() }
@@ -142,6 +155,13 @@ fun ShowDetails(
 	val topBarHeight = 64.dp
 	val scope = rememberCoroutineScope()
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
+	var multiWindowed by remember { mutableStateOf(false) }
+	scope.launch {
+		vm.observeMultiWindowFlow().collectLatest {
+			multiWindowed = it
+		}
+	}
+
 	HorizontalPager(
 		state = pagerState,
 		pageSize = PageSize.Fill,
@@ -169,7 +189,8 @@ fun ShowDetails(
 					vm = vm,
 					nc = nc,
 					isVisible = isVisible,
-					exit = exit
+					exit = exit,
+					multiWindow = multiWindowed
 				)
 			}
 		}
@@ -186,16 +207,24 @@ fun ShowAsynchImage(
 	nc: NavController,
 	isVisible: MutableState<Boolean>,
 	exit: MutableState<Boolean>,
+	multiWindow: Boolean,
 )
 {
 	val orientation = LocalContext.current.resources.configuration.orientation
-	val scale = if(orientation == Configuration.ORIENTATION_PORTRAIT)
+	val scale = if(!multiWindow)
 	{
-		ContentScale.FillWidth
+		if(orientation == Configuration.ORIENTATION_PORTRAIT)
+		{
+			ContentScale.FillWidth
+		}
+		else
+		{
+			ContentScale.FillHeight
+		}
 	}
 	else
 	{
-		ContentScale.FillHeight
+		ContentScale.Fit
 	}
 	val zoom = rememberZoomState()
 	val count = remember { listOf(0).toMutableList() }
@@ -369,7 +398,6 @@ private fun saveToSharedPrefs(context: Context, s: String, vBoolean: Boolean)
 	val editor = pic.edit()
 	editor.putString(PIC, s)
 	editor.apply()
-
 	val vis = context.getSharedPreferences(TOP_BAR_VISABILITY, MODE_PRIVATE)
 	val editorVis = vis.edit()
 	editorVis.putBoolean(TOP_BAR_VISABILITY, vBoolean)
