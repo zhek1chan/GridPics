@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,7 +29,7 @@ import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.pictures.PicturesViewModel
-import com.example.gridpics.ui.services.NotificationService
+import com.example.gridpics.ui.services.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.themes.ComposeTheme
@@ -54,6 +55,7 @@ class MainActivity: AppCompatActivity()
 	private var picturesSharedPrefs: String? = null
 	private var changedTheme: Boolean? = null
 	private var serviceIntent = Intent()
+	private var description = "default"
 	private var job = jobForNotifications
 	private var scope = GlobalScope
 	override fun onCreate(savedInstanceState: Bundle?)
@@ -63,7 +65,8 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 
-		serviceIntent = Intent(this, NotificationService::class.java)
+		serviceIntent = Intent(this, MainNotificationService::class.java)
+		serviceIntent.putExtra("description", description)
 
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
 		{
@@ -137,6 +140,12 @@ class MainActivity: AppCompatActivity()
 		}
 
 		picturesSharedPrefs = this.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
+		lifecycleScope.launch(Dispatchers.IO) {
+			detailsViewModel.observeUrlFlow().collectLatest {
+				description = it
+				Log.d("description", description)
+			}
+		}
 		setContent {
 			ComposeTheme {
 				val navController = rememberNavController()
@@ -217,13 +226,16 @@ class MainActivity: AppCompatActivity()
 				Manifest.permission.POST_NOTIFICATIONS,
 			) == PackageManager.PERMISSION_GRANTED)
 		{
+			val newIntent = serviceIntent
+			newIntent.putExtra("description", description)
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
-				startForegroundService(serviceIntent)
+				startForegroundService(newIntent)
+				Log.d("description after stop", description)
 			}
 			else
 			{
-				startService(serviceIntent)
+				startService(newIntent)
 			}
 		}
 		isActive = true

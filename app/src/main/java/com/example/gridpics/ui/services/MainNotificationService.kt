@@ -18,18 +18,28 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.countExitNavigati
 import com.example.gridpics.ui.activity.MainActivity.Companion.jobForNotifications
 import kotlinx.coroutines.cancelChildren
 
-class NotificationService: Service()
+class MainNotificationService: Service()
 {
 	private val binder = NetworkServiceBinder()
 	private var isActive = true
 	private var job = jobForNotifications
+	private lateinit var contentText: String
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
 		isActive = true
 		job.cancelChildren()
+		Log.d("service", "service onStartCommand")
+		val extras = intent?.extras
+		contentText = if(!extras?.getString("description").isNullOrEmpty() && extras?.getString("description") != "default")
+		{
+			extras!!.getString("description")!!
+		}
+		else
+		{
+			getString(R.string.notification_content_text)
+		}
 		createNotificationChannel()
 		showNotification()
-		Log.d("service", "service onStartCommand")
 		return START_NOT_STICKY
 	}
 
@@ -62,6 +72,7 @@ class NotificationService: Service()
 
 	private fun showNotification()
 	{
+		Log.d("description in service", contentText)
 		val dontUseSound = countExitNavigation > 1
 		// Создаем уведомление
 		val builder = NotificationCompat.Builder(this, MainActivity.CHANNEL_ID)
@@ -72,7 +83,7 @@ class NotificationService: Service()
 			.setSmallIcon(R.mipmap.ic_launcher)
 			.setColor(getColor(R.color.green))
 			.setContentTitle(getString(R.string.gridpics))
-			.setContentText(getString(R.string.notification_content_text))
+			.setContentText(contentText)
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.notify(NOTIFICATION_ID, builder.build())
 		startForeground(NOTIFICATION_ID, builder.build())
@@ -80,6 +91,6 @@ class NotificationService: Service()
 
 	inner class NetworkServiceBinder: Binder()
 	{
-		fun get(): NotificationService = this@NotificationService
+		fun get(): MainNotificationService = this@MainNotificationService
 	}
 }

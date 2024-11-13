@@ -8,6 +8,10 @@ class DetailsViewModel: ViewModel()
 {
 	private val stateFlow = MutableStateFlow(false)
 	fun observeFlow(): Flow<Boolean> = stateFlow
+
+	private val urlFlow = MutableStateFlow("default")
+	fun observeUrlFlow(): Flow<String> = urlFlow
+
 	fun changeState()
 	{
 		stateFlow.value = !stateFlow.value
@@ -18,5 +22,10 @@ class DetailsViewModel: ViewModel()
 	fun postState(b: Boolean)
 	{
 		stateMultiWindowFlow.value = b
+	}
+
+	fun postUrl(s: String)
+	{
+		urlFlow.value = s
 	}
 }

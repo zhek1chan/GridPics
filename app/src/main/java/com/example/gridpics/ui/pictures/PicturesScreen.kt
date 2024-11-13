@@ -84,8 +84,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun PicturesScreen(navController: NavController, viewModel: PicturesViewModel)
 {
-	val txt = LocalContext.current.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
-	val clearedCache = LocalContext.current.getSharedPreferences(CACHE, MODE_PRIVATE).getBoolean(CACHE, false)
+	val context = LocalContext.current
+	val txt = context.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
+	val clearedCache = context.getSharedPreferences(CACHE, MODE_PRIVATE).getBoolean(CACHE, false)
 
 	BackHandler {
 		viewModel.backNavButtonPress(true)
