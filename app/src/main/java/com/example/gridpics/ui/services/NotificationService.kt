@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Binder
@@ -12,8 +11,6 @@ import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.os.IBinder
 import android.util.Log
-import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
@@ -22,12 +19,9 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.countExitNavigati
 import com.example.gridpics.ui.activity.MainActivity.Companion.jobForNotifications
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 class NotificationService: Service()
 {
 	private val binder = NetworkServiceBinder()
@@ -99,42 +93,15 @@ class NotificationService: Service()
 
 	override fun stopService(name: Intent?): Boolean
 	{
-		Log.d("service", "service onStop")
 		isActive = false
-		launchNewJob()
-		countExitNavigation++
+		Log.d("service", "service onStop")
 		return super.stopService(name)
-	}
-
-	private fun launchNewJob()
-	{
-		scope.launch {
-			Log.d("service", "work has been started")
-			for(i in 0 .. 10)
-			{
-				delay(200)
-				if(isActive)
-				{
-					cancel()
-				}
-				else if(i == 10)
-				{
-					hideNotification()
-				}
-			}
-		}
 	}
 
 	override fun onDestroy()
 	{
 		Log.d("service", "service onDestroy")
 		super.onDestroy()
-	}
-
-	private fun hideNotification()
-	{
-		val manager: NotificationManager = getSystemService(NotificationManager::class.java)
-		manager.cancel(NOTIFICATION_ID)
 	}
 
 	override fun onTaskRemoved(rootIntent: Intent?)

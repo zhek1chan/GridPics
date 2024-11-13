@@ -1,11 +1,7 @@
 package com.example.gridpics
 
-import android.app.Activity
 import android.app.Application
-import android.app.NotificationManager
 import android.os.Build
-import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -18,7 +14,6 @@ import com.example.gridpics.di.dataModule
 import com.example.gridpics.di.domainModule
 import com.example.gridpics.di.viewModelModule
 import com.example.gridpics.domain.interactor.SettingsInteractor
-import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import okhttp3.OkHttpClient
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.component.KoinComponent
@@ -37,38 +32,6 @@ class App: Application(), KoinComponent
 				viewModelModule
 			)
 		}
-
-		registerActivityLifecycleCallbacks(object: ActivityLifecycleCallbacks
-		{
-			override fun onActivityCreated(p0: Activity, p1: Bundle?)
-			{
-			}
-
-			override fun onActivityStarted(p0: Activity)
-			{
-			}
-
-			override fun onActivityResumed(p0: Activity)
-			{
-			}
-
-			override fun onActivityPaused(p0: Activity)
-			{
-			}
-
-			override fun onActivityStopped(p0: Activity)
-			{
-			}
-
-			override fun onActivitySaveInstanceState(p0: Activity, p1: Bundle)
-			{
-			}
-
-			override fun onActivityDestroyed(p0: Activity)
-			{
-				Toast.makeText(baseContext, "onDestroy() was called", Toast.LENGTH_SHORT).show()
-			}
-		})
 
 		instance = this
 		val settingsInteractor = getKoin().get<SettingsInteractor>()

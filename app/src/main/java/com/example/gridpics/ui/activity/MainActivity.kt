@@ -1,33 +1,20 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.app.ActivityManager
-import android.app.Notification
-import android.app.NotificationManager
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
 import android.util.Log
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat
-import androidx.core.app.ServiceCompat
-import androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE
-import androidx.core.app.ServiceCompat.startForeground
-import androidx.core.app.ServiceCompat.stopForeground
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -46,16 +33,15 @@ import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 class MainActivity: AppCompatActivity()
 {
 	private var isActive: Boolean = false
@@ -65,26 +51,12 @@ class MainActivity: AppCompatActivity()
 	private var picturesSharedPrefs: String? = null
 	private var changedTheme: Boolean? = null
 	private var serviceIntent = Intent()
-	private var notifyService: NotificationService? = null
-	private val notifServiceReady = NotificationService()
-	private val connection = object: ServiceConnection
-	{
-		override fun onServiceConnected(name: ComponentName?, service: IBinder?)
-		{
-			val binder = service as NotificationService.NetworkServiceBinder
-			notifyService = binder.get()
-		}
-
-		override fun onServiceDisconnected(name: ComponentName?)
-		{
-			notifyService = null
-		}
-	}
+	private var job = jobForNotifications
+	private var scope = CoroutineScope(Dispatchers.IO + job)
 
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
-		connection
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
@@ -113,7 +85,14 @@ class MainActivity: AppCompatActivity()
 		}
 		else
 		{
-			startForegroundService(serviceIntent)
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			{
+				startForegroundService(serviceIntent)
+			}
+			else
+			{
+				startService(serviceIntent)
+			}
 		}
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
@@ -205,7 +184,14 @@ class MainActivity: AppCompatActivity()
 					Manifest.permission.POST_NOTIFICATIONS,
 				) == PackageManager.PERMISSION_GRANTED)
 			{
-				startForegroundService(serviceIntent)
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				{
+					startForegroundService(serviceIntent)
+				}
+				else
+				{
+					startService(serviceIntent)
+				}
 			}
 		}
 	}
@@ -229,37 +215,35 @@ class MainActivity: AppCompatActivity()
 				Manifest.permission.POST_NOTIFICATIONS,
 			) == PackageManager.PERMISSION_GRANTED)
 		{
-			startForegroundService(serviceIntent)
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			{
+				startForegroundService(serviceIntent)
+			}
+			else
+			{
+				startService(serviceIntent)
+			}
 		}
 		isActive = true
 		Log.d("lifecycle", "onStart()")
 		super.onStart()
 	}
 
+	override fun onRestart()
+	{
+		job.cancelChildren()
+		super.onRestart()
+	}
+
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
 		super.onPause()
-		if(isServiceRunning(NotificationService::class.java))
-		{
-		}
+		stopNotificationCoroutine()
+		countExitNavigation++
 		isActive = false
 	}
 
-	//КОД ДОБАВЛЕН ДЛЯ ТЕСТА НА САМСУНГАХ
-	/*@OptIn(DelicateCoroutinesApi::class)
-	override fun onStop()
-	{
-		GlobalScope.launch {
-			delay(600)
-			stopService(serviceIntent)
-			val manager: NotificationManager = getSystemService(NotificationManager::class.java)
-			manager.cancel(NOTIFICATION_ID)
-		}
-		super.onStop()
-	}*/
-
-	@OptIn(DelicateCoroutinesApi::class)
 	override fun onDestroy()
 	{
 		Log.d("lifecycle", "onDestroy()")
@@ -267,27 +251,27 @@ class MainActivity: AppCompatActivity()
 		val editorVis = vis.edit()
 		editorVis.putBoolean(WE_WERE_HERE_BEFORE, false)
 		editorVis.apply()
-		GlobalScope.launch {
-		}
-		if(countExitNavigation >= 1)
-		{
-			this@MainActivity.finishAffinity()
-		}
+		stopService(serviceIntent)
 		super.onDestroy()
 	}
 
-	@Suppress("DEPRECATION")
-	private fun isServiceRunning(serviceClass: Class<*>): Boolean
+	private fun stopNotificationCoroutine()
 	{
-		val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
-		for(service in manager.getRunningServices(Int.MAX_VALUE))
-		{
-			if(serviceClass.name == service.service.className)
+		scope.launch {
+			Log.d("service", "work has been started")
+			for(i in 0 .. 10)
 			{
-				return true
+				delay(200)
+				if(isActive)
+				{
+					cancel()
+				}
+				else if(i == 10)
+				{
+					stopService(serviceIntent)
+				}
 			}
 		}
-		return false
 	}
 
 	companion object
