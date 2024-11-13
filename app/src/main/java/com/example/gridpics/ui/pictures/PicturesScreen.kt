@@ -3,8 +3,10 @@ package com.example.gridpics.ui.pictures
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -77,6 +79,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.placeholder.NoInternetScreen
+import com.example.gridpics.ui.services.MainNotificationService
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -87,6 +90,17 @@ fun PicturesScreen(navController: NavController, viewModel: PicturesViewModel)
 	val context = LocalContext.current
 	val txt = context.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 	val clearedCache = context.getSharedPreferences(CACHE, MODE_PRIVATE).getBoolean(CACHE, false)
+	val serviceIntent = Intent(context, MainNotificationService::class.java)
+
+	serviceIntent.putExtra("description", "default")
+	if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+	{
+		context.startForegroundService(serviceIntent)
+	}
+	else
+	{
+		context.startService(serviceIntent)
+	}
 
 	BackHandler {
 		viewModel.backNavButtonPress(true)

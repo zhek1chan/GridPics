@@ -97,11 +97,13 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 				if(it)
 				{
 					Log.d("we are out", "We are out")
+					vmDetails.postUrl("default")
 					vmDetails.changeState()
 					nc.navigateUp()
 				}
 				else
 				{
+					vmDetails.postUrl("default")
 					nc.navigateUp()
 				}
 			}
