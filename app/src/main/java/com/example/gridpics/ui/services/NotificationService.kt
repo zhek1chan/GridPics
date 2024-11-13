@@ -17,17 +17,13 @@ import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.countExitNavigation
 import com.example.gridpics.ui.activity.MainActivity.Companion.jobForNotifications
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.launch
 
 class NotificationService: Service()
 {
 	private val binder = NetworkServiceBinder()
 	private var isActive = true
 	private var job = jobForNotifications
-	private var scope = CoroutineScope(Dispatchers.IO + job)
 	override fun onCreate()
 	{
 		Log.d("service", "service onCreate")
@@ -80,9 +76,6 @@ class NotificationService: Service()
 		createNotificationChannel()
 		showNotification()
 		Log.d("service", "service onStartCommand")
-		scope.launch {
-			Log.d("service", "service is alive")
-		}
 		return START_NOT_STICKY
 	}
 
@@ -102,12 +95,6 @@ class NotificationService: Service()
 	{
 		Log.d("service", "service onDestroy")
 		super.onDestroy()
-	}
-
-	override fun onTaskRemoved(rootIntent: Intent?)
-	{
-		stopSelf()
-		super.onTaskRemoved(rootIntent)
 	}
 
 	inner class NetworkServiceBinder: Binder()

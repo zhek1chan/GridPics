@@ -33,7 +33,9 @@ import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
@@ -52,8 +54,8 @@ class MainActivity: AppCompatActivity()
 	private var changedTheme: Boolean? = null
 	private var serviceIntent = Intent()
 	private var job = jobForNotifications
-	private var scope = CoroutineScope(Dispatchers.IO + job)
-
+	@OptIn(DelicateCoroutinesApi::class)
+	private var scope = GlobalScope
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
@@ -128,7 +130,7 @@ class MainActivity: AppCompatActivity()
 			picturesViewModel.observeBackNav().collectLatest {
 				if(it)
 				{
-					//stopForeground(notifServiceReady, STOP_FOREGROUND_REMOVE)
+					stopService(serviceIntent)
 					this@MainActivity.finishAffinity()
 				}
 			}
@@ -238,10 +240,10 @@ class MainActivity: AppCompatActivity()
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
-		super.onPause()
 		stopNotificationCoroutine()
 		countExitNavigation++
 		isActive = false
+		super.onPause()
 	}
 
 	override fun onDestroy()
@@ -251,13 +253,13 @@ class MainActivity: AppCompatActivity()
 		val editorVis = vis.edit()
 		editorVis.putBoolean(WE_WERE_HERE_BEFORE, false)
 		editorVis.apply()
-		stopService(serviceIntent)
 		super.onDestroy()
 	}
 
+	@OptIn(DelicateCoroutinesApi::class)
 	private fun stopNotificationCoroutine()
 	{
-		scope.launch {
+		scope.launch(Dispatchers.IO + job) {
 			Log.d("service", "work has been started")
 			for(i in 0 .. 10)
 			{
@@ -269,6 +271,7 @@ class MainActivity: AppCompatActivity()
 				else if(i == 10)
 				{
 					stopService(serviceIntent)
+					Log.d("service", "service was stopped")
 				}
 			}
 		}
