@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
+@OptIn(DelicateCoroutinesApi::class)
 class MainActivity: AppCompatActivity()
 {
 	private var isActive: Boolean = false
@@ -54,7 +55,6 @@ class MainActivity: AppCompatActivity()
 	private var changedTheme: Boolean? = null
 	private var serviceIntent = Intent()
 	private var job = jobForNotifications
-	@OptIn(DelicateCoroutinesApi::class)
 	private var scope = GlobalScope
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
@@ -234,6 +234,7 @@ class MainActivity: AppCompatActivity()
 	override fun onRestart()
 	{
 		job.cancelChildren()
+		Log.d("lifecycle", "onRestart()")
 		super.onRestart()
 	}
 
@@ -256,11 +257,10 @@ class MainActivity: AppCompatActivity()
 		super.onDestroy()
 	}
 
-	@OptIn(DelicateCoroutinesApi::class)
 	private fun stopNotificationCoroutine()
 	{
 		scope.launch(Dispatchers.IO + job) {
-			Log.d("service", "work has been started")
+			Log.d("service", "stopNotificationCoroutine has been started")
 			for(i in 0 .. 10)
 			{
 				delay(200)

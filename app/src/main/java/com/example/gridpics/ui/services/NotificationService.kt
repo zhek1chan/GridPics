@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.services
 
-import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -24,10 +23,20 @@ class NotificationService: Service()
 	private val binder = NetworkServiceBinder()
 	private var isActive = true
 	private var job = jobForNotifications
-	override fun onCreate()
+
+	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
-		Log.d("service", "service onCreate")
-		super.onCreate()
+		isActive = true
+		job.cancelChildren()
+		createNotificationChannel()
+		showNotification()
+		Log.d("service", "service onStartCommand")
+		return START_NOT_STICKY
+	}
+
+	override fun onBind(intent: Intent?): IBinder
+	{
+		return binder
 	}
 
 	private fun createNotificationChannel()
@@ -52,7 +61,6 @@ class NotificationService: Service()
 		}
 	}
 
-	@SuppressLint("ForegroundServiceType")
 	private fun showNotification()
 	{
 		// Создаем уведомление
@@ -67,34 +75,6 @@ class NotificationService: Service()
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.notify(NOTIFICATION_ID, builder.build())
 		startForeground(NOTIFICATION_ID, builder.build())
-	}
-
-	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
-	{
-		isActive = true
-		job.cancelChildren()
-		createNotificationChannel()
-		showNotification()
-		Log.d("service", "service onStartCommand")
-		return START_NOT_STICKY
-	}
-
-	override fun onBind(intent: Intent?): IBinder
-	{
-		return binder
-	}
-
-	override fun stopService(name: Intent?): Boolean
-	{
-		isActive = false
-		Log.d("service", "service onStop")
-		return super.stopService(name)
-	}
-
-	override fun onDestroy()
-	{
-		Log.d("service", "service onDestroy")
-		super.onDestroy()
 	}
 
 	inner class NetworkServiceBinder: Binder()
