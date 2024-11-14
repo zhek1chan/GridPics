@@ -178,7 +178,7 @@ class MainActivity: AppCompatActivity()
 				PicturesScreen(navController, picturesViewModel, detailsViewModel)
 			}
 			composable(BottomNavItem.Settings.route) {
-				SettingsScreen(settingsViewModel, changedTheme!!, navController)
+				SettingsScreen(settingsViewModel, changedTheme!!, navController, detailsViewModel)
 			}
 			composable(Screen.Details.route) {
 				DetailsScreen(navController, detailsViewModel, picturesViewModel)
