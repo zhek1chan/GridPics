@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.res.Configuration
-import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -78,7 +77,6 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.TOP_BAR_VISABILIT
 import com.example.gridpics.ui.activity.MainActivity.Companion.WE_WERE_HERE_BEFORE
 import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.pictures.isValidUrl
-import com.example.gridpics.ui.services.MainNotificationService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -180,7 +178,6 @@ fun ShowDetails(
 			}
 		}
 		firstPage.value = false
-		val serviceIntent = Intent(context, MainNotificationService::class.java)
 		when
 		{
 			vmPictures.checkOnErrorExists(list[page]) ->
@@ -202,15 +199,6 @@ fun ShowDetails(
 		}
 		MainActivity.countExitNavigation++
 		vm.postUrl(list[pagerState.currentPage])
-		serviceIntent.putExtra("description", list[pagerState.currentPage])
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-		{
-			context.startForegroundService(serviceIntent)
-		}
-		else
-		{
-			context.startService(serviceIntent)
-		}
 		Log.d("S", "Real Saved page $page")
 		saveToSharedPrefs(context, list[pagerState.currentPage], isVisible.value)
 	}
