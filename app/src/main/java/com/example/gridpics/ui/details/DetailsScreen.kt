@@ -68,6 +68,7 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
@@ -76,6 +77,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
 import com.example.gridpics.ui.activity.MainActivity.Companion.TOP_BAR_VISABILITY
 import com.example.gridpics.ui.activity.MainActivity.Companion.WE_WERE_HERE_BEFORE
+import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.pictures.isValidUrl
 import kotlinx.coroutines.Dispatchers
@@ -195,7 +197,8 @@ fun ShowDetails(
 					nc = nc,
 					isVisible = isVisible,
 					exit = exit,
-					multiWindow = multiWindowed
+					multiWindow = multiWindowed,
+					picturesViewModel = vmPictures
 				)
 			}
 		}
@@ -210,6 +213,7 @@ fun ShowAsynchImage(
 	list: MutableList<String>,
 	page: Int,
 	vm: DetailsViewModel,
+	picturesViewModel: PicturesViewModel,
 	nc: NavController,
 	isVisible: MutableState<Boolean>,
 	exit: MutableState<Boolean>,
@@ -235,15 +239,21 @@ fun ShowAsynchImage(
 	val zoom = rememberZoomState()
 	val count = remember { listOf(0).toMutableList() }
 	val countLastThree = remember { listOf(0).toMutableList() }
+	val error = remember { mutableStateOf(false) }
 	val imgRequest = ImageRequest.Builder(LocalContext.current)
 		.data(list[page])
 		.placeholder(R.drawable.loading)
-		.networkCachePolicy(CachePolicy.DISABLED)
+		.error(R.drawable.loading)
+		.networkCachePolicy(CachePolicy.ENABLED)
 		.build()
 	AsyncImage(
 		model = imgRequest,
 		contentDescription = "",
 		contentScale = scale,
+		onError = {
+			Log.d("error", "error")
+			error.value = true
+		},
 		modifier = Modifier
 			.fillMaxSize()
 			.zoomable(zoom, enableOneFingerZoom = false, onTap = {
@@ -282,6 +292,11 @@ fun ShowAsynchImage(
 				}
 			}
 	)
+	if(error.value)
+	{
+		picturesViewModel.addError(list[page])
+		nc.navigate(Screen.Details.route)
+	}
 }
 
 @Composable
