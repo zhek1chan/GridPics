@@ -95,7 +95,7 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 	val context = LocalContext.current
 	val scope = rememberCoroutineScope()
 	BackHandler {
-		scope.launch(Dispatchers.IO) {
+		scope.launch(Dispatchers.Main) {
 			vmDetails.observeFlow().collectLatest {
 				if(it)
 				{
