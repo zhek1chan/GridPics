@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -11,6 +12,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
@@ -103,15 +105,31 @@ class MainActivity: AppCompatActivity()
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
-
-		changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
-		if(!changedTheme!!)
+		val userChangedTheme = getSharedPreferences(USER_CHANGED_THEME_BY_BUTTON, MODE_PRIVATE).getBoolean(USER_CHANGED_THEME_BY_BUTTON, false)
+		if(userChangedTheme)
 		{
-			settingsViewModel.postValue(this, false)
+			Log.d("theme", "user has changed theme")
+			//USER CHANGED THEME BY BUTTON IN APP
+			changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
+			if(!changedTheme!!)
+			{
+				settingsViewModel.postValue(this, b = false, changedByUser = true)
+			}
+			else
+			{
+				settingsViewModel.postValue(this, b = true, changedByUser = true)
+			}
+		}
+		else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+		{
+			//надо получить тему
+			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+			changedTheme = isDarkTheme(this)
 		}
 		else
 		{
-			settingsViewModel.postValue(this, true)
+			changedTheme = false
+			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 		}
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		CoroutineScope(Dispatchers.Main).launch {
@@ -316,6 +334,12 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
+	private fun isDarkTheme(activity: Activity): Boolean
+	{
+		return activity.resources.configuration.uiMode and
+			Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+	}
+
 	companion object
 	{
 		val jobForNotifications = Job()
@@ -329,5 +353,6 @@ class MainActivity: AppCompatActivity()
 		const val NULL_STRING = "NULL"
 		const val TOP_BAR_VISABILITY = "TOP_BAR_VISABILITY"
 		const val WE_WERE_HERE_BEFORE = "WE_WERE_HERE_BEFORE"
+		const val USER_CHANGED_THEME_BY_BUTTON = "USER_CHANGED_THEME_BY_BUTTON"
 	}
 }

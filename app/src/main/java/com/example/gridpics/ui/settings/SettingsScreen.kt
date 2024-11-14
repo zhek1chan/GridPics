@@ -108,7 +108,7 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 							scope.launch(Dispatchers.Main) {
 								checkedStateForTheme.value = !checkedStateForTheme.value
 								delay(150)
-								vm.changeTheme(context)
+								vm.changeTheme(context, true)
 							}
 						}
 				) {
@@ -135,7 +135,7 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 							scope.launch(Dispatchers.Main) {
 								checkedStateForTheme.value = it
 								delay(150)
-								vm.changeTheme(context)
+								vm.changeTheme(context, true)
 							}
 						})
 				}
