@@ -142,20 +142,24 @@ class MainActivity: AppCompatActivity()
 		picturesSharedPrefs = this.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 		lifecycleScope.launch(Dispatchers.IO) {
 			detailsViewModel.observeUrlFlow().collectLatest {
-				val newIntent = serviceIntent
-				newIntent.putExtra("description", it)
-				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				if(description != it || it == "default") //for optimization
 				{
-					startForegroundService(newIntent)
+					Log.d("description in main", description)
+					val newIntent = serviceIntent
+					newIntent.putExtra("description", it)
+					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+					{
+						startForegroundService(newIntent)
+					}
+					else
+					{
+						startService(newIntent)
+					}
+					description = it
 				}
-				else
-				{
-					startService(newIntent)
-				}
-				description = it
-				Log.d("description", description)
 			}
 		}
+
 
 		setContent {
 			ComposeTheme {
@@ -168,16 +172,22 @@ class MainActivity: AppCompatActivity()
 	@Composable
 	fun NavigationSetup(navController: NavHostController)
 	{
-		NavHost(navController, startDestination = BottomNavItem.Home.route, enterTransition = {
-			EnterTransition.None
-		},
+		NavHost(
+			navController,
+			startDestination = BottomNavItem.Home.route,
+			enterTransition = {
+				EnterTransition.None
+			},
 			exitTransition = {
 				ExitTransition.None
-			}) {
+			}
+		)
+		{
 			composable(BottomNavItem.Home.route) {
 				PicturesScreen(navController, picturesViewModel, detailsViewModel)
 			}
 			composable(BottomNavItem.Settings.route) {
+				onStart()
 				SettingsScreen(settingsViewModel, changedTheme!!, navController, detailsViewModel)
 			}
 			composable(Screen.Details.route) {

@@ -1,17 +1,18 @@
 package com.example.gridpics.ui.details
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 class DetailsViewModel: ViewModel()
 {
 	private val stateFlow = MutableStateFlow(false)
 	fun observeFlow(): Flow<Boolean> = stateFlow
-
 	private val urlFlow = MutableStateFlow("default")
 	fun observeUrlFlow(): Flow<String> = urlFlow
-
 	fun changeState()
 	{
 		stateFlow.value = !stateFlow.value
@@ -26,6 +27,8 @@ class DetailsViewModel: ViewModel()
 
 	fun postUrl(s: String)
 	{
-		urlFlow.value = s
+		viewModelScope.launch(Dispatchers.Main) {
+			urlFlow.emit(s)
+		}
 	}
 }

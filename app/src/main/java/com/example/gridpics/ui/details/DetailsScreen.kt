@@ -125,6 +125,7 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 	{
 		val list = remember { pictures!!.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(pageCount = { list.size })
+		vmDetails.postUrl(list[pagerState.currentPage])
 		val isVisible = remember { mutableStateOf(visible) }
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
@@ -198,7 +199,6 @@ fun ShowDetails(
 			}
 		}
 		MainActivity.countExitNavigation++
-		vm.postUrl(list[pagerState.currentPage])
 		Log.d("S", "Real Saved page $page")
 		saveToSharedPrefs(context, list[pagerState.currentPage], isVisible.value)
 	}
