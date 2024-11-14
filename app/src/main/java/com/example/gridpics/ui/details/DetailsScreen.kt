@@ -68,6 +68,7 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.NULL_STRING
@@ -236,6 +237,7 @@ fun ShowAsynchImage(
 	val countLastThree = remember { listOf(0).toMutableList() }
 	val imgRequest = ImageRequest.Builder(LocalContext.current)
 		.data(list[page])
+		.placeholder(R.drawable.loading)
 		.networkCachePolicy(CachePolicy.DISABLED)
 		.build()
 	AsyncImage(
