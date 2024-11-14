@@ -27,7 +27,7 @@ class DetailsViewModel: ViewModel()
 
 	fun postUrl(s: String)
 	{
-		viewModelScope.launch(Dispatchers.Main) {
+		viewModelScope.launch(Dispatchers.IO) {
 			urlFlow.emit(s)
 		}
 	}

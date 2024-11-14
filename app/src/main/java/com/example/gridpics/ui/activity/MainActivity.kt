@@ -142,20 +142,26 @@ class MainActivity: AppCompatActivity()
 		picturesSharedPrefs = this.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
 		lifecycleScope.launch(Dispatchers.IO) {
 			detailsViewModel.observeUrlFlow().collectLatest {
-				if(description != it || it == "default") //for optimization
+				if(ContextCompat.checkSelfPermission(
+						this@MainActivity,
+						Manifest.permission.POST_NOTIFICATIONS,
+					) == PackageManager.PERMISSION_GRANTED)
 				{
-					Log.d("description in main", description)
-					val newIntent = serviceIntent
-					newIntent.putExtra("description", it)
-					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+					if(description != it || it == "default") //for optimization
 					{
-						startForegroundService(newIntent)
+						Log.d("description in main", description)
+						val newIntent = serviceIntent
+						newIntent.putExtra("description", it)
+						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+						{
+							startForegroundService(newIntent)
+						}
+						else
+						{
+							startService(newIntent)
+						}
+						description = it
 					}
-					else
-					{
-						startService(newIntent)
-					}
-					description = it
 				}
 			}
 		}
@@ -187,7 +193,6 @@ class MainActivity: AppCompatActivity()
 				PicturesScreen(navController, picturesViewModel, detailsViewModel)
 			}
 			composable(BottomNavItem.Settings.route) {
-				onStart()
 				SettingsScreen(settingsViewModel, changedTheme!!, navController, detailsViewModel)
 			}
 			composable(Screen.Details.route) {
@@ -240,7 +245,14 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	override fun onStart()
+	override fun onRestart()
+	{
+		job.cancelChildren()
+		Log.d("lifecycle", "onRestart()")
+		super.onRestart()
+	}
+
+	override fun onResume()
 	{
 		if(ContextCompat.checkSelfPermission(
 				this,
@@ -252,23 +264,17 @@ class MainActivity: AppCompatActivity()
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
 				startForegroundService(newIntent)
-				Log.d("description after stop", description)
+				Log.d("description after pause", description)
 			}
 			else
 			{
 				startService(newIntent)
 			}
+			countExitNavigation++
 		}
 		isActive = true
-		Log.d("lifecycle", "onStart()")
-		super.onStart()
-	}
-
-	override fun onRestart()
-	{
-		job.cancelChildren()
-		Log.d("lifecycle", "onRestart()")
-		super.onRestart()
+		Log.d("lifecycle", "onResume()")
+		super.onResume()
 	}
 
 	override fun onPause()

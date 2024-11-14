@@ -72,7 +72,7 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 		var enabled = !changedTheme
 		val scope = rememberCoroutineScope()
 		val checkedStateForTheme = remember { mutableStateOf(enabled) }
-		scope.launch(Dispatchers.Main) {
+		scope.launch(Dispatchers.IO) {
 			vm.observeTheme().collectLatest {
 				enabled = it
 				checkedStateForTheme.value = it

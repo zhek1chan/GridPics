@@ -71,6 +71,7 @@ import coil3.request.ImageRequest
 import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
+import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.NULL_STRING
 import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
@@ -94,7 +95,7 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 	val context = LocalContext.current
 	val scope = rememberCoroutineScope()
 	BackHandler {
-		scope.launch(Dispatchers.Main) {
+		scope.launch(Dispatchers.IO) {
 			vmDetails.observeFlow().collectLatest {
 				if(it)
 				{
@@ -127,7 +128,7 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 	if(pic != NULL_STRING && pictures != NULL_STRING)
 	{
 		val list = remember { pictures!!.split("\n").toMutableList() }
-		val pagerState = rememberPagerState(pageCount = { list.size })
+		val pagerState = rememberPagerState(initialPage = list.indexOf(pic), pageCount = { list.size })
 		vmDetails.postUrl(list[pagerState.currentPage])
 		val isVisible = remember { mutableStateOf(visible) }
 		Scaffold(
@@ -408,7 +409,7 @@ fun AppBar(
 		if(navBack)
 		{
 			navBack = false
-			nc.navigateUp()
+			nc.navigate(BottomNavItem.Home.route)
 		}
 	}
 }
