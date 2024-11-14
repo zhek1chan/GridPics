@@ -142,6 +142,7 @@ fun itemNewsCard(item: String, nc: NavController, vm: PicturesViewModel): Boolea
 		if(vm.checkOnErrorExists(item))
 		{
 			pl = R.drawable.error
+			isError = true
 		}
 		val headers = NetworkHeaders.Builder()
 			.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
@@ -244,7 +245,6 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 	val listState = rememberLazyGridState()
 	if(s == "null" || s.isNullOrEmpty())
 	{
-		vm.clearErrors()
 		val value by vm.observeState().observeAsState()
 		when(value)
 		{
@@ -377,17 +377,26 @@ fun GradientButton(
 	vm: PicturesViewModel,
 )
 {
-	Button(modifier = Modifier
-		.fillMaxWidth()
-		.padding(start = 32.dp, end = 32.dp), onClick = {
-		vm.getPics()
-	}, contentPadding = PaddingValues(), colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), shape = RoundedCornerShape(cornerRadius)) {
+	Button(
+		modifier = Modifier
+			.fillMaxWidth()
+			.padding(start = 32.dp, end = 32.dp),
+		onClick = {
+			vm.clearErrors()
+			vm.getPics()
+		},
+		contentPadding = PaddingValues(),
+		colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+		shape = RoundedCornerShape(cornerRadius)
+	)
+	{
 		Box(modifier = Modifier
 			.fillMaxWidth()
 			.background(brush = Brush.horizontalGradient(colors = gradientColors), shape = roundedCornerShape)
 			.clip(roundedCornerShape)
 			.background(brush = Brush.linearGradient(colors = gradientColors), shape = RoundedCornerShape(cornerRadius))
-			.padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
+			.padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center)
+		{
 			Text(text = nameButton, fontSize = 20.sp, color = Color.White)
 		}
 	}
