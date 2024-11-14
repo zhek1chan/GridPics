@@ -37,6 +37,7 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
+import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.Dispatchers
@@ -45,8 +46,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: SettingsViewModel, changedTheme: Boolean, navController: NavController)
+fun SettingsScreen(vm: SettingsViewModel, changedTheme: Boolean, navController: NavController, detailsViewModel: DetailsViewModel)
 {
+	detailsViewModel.postUrl("default")
 	Scaffold(modifier = Modifier
 		.fillMaxWidth(),
 		bottomBar = { BottomNavigationBar(navController) },
