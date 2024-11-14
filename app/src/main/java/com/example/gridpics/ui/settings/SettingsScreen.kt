@@ -2,6 +2,7 @@ package com.example.gridpics.ui.settings
 
 import android.annotation.SuppressLint
 import android.content.Context.MODE_PRIVATE
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -138,6 +139,48 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 								vm.changeTheme(context, true)
 							}
 						})
+				}
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+					Row(
+						verticalAlignment = Alignment.CenterVertically,
+						modifier = Modifier
+							.fillMaxWidth()
+							.padding(16.dp, 10.dp)
+							.clickable {
+								scope.launch(Dispatchers.Main) {
+									checkedStateForTheme.value = !checkedStateForTheme.value
+									delay(150)
+									vm.changeTheme(context, true)
+								}
+							}
+					) {
+						Icon(
+							modifier = Modifier.padding(0.dp, 0.dp),
+							painter = painterResource(R.drawable.ic_theme),
+							contentDescription = "CommentIcon",
+							tint = MaterialTheme.colorScheme.onPrimary
+						)
+						Text(
+							stringResource(R.string.dark_theme),
+							fontSize = 18.sp,
+							color = MaterialTheme.colorScheme.onPrimary,
+							modifier = Modifier.padding(16.dp, 0.dp)
+						)
+						Spacer(
+							Modifier
+								.weight(1f)
+								.fillMaxWidth()
+						)
+						GradientSwitch(
+							checked = checkedStateForTheme.value,
+							onCheckedChange = {
+								scope.launch(Dispatchers.Main) {
+									checkedStateForTheme.value = it
+									delay(150)
+									vm.changeTheme(context, true)
+								}
+							})
+					}
 				}
 				Row(
 					verticalAlignment = Alignment.CenterVertically,
