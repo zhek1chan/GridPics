@@ -46,12 +46,11 @@ import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsViewModel: DetailsViewModel)
+fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsViewModel: DetailsViewModel, option: Int)
 {
 	detailsViewModel.postUrl("default")
 	Scaffold(modifier = Modifier
@@ -63,7 +62,7 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 					.padding(padding)
 					.consumeWindowInsets(padding)
 					.fillMaxSize()) {
-				SettingsCompose(vm)
+				SettingsCompose(vm, option)
 			}
 		}
 	)
@@ -71,11 +70,11 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun SettingsCompose(vm: SettingsViewModel)
+fun SettingsCompose(vm: SettingsViewModel, option: Int)
 {
 	ComposeTheme {
 		val scope = rememberCoroutineScope()
-		var setOption = 2
+		var setOption = option
 		scope.launch(Dispatchers.Main) {
 			vm.observeFlow().collectLatest {
 				setOption = it
@@ -119,6 +118,7 @@ fun SettingsCompose(vm: SettingsViewModel)
 									.clickable {
 										scope.launch(Dispatchers.Main) {
 											onOptionSelected(text)
+											vm.changeTheme(context, listOfThemeOptions.indexOf(text))
 										}
 									}
 							) {
@@ -157,7 +157,11 @@ fun SettingsCompose(vm: SettingsViewModel)
 								)
 								RadioButton(
 									selected = (text == selectedOption),
-									onClick = { onOptionSelected(text) },
+									onClick =
+									{
+										onOptionSelected(text)
+										vm.changeTheme(context, listOfThemeOptions.indexOf(text))
+									},
 									colors = RadioButtonColors(
 										Color.Green,
 										MaterialTheme.colorScheme.onSecondary,

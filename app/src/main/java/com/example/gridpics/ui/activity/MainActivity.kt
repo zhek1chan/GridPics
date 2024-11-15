@@ -54,7 +54,6 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var picturesSharedPrefs: String? = null
 	private var themePick: Int = 2
-	private var pressedSync: Boolean? = null
 	private var serviceIntent = Intent()
 	private var description = "default"
 	private var job = jobForNotifications
@@ -189,7 +188,7 @@ class MainActivity: AppCompatActivity()
 				PicturesScreen(navController, picturesViewModel, detailsViewModel)
 			}
 			composable(BottomNavItem.Settings.route) {
-				SettingsScreen(settingsViewModel, navController, detailsViewModel)
+				SettingsScreen(settingsViewModel, navController, detailsViewModel, themePick)
 			}
 			composable(Screen.Details.route) {
 				DetailsScreen(navController, detailsViewModel, picturesViewModel)
