@@ -2,7 +2,6 @@ package com.example.gridpics.ui.settings
 
 import android.annotation.SuppressLint
 import android.content.Context.MODE_PRIVATE
-import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -12,10 +11,14 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -47,7 +51,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: SettingsViewModel, changedTheme: Boolean, navController: NavController, detailsViewModel: DetailsViewModel, pressedSync: Boolean)
+fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsViewModel: DetailsViewModel)
 {
 	detailsViewModel.postUrl("default")
 	Scaffold(modifier = Modifier
@@ -59,7 +63,7 @@ fun SettingsScreen(vm: SettingsViewModel, changedTheme: Boolean, navController: 
 					.padding(padding)
 					.consumeWindowInsets(padding)
 					.fillMaxSize()) {
-				SettingsCompose(vm, changedTheme, pressedSync)
+				SettingsCompose(vm)
 			}
 		}
 	)
@@ -67,18 +71,14 @@ fun SettingsScreen(vm: SettingsViewModel, changedTheme: Boolean, navController: 
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean, pressedSync: Boolean)
+fun SettingsCompose(vm: SettingsViewModel)
 {
 	ComposeTheme {
 		val scope = rememberCoroutineScope()
-		val checkedStateForTheme = remember { mutableStateOf(!changedTheme) }
-		val checkedStateForThemeSync = remember { mutableStateOf(pressedSync) }
-		scope.launch(Dispatchers.IO) {
-			vm.observeTheme().collectLatest {
-				checkedStateForTheme.value = it
-			}
-			vm.observeThemeSync().collectLatest {
-				checkedStateForThemeSync.value = !it
+		var setOption = 2
+		scope.launch(Dispatchers.Main) {
+			vm.observeFlow().collectLatest {
+				setOption = it
 			}
 		}
 		var showDialog by remember { mutableStateOf(false) }
@@ -102,11 +102,79 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean, pressedSync: B
 						color = MaterialTheme.colorScheme.onPrimary
 					)
 				}
-				Row(
+				val listOfThemeOptions = listOf(
+					context.getString(R.string.light_theme),
+					context.getString(R.string.dark_theme),
+					context.getString(R.string.synch_with_sys)
+				)
+				val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[setOption]) }
+				Column {
+					Column(Modifier.selectableGroup()) {
+						listOfThemeOptions.forEach { text ->
+							Row(
+								verticalAlignment = Alignment.CenterVertically,
+								modifier = Modifier
+									.fillMaxWidth()
+									.padding(18.dp, 10.dp, 6.dp, 0.dp)
+									.clickable {
+										scope.launch(Dispatchers.Main) {
+											onOptionSelected(text)
+										}
+									}
+							) {
+								val painter = when(text)
+								{
+									listOfThemeOptions[0] ->
+									{
+										painterResource(R.drawable.ic_day)
+									}
+									listOfThemeOptions[1] ->
+									{
+										painterResource(R.drawable.ic_night)
+									}
+									else ->
+									{
+										painterResource(R.drawable.ic_sys_theme)
+									}
+								}
+
+								Icon(
+									modifier = Modifier.padding(0.dp, 0.dp),
+									painter = painter,
+									contentDescription = "CommentIcon",
+									tint = MaterialTheme.colorScheme.onPrimary
+								)
+								Text(
+									text = text,
+									fontSize = 18.sp,
+									color = MaterialTheme.colorScheme.onPrimary,
+									modifier = Modifier.padding(16.dp, 0.dp)
+								)
+								Spacer(
+									Modifier
+										.weight(1f)
+										.fillMaxWidth()
+								)
+								RadioButton(
+									selected = (text == selectedOption),
+									onClick = { onOptionSelected(text) },
+									colors = RadioButtonColors(
+										Color.Green,
+										MaterialTheme.colorScheme.onSecondary,
+										MaterialTheme.colorScheme.error,
+										MaterialTheme.colorScheme.onSecondary
+									)
+								)
+							}
+						}
+					}
+				}
+				HorizontalDivider(modifier = Modifier.padding(18.dp), color = MaterialTheme.colorScheme.onPrimary, thickness = 1.dp)
+				/*Row(
 					verticalAlignment = Alignment.CenterVertically,
 					modifier = Modifier
 						.fillMaxWidth()
-						.padding(16.dp, 10.dp)
+						.padding(16.dp, 5.dp, 16.dp, 0.dp)
 						.clickable {
 							scope.launch(Dispatchers.Main) {
 								checkedStateForTheme.value = !checkedStateForTheme.value
@@ -122,7 +190,7 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean, pressedSync: B
 						tint = MaterialTheme.colorScheme.onPrimary
 					)
 					Text(
-						stringResource(R.string.dark_theme),
+						stringResource(R.string.light_theme),
 						fontSize = 18.sp,
 						color = MaterialTheme.colorScheme.onPrimary,
 						modifier = Modifier.padding(16.dp, 0.dp)
@@ -132,15 +200,17 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean, pressedSync: B
 							.weight(1f)
 							.fillMaxWidth()
 					)
-					GradientSwitch(
-						checked = checkedStateForTheme.value,
-						onCheckedChange = {
+					RadioButton(
+						selected = !state.value,
+						onClick = {
+							state.value = false
 							scope.launch(Dispatchers.Main) {
 								checkedStateForTheme.value = !checkedStateForTheme.value
 								delay(150)
 								vm.postValue(context, !checkedStateForTheme.value, changedByUser = true, useChangeFunc = true)
 							}
-						})
+						}
+					)
 				}
 				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
 				{
@@ -148,12 +218,12 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean, pressedSync: B
 						verticalAlignment = Alignment.CenterVertically,
 						modifier = Modifier
 							.fillMaxWidth()
-							.padding(16.dp, 10.dp)
+							.padding(16.dp, 5.dp, 16.dp, 0.dp)
 							.clickable {
 								scope.launch(Dispatchers.Main) {
 									checkedStateForThemeSync.value = !checkedStateForThemeSync.value
-									vm.saveState(context, darkIsActive = false, changedByUser = true)
-									delay(150)
+									//vm.saveState(context, darkIsActive = false, changedByUser = false)
+									delay(250)
 									vm.postValueSync(context, checkedStateForThemeSync.value, true)
 								}
 							}
@@ -175,23 +245,24 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean, pressedSync: B
 								.weight(1f)
 								.fillMaxWidth()
 						)
-						GradientSwitch(
-							checked = checkedStateForThemeSync.value,
-							onCheckedChange = {
+						RadioButton(
+							selected = state.value,
+							onClick = {
+								state.value = true
 								scope.launch(Dispatchers.Main) {
-									checkedStateForThemeSync.value = it
-									vm.saveState(context, darkIsActive = false, changedByUser = true)
-									delay(150)
+									checkedStateForThemeSync.value = true
+									delay(250)
 									vm.postValueSync(context, checkedStateForThemeSync.value, true)
 								}
-							})
+							}
+						)
 					}
-				}
+				}*/
 				Row(
 					verticalAlignment = Alignment.CenterVertically,
 					modifier = Modifier
 						.fillMaxWidth()
-						.padding(16.dp, 10.dp)
+						.padding(16.dp, 10.dp, 0.dp, 16.dp)
 						.clickable {
 							showDialog = true
 						}

@@ -11,7 +11,6 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
@@ -54,7 +53,7 @@ class MainActivity: AppCompatActivity()
 	private val settingsViewModel by viewModel<SettingsViewModel>()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var picturesSharedPrefs: String? = null
-	private var blackTheme: Boolean? = null
+	private var themePick: Int = 2
 	private var pressedSync: Boolean? = null
 	private var serviceIntent = Intent()
 	private var description = "default"
@@ -105,37 +104,11 @@ class MainActivity: AppCompatActivity()
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
-		val userChangedTheme = getSharedPreferences(USER_CHANGED_THEME_BY_BUTTON, MODE_PRIVATE).getBoolean(USER_CHANGED_THEME_BY_BUTTON, false)
-		if(userChangedTheme)
-		{
-			Log.d("theme", "user has changed theme")
-			//USER CHANGED THEME BY BUTTON IN APP
-			settingsViewModel.postValueSync(this, false, usePressFunc = false)
-			blackTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
-			if(!blackTheme!!)
-			{
-				settingsViewModel.postValue(this, b = false, changedByUser = true, useChangeFunc = true)
-			}
-			else
-			{
-				settingsViewModel.postValue(this, b = true, changedByUser = true, useChangeFunc = true)
-			}
-			pressedSync = false
-		}
-		else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-		{
-			settingsViewModel.postValueSync(this, b = true, usePressFunc = true)
-			pressedSync = true
-			blackTheme = false
-		}
-		else
-		{
-			pressedSync = false
-			blackTheme = false
-			settingsViewModel.postValueSync(this, b = false, usePressFunc = true)
-			settingsViewModel.postValue(this, b = false, changedByUser = false, useChangeFunc = false)
-			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-		}
+		//theme pick
+		themePick = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getInt(THEME_SP_KEY, 2)
+		settingsViewModel.changeTheme(this, themePick)
+
+
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		CoroutineScope(Dispatchers.Main).launch {
 			detailsViewModel.observeFlow().collectLatest {
@@ -216,7 +189,7 @@ class MainActivity: AppCompatActivity()
 				PicturesScreen(navController, picturesViewModel, detailsViewModel)
 			}
 			composable(BottomNavItem.Settings.route) {
-				SettingsScreen(settingsViewModel, blackTheme!!, navController, detailsViewModel, pressedSync!!)
+				SettingsScreen(settingsViewModel, navController, detailsViewModel)
 			}
 			composable(Screen.Details.route) {
 				DetailsScreen(navController, detailsViewModel, picturesViewModel)
@@ -352,6 +325,5 @@ class MainActivity: AppCompatActivity()
 		const val NULL_STRING = "NULL"
 		const val TOP_BAR_VISABILITY = "TOP_BAR_VISABILITY"
 		const val WE_WERE_HERE_BEFORE = "WE_WERE_HERE_BEFORE"
-		const val USER_CHANGED_THEME_BY_BUTTON = "USER_CHANGED_THEME_BY_BUTTON"
 	}
 }

@@ -7,6 +7,7 @@
     <string name="settings">Настройки</string>
     <string name="main">Главная</string>
     <string name="dark_theme">Тёмная тема</string>
+    <string name="light_theme">Светлая тема</string>
     <string name="nothing_found">Ничего не нашлось!\nПопробуйте позже</string>
     <string name="no_internet">Отсутсвует подключение к интернету</string>
     <string name="gridpics">GridPics</string>
