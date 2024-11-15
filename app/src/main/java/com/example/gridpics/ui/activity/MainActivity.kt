@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -66,7 +67,6 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 
 		installSplashScreen()
-
 		themePick = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getInt(THEME_SP_KEY, 2)
 		val justChangedTheme = if(themePick == 2)
 		{
@@ -79,10 +79,10 @@ class MainActivity: AppCompatActivity()
 
 		serviceIntent = Intent(this, MainNotificationService::class.java)
 		serviceIntent.putExtra("description", description)
-		val previousTheme = getSharedPreferences(IS_BLACK_THEME, MODE_PRIVATE).getBoolean(IS_BLACK_THEME, false)
+		val previousTheme = getSharedPreferences(IS_BLACK_THEME, MODE_PRIVATE).getString(IS_BLACK_THEME, isDarkTheme(this).toString())
 		Log.d("theme", "just changed theme? $justChangedTheme")
 
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !justChangedTheme && (previousTheme == isDarkTheme(this)))
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !justChangedTheme && (previousTheme == isDarkTheme(this).toString()))
 		{
 			if(
 				ContextCompat.checkSelfPermission(
@@ -118,6 +118,17 @@ class MainActivity: AppCompatActivity()
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
+
+		val orientation = resources.configuration.orientation
+		val params = this.window.attributes
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && orientation == Configuration.ORIENTATION_LANDSCAPE)
+		{
+			params.layoutInDisplayCutoutMode =
+				WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+			params.layoutInDisplayCutoutMode =
+				WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+		}
 		//theme pick
 		settingsViewModel.changeTheme(this, themePick)
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
@@ -178,7 +189,7 @@ class MainActivity: AppCompatActivity()
 		editorForDialog.apply()
 		val sharedPreferencesForCheck = this.getSharedPreferences(IS_BLACK_THEME, MODE_PRIVATE)
 		val editorForCheck = sharedPreferencesForCheck.edit()
-		editorForCheck.putBoolean(IS_BLACK_THEME, isDarkTheme(this))
+		editorForCheck.putString(IS_BLACK_THEME, isDarkTheme(this).toString())
 		editorForCheck.apply()
 
 		setContent {
