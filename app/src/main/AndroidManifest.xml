@@ -19,7 +19,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GridPics"
         android:usesCleartextTraffic="true"
-        tools:targetApi="31">
+        tools:targetApi="35">
         <service
 			android:name=".ui.services.MainNotificationService"
 			android:foregroundServiceType="specialUse"

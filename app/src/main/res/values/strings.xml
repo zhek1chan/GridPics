@@ -22,6 +22,7 @@
     <string name="cancel">Отменить</string>
 	<string name="okey">Okey</string>
     <string name="reload">Обновляем данные...</string>
+    <string name="reload_pic">Обновляем картинку...</string>
     <string name="text_plain">text/plain</string>
     <string name="null_null">null</string>
     <string name="clear_cache">Очистить кэш изображений</string>

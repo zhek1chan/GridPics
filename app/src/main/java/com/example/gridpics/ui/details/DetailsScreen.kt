@@ -6,6 +6,7 @@ import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.res.Configuration
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -335,6 +336,7 @@ fun ShowError(
 			Button(
 				onClick =
 				{
+					Toast.makeText(context, context.getString(R.string.reload_pic), Toast.LENGTH_LONG).show()
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
 				Text(stringResource(R.string.update_loading))

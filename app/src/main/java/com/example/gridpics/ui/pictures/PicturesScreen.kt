@@ -335,15 +335,6 @@ fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 					.padding(0.dp, 10.dp, 0.dp, 0.dp), colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary), title = {
 					Row {
 						Text(stringResource(R.string.gridpics))
-						/*IconButton(
-							onClick = {
-								openAddDialog = false //TODO
-							},
-							modifier = Modifier
-								.align(Alignment.CenterVertically)
-						) {
-							Icon(painter = rememberVectorPainter(Icons.Default.Add), contentDescription = "share", tint = MaterialTheme.colorScheme.onPrimary)
-						}*/
 					}
 				})
 				if(openAddDialog)
