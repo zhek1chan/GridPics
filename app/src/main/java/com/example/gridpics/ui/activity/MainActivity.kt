@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -63,12 +64,25 @@ class MainActivity: AppCompatActivity()
 		super.onCreate(savedInstanceState)
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
+
 		installSplashScreen()
+
+		themePick = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getInt(THEME_SP_KEY, 2)
+		val justChangedTheme = if(themePick == 2)
+		{
+			getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false)
+		}
+		else
+		{
+			isDarkTheme(this)
+		}
 
 		serviceIntent = Intent(this, MainNotificationService::class.java)
 		serviceIntent.putExtra("description", description)
+		val previousTheme = getSharedPreferences(IS_BLACK_THEME, MODE_PRIVATE).getBoolean(IS_BLACK_THEME, false)
+		Log.d("theme", "just changed theme? $justChangedTheme")
 
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !justChangedTheme && (previousTheme == isDarkTheme(this)))
 		{
 			if(
 				ContextCompat.checkSelfPermission(
@@ -99,15 +113,13 @@ class MainActivity: AppCompatActivity()
 				startService(serviceIntent)
 			}
 		}
+
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
 		//theme pick
-		themePick = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getInt(THEME_SP_KEY, 2)
 		settingsViewModel.changeTheme(this, themePick)
-
-
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		CoroutineScope(Dispatchers.Main).launch {
 			detailsViewModel.observeFlow().collectLatest {
@@ -160,7 +172,14 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-
+		val sharedPreferencesForDialog = this@MainActivity.getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE)
+		val editorForDialog = sharedPreferencesForDialog.edit()
+		editorForDialog.putBoolean(JUST_CHANGED_THEME, false)
+		editorForDialog.apply()
+		val sharedPreferencesForCheck = this.getSharedPreferences(IS_BLACK_THEME, MODE_PRIVATE)
+		val editorForCheck = sharedPreferencesForCheck.edit()
+		editorForCheck.putBoolean(IS_BLACK_THEME, isDarkTheme(this))
+		editorForCheck.apply()
 
 		setContent {
 			ComposeTheme {
@@ -311,6 +330,12 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
+	private fun isDarkTheme(context: Context): Boolean
+	{
+		return context.resources.configuration.uiMode and
+			Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+	}
+
 	companion object
 	{
 		val jobForNotifications = Job()
@@ -322,7 +347,9 @@ class MainActivity: AppCompatActivity()
 		const val THEME_SP_KEY = "THEME_SHARED_PREFS"
 		const val CHANNEL_ID = "GRID_PICS_CHANEL_ID"
 		const val NULL_STRING = "NULL"
+		const val IS_BLACK_THEME = "IS_BLACK_THEME"
 		const val TOP_BAR_VISABILITY = "TOP_BAR_VISABILITY"
 		const val WE_WERE_HERE_BEFORE = "WE_WERE_HERE_BEFORE"
+		const val JUST_CHANGED_THEME = "JUST_CHANGED_THEME"
 	}
 }

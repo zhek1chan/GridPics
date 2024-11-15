@@ -118,6 +118,7 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 									.clickable {
 										scope.launch(Dispatchers.Main) {
 											onOptionSelected(text)
+											vm.changeFromSettings(context)
 											vm.changeTheme(context, listOfThemeOptions.indexOf(text))
 										}
 									}
@@ -160,6 +161,7 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 									onClick =
 									{
 										onOptionSelected(text)
+										vm.changeFromSettings(context)
 										vm.changeTheme(context, listOfThemeOptions.indexOf(text))
 									},
 									colors = RadioButtonColors(

@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.gridpics.ui.activity.MainActivity.Companion.JUST_CHANGED_THEME
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SP_KEY
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -46,6 +47,14 @@ class SettingsViewModel: ViewModel()
 				}
 			}
 		}
+	}
+
+	fun changeFromSettings(context: Context)
+	{
+		val sharedPreferencesForDialog = context.getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE)
+		val editorForDialog = sharedPreferencesForDialog.edit()
+		editorForDialog.putBoolean(JUST_CHANGED_THEME, true)
+		editorForDialog.apply()
 	}
 
 	private fun saveThemeState(context: Context, i: Int)
