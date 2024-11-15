@@ -82,6 +82,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.WE_WERE_HERE_BEFO
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.pictures.isValidUrl
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -188,7 +189,7 @@ fun ShowDetails(
 		{
 			vmPictures.checkOnErrorExists(list[page]) ->
 			{
-				ShowError(context, list, page)
+				ShowError(context, list, page, pagerState)
 			}
 			!vmPictures.checkOnErrorExists(list[page]) ->
 			{
@@ -306,6 +307,7 @@ fun ShowError(
 	context: Context,
 	list: MutableList<String>,
 	currentPage: Int,
+	pagerState: PagerState
 )
 {
 	val errorMessage = if(isValidUrl(list[currentPage]))
@@ -337,6 +339,10 @@ fun ShowError(
 				onClick =
 				{
 					Toast.makeText(context, context.getString(R.string.reload_pic), Toast.LENGTH_LONG).show()
+					CoroutineScope(Dispatchers.Main).launch {
+						pagerState.scrollToPage(currentPage)
+					}
+
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
 				Text(stringResource(R.string.update_loading))
