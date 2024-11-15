@@ -2,6 +2,7 @@ package com.example.gridpics.ui.settings
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ViewModel
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SP_KEY
@@ -13,7 +14,9 @@ class SettingsViewModel: ViewModel()
 {
 	private val blackTheme = MutableStateFlow(false)
 	fun observeTheme(): Flow<Boolean> = blackTheme
-	fun changeTheme(context: Context, changedByUser: Boolean)
+	private val syncWithSys = MutableStateFlow(false)
+	fun observeThemeSync(): Flow<Boolean> = syncWithSys
+	private fun changeTheme(context: Context, changedByUser: Boolean)
 	{
 		if(!blackTheme.value)
 		{
@@ -28,24 +31,60 @@ class SettingsViewModel: ViewModel()
 		blackTheme.value = !blackTheme.value
 	}
 
-	private fun saveState(context: Context, whiteOrBlack: Boolean, changedByUser: Boolean)
+	private fun pressOnSyncWithSys(context: Context)
 	{
-		val sharedPreferences = context.getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE)
-		val editor = sharedPreferences.edit()
-		editor.putBoolean(THEME_SP_KEY, whiteOrBlack)
-		editor.apply()
+		saveState(context, darkIsActive = false, changedByUser = false)
+		blackTheme.value = false
+		if(syncWithSys.value)
+		{
+			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+		}
+		else
+		{
+			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+		}
+		syncWithSys.value = !syncWithSys.value
+	}
+
+	fun saveState(context: Context, darkIsActive: Boolean, changedByUser: Boolean)
+	{
 		if(changedByUser)
 		{
-			val sP = context.getSharedPreferences(USER_CHANGED_THEME_BY_BUTTON, MODE_PRIVATE)
-			val editorSecond = sP.edit()
-			editorSecond.putBoolean(USER_CHANGED_THEME_BY_BUTTON, true)
-			editorSecond.apply()
+			val sharedPreferences = context.getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE)
+			val editor = sharedPreferences.edit()
+			editor.putBoolean(THEME_SP_KEY, darkIsActive)
+			editor.apply()
+		}
+		else
+		{
+			val sharedPreferences = context.getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE)
+			val editor = sharedPreferences.edit()
+			editor.putBoolean(THEME_SP_KEY, false)
+			editor.apply()
+		}
+		val sP = context.getSharedPreferences(USER_CHANGED_THEME_BY_BUTTON, MODE_PRIVATE)
+		val editorSecond = sP.edit()
+		editorSecond.putBoolean(USER_CHANGED_THEME_BY_BUTTON, changedByUser)
+		editorSecond.apply()
+	}
+
+	fun postValueSync(context: Context, b: Boolean, usePressFunc: Boolean)
+	{
+		syncWithSys.value = !b
+		Log.d("theme", "posted follow sys colors: $b")
+		if(usePressFunc)
+		{
+			pressOnSyncWithSys(context)
 		}
 	}
 
-	fun postValue(context: Context, b: Boolean, changedByUser: Boolean)
+	fun postValue(context: Context, b: Boolean, changedByUser: Boolean, useChangeFunc: Boolean)
 	{
 		blackTheme.value = b
-		changeTheme(context, changedByUser)
+		Log.d("theme", "posted black theme: $b")
+		if(useChangeFunc)
+		{
+			changeTheme(context, changedByUser)
+		}
 	}
 }

@@ -32,4 +32,5 @@
 	<string name="notification_content_text">Вы видите это уведомление, потому что приложение активно</string>
     <string name="my_notification_channel">My Notification Channel</string>
     <string name="channel_for_my_notification">Channel for my notification</string>
+    <string name="synch_with_sys">Следовать системной теме</string>
 </resources>

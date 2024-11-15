@@ -47,7 +47,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: SettingsViewModel, changedTheme: Boolean, navController: NavController, detailsViewModel: DetailsViewModel)
+fun SettingsScreen(vm: SettingsViewModel, changedTheme: Boolean, navController: NavController, detailsViewModel: DetailsViewModel, pressedSync: Boolean)
 {
 	detailsViewModel.postUrl("default")
 	Scaffold(modifier = Modifier
@@ -59,7 +59,7 @@ fun SettingsScreen(vm: SettingsViewModel, changedTheme: Boolean, navController: 
 					.padding(padding)
 					.consumeWindowInsets(padding)
 					.fillMaxSize()) {
-				SettingsCompose(vm, changedTheme)
+				SettingsCompose(vm, changedTheme, pressedSync)
 			}
 		}
 	)
@@ -67,16 +67,18 @@ fun SettingsScreen(vm: SettingsViewModel, changedTheme: Boolean, navController: 
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
+fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean, pressedSync: Boolean)
 {
 	ComposeTheme {
-		var enabled = !changedTheme
 		val scope = rememberCoroutineScope()
-		val checkedStateForTheme = remember { mutableStateOf(enabled) }
+		val checkedStateForTheme = remember { mutableStateOf(!changedTheme) }
+		val checkedStateForThemeSync = remember { mutableStateOf(pressedSync) }
 		scope.launch(Dispatchers.IO) {
 			vm.observeTheme().collectLatest {
-				enabled = it
 				checkedStateForTheme.value = it
+			}
+			vm.observeThemeSync().collectLatest {
+				checkedStateForThemeSync.value = !it
 			}
 		}
 		var showDialog by remember { mutableStateOf(false) }
@@ -109,7 +111,7 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 							scope.launch(Dispatchers.Main) {
 								checkedStateForTheme.value = !checkedStateForTheme.value
 								delay(150)
-								vm.changeTheme(context, true)
+								vm.postValue(context, !checkedStateForTheme.value, changedByUser = true, useChangeFunc = true)
 							}
 						}
 				) {
@@ -134,13 +136,14 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 						checked = checkedStateForTheme.value,
 						onCheckedChange = {
 							scope.launch(Dispatchers.Main) {
-								checkedStateForTheme.value = it
+								checkedStateForTheme.value = !checkedStateForTheme.value
 								delay(150)
-								vm.changeTheme(context, true)
+								vm.postValue(context, !checkedStateForTheme.value, changedByUser = true, useChangeFunc = true)
 							}
 						})
 				}
-				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+				{
 					Row(
 						verticalAlignment = Alignment.CenterVertically,
 						modifier = Modifier
@@ -148,20 +151,21 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 							.padding(16.dp, 10.dp)
 							.clickable {
 								scope.launch(Dispatchers.Main) {
-									checkedStateForTheme.value = !checkedStateForTheme.value
+									checkedStateForThemeSync.value = !checkedStateForThemeSync.value
+									vm.saveState(context, darkIsActive = false, changedByUser = true)
 									delay(150)
-									vm.changeTheme(context, true)
+									vm.postValueSync(context, checkedStateForThemeSync.value, true)
 								}
 							}
 					) {
 						Icon(
 							modifier = Modifier.padding(0.dp, 0.dp),
-							painter = painterResource(R.drawable.ic_theme),
+							painter = painterResource(R.drawable.ic_sys_theme),
 							contentDescription = "CommentIcon",
 							tint = MaterialTheme.colorScheme.onPrimary
 						)
 						Text(
-							stringResource(R.string.dark_theme),
+							stringResource(R.string.synch_with_sys),
 							fontSize = 18.sp,
 							color = MaterialTheme.colorScheme.onPrimary,
 							modifier = Modifier.padding(16.dp, 0.dp)
@@ -172,12 +176,13 @@ fun SettingsCompose(vm: SettingsViewModel, changedTheme: Boolean)
 								.fillMaxWidth()
 						)
 						GradientSwitch(
-							checked = checkedStateForTheme.value,
+							checked = checkedStateForThemeSync.value,
 							onCheckedChange = {
 								scope.launch(Dispatchers.Main) {
-									checkedStateForTheme.value = it
+									checkedStateForThemeSync.value = it
+									vm.saveState(context, darkIsActive = false, changedByUser = true)
 									delay(150)
-									vm.changeTheme(context, true)
+									vm.postValueSync(context, checkedStateForThemeSync.value, true)
 								}
 							})
 					}

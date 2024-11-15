@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -55,7 +54,8 @@ class MainActivity: AppCompatActivity()
 	private val settingsViewModel by viewModel<SettingsViewModel>()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var picturesSharedPrefs: String? = null
-	private var changedTheme: Boolean? = null
+	private var blackTheme: Boolean? = null
+	private var pressedSync: Boolean? = null
 	private var serviceIntent = Intent()
 	private var description = "default"
 	private var job = jobForNotifications
@@ -110,25 +110,30 @@ class MainActivity: AppCompatActivity()
 		{
 			Log.d("theme", "user has changed theme")
 			//USER CHANGED THEME BY BUTTON IN APP
-			changedTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
-			if(!changedTheme!!)
+			settingsViewModel.postValueSync(this, false, usePressFunc = false)
+			blackTheme = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getBoolean(THEME_SP_KEY, true)
+			if(!blackTheme!!)
 			{
-				settingsViewModel.postValue(this, b = false, changedByUser = true)
+				settingsViewModel.postValue(this, b = false, changedByUser = true, useChangeFunc = true)
 			}
 			else
 			{
-				settingsViewModel.postValue(this, b = true, changedByUser = true)
+				settingsViewModel.postValue(this, b = true, changedByUser = true, useChangeFunc = true)
 			}
+			pressedSync = false
 		}
 		else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
 		{
-			//надо получить тему
-			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-			changedTheme = isDarkTheme(this)
+			settingsViewModel.postValueSync(this, b = true, usePressFunc = true)
+			pressedSync = true
+			blackTheme = false
 		}
 		else
 		{
-			changedTheme = false
+			pressedSync = false
+			blackTheme = false
+			settingsViewModel.postValueSync(this, b = false, usePressFunc = true)
+			settingsViewModel.postValue(this, b = false, changedByUser = false, useChangeFunc = false)
 			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 		}
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
@@ -211,7 +216,7 @@ class MainActivity: AppCompatActivity()
 				PicturesScreen(navController, picturesViewModel, detailsViewModel)
 			}
 			composable(BottomNavItem.Settings.route) {
-				SettingsScreen(settingsViewModel, changedTheme!!, navController, detailsViewModel)
+				SettingsScreen(settingsViewModel, blackTheme!!, navController, detailsViewModel, pressedSync!!)
 			}
 			composable(Screen.Details.route) {
 				DetailsScreen(navController, detailsViewModel, picturesViewModel)
@@ -332,12 +337,6 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-	}
-
-	private fun isDarkTheme(activity: Activity): Boolean
-	{
-		return activity.resources.configuration.uiMode and
-			Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 	}
 
 	companion object
