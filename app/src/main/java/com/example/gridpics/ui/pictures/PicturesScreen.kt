@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -93,39 +94,65 @@ fun PicturesScreen(navController: NavController, viewModel: PicturesViewModel, v
 	BackHandler {
 		viewModel.backNavButtonPress(true)
 	}
-
-
-	Scaffold(modifier = Modifier
-		.fillMaxWidth(),
-		bottomBar = { BottomNavigationBar(navController) },
-		content = { padding ->
-			Column(
-				modifier = Modifier
-					.padding(padding)
-					.consumeWindowInsets(padding)
-					.fillMaxSize()) {
-				if(!txt.isNullOrEmpty() && !clearedCache)
-				{
-					viewModel.newState()
-					ShowPictures(txt, viewModel, navController)
-				}
-				else if(!clearedCache && txt.isNullOrEmpty())
-				{
-					viewModel.newState()
-					viewModel.resume()
-					viewModel.getPics()
-					ShowPictures(null, viewModel, navController)
-				}
-				else if(clearedCache || txt.isNullOrEmpty())
-				{
-					viewModel.resume()
-					viewModel.newState()
-					viewModel.getPics()
-					ShowPictures(null, viewModel, navController)
+	val orientation = context.resources.configuration.orientation
+	if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+		Scaffold(modifier = Modifier
+			.fillMaxWidth()
+			.displayCutoutPadding(),
+			bottomBar = { BottomNavigationBar(navController) },
+			content = { padding ->
+				Column(
+					modifier = Modifier
+						.padding(padding)
+						.consumeWindowInsets(padding)
+						.fillMaxSize()
+				) {
+					if (!txt.isNullOrEmpty() && !clearedCache) {
+						viewModel.newState()
+						ShowPictures(txt, viewModel, navController)
+					} else if (!clearedCache && txt.isNullOrEmpty()) {
+						viewModel.newState()
+						viewModel.resume()
+						viewModel.getPics()
+						ShowPictures(null, viewModel, navController)
+					} else if (clearedCache || txt.isNullOrEmpty()) {
+						viewModel.resume()
+						viewModel.newState()
+						viewModel.getPics()
+						ShowPictures(null, viewModel, navController)
+					}
 				}
 			}
-		}
-	)
+		)
+	} else {
+		Scaffold(modifier = Modifier
+			.fillMaxWidth(),
+			bottomBar = { BottomNavigationBar(navController) },
+			content = { padding ->
+				Column(
+					modifier = Modifier
+						.padding(padding)
+						.consumeWindowInsets(padding)
+						.fillMaxSize()
+				) {
+					if (!txt.isNullOrEmpty() && !clearedCache) {
+						viewModel.newState()
+						ShowPictures(txt, viewModel, navController)
+					} else if (!clearedCache && txt.isNullOrEmpty()) {
+						viewModel.newState()
+						viewModel.resume()
+						viewModel.getPics()
+						ShowPictures(null, viewModel, navController)
+					} else if (clearedCache || txt.isNullOrEmpty()) {
+						viewModel.resume()
+						viewModel.newState()
+						viewModel.getPics()
+						ShowPictures(null, viewModel, navController)
+					}
+				}
+			}
+		)
+	}
 }
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -164,13 +191,10 @@ fun itemNewsCard(item: String, nc: NavController, vm: PicturesViewModel): Boolea
 			contentDescription = item,
 			modifier = Modifier
 				.clickable {
-					if(!isError)
-					{
+					if (!isError) {
 						isClicked = true
 						openAlertDialog.value = false
-					}
-					else
-					{
+					} else {
 						openAlertDialog.value = true
 					}
 				}
@@ -383,9 +407,15 @@ fun GradientButton(
 	{
 		Box(modifier = Modifier
 			.fillMaxWidth()
-			.background(brush = Brush.horizontalGradient(colors = gradientColors), shape = roundedCornerShape)
+			.background(
+				brush = Brush.horizontalGradient(colors = gradientColors),
+				shape = roundedCornerShape
+			)
 			.clip(roundedCornerShape)
-			.background(brush = Brush.linearGradient(colors = gradientColors), shape = RoundedCornerShape(cornerRadius))
+			.background(
+				brush = Brush.linearGradient(colors = gradientColors),
+				shape = RoundedCornerShape(cornerRadius)
+			)
 			.padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center)
 		{
 			Text(text = nameButton, fontSize = 20.sp, color = Color.White)

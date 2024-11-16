@@ -8,7 +8,6 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -119,16 +118,6 @@ class MainActivity: AppCompatActivity()
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
 
-		val orientation = resources.configuration.orientation
-		val params = this.window.attributes
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && orientation == Configuration.ORIENTATION_LANDSCAPE)
-		{
-			params.layoutInDisplayCutoutMode =
-				WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
-		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
-			params.layoutInDisplayCutoutMode =
-				WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-		}
 		//theme pick
 		settingsViewModel.changeTheme(this, themePick)
 		val controller = WindowCompat.getInsetsController(window, window.decorView)

@@ -2,12 +2,14 @@ package com.example.gridpics.ui.settings
 
 import android.annotation.SuppressLint
 import android.content.Context.MODE_PRIVATE
+import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -55,20 +57,41 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsViewModel: DetailsViewModel, option: Int)
 {
 	detailsViewModel.postUrl("default")
-	Scaffold(modifier = Modifier
-		.fillMaxWidth(),
-		bottomBar = { BottomNavigationBar(navController) },
-		content = { padding ->
-			Column(
-				modifier = Modifier
-					.padding(padding)
-					.consumeWindowInsets(padding)
-					.verticalScroll(rememberScrollState())
-					.fillMaxSize()) {
-				SettingsCompose(vm, option)
+	val orientation = LocalContext.current.resources.configuration.orientation
+	if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+		Scaffold(modifier = Modifier
+			.fillMaxWidth()
+			.displayCutoutPadding(),
+			bottomBar = { BottomNavigationBar(navController) },
+			content = { padding ->
+				Column(
+					modifier = Modifier
+						.padding(padding)
+						.consumeWindowInsets(padding)
+						.verticalScroll(rememberScrollState())
+						.fillMaxSize()
+				) {
+					SettingsCompose(vm, option)
+				}
 			}
-		}
-	)
+		)
+	} else {
+		Scaffold(modifier = Modifier
+			.fillMaxWidth(),
+			bottomBar = { BottomNavigationBar(navController) },
+			content = { padding ->
+				Column(
+					modifier = Modifier
+						.padding(padding)
+						.consumeWindowInsets(padding)
+						.verticalScroll(rememberScrollState())
+						.fillMaxSize()
+				) {
+					SettingsCompose(vm, option)
+				}
+			}
+		)
+	}
 }
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -122,7 +145,10 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 										scope.launch(Dispatchers.Main) {
 											onOptionSelected(text)
 											vm.changeFromSettings(context)
-											vm.changeTheme(context, listOfThemeOptions.indexOf(text))
+											vm.changeTheme(
+												context,
+												listOfThemeOptions.indexOf(text)
+											)
 										}
 									}
 							) {
@@ -200,9 +226,10 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 						color = MaterialTheme.colorScheme.onPrimary,
 						modifier = Modifier.padding(16.dp, 0.dp)
 					)
-					Spacer(Modifier
-						.weight(1f)
-						.fillMaxWidth()
+					Spacer(
+						Modifier
+							.weight(1f)
+							.fillMaxWidth()
 					)
 				}
 				if(showDialog)
