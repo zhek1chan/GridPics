@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
@@ -50,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -199,8 +201,10 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 								Text(
 									text = text,
 									fontSize = 18.sp,
+									maxLines = 1,
+									overflow = TextOverflow.Ellipsis,
 									color = MaterialTheme.colorScheme.onPrimary,
-									modifier = Modifier.padding(16.dp, 0.dp)
+									modifier = Modifier.padding(16.dp, 0.dp).width(250.dp)
 								)
 								Spacer(
 									Modifier
@@ -208,6 +212,7 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 										.fillMaxWidth()
 								)
 								RadioButton(
+									modifier = Modifier.padding(0.dp,0.dp,5.dp,0.dp),
 									selected = (text == selectedOption),
 									onClick =
 									{
