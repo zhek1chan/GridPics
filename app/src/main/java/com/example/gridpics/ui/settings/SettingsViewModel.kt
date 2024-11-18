@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.ui.activity.MainActivity.Companion.JUST_CHANGED_THEME
-import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SP_KEY
+import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,9 +59,9 @@ class SettingsViewModel: ViewModel()
 
 	private fun saveThemeState(context: Context, i: Int)
 	{
-		val sharedPreferences = context.getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE)
+		val sharedPreferences = context.getSharedPreferences(THEME_SHARED_PREFERENCE, MODE_PRIVATE)
 		val editor = sharedPreferences.edit()
-		editor.putInt(THEME_SP_KEY, i)
+		editor.putInt(THEME_SHARED_PREFERENCE, i)
 		editor.apply()
 	}
 }

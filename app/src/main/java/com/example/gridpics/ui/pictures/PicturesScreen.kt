@@ -69,8 +69,8 @@ import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
-import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
-import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
+import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
+import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
@@ -81,7 +81,7 @@ import kotlinx.coroutines.launch
 fun PicturesScreen(navController: NavController, viewModel: PicturesViewModel, viewModelDetails: DetailsViewModel)
 {
 	val context = LocalContext.current
-	val txt = context.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
+	val txt = context.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE).getString(SHARED_PREFS_PICTURES, null)
 	val clearedCache = context.getSharedPreferences(CACHE, MODE_PRIVATE).getBoolean(CACHE, false)
 	viewModelDetails.postUrl("default")
 
@@ -229,9 +229,9 @@ fun itemNewsCard(item: String, nc: NavController, vm: PicturesViewModel): Boolea
 		if(isClicked)
 		{
 			isClicked = false
-			val sharedPreferences = context.getSharedPreferences(PIC, MODE_PRIVATE)
+			val sharedPreferences = context.getSharedPreferences(PICTURE, MODE_PRIVATE)
 			val editor = sharedPreferences.edit()
-			editor.putString(PIC, item)
+			editor.putString(PICTURE, item)
 			editor.apply()
 			nc.navigate("details_screen")
 		}
@@ -490,9 +490,9 @@ fun AlertDialogSecondary(
 
 private fun saveToSharedPrefs(context: Context, s: String)
 {
-	val sharedPreferencesPictures = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
+	val sharedPreferencesPictures = context.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE)
 	val editorPictures = sharedPreferencesPictures.edit()
-	editorPictures.putString(PICTURES, s)
+	editorPictures.putString(SHARED_PREFS_PICTURES, s)
 	editorPictures.apply()
 	val sharedPreferences = context.getSharedPreferences(CACHE, MODE_PRIVATE)
 	val editor = sharedPreferences.edit()

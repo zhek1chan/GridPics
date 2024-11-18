@@ -66,7 +66,7 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 
 		installSplashScreen()
-		themePick = getSharedPreferences(THEME_SP_KEY, MODE_PRIVATE).getInt(THEME_SP_KEY, 2)
+		themePick = getSharedPreferences(THEME_SHARED_PREFERENCE, MODE_PRIVATE).getInt(THEME_SHARED_PREFERENCE, 2)
 		val justChangedTheme = if(themePick == 2)
 		{
 			getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false)
@@ -146,7 +146,7 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 
-		picturesSharedPrefs = this.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, null)
+		picturesSharedPrefs = this.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE).getString(SHARED_PREFS_PICTURES, null)
 		lifecycleScope.launch(Dispatchers.IO) {
 			detailsViewModel.observeUrlFlow().collectLatest {
 				if(ContextCompat.checkSelfPermission(
@@ -341,14 +341,14 @@ class MainActivity: AppCompatActivity()
 		val jobForNotifications = Job()
 		var countExitNavigation = 0
 		const val NOTIFICATION_ID = 1337
-		const val CACHE = "CACHE"
-		const val PICTURES = "PICTURES_SHARED_PREFS"
-		const val PIC = "PIC"
-		const val THEME_SP_KEY = "THEME_SHARED_PREFS"
-		const val CHANNEL_ID = "GRID_PICS_CHANEL_ID"
-		const val NULL_STRING = "NULL"
+		const val CACHE = "CACHE_CACHE"
+		const val SHARED_PREFS_PICTURES = "SHARED_PREFS_PICTURES"
+		const val PICTURE = "PICTURE"
+		const val THEME_SHARED_PREFERENCE = "THEME_SHARED_PREFERENCE"
+		const val CHANNEL_NOTIFICATIONS_ID = "GRID_PICS_CHANEL_NOTIFICATIONS_ID"
+		const val NULL_STRING = "NULL_STRING"
 		const val IS_BLACK_THEME = "IS_BLACK_THEME"
-		const val TOP_BAR_VISABILITY = "TOP_BAR_VISABILITY"
+		const val TOP_BAR_VISABILITY_SHARED_PREFERENCE = "TOP_BAR_VISABILITY_SHARED_PREFERENCE"
 		const val WE_WERE_HERE_BEFORE = "WE_WERE_HERE_BEFORE"
 		const val JUST_CHANGED_THEME = "JUST_CHANGED_THEME"
 	}

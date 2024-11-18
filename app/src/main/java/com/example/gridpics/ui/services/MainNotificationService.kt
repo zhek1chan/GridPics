@@ -68,7 +68,7 @@ class MainNotificationService: Service()
 			{
 				NotificationManager.IMPORTANCE_DEFAULT
 			}
-			val channel = NotificationChannel(MainActivity.CHANNEL_ID, name, importance)
+			val channel = NotificationChannel(MainActivity.CHANNEL_NOTIFICATIONS_ID, name, importance)
 			channel.description = description
 			val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 			notificationManager.createNotificationChannel(channel)
@@ -80,7 +80,7 @@ class MainNotificationService: Service()
 		Log.d("description in service", contentText)
 		val dontUseSound = countExitNavigation > 1
 		// Создаем уведомление
-		val builder = NotificationCompat.Builder(this, MainActivity.CHANNEL_ID)
+		val builder = NotificationCompat.Builder(this, MainActivity.CHANNEL_NOTIFICATIONS_ID)
 			.setContentIntent(null)
 			.setAutoCancel(true)
 			.setOngoing(true)

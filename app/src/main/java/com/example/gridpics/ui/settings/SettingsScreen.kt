@@ -60,7 +60,7 @@ import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
-import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
+import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.themes.ComposeTheme
@@ -167,7 +167,7 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 								verticalAlignment = Alignment.CenterVertically,
 								modifier = Modifier
 									.fillMaxWidth()
-									.padding(18.dp, 10.dp, 6.dp, 0.dp)
+									.padding(18.dp, 10.dp, 18.dp, 0.dp)
 									.clickable {
 										scope.launch(Dispatchers.Main) {
 											onOptionSelected(text)
@@ -204,7 +204,9 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 									maxLines = 1,
 									overflow = TextOverflow.Ellipsis,
 									color = MaterialTheme.colorScheme.onPrimary,
-									modifier = Modifier.padding(16.dp, 0.dp).width(250.dp)
+									modifier = Modifier
+										.padding(16.dp, 0.dp)
+										.width(250.dp)
 								)
 								Spacer(
 									Modifier
@@ -212,7 +214,6 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 										.fillMaxWidth()
 								)
 								RadioButton(
-									modifier = Modifier.padding(0.dp,0.dp,5.dp,0.dp),
 									selected = (text == selectedOption),
 									onClick =
 									{
@@ -267,9 +268,9 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 							val imageLoader = context.imageLoader
 							imageLoader.diskCache?.clear()
 							imageLoader.memoryCache?.clear()
-							val sharedPreferences = context.getSharedPreferences(PICTURES, MODE_PRIVATE)
+							val sharedPreferences = context.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE)
 							val editor = sharedPreferences.edit()
-							editor.putString(PICTURES, null)
+							editor.putString(SHARED_PREFS_PICTURES, null)
 							editor.apply()
 							val sharedPreferencesCache = context.getSharedPreferences(CACHE, MODE_PRIVATE)
 							val editorCache = sharedPreferencesCache.edit()

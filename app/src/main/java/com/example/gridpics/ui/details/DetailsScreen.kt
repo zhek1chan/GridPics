@@ -76,9 +76,9 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.NULL_STRING
-import com.example.gridpics.ui.activity.MainActivity.Companion.PIC
-import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURES
-import com.example.gridpics.ui.activity.MainActivity.Companion.TOP_BAR_VISABILITY
+import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
+import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
+import com.example.gridpics.ui.activity.MainActivity.Companion.TOP_BAR_VISABILITY_SHARED_PREFERENCE
 import com.example.gridpics.ui.activity.MainActivity.Companion.WE_WERE_HERE_BEFORE
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.pictures.PicturesViewModel
@@ -115,9 +115,9 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 			}
 		}
 	}
-	val pictures = context.getSharedPreferences(PICTURES, MODE_PRIVATE).getString(PICTURES, NULL_STRING)
-	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE).getString(PIC, NULL_STRING)
-	var visible = context.getSharedPreferences(TOP_BAR_VISABILITY, MODE_PRIVATE).getBoolean(TOP_BAR_VISABILITY, true)
+	val pictures = context.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE).getString(SHARED_PREFS_PICTURES, NULL_STRING)
+	val pic = context.getSharedPreferences(PICTURE, MODE_PRIVATE).getString(PICTURE, NULL_STRING)
+	var visible = context.getSharedPreferences(TOP_BAR_VISABILITY_SHARED_PREFERENCE, MODE_PRIVATE).getBoolean(TOP_BAR_VISABILITY_SHARED_PREFERENCE, true)
 	val weWereHere = context.getSharedPreferences(WE_WERE_HERE_BEFORE, MODE_PRIVATE).getBoolean(WE_WERE_HERE_BEFORE, false)
 	if(weWereHere)
 	{
@@ -427,13 +427,13 @@ fun AppBar(
 
 private fun saveToSharedPrefs(context: Context, s: String, vBoolean: Boolean)
 {
-	val pic = context.getSharedPreferences(PIC, MODE_PRIVATE)
+	val pic = context.getSharedPreferences(PICTURE, MODE_PRIVATE)
 	val editor = pic.edit()
-	editor.putString(PIC, s)
+	editor.putString(PICTURE, s)
 	editor.apply()
-	val vis = context.getSharedPreferences(TOP_BAR_VISABILITY, MODE_PRIVATE)
+	val vis = context.getSharedPreferences(TOP_BAR_VISABILITY_SHARED_PREFERENCE, MODE_PRIVATE)
 	val editorVis = vis.edit()
-	editorVis.putBoolean(TOP_BAR_VISABILITY, vBoolean)
+	editorVis.putBoolean(TOP_BAR_VISABILITY_SHARED_PREFERENCE, vBoolean)
 	editorVis.apply()
 }
 
