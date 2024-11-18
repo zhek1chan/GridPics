@@ -13,9 +13,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,7 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -35,16 +37,11 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +57,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -305,7 +303,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					state = listState,
 					modifier = Modifier
 						.fillMaxSize()
-						.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+						.padding(0.dp, 55.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
 						itemNewsCard(it, nv, vm)
 					}
@@ -336,7 +334,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 					state = listState,
 					modifier = Modifier
 						.fillMaxSize()
-						.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+						.padding(0.dp, 55.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
 						itemNewsCard(it, nv, vm)
 					}
@@ -354,7 +352,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			state = listState,
 			modifier = Modifier
 				.fillMaxSize()
-				.padding(0.dp, 45.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+				.padding(0.dp, 55.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
 				itemNewsCard(it, nv, vm)
@@ -364,42 +362,32 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 {
 	ComposeTheme {
-		var openAddDialog by remember { mutableStateOf(false) }
-		val editMessage = remember { mutableStateOf("") }
-		var string = s.toString()
-
 		Scaffold(
 			topBar = {
-				TopAppBar(modifier = Modifier
-					.height(35.dp)
-					.padding(0.dp, 10.dp, 0.dp, 0.dp), colors = TopAppBarDefaults.topAppBarColors(titleContentColor = MaterialTheme.colorScheme.onPrimary), title = {
-					Row {
-						Text(stringResource(R.string.gridpics))
-					}
-				})
-				if(openAddDialog)
-				{
-					Row(verticalAlignment = Alignment.CenterVertically) {
-						AddDialog(
-							editMessage = editMessage,
-							onSubmit =
-							{
-								string += "\n${editMessage.value}"
-								openAddDialog = false
-								Log.d("WHAT I WROTE:", string)
-							},
-							onDismiss = { openAddDialog = false }
-						)
-					}
+				Row(
+					verticalAlignment = Alignment.CenterVertically,
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(16.dp, 0.dp, 16.dp, 0.dp)
+						.height(WindowInsets.systemBarsIgnoringVisibility
+							.asPaddingValues()
+							.calculateTopPadding())
+				) {
+					Text(
+						textAlign = TextAlign.Center,
+						text = stringResource(R.string.gridpics),
+						fontSize = 21.sp,
+						color = MaterialTheme.colorScheme.onPrimary
+					)
 				}
 			},
 		) {
-			ShowList(string, vm, nv)
+			ShowList(s, vm, nv)
 		}
 	}
 }
@@ -505,55 +493,6 @@ fun AlertDialogSecondary(
 			Text(stringResource(R.string.okey))
 		}
 	})
-}
-
-@Composable
-fun AddDialog(
-	editMessage: MutableState<String>,
-	onSubmit: () -> Unit,
-	onDismiss: () -> Unit,
-)
-{
-	Column(
-		modifier = Modifier
-			.clip(RoundedCornerShape(4.dp))
-			.background(MaterialTheme.colorScheme.background)
-			.padding(8.dp),
-	) {
-		Column(
-			modifier = Modifier.padding(16.dp),
-		) {
-			Text(text = stringResource(R.string.extract_link))
-
-			Spacer(modifier = Modifier.height(8.dp))
-
-			TextField(
-				value = editMessage.value,
-				onValueChange = { editMessage.value = it },
-				singleLine = true
-			)
-		}
-
-		Spacer(modifier = Modifier.height(8.dp))
-
-		Row(
-			modifier = Modifier.align(Alignment.End)
-		) {
-			Button(
-				onClick = onDismiss
-			) {
-				Text(stringResource(R.string.cancel))
-			}
-
-			Spacer(modifier = Modifier.width(8.dp))
-
-			Button(
-				onClick = onSubmit
-			) {
-				Text(stringResource(R.string.add))
-			}
-		}
-	}
 }
 
 private fun saveToSharedPrefs(context: Context, s: String)

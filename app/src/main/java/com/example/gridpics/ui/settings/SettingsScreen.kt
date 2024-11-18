@@ -8,13 +8,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
@@ -39,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -60,7 +66,8 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 {
 	detailsViewModel.postUrl("default")
 	val orientation = LocalContext.current.resources.configuration.orientation
-	if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+	if(orientation == Configuration.ORIENTATION_LANDSCAPE)
+	{
 		Box(modifier = Modifier
 			.fillMaxSize()
 			.background(MaterialTheme.colorScheme.background)
@@ -82,7 +89,9 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 				}
 			)
 		}
-	} else {
+	}
+	else
+	{
 		Scaffold(modifier = Modifier
 			.fillMaxWidth(),
 			bottomBar = { BottomNavigationBar(navController) },
@@ -101,6 +110,7 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 	}
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun SettingsCompose(vm: SettingsViewModel, option: Int)
@@ -126,10 +136,14 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 					verticalAlignment = Alignment.CenterVertically,
 					modifier = Modifier
 						.fillMaxWidth()
-						.padding(16.dp, 10.dp)
+						.padding(16.dp, 0.dp, 16.dp, 0.dp)
+						.height(WindowInsets.systemBarsIgnoringVisibility
+							.asPaddingValues()
+							.calculateTopPadding())
 				) {
 					Text(
-						stringResource(R.string.settings),
+						textAlign = TextAlign.Center,
+						text = stringResource(R.string.settings),
 						fontSize = 21.sp,
 						color = MaterialTheme.colorScheme.onPrimary
 					)
