@@ -11,24 +11,21 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
@@ -38,13 +35,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -307,7 +304,7 @@ fun ShowError(
 	context: Context,
 	list: MutableList<String>,
 	currentPage: Int,
-	pagerState: PagerState
+	pagerState: PagerState,
 )
 {
 	val errorMessage = if(isValidUrl(list[currentPage]))
@@ -342,7 +339,6 @@ fun ShowError(
 					CoroutineScope(Dispatchers.Main).launch {
 						pagerState.scrollToPage(currentPage)
 					}
-
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
 				Text(stringResource(R.string.update_loading))
@@ -362,17 +358,10 @@ fun AppBar(
 {
 	var navBack by remember { mutableStateOf(false) }
 	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
-		Box(
-			modifier = Modifier
-				.background(MaterialTheme.colorScheme.background)
-				.height(WindowInsets.systemBarsIgnoringVisibility
-					.asPaddingValues()
-					.calculateTopPadding())
-				.fillMaxWidth())
-		TopAppBar(
+		CenterAlignedTopAppBar(
 			modifier = Modifier
 				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
-				.height(60.dp)
+				.wrapContentSize()
 				.clickable {
 					navBack = true
 				},
@@ -382,7 +371,8 @@ fun AppBar(
 					fontSize = 18.sp,
 					maxLines = 2,
 					modifier = Modifier
-						.clickable { navBack = true },
+						.clickable { navBack = true }
+						.padding(0.dp, 3.dp, 0.dp, 0.dp),
 					overflow = TextOverflow.Ellipsis,
 				)
 			},
@@ -390,7 +380,8 @@ fun AppBar(
 				IconButton({ navBack = true }) {
 					Icon(
 						Icons.AutoMirrored.Filled.ArrowBack,
-						contentDescription = "back"
+						contentDescription = "back",
+						modifier = Modifier.wrapContentSize()
 					)
 				}
 			},
@@ -410,7 +401,7 @@ fun AppBar(
 					Icon(
 						painter = rememberVectorPainter(Icons.Default.Share),
 						contentDescription = "share",
-						tint = MaterialTheme.colorScheme.onPrimary
+						tint = MaterialTheme.colorScheme.onPrimary,
 					)
 				}
 			}
