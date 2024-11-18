@@ -8,6 +8,8 @@ import android.content.res.Configuration
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -39,13 +41,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -56,6 +58,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -109,6 +112,7 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 				}
 				else
 				{
+					Log.d("we are out", "We are without changing state")
 					vmDetails.postUrl("default")
 					nc.navigateUp()
 				}
@@ -240,10 +244,11 @@ fun ShowAsynchImage(
 	{
 		ContentScale.Fit
 	}
-	val zoom = rememberZoomState()
+	val zoom = rememberZoomState(2.8f, Size.Zero)
 	val count = remember { listOf(0).toMutableList() }
 	val countLastThree = remember { listOf(0).toMutableList() }
 	val error = remember { mutableStateOf(false) }
+	val current = current
 	val imgRequest = ImageRequest.Builder(LocalContext.current)
 		.data(list[page])
 		.placeholder(R.drawable.loading)
@@ -283,10 +288,7 @@ fun ShowAsynchImage(
 							Log.d("g", "G")
 							if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2)
 							{
-								if(!isVisible.value)
-								{
-									vm.changeState()
-								}
+								//LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher.onBackPressed()
 								nc.navigateUp()
 							}
 						}
