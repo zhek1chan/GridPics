@@ -95,36 +95,49 @@ fun PicturesScreen(navController: NavController, viewModel: PicturesViewModel, v
 		viewModel.backNavButtonPress(true)
 	}
 	val orientation = context.resources.configuration.orientation
-	if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-		Scaffold(modifier = Modifier
-			.fillMaxWidth()
-			.displayCutoutPadding(),
-			bottomBar = { BottomNavigationBar(navController) },
-			content = { padding ->
-				Column(
-					modifier = Modifier
-						.padding(padding)
-						.consumeWindowInsets(padding)
-						.fillMaxSize()
-				) {
-					if (!txt.isNullOrEmpty() && !clearedCache) {
-						viewModel.newState()
-						ShowPictures(txt, viewModel, navController)
-					} else if (!clearedCache && txt.isNullOrEmpty()) {
-						viewModel.newState()
-						viewModel.resume()
-						viewModel.getPics()
-						ShowPictures(null, viewModel, navController)
-					} else if (clearedCache || txt.isNullOrEmpty()) {
-						viewModel.resume()
-						viewModel.newState()
-						viewModel.getPics()
-						ShowPictures(null, viewModel, navController)
+	if(orientation == Configuration.ORIENTATION_LANDSCAPE)
+	{
+		Box(modifier = Modifier
+			.fillMaxSize()
+			.background(MaterialTheme.colorScheme.background)
+		) {
+			Scaffold(modifier = Modifier
+				.fillMaxWidth()
+				.displayCutoutPadding(),
+				bottomBar = { BottomNavigationBar(navController) },
+				content = { padding ->
+					Column(
+						modifier = Modifier
+							.padding(padding)
+							.consumeWindowInsets(padding)
+							.fillMaxSize()
+					) {
+						if(!txt.isNullOrEmpty() && !clearedCache)
+						{
+							viewModel.newState()
+							ShowPictures(txt, viewModel, navController)
+						}
+						else if(!clearedCache && txt.isNullOrEmpty())
+						{
+							viewModel.newState()
+							viewModel.resume()
+							viewModel.getPics()
+							ShowPictures(null, viewModel, navController)
+						}
+						else if(clearedCache || txt.isNullOrEmpty())
+						{
+							viewModel.resume()
+							viewModel.newState()
+							viewModel.getPics()
+							ShowPictures(null, viewModel, navController)
+						}
 					}
 				}
-			}
-		)
-	} else {
+			)
+		}
+	}
+	else
+	{
 		Scaffold(modifier = Modifier
 			.fillMaxWidth(),
 			bottomBar = { BottomNavigationBar(navController) },
@@ -135,15 +148,20 @@ fun PicturesScreen(navController: NavController, viewModel: PicturesViewModel, v
 						.consumeWindowInsets(padding)
 						.fillMaxSize()
 				) {
-					if (!txt.isNullOrEmpty() && !clearedCache) {
+					if(!txt.isNullOrEmpty() && !clearedCache)
+					{
 						viewModel.newState()
 						ShowPictures(txt, viewModel, navController)
-					} else if (!clearedCache && txt.isNullOrEmpty()) {
+					}
+					else if(!clearedCache && txt.isNullOrEmpty())
+					{
 						viewModel.newState()
 						viewModel.resume()
 						viewModel.getPics()
 						ShowPictures(null, viewModel, navController)
-					} else if (clearedCache || txt.isNullOrEmpty()) {
+					}
+					else if(clearedCache || txt.isNullOrEmpty())
+					{
 						viewModel.resume()
 						viewModel.newState()
 						viewModel.getPics()
@@ -191,10 +209,13 @@ fun itemNewsCard(item: String, nc: NavController, vm: PicturesViewModel): Boolea
 			contentDescription = item,
 			modifier = Modifier
 				.clickable {
-					if (!isError) {
+					if(!isError)
+					{
 						isClicked = true
 						openAlertDialog.value = false
-					} else {
+					}
+					else
+					{
 						openAlertDialog.value = true
 					}
 				}

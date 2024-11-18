@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -59,22 +61,27 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 	detailsViewModel.postUrl("default")
 	val orientation = LocalContext.current.resources.configuration.orientation
 	if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-		Scaffold(modifier = Modifier
-			.fillMaxWidth()
-			.displayCutoutPadding(),
-			bottomBar = { BottomNavigationBar(navController) },
-			content = { padding ->
-				Column(
-					modifier = Modifier
-						.padding(padding)
-						.consumeWindowInsets(padding)
-						.verticalScroll(rememberScrollState())
-						.fillMaxSize()
-				) {
-					SettingsCompose(vm, option)
+		Box(modifier = Modifier
+			.fillMaxSize()
+			.background(MaterialTheme.colorScheme.background)
+		) {
+			Scaffold(modifier = Modifier
+				.fillMaxWidth()
+				.displayCutoutPadding(),
+				bottomBar = { BottomNavigationBar(navController) },
+				content = { padding ->
+					Column(
+						modifier = Modifier
+							.padding(padding)
+							.consumeWindowInsets(padding)
+							.verticalScroll(rememberScrollState())
+							.fillMaxSize()
+					) {
+						SettingsCompose(vm, option)
+					}
 				}
-			}
-		)
+			)
+		}
 	} else {
 		Scaffold(modifier = Modifier
 			.fillMaxWidth(),
@@ -145,10 +152,7 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 										scope.launch(Dispatchers.Main) {
 											onOptionSelected(text)
 											vm.changeFromSettings(context)
-											vm.changeTheme(
-												context,
-												listOfThemeOptions.indexOf(text)
-											)
+											vm.changeTheme(context, listOfThemeOptions.indexOf(text))
 										}
 									}
 							) {
@@ -226,10 +230,9 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 						color = MaterialTheme.colorScheme.onPrimary,
 						modifier = Modifier.padding(16.dp, 0.dp)
 					)
-					Spacer(
-						Modifier
-							.weight(1f)
-							.fillMaxWidth()
+					Spacer(Modifier
+						.weight(1f)
+						.fillMaxWidth()
 					)
 				}
 				if(showDialog)
