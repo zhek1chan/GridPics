@@ -372,6 +372,7 @@ fun AppBar(
 		TopAppBar(
 			modifier = Modifier
 				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
+				.height(60.dp)
 				.clickable {
 					navBack = true
 				},

@@ -13,11 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -362,7 +358,6 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 {
@@ -374,9 +369,7 @@ fun ShowPictures(s: String?, vm: PicturesViewModel, nv: NavController)
 					modifier = Modifier
 						.fillMaxWidth()
 						.padding(16.dp, 0.dp, 16.dp, 0.dp)
-						.height(WindowInsets.systemBarsIgnoringVisibility
-							.asPaddingValues()
-							.calculateTopPadding())
+						.height(60.dp)
 				) {
 					Text(
 						textAlign = TextAlign.Center,

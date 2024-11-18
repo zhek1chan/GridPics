@@ -3,6 +3,7 @@ package com.example.gridpics.ui.settings
 import android.annotation.SuppressLint
 import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,11 +21,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +35,8 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,6 +81,7 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 				.fillMaxWidth()
 				.displayCutoutPadding(),
 				bottomBar = { BottomNavigationBar(navController) },
+				topBar = { SettingsTopBar() },
 				content = { padding ->
 					Column(
 						modifier = Modifier
@@ -95,6 +101,7 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 		Scaffold(modifier = Modifier
 			.fillMaxWidth(),
 			bottomBar = { BottomNavigationBar(navController) },
+			topBar = { SettingsTopBar() },
 			content = { padding ->
 				Column(
 					modifier = Modifier
@@ -110,7 +117,6 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 	}
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun SettingsCompose(vm: SettingsViewModel, option: Int)
@@ -137,9 +143,7 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 					modifier = Modifier
 						.fillMaxWidth()
 						.padding(16.dp, 0.dp, 16.dp, 0.dp)
-						.height(WindowInsets.systemBarsIgnoringVisibility
-							.asPaddingValues()
-							.calculateTopPadding())
+						.height(60.dp)
 				) {
 					Text(
 						textAlign = TextAlign.Center,
@@ -277,5 +281,40 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 				}
 			}
 		}
+	}
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun SettingsTopBar()
+{
+	Log.d("width", "${
+		WindowInsets.systemBarsIgnoringVisibility
+			.asPaddingValues()
+			.calculateTopPadding()
+	}")
+	Box(
+		modifier = Modifier
+			.background(MaterialTheme.colorScheme.background)
+			.height(WindowInsets.systemBarsIgnoringVisibility
+				.asPaddingValues()
+				.calculateTopPadding())
+			.fillMaxWidth()) {
+		TopAppBar(
+			modifier = Modifier
+				.height(60.dp)
+				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility),
+			title = {
+				Text(
+					text = LocalContext.current.getString(R.string.settings)
+				)
+			},
+			colors = TopAppBarDefaults.topAppBarColors(
+				titleContentColor = MaterialTheme.colorScheme.onPrimary,
+				navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+				actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+				containerColor = MaterialTheme.colorScheme.background
+			)
+		)
 	}
 }
