@@ -214,6 +214,7 @@ fun ShowDetails(
 				ShowAsynchImage(
 					list = list,
 					page = page,
+					pagerState = pagerState,
 					vm = vm,
 					nc = nc,
 					isVisible = isVisible,
@@ -234,6 +235,7 @@ fun ShowDetails(
 fun ShowAsynchImage(
 	list: MutableList<String>,
 	page: Int,
+	pagerState: PagerState,
 	vm: DetailsViewModel,
 	picturesViewModel: PicturesViewModel,
 	nc: NavController,
@@ -281,15 +283,16 @@ fun ShowAsynchImage(
 			pic.compress(Bitmap.CompressFormat.JPEG, 10, baos)
 			val b = baos.toByteArray()
 			bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
+			picturesViewModel.removeSpecialError(list[page])
 		},
 		onError = {
 			val pic = context.resources.getDrawable(R.drawable.error).toBitmap()
 			val baos = ByteArrayOutputStream()
 			pic.compress(Bitmap.CompressFormat.JPEG, 10, baos)
 			val b = baos.toByteArray()
-			vm.postUrl(list[page], Base64.encodeToString(b, Base64.DEFAULT))
+			vm.postUrl(list[pagerState.currentPage], Base64.encodeToString(b, Base64.DEFAULT))
 			bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
-			Log.d("error", "error")
+			picturesViewModel.addError(list[page])
 			error.value = true
 		},
 		modifier = Modifier
@@ -314,7 +317,6 @@ fun ShowAsynchImage(
 						}
 						if(event.changes.any { !it.pressed })
 						{
-							Log.d("g", "G")
 							if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2)
 							{
 								vm.postNegativeVisabilityState()
@@ -334,7 +336,7 @@ fun ShowAsynchImage(
 		pic.compress(Bitmap.CompressFormat.JPEG, 10, baos)
 		val b = baos.toByteArray()
 		bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
-		picturesViewModel.addError(list[page])
+		picturesViewModel.addError(list[pagerState.currentPage])
 		nc.navigate(Screen.Details.route)
 	}
 }

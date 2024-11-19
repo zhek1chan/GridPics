@@ -58,12 +58,23 @@ class PicturesViewModel(
 
 	fun addError(s: String)
 	{
-		errorsList.add(s)
+		if (!errorsList.contains(s))
+		{
+			errorsList.add(s)
+		}
 	}
 
 	fun checkOnErrorExists(s: String): Boolean
 	{
 		return errorsList.contains(s)
+	}
+
+	fun removeSpecialError(s: String)
+	{
+		if(errorsList.contains(s))
+		{
+			errorsList.remove(s)
+		}
 	}
 
 	fun clearErrors()
