@@ -1,6 +1,7 @@
 package com.example.gridpics
 
 import android.app.Application
+import android.content.Context
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import coil3.ImageLoader
@@ -19,7 +20,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.context.startKoin
 
-class App: Application(), KoinComponent
+class App: Application(), KoinComponent, SingletonImageLoader.Factory
 {
 	override fun onCreate()
 	{
@@ -70,6 +71,17 @@ class App: Application(), KoinComponent
 		{
 			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 		}
+	}
+
+	override fun newImageLoader(context: Context): ImageLoader {
+		return ImageLoader.Builder(context)
+			.diskCache {
+				DiskCache.Builder()
+					.directory(context.cacheDir.resolve("image_cache"))
+					.maxSizePercent(0.3)
+					.build()
+			}
+			.build()
 	}
 
 	companion object

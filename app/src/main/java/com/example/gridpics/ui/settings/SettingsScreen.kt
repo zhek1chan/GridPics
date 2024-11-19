@@ -71,7 +71,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsViewModel: DetailsViewModel, option: Int)
 {
-	detailsViewModel.postUrl("default")
+	detailsViewModel.postUrl("default", "")
 	val orientation = LocalContext.current.resources.configuration.orientation
 	if(orientation == Configuration.ORIENTATION_LANDSCAPE)
 	{

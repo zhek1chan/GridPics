@@ -59,6 +59,7 @@ class MainActivity: AppCompatActivity()
 	private var description = "default"
 	private var job = jobForNotifications
 	private var scope = GlobalScope
+	private var bitmapString = ""
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
@@ -117,12 +118,11 @@ class MainActivity: AppCompatActivity()
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
-
 		//theme pick
 		settingsViewModel.changeTheme(this, themePick)
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		CoroutineScope(Dispatchers.Main).launch {
-			detailsViewModel.observeFlow().collectLatest {
+			detailsViewModel.observeVisabilityFlow().collectLatest {
 				if(it)
 				{
 					controller.hide(WindowInsetsCompat.Type.statusBars())
@@ -147,6 +147,12 @@ class MainActivity: AppCompatActivity()
 		}
 
 		picturesSharedPrefs = this.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE).getString(SHARED_PREFS_PICTURES, null)
+		CoroutineScope(Dispatchers.IO).launch {
+			detailsViewModel.observeBitmapFlow().collectLatest { b ->
+				bitmapString = b
+			}
+		}
+
 		lifecycleScope.launch(Dispatchers.IO) {
 			detailsViewModel.observeUrlFlow().collectLatest {
 				if(ContextCompat.checkSelfPermission(
@@ -159,6 +165,9 @@ class MainActivity: AppCompatActivity()
 						Log.d("description in main", description)
 						val newIntent = serviceIntent
 						newIntent.putExtra("description", it)
+						delay(350)
+						Log.d("wtf in activity", bitmapString)
+						newIntent.putExtra("picture_bitmap", bitmapString)
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 						{
 							startForegroundService(newIntent)

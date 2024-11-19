@@ -83,7 +83,8 @@ fun PicturesScreen(navController: NavController, viewModel: PicturesViewModel, v
 	val context = LocalContext.current
 	val txt = context.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE).getString(SHARED_PREFS_PICTURES, null)
 	val clearedCache = context.getSharedPreferences(CACHE, MODE_PRIVATE).getBoolean(CACHE, false)
-	viewModelDetails.postUrl("default")
+	viewModelDetails.postUrl("default", "")
+	viewModelDetails.postNegativeVisabilityState()
 
 	BackHandler {
 		viewModel.backNavButtonPress(true)
@@ -189,8 +190,8 @@ fun itemNewsCard(item: String, nc: NavController, vm: PicturesViewModel): Boolea
 		val imgRequest = remember(item) {
 			ImageRequest.Builder(context)
 				.data(item)
+				.allowHardware(false)
 				.httpHeaders(headers)
-				.allowHardware(true)
 				.networkCachePolicy(CachePolicy.ENABLED)
 				.memoryCachePolicy(CachePolicy.ENABLED)
 				.diskCachePolicy(CachePolicy.ENABLED)

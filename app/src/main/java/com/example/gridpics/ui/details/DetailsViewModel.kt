@@ -9,13 +9,15 @@ import kotlinx.coroutines.launch
 
 class DetailsViewModel: ViewModel()
 {
-	private val stateFlow = MutableStateFlow(false)
-	fun observeFlow(): Flow<Boolean> = stateFlow
+	private val visabilityFlow = MutableStateFlow(false)
+	fun observeVisabilityFlow(): Flow<Boolean> = visabilityFlow
 	private val urlFlow = MutableStateFlow("default")
 	fun observeUrlFlow(): Flow<String> = urlFlow
-	fun changeState()
+	private val bitmapFlow = MutableStateFlow("default")
+	fun observeBitmapFlow(): Flow<String> = bitmapFlow
+	fun changeVisabilityState()
 	{
-		stateFlow.value = !stateFlow.value
+		visabilityFlow.value = !visabilityFlow.value
 	}
 
 	private val stateMultiWindowFlow = MutableStateFlow(false)
@@ -25,10 +27,16 @@ class DetailsViewModel: ViewModel()
 		stateMultiWindowFlow.value = b
 	}
 
-	fun postUrl(s: String)
+	fun postUrl(s: String, b: String)
 	{
 		viewModelScope.launch(Dispatchers.IO) {
 			urlFlow.emit(s)
+			bitmapFlow.emit(b)
 		}
+	}
+
+	fun postNegativeVisabilityState()
+	{
+		visabilityFlow.value = false
 	}
 }
