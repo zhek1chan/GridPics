@@ -42,7 +42,6 @@ class MainNotificationService: Service()
 		val resultIntent = Intent(instance, MainActivity::class.java)
 		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE)
-		CoroutineScope(Dispatchers.IO).launch {
 			val extras = intent?.extras
 			contentText = if(!extras?.getString("description").isNullOrEmpty() && extras?.getString("description") != "default")
 			{
@@ -89,7 +88,6 @@ class MainNotificationService: Service()
 				createNotificationChannel()
 				showNotification(builder)
 			}
-		}
 		return START_NOT_STICKY
 	}
 

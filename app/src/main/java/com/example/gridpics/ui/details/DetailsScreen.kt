@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
@@ -73,6 +71,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
+import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -99,7 +98,7 @@ import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 import java.io.ByteArrayOutputStream
 
-@SuppressLint("RestrictedApi", "CommitPrefEdits", "ApplySharedPref")
+@SuppressLint("RestrictedApi", "CommitPrefEdits", "ApplySharedPref", "UseCompatLoadingForDrawables", "CoroutineCreationDuringComposition")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: PicturesViewModel)
@@ -142,13 +141,52 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 		val list = remember { pictures!!.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(initialPage = list.indexOf(pic), pageCount = { list.size })
 		val bitmapString = remember { mutableStateOf("") }
+		CoroutineScope(Dispatchers.Default).launch {
+			val imgRequest =
+				ImageRequest.Builder(context)
+					.data(list[pagerState.currentPage])
+					.placeholder(R.drawable.loading)
+					.error(R.drawable.error)
+					.allowHardware(false)
+					.target {
+						val picture = it.toBitmap()
+						val baos = ByteArrayOutputStream()
+						if (picture.byteCount > 2*1024*1024)
+						{
+							picture.compress(Bitmap.CompressFormat.JPEG, 5, baos)
+						} else {
+							picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)
+						}
+						val b = baos.toByteArray()
+						bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
+						Log.d("checkMa", "tipa zagruzilos'")
+					}
+					.networkCachePolicy(CachePolicy.ENABLED)
+					.diskCachePolicy(CachePolicy.ENABLED)
+					.diskCacheKey(list[pagerState.currentPage])
+					.memoryCachePolicy(CachePolicy.ENABLED)
+					.build()
+
+			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
+		}
 		vmDetails.postUrl(list[pagerState.currentPage], bitmapString.value)
 		val isVisible = remember { mutableStateOf(visible) }
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 			topBar = { AppBar(isVisible, context, nc, list, pagerState) },
 			content = { padding ->
-				ShowDetails(pic!!, vmDetails, nc, isVisible, list, pagerState, context, padding, vmPictures, bitmapString)
+				ShowDetails(
+					pic!!,
+					vmDetails,
+					nc,
+					isVisible,
+					list,
+					pagerState,
+					context,
+					padding,
+					vmPictures,
+					bitmapString
+				)
 			}
 		)
 	}
@@ -167,7 +205,7 @@ fun ShowDetails(
 	context: Context,
 	padding: PaddingValues,
 	vmPictures: PicturesViewModel,
-	bitmapString: MutableState<String>,
+	bitmapString: MutableState<String>
 )
 {
 	padding.calculateBottomPadding()
@@ -201,27 +239,25 @@ fun ShowDetails(
 		{
 			vmPictures.checkOnErrorExists(list[page]) ->
 			{
-				val pic = context.resources.getDrawable(R.drawable.error).toBitmap()
-				val baos = ByteArrayOutputStream()
-				pic.compress(Bitmap.CompressFormat.JPEG, 10, baos)
-				val b = baos.toByteArray()
-				bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
-				vm.postUrl(list[pagerState.currentPage], Base64.encodeToString(b, Base64.DEFAULT))
-				ShowError(context, list, page, pagerState)
+				ShowError(
+					context = context,
+					list = list,
+					currentPage = page,
+					pagerState = pagerState,
+					bitmapString = bitmapString)
 			}
 			!vmPictures.checkOnErrorExists(list[page]) ->
 			{
 				ShowAsynchImage(
 					list = list,
 					page = page,
-					pagerState = pagerState,
 					vm = vm,
 					nc = nc,
 					isVisible = isVisible,
 					exit = exit,
 					multiWindow = multiWindowed,
 					picturesViewModel = vmPictures,
-					bitmapString = bitmapString
+					context = context
 				)
 			}
 		}
@@ -235,17 +271,16 @@ fun ShowDetails(
 fun ShowAsynchImage(
 	list: MutableList<String>,
 	page: Int,
-	pagerState: PagerState,
 	vm: DetailsViewModel,
 	picturesViewModel: PicturesViewModel,
 	nc: NavController,
 	isVisible: MutableState<Boolean>,
 	exit: MutableState<Boolean>,
 	multiWindow: Boolean,
-	bitmapString: MutableState<String>,
+	context: Context
 )
 {
-	val orientation = LocalContext.current.resources.configuration.orientation
+	val orientation = context.resources.configuration.orientation
 	val scale = if(!multiWindow)
 	{
 		if(orientation == Configuration.ORIENTATION_PORTRAIT)
@@ -264,13 +299,12 @@ fun ShowAsynchImage(
 	val zoom = rememberZoomState(2.8f, Size.Zero)
 	val count = remember { listOf(0).toMutableList() }
 	val countLastThree = remember { listOf(0).toMutableList() }
-	val error = remember { mutableStateOf(false) }
-	val context = LocalContext.current
 	val imgRequest = ImageRequest.Builder(context)
 		.data(list[page])
 		.placeholder(R.drawable.loading)
 		.error(R.drawable.loading)
 		.allowHardware(false)
+		.diskCacheKey(list[page])
 		.networkCachePolicy(CachePolicy.ENABLED)
 		.build()
 	AsyncImage(
@@ -278,22 +312,11 @@ fun ShowAsynchImage(
 		contentDescription = "",
 		contentScale = scale,
 		onSuccess = {
-			val pic = it.result.image.toBitmap()
-			val baos = ByteArrayOutputStream()
-			pic.compress(Bitmap.CompressFormat.JPEG, 10, baos)
-			val b = baos.toByteArray()
-			bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
 			picturesViewModel.removeSpecialError(list[page])
 		},
 		onError = {
-			val pic = context.resources.getDrawable(R.drawable.error).toBitmap()
-			val baos = ByteArrayOutputStream()
-			pic.compress(Bitmap.CompressFormat.JPEG, 10, baos)
-			val b = baos.toByteArray()
-			vm.postUrl(list[pagerState.currentPage], Base64.encodeToString(b, Base64.DEFAULT))
-			bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
 			picturesViewModel.addError(list[page])
-			error.value = true
+			nc.navigate(Screen.Details.route)
 		},
 		modifier = Modifier
 			.fillMaxSize()
@@ -329,26 +352,28 @@ fun ShowAsynchImage(
 				}
 			}
 	)
-	if(error.value)
-	{
-		val pic = context.resources.getDrawable(R.drawable.error).toBitmap()
-		val baos = ByteArrayOutputStream()
-		pic.compress(Bitmap.CompressFormat.JPEG, 10, baos)
-		val b = baos.toByteArray()
-		bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
-		picturesViewModel.addError(list[pagerState.currentPage])
-		nc.navigate(Screen.Details.route)
-	}
 }
 
+@SuppressLint("UseCompatLoadingForDrawables")
 @Composable
 fun ShowError(
 	context: Context,
 	list: MutableList<String>,
 	currentPage: Int,
 	pagerState: PagerState,
+	bitmapString: MutableState<String>
 )
 {
+	val picture = context.resources.getDrawable(R.drawable.error, null).toBitmap()
+	val baos = ByteArrayOutputStream()
+	if (picture.byteCount > 2*1024*1024)
+	{
+		picture.compress(Bitmap.CompressFormat.JPEG, 5, baos)
+	} else {
+		picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)
+	}
+	val b = baos.toByteArray()
+	bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
 	val errorMessage = if(isValidUrl(list[currentPage]))
 	{
 		"HTTP error: 404"

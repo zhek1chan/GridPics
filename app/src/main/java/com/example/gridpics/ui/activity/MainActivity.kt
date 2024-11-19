@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -60,6 +61,8 @@ class MainActivity: AppCompatActivity()
 	private var job = jobForNotifications
 	private var scope = GlobalScope
 	private var bitmapString = ""
+
+	@SuppressLint("UseCompatLoadingForDrawables")
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
@@ -147,7 +150,7 @@ class MainActivity: AppCompatActivity()
 		}
 
 		picturesSharedPrefs = this.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE).getString(SHARED_PREFS_PICTURES, null)
-		CoroutineScope(Dispatchers.IO).launch {
+		CoroutineScope(Dispatchers.Default).launch {
 			detailsViewModel.observeBitmapFlow().collectLatest { b ->
 				bitmapString = b
 			}
@@ -165,7 +168,7 @@ class MainActivity: AppCompatActivity()
 						Log.d("description in main", description)
 						val newIntent = serviceIntent
 						newIntent.putExtra("description", it)
-						delay(350)
+						delay(400)
 						Log.d("wtf in activity", bitmapString)
 						newIntent.putExtra("picture_bitmap", bitmapString)
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
