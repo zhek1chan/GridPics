@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.ui.activity.MainActivity.Companion.JUST_CHANGED_THEME
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -24,7 +23,7 @@ class SettingsViewModel: ViewModel()
 		{
 			0 ->
 			{
-				viewModelScope.launch(Dispatchers.Main) {
+				viewModelScope.launch {
 					stateFlow.value = 0
 					saveThemeState(context, 0)
 					AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
@@ -32,7 +31,7 @@ class SettingsViewModel: ViewModel()
 			}
 			1 ->
 			{
-				viewModelScope.launch(Dispatchers.Main) {
+				viewModelScope.launch {
 					stateFlow.value = 1
 					saveThemeState(context, 1)
 					AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
@@ -40,7 +39,7 @@ class SettingsViewModel: ViewModel()
 			}
 			2 ->
 			{
-				viewModelScope.launch(Dispatchers.Main) {
+				viewModelScope.launch {
 					stateFlow.value = 2
 					saveThemeState(context, 2)
 					AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)

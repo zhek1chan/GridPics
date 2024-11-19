@@ -153,6 +153,7 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 						val baos = ByteArrayOutputStream()
 						if (picture.byteCount > 2*1024*1024)
 						{
+							// TODO: Одна корутина обгоняет другую, надо фиксить (большая картинка с ночью дохнет) 
 							picture.compress(Bitmap.CompressFormat.JPEG, 5, baos)
 						} else {
 							picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)

@@ -82,10 +82,11 @@ class MainActivity: AppCompatActivity()
 
 		serviceIntent = Intent(this, MainNotificationService::class.java)
 		serviceIntent.putExtra("description", description)
-		val previousTheme = getSharedPreferences(IS_BLACK_THEME, MODE_PRIVATE).getString(IS_BLACK_THEME, isDarkTheme(this).toString())
+		val darkThemeIsActive = isDarkTheme(this).toString()
+		val previousTheme = getSharedPreferences(IS_BLACK_THEME, MODE_PRIVATE).getString(IS_BLACK_THEME, darkThemeIsActive)
 		Log.d("theme", "just changed theme? $justChangedTheme")
 
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !justChangedTheme && (previousTheme == isDarkTheme(this).toString()))
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !justChangedTheme && (previousTheme == darkThemeIsActive))
 		{
 			if(
 				ContextCompat.checkSelfPermission(
@@ -124,7 +125,7 @@ class MainActivity: AppCompatActivity()
 		//theme pick
 		settingsViewModel.changeTheme(this, themePick)
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
-		CoroutineScope(Dispatchers.Main).launch {
+		lifecycleScope.launch {
 			detailsViewModel.observeVisabilityFlow().collectLatest {
 				if(it)
 				{
@@ -139,7 +140,7 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 
-		CoroutineScope(Dispatchers.Main).launch {
+		lifecycleScope.launch {
 			picturesViewModel.observeBackNav().collectLatest {
 				if(it)
 				{
