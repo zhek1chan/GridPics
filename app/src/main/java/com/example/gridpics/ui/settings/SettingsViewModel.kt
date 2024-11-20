@@ -7,15 +7,12 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.ui.activity.MainActivity.Companion.JUST_CHANGED_THEME
+import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class SettingsViewModel: ViewModel()
 {
-	private val stateFlow = MutableStateFlow(2)
-	fun observeFlow(): Flow<Int> = stateFlow
 	fun changeTheme(context: Context, option: Int)
 	{
 		Log.d("theme option", "theme option: $option")
@@ -24,7 +21,6 @@ class SettingsViewModel: ViewModel()
 			0 ->
 			{
 				viewModelScope.launch {
-					stateFlow.value = 0
 					saveThemeState(context, 0)
 					AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 				}
@@ -32,7 +28,6 @@ class SettingsViewModel: ViewModel()
 			1 ->
 			{
 				viewModelScope.launch {
-					stateFlow.value = 1
 					saveThemeState(context, 1)
 					AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 				}
@@ -40,7 +35,6 @@ class SettingsViewModel: ViewModel()
 			2 ->
 			{
 				viewModelScope.launch {
-					stateFlow.value = 2
 					saveThemeState(context, 2)
 					AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
 				}
@@ -50,7 +44,7 @@ class SettingsViewModel: ViewModel()
 
 	fun changeFromSettings(context: Context)
 	{
-		val sharedPreferencesForDialog = context.getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE)
+		val sharedPreferencesForDialog = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		val editorForDialog = sharedPreferencesForDialog.edit()
 		editorForDialog.putBoolean(JUST_CHANGED_THEME, true)
 		editorForDialog.apply()
@@ -58,7 +52,7 @@ class SettingsViewModel: ViewModel()
 
 	private fun saveThemeState(context: Context, i: Int)
 	{
-		val sharedPreferences = context.getSharedPreferences(THEME_SHARED_PREFERENCE, MODE_PRIVATE)
+		val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		val editor = sharedPreferences.edit()
 		editor.putInt(THEME_SHARED_PREFERENCE, i)
 		editor.apply()

@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -29,11 +30,14 @@ import androidx.navigation.compose.rememberNavController
 import com.example.gridpics.R
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
+import com.example.gridpics.ui.pictures.PictureState
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.services.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
+import com.example.gridpics.ui.state.BarsVisabilityState
+import com.example.gridpics.ui.state.MultiWindowState
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -61,6 +65,9 @@ class MainActivity: AppCompatActivity()
 	private var job = jobForNotifications
 	private var scope = GlobalScope
 	private var bitmapString = ""
+	private var state = mutableStateOf<PictureState>(PictureState.NothingFound)
+	private var multiWindowState = mutableStateOf<MultiWindowState>(MultiWindowState.NotMultiWindow)
+	private var barsState = mutableStateOf<BarsVisabilityState>(BarsVisabilityState.IsVisible)
 
 	@SuppressLint("UseCompatLoadingForDrawables")
 	override fun onCreate(savedInstanceState: Bundle?)
@@ -123,20 +130,27 @@ class MainActivity: AppCompatActivity()
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
+
+		picturesViewModel.getPics()
+		picturesViewModel.observeState().observeForever {
+			state.value = it
+		}
 		//theme pick
 		settingsViewModel.changeTheme(this, themePick)
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		lifecycleScope.launch {
 			detailsViewModel.observeVisabilityFlow().collectLatest {
-				if(it)
+				if(it == BarsVisabilityState.NotVisible)
 				{
 					controller.hide(WindowInsetsCompat.Type.statusBars())
 					controller.hide(WindowInsetsCompat.Type.navigationBars())
+					barsState.value = it
 				}
 				else
 				{
 					controller.show(WindowInsetsCompat.Type.statusBars())
 					controller.show(WindowInsetsCompat.Type.navigationBars())
+					barsState.value = it
 				}
 			}
 		}
@@ -186,7 +200,6 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-
 		val editorSharedPrefs = sharedPreferences.edit()
 		editorSharedPrefs.putBoolean(JUST_CHANGED_THEME, false)
 		editorSharedPrefs.putString(IS_BLACK_THEME, isDarkTheme(this).toString())
@@ -215,13 +228,42 @@ class MainActivity: AppCompatActivity()
 		)
 		{
 			composable(BottomNavItem.Home.route) {
-				PicturesScreen(navController, picturesViewModel, detailsViewModel)
+				PicturesScreen(
+					navController = navController,
+					viewModelPictures = picturesViewModel,
+					postPressOnBackButton = { picturesViewModel.backNavButtonPress(true) },
+					checkIfExists = { str -> picturesViewModel.checkOnErrorExists(str) },
+					addError = { str -> picturesViewModel.addError(str) },
+					getPics = { picturesViewModel.getPics() },
+					postState = { str -> picturesViewModel.postState(str) },
+					state = state.value,
+					clearErrors = { picturesViewModel.clearErrors() },
+					postPositiveState = { detailsViewModel.postPositiveVisabilityState() },
+					postDefaultUrl = { detailsViewModel.postUrl(DEFAULT_STRING_VALUE, "") }
+				)
 			}
 			composable(BottomNavItem.Settings.route) {
-				SettingsScreen(settingsViewModel, navController, detailsViewModel, themePick)
+				SettingsScreen(
+					navController,
+					themePick,
+					postDefaultUrl = { detailsViewModel.postUrl(DEFAULT_STRING_VALUE, "") },
+					changeFromSettings = { ctx -> settingsViewModel.changeFromSettings(ctx) },
+					changeTheme = { ctx, int -> settingsViewModel.changeTheme(ctx, int) },
+				)
 			}
 			composable(Screen.Details.route) {
-				DetailsScreen(navController, detailsViewModel, picturesViewModel)
+				DetailsScreen(
+					nc = navController,
+					checkIfExists = { str -> picturesViewModel.checkOnErrorExists(str) },
+					addError = { str -> picturesViewModel.addError(str) },
+					state = barsState.value,
+					removeSpecialError = { str -> picturesViewModel.removeSpecialError(str) },
+					postDefaultUrl = { detailsViewModel.postUrl(DEFAULT_STRING_VALUE, "") },
+					changeVisabilityState = { detailsViewModel.changeVisabilityState() },
+					postUrl = { str, p -> detailsViewModel.postUrl(str, p) },
+					postPositiveState = { detailsViewModel.postPositiveVisabilityState() },
+					multiWindowState = multiWindowState.value
+				)
 			}
 		}
 	}
@@ -262,11 +304,11 @@ class MainActivity: AppCompatActivity()
 	{
 		if(isInMultiWindowMode || isInPictureInPictureMode)
 		{
-			detailsViewModel.postState(true)
+			multiWindowState.value = MultiWindowState.MultiWindow
 		}
 		else
 		{
-			detailsViewModel.postState(false)
+			multiWindowState.value = MultiWindowState.NotMultiWindow
 		}
 	}
 
@@ -364,7 +406,7 @@ class MainActivity: AppCompatActivity()
 		const val JUST_CHANGED_THEME = "JUST_CHANGED_THEME"
 		const val DESCRIPTION_NAMING = "description"
 		const val PICTURE_BITMAP = "picture_bitmap"
-		const val SHARED_PREFERENCE_GRIDPICS =  "SHARED_PREFERENCE_GRIDPICS"
+		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
 		const val DEFAULT_STRING_VALUE = "default"
 		const val HTTP_ERROR = "HTTP error: 404"
 	}

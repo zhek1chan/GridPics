@@ -82,7 +82,6 @@ import coil3.toBitmap
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity
-import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.MainActivity.Companion.NULL_STRING
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
@@ -91,11 +90,11 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICT
 import com.example.gridpics.ui.activity.MainActivity.Companion.TOP_BAR_VISABILITY_SHARED_PREFERENCE
 import com.example.gridpics.ui.activity.MainActivity.Companion.WE_WERE_HERE_BEFORE
 import com.example.gridpics.ui.activity.Screen
-import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.pictures.isValidUrl
+import com.example.gridpics.ui.state.BarsVisabilityState
+import com.example.gridpics.ui.state.MultiWindowState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -104,26 +103,35 @@ import java.io.ByteArrayOutputStream
 @SuppressLint("RestrictedApi", "CommitPrefEdits", "ApplySharedPref", "UseCompatLoadingForDrawables", "CoroutineCreationDuringComposition")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: PicturesViewModel)
+fun DetailsScreen(
+	nc: NavController,
+	checkIfExists: (String) -> Boolean,
+	addError: (String) -> Unit,
+	state: BarsVisabilityState,
+	removeSpecialError: (String) -> Unit,
+	postDefaultUrl: () -> Unit,
+	changeVisabilityState: () -> Unit,
+	postUrl: (String, String) -> Unit,
+	postPositiveState: () -> Unit,
+	multiWindowState: MultiWindowState,
+)
 {
 	val context = LocalContext.current
 	val scope = rememberCoroutineScope()
 	BackHandler {
 		scope.launch(Dispatchers.Main) {
-			vmDetails.observeVisabilityFlow().collectLatest {
-				if(it)
-				{
-					Log.d("we are out", "We are out")
-					vmDetails.postUrl(DEFAULT_STRING_VALUE, "")
-					vmDetails.changeVisabilityState()
-					nc.navigateUp()
-				}
-				else
-				{
-					Log.d("we are out", "We are without changing state")
-					vmDetails.postUrl(DEFAULT_STRING_VALUE, "")
-					nc.navigateUp()
-				}
+			if(state == BarsVisabilityState.NotVisible)
+			{
+				Log.d("we are out", "We are out")
+				postDefaultUrl.invoke()
+				changeVisabilityState.invoke()
+				nc.navigateUp()
+			}
+			else
+			{
+				Log.d("we are out", "We are without changing state")
+				postDefaultUrl.invoke()
+				nc.navigateUp()
 			}
 		}
 	}
@@ -154,11 +162,13 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 					.target {
 						val picture = it.toBitmap()
 						val baos = ByteArrayOutputStream()
-						if (picture.byteCount > 1024*1024)
+						if(picture.byteCount > 1024 * 1024)
 						{
 							// todooshka: Одна корутина обгоняет другую, надо фиксить (большая картинка с ночью дохнет)
 							picture.compress(Bitmap.CompressFormat.JPEG, 3, baos)
-						} else {
+						}
+						else
+						{
 							picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)
 						}
 						val b = baos.toByteArray()
@@ -173,23 +183,27 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 
 			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
 		}
-		vmDetails.postUrl(list[pagerState.currentPage], bitmapString.value)
+		postUrl(list[pagerState.currentPage], bitmapString.value)
 		val isVisible = remember { mutableStateOf(visible) }
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 			topBar = { AppBar(isVisible, context, nc, list, pagerState) },
 			content = { padding ->
 				ShowDetails(
-					pic!!,
-					vmDetails,
-					nc,
-					isVisible,
-					list,
-					pagerState,
-					context,
-					padding,
-					vmPictures,
-					bitmapString
+					img = pic!!,
+					nc = nc,
+					isVisible = isVisible,
+					list = list,
+					pagerState = pagerState,
+					context = context,
+					padding = padding,
+					checkIfExists = checkIfExists,
+					addError = addError,
+					removeSpecialError = removeSpecialError,
+					bitmapString = bitmapString,
+					changeVisabilityState = changeVisabilityState,
+					postPositiveState = postPositiveState,
+					multiWindowed = multiWindowState
 				)
 			}
 		)
@@ -201,15 +215,19 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 @Composable
 fun ShowDetails(
 	img: String,
-	vm: DetailsViewModel,
 	nc: NavController,
 	isVisible: MutableState<Boolean>,
 	list: MutableList<String>,
 	pagerState: PagerState,
 	context: Context,
 	padding: PaddingValues,
-	vmPictures: PicturesViewModel,
-	bitmapString: MutableState<String>
+	checkIfExists: (String) -> Boolean,
+	addError: (String) -> Unit,
+	removeSpecialError: (String) -> Unit,
+	bitmapString: MutableState<String>,
+	multiWindowed: MultiWindowState,
+	changeVisabilityState: () -> Unit,
+	postPositiveState: () -> Unit,
 )
 {
 	padding.calculateBottomPadding()
@@ -219,12 +237,6 @@ fun ShowDetails(
 	val topBarHeight = 64.dp
 	val scope = rememberCoroutineScope()
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
-	var multiWindowed by remember { mutableStateOf(false) }
-	scope.launch {
-		vm.observeMultiWindowFlow().collectLatest {
-			multiWindowed = it
-		}
-	}
 
 	HorizontalPager(
 		state = pagerState,
@@ -241,7 +253,7 @@ fun ShowDetails(
 		firstPage.value = false
 		when
 		{
-			vmPictures.checkOnErrorExists(list[page]) ->
+			checkIfExists(list[page]) ->
 			{
 				ShowError(
 					context = context,
@@ -250,17 +262,19 @@ fun ShowDetails(
 					pagerState = pagerState,
 					bitmapString = bitmapString)
 			}
-			!vmPictures.checkOnErrorExists(list[page]) ->
+			!checkIfExists(list[page]) ->
 			{
 				ShowAsynchImage(
 					list = list,
 					page = page,
-					vm = vm,
+					addError = addError,
+					removeSpecialError = removeSpecialError,
+					changeVisabilityState = changeVisabilityState,
+					postPositiveState = postPositiveState,
 					nc = nc,
 					isVisible = isVisible,
 					exit = exit,
 					multiWindow = multiWindowed,
-					picturesViewModel = vmPictures,
 					context = context
 				)
 			}
@@ -275,17 +289,19 @@ fun ShowDetails(
 fun ShowAsynchImage(
 	list: MutableList<String>,
 	page: Int,
-	vm: DetailsViewModel,
-	picturesViewModel: PicturesViewModel,
+	addError: (String) -> Unit,
+	removeSpecialError: (String) -> Unit,
+	changeVisabilityState: () -> Unit,
+	postPositiveState: () -> Unit,
 	nc: NavController,
 	isVisible: MutableState<Boolean>,
 	exit: MutableState<Boolean>,
-	multiWindow: Boolean,
-	context: Context
+	multiWindow: MultiWindowState,
+	context: Context,
 )
 {
 	val orientation = context.resources.configuration.orientation
-	val scale = if(!multiWindow)
+	val scale = if(multiWindow == MultiWindowState.NotMultiWindow)
 	{
 		if(orientation == Configuration.ORIENTATION_PORTRAIT)
 		{
@@ -316,16 +332,16 @@ fun ShowAsynchImage(
 		contentDescription = "",
 		contentScale = scale,
 		onSuccess = {
-			picturesViewModel.removeSpecialError(list[page])
+			removeSpecialError(list[page])
 		},
 		onError = {
-			picturesViewModel.addError(list[page])
+			addError(list[page])
 			nc.navigate(Screen.Details.route)
 		},
 		modifier = Modifier
 			.fillMaxSize()
 			.zoomable(zoom, enableOneFingerZoom = false, onTap = {
-				vm.changeVisabilityState()
+				changeVisabilityState.invoke()
 				isVisible.value = !isVisible.value
 			})
 			.pointerInput(Unit) {
@@ -346,7 +362,7 @@ fun ShowAsynchImage(
 						{
 							if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2)
 							{
-								vm.postNegativeVisabilityState()
+								postPositiveState.invoke()
 								nc.navigateUp()
 							}
 						}
@@ -365,15 +381,17 @@ fun ShowError(
 	list: MutableList<String>,
 	currentPage: Int,
 	pagerState: PagerState,
-	bitmapString: MutableState<String>
+	bitmapString: MutableState<String>,
 )
 {
 	val picture = context.resources.getDrawable(R.drawable.error, null).toBitmap()
 	val baos = ByteArrayOutputStream()
-	if (picture.byteCount > 2*1024*1024)
+	if(picture.byteCount > 2 * 1024 * 1024)
 	{
 		picture.compress(Bitmap.CompressFormat.JPEG, 5, baos)
-	} else {
+	}
+	else
+	{
 		picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)
 	}
 	val b = baos.toByteArray()

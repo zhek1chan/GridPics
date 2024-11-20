@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.settings
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
 import android.util.Log
@@ -60,20 +61,23 @@ import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
-import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
-import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsViewModel: DetailsViewModel, option: Int)
+fun SettingsScreen(
+	navController: NavController,
+	option: Int,
+	postDefaultUrl: () -> Unit,
+	changeFromSettings: (Context) -> Unit,
+	changeTheme: (Context, Int) -> Unit,
+)
 {
-	detailsViewModel.postUrl(DEFAULT_STRING_VALUE, "")
+	postDefaultUrl.invoke()
 	val orientation = LocalContext.current.resources.configuration.orientation
 	if(orientation == Configuration.ORIENTATION_LANDSCAPE)
 	{
@@ -94,7 +98,7 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 							.verticalScroll(rememberScrollState())
 							.fillMaxSize()
 					) {
-						SettingsCompose(vm, option)
+						SettingsCompose(option, changeFromSettings, changeTheme)
 					}
 				}
 			)
@@ -114,7 +118,7 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 						.verticalScroll(rememberScrollState())
 						.fillMaxSize()
 				) {
-					SettingsCompose(vm, option)
+					SettingsCompose(option, changeFromSettings, changeTheme)
 				}
 			}
 		)
@@ -123,16 +127,14 @@ fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsV
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun SettingsCompose(vm: SettingsViewModel, option: Int)
+fun SettingsCompose(
+	option: Int,
+	changeFromSettings: (Context) -> Unit,
+	changeTheme: (Context, Int) -> Unit,
+)
 {
 	ComposeTheme {
 		val scope = rememberCoroutineScope()
-		var setOption = option
-		scope.launch(Dispatchers.Main) {
-			vm.observeFlow().collectLatest {
-				setOption = it
-			}
-		}
 		var showDialog by remember { mutableStateOf(false) }
 		val context = LocalContext.current
 		ConstraintLayout {
@@ -161,7 +163,7 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 					context.getString(R.string.dark_theme),
 					context.getString(R.string.synch_with_sys)
 				)
-				val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[setOption]) }
+				val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option]) }
 				Column {
 					Column(Modifier.selectableGroup()) {
 						listOfThemeOptions.forEach { text ->
@@ -173,8 +175,8 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 									.clickable {
 										scope.launch(Dispatchers.Main) {
 											onOptionSelected(text)
-											vm.changeFromSettings(context)
-											vm.changeTheme(context, listOfThemeOptions.indexOf(text))
+											changeFromSettings(context)
+											changeTheme(context, listOfThemeOptions.indexOf(text))
 										}
 									}
 							) {
@@ -220,8 +222,8 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 									onClick =
 									{
 										onOptionSelected(text)
-										vm.changeFromSettings(context)
-										vm.changeTheme(context, listOfThemeOptions.indexOf(text))
+										changeFromSettings(context)
+										changeTheme(context, listOfThemeOptions.indexOf(text))
 									},
 									colors = RadioButtonColors(
 										Color.Green,
