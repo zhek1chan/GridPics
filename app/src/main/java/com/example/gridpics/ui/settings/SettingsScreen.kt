@@ -61,11 +61,12 @@ import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
+import com.example.gridpics.ui.activity.MainActivity.Companion.JUST_CHANGED_THEME
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
+import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
@@ -73,8 +74,7 @@ fun SettingsScreen(
 	navController: NavController,
 	option: Int,
 	postDefaultUrl: () -> Unit,
-	changeFromSettings: (Context) -> Unit,
-	changeTheme: (Context, Int) -> Unit,
+	changeTheme: (Int) -> Unit,
 )
 {
 	postDefaultUrl.invoke()
@@ -98,7 +98,7 @@ fun SettingsScreen(
 							.verticalScroll(rememberScrollState())
 							.fillMaxSize()
 					) {
-						SettingsCompose(option, changeFromSettings, changeTheme)
+						SettingsCompose(option, changeTheme)
 					}
 				}
 			)
@@ -118,7 +118,7 @@ fun SettingsScreen(
 						.verticalScroll(rememberScrollState())
 						.fillMaxSize()
 				) {
-					SettingsCompose(option, changeFromSettings, changeTheme)
+					SettingsCompose(option, changeTheme)
 				}
 			}
 		)
@@ -129,8 +129,7 @@ fun SettingsScreen(
 @Composable
 fun SettingsCompose(
 	option: Int,
-	changeFromSettings: (Context) -> Unit,
-	changeTheme: (Context, Int) -> Unit,
+	changeTheme: (Int) -> Unit,
 )
 {
 	ComposeTheme {
@@ -173,10 +172,11 @@ fun SettingsCompose(
 									.fillMaxWidth()
 									.padding(18.dp, 10.dp, 18.dp, 0.dp)
 									.clickable {
-										scope.launch(Dispatchers.Main) {
+										scope.launch {
 											onOptionSelected(text)
 											changeFromSettings(context)
-											changeTheme(context, listOfThemeOptions.indexOf(text))
+											saveThemeState(context, listOfThemeOptions.indexOf(text))
+											changeTheme(listOfThemeOptions.indexOf(text))
 										}
 									}
 							) {
@@ -223,7 +223,8 @@ fun SettingsCompose(
 									{
 										onOptionSelected(text)
 										changeFromSettings(context)
-										changeTheme(context, listOfThemeOptions.indexOf(text))
+										saveThemeState(context, listOfThemeOptions.indexOf(text))
+										changeTheme(listOfThemeOptions.indexOf(text))
 									},
 									colors = RadioButtonColors(
 										Color.Green,
@@ -324,4 +325,18 @@ fun SettingsTopBar()
 			)
 		)
 	}
+}
+
+private fun saveThemeState(context: Context, i: Int)
+{
+	val editor = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
+	editor.putInt(THEME_SHARED_PREFERENCE, i)
+	editor.apply()
+}
+
+fun changeFromSettings(context: Context)
+{
+	val editorForDialog = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
+	editorForDialog.putBoolean(JUST_CHANGED_THEME, true)
+	editorForDialog.apply()
 }

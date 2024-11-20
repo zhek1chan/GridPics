@@ -38,12 +38,8 @@ class MainNotificationService: Service()
 	private val binder = NetworkServiceBinder()
 	private var isActive = true
 	private lateinit var contentText: String
-	private var count = 1
-
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
-		count = 1
-		Log.d("serviceCount", "$count")
 		jobForNotification.cancelChildren()
 		isActive = true
 		Log.d("service", "service onStartCommand")
@@ -102,9 +98,8 @@ class MainNotificationService: Service()
 
 	override fun onBind(intent: Intent?): IBinder
 	{
-		jobForNotification.cancelChildren()
 		isActive = true
-		Log.d("service", "service onStartCommand")
+		Log.d("service", "service onBind")
 		val dontUseSound = countExitNavigation > 1
 		val resultIntent = Intent(instance, MainActivity::class.java)
 		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
@@ -191,6 +186,7 @@ class MainNotificationService: Service()
 	override fun onUnbind(intent: Intent?): Boolean
 	{
 		isActive = false
+		Log.d("service", "onUnbind()")
 		stopNotificationCoroutine()
 		return super.onUnbind(intent)
 	}

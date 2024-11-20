@@ -39,11 +39,14 @@ import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.services.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
+import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.state.BarsVisabilityState
 import com.example.gridpics.ui.state.MultiWindowState
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
@@ -58,16 +61,16 @@ class MainActivity: AppCompatActivity()
 	private val settingsViewModel by viewModel<SettingsViewModel>()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var picturesSharedPrefs: String? = null
-	private var themePick: Int = 2
+	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var serviceIntent = Intent()
 	private var description = DEFAULT_STRING_VALUE
-	private var job = jobForNotification
 	private var bitmapString = ""
 	private var state = mutableStateOf<PictureState>(PictureState.NothingFound)
 	private var multiWindowState = mutableStateOf<MultiWindowState>(MultiWindowState.NotMultiWindow)
 	private var barsState = mutableStateOf<BarsVisabilityState>(BarsVisabilityState.IsVisible)
 	private var mainNotificationService = MainNotificationService()
 	private var mBound: Boolean = false
+	private var allConnections: MutableList<ServiceConnection> = mutableListOf()
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -89,14 +92,13 @@ class MainActivity: AppCompatActivity()
 		super.onCreate(savedInstanceState)
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
-
 		installSplashScreen()
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		//serviceIntentForNotification
 		serviceIntent = Intent(this, MainNotificationService::class.java)
 		serviceIntent.putExtra(DESCRIPTION_NAMING, description)
 		//get theme pic
-		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, 2)
+		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		setTheme()
 		//check if theme was changed and activity recreated because of it
 		val justChangedTheme = if(themePick == 2)
@@ -190,7 +192,7 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 
-		lifecycleScope.launch(Dispatchers.IO) {
+		lifecycleScope.launch(Dispatchers.Default) {
 			detailsViewModel.observeUrlFlow().collectLatest {
 				if(ContextCompat.checkSelfPermission(
 						this@MainActivity,
@@ -205,15 +207,18 @@ class MainActivity: AppCompatActivity()
 						delay(400)
 						Log.d("wtf in activity", bitmapString)
 						newIntent.putExtra(PICTURE_BITMAP, bitmapString)
+						serviceIntent = newIntent
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 						{
 							startForegroundService(newIntent)
 							bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
+							allConnections.add(connection)
 						}
 						else
 						{
 							startService(newIntent)
 							bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
+							allConnections.add(connection)
 						}
 						description = it
 					}
@@ -267,8 +272,7 @@ class MainActivity: AppCompatActivity()
 					navController,
 					themePick,
 					postDefaultUrl = { detailsViewModel.postUrl(DEFAULT_STRING_VALUE, "") },
-					changeFromSettings = { ctx -> settingsViewModel.changeFromSettings(ctx) },
-					changeTheme = { ctx, int -> settingsViewModel.changeTheme(ctx, int) },
+					changeTheme = { int -> settingsViewModel.changeTheme(int) },
 				)
 			}
 			composable(Screen.Details.route) {
@@ -312,11 +316,13 @@ class MainActivity: AppCompatActivity()
 				{
 					startForegroundService(serviceIntent)
 					bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+					allConnections.add(connection)
 				}
 				else
 				{
 					startService(serviceIntent)
 					bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+					allConnections.add(connection)
 				}
 			}
 		}
@@ -336,7 +342,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
-		job.cancelChildren()
+		jobForNotification.cancelChildren()
 		Log.d("lifecycle", "onRestart()")
 		super.onRestart()
 	}
@@ -350,16 +356,19 @@ class MainActivity: AppCompatActivity()
 		{
 			val newIntent = serviceIntent
 			newIntent.putExtra(DESCRIPTION_NAMING, description)
+			newIntent.putExtra(PICTURE_BITMAP, bitmapString)
+			serviceIntent = newIntent
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
-				startForegroundService(newIntent)
-				bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+				startService(newIntent)
+				bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
+				Log.d("service", "connection $connection")
 				Log.d("description after pause", description)
 			}
 			else
 			{
 				startService(newIntent)
-				bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+				bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
 			}
 			countExitNavigation++
 		}
@@ -368,26 +377,29 @@ class MainActivity: AppCompatActivity()
 		super.onResume()
 	}
 
+	@OptIn(DelicateCoroutinesApi::class)
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
-		if(mBound)
-		{
-			unbindService(connection)
-			mBound = false
+		unbindService(connection)
+		//без этого работает криво, основную логику я вынес
+		GlobalScope.launch(Dispatchers.IO + jobForNotification) {
+			delay(2000)
+			stopService(serviceIntent)
 		}
+		allConnections.clear()
 		countExitNavigation++
 		isActive = false
+		val vis = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
+		val editorVis = vis.edit()
+		editorVis.putBoolean(WE_WERE_HERE_BEFORE, false)
+		editorVis.apply()
 		super.onPause()
 	}
 
 	override fun onDestroy()
 	{
 		Log.d("lifecycle", "onDestroy()")
-		val vis = getSharedPreferences(WE_WERE_HERE_BEFORE, MODE_PRIVATE)
-		val editorVis = vis.edit()
-		editorVis.putBoolean(WE_WERE_HERE_BEFORE, false)
-		editorVis.apply()
 		super.onDestroy()
 	}
 
@@ -399,7 +411,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun setTheme()
 	{
-		settingsViewModel.changeTheme(this, themePick)
+		settingsViewModel.changeTheme(themePick)
 	}
 
 	companion object

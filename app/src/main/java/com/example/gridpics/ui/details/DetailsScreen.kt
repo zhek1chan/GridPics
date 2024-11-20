@@ -119,7 +119,7 @@ fun DetailsScreen(
 	val context = LocalContext.current
 	val scope = rememberCoroutineScope()
 	BackHandler {
-		scope.launch(Dispatchers.Main) {
+		scope.launch {
 			if(state == BarsVisabilityState.NotVisible)
 			{
 				Log.d("we are out", "We are out")
@@ -246,7 +246,7 @@ fun ShowDetails(
 	) { page ->
 		if(firstPage.value)
 		{
-			scope.launch(Dispatchers.Main) {
+			scope.launch{
 				pagerState.scrollToPage(startPage)
 			}
 		}
