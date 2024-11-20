@@ -19,13 +19,13 @@ import androidx.core.app.NotificationCompat.Builder
 import com.example.gridpics.App.Companion.instance
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
+import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
+import com.example.gridpics.ui.activity.MainActivity.Companion.DESCRIPTION_NAMING
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
+import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE_BITMAP
 import com.example.gridpics.ui.activity.MainActivity.Companion.countExitNavigation
 import com.example.gridpics.ui.activity.MainActivity.Companion.jobForNotifications
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.launch
 
 class MainNotificationService: Service()
 {
@@ -42,52 +42,52 @@ class MainNotificationService: Service()
 		val resultIntent = Intent(instance, MainActivity::class.java)
 		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE)
-			val extras = intent?.extras
-			contentText = if(!extras?.getString("description").isNullOrEmpty() && extras?.getString("description") != "default")
-			{
-				extras!!.getString("description")!!
-			}
-			else
-			{
-				getString(R.string.notification_content_text)
-			}
-			if(!contentText.contains(getString(R.string.notification_content_text)))
-			{
-				val stringImage = extras?.getString("picture_bitmap")
-				Log.d("wtf", stringImage.toString())
-				val decoded = Base64.decode(stringImage, 0)
-				val bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
-				Log.d("wtf", "$bitmap")
-				val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
-					.setContentIntent(resultPendingIntent)
-					.setAutoCancel(true)
-					.setOngoing(true)
-					.setSilent(dontUseSound)
-					.setSmallIcon(R.mipmap.ic_launcher)
-					.setColor(getColor(R.color.green))
-					.setContentTitle(getString(R.string.gridpics))
-					.setContentText(contentText)
-					.setLargeIcon(bitmap)
-					.setStyle(NotificationCompat.BigPictureStyle()
-						.bigPicture(bitmap)
-						.bigLargeIcon(null as Icon?))
-				createNotificationChannel()
-				showNotification(builder)
-			}
-			else
-			{
-				val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
-					.setContentIntent(resultPendingIntent)
-					.setAutoCancel(true)
-					.setOngoing(true)
-					.setSilent(dontUseSound)
-					.setSmallIcon(R.mipmap.ic_launcher)
-					.setColor(getColor(R.color.green))
-					.setContentTitle(getString(R.string.gridpics))
-					.setContentText(contentText)
-				createNotificationChannel()
-				showNotification(builder)
-			}
+		val extras = intent?.extras
+		contentText = if(!extras?.getString(DESCRIPTION_NAMING).isNullOrEmpty() && extras?.getString(DESCRIPTION_NAMING) != DEFAULT_STRING_VALUE)
+		{
+			extras!!.getString(DESCRIPTION_NAMING)!!
+		}
+		else
+		{
+			getString(R.string.notification_content_text)
+		}
+		if(!contentText.contains(getString(R.string.notification_content_text)))
+		{
+			val stringImage = extras?.getString(PICTURE_BITMAP)
+			Log.d("wtf", stringImage.toString())
+			val decoded = Base64.decode(stringImage, 0)
+			val bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+			Log.d("wtf", "$bitmap")
+			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
+				.setContentIntent(resultPendingIntent)
+				.setAutoCancel(true)
+				.setOngoing(true)
+				.setSilent(dontUseSound)
+				.setSmallIcon(R.mipmap.ic_launcher)
+				.setColor(getColor(R.color.green))
+				.setContentTitle(getString(R.string.gridpics))
+				.setContentText(contentText)
+				.setLargeIcon(bitmap)
+				.setStyle(NotificationCompat.BigPictureStyle()
+					.bigPicture(bitmap)
+					.bigLargeIcon(null as Icon?))
+			createNotificationChannel()
+			showNotification(builder)
+		}
+		else
+		{
+			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
+				.setContentIntent(resultPendingIntent)
+				.setAutoCancel(true)
+				.setOngoing(true)
+				.setSilent(dontUseSound)
+				.setSmallIcon(R.mipmap.ic_launcher)
+				.setColor(getColor(R.color.green))
+				.setContentTitle(getString(R.string.gridpics))
+				.setContentText(contentText)
+			createNotificationChannel()
+			showNotification(builder)
+		}
 		return START_NOT_STICKY
 	}
 

@@ -69,8 +69,11 @@ import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
+import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
+import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
+import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import com.example.gridpics.ui.themes.ComposeTheme
@@ -81,9 +84,10 @@ import kotlinx.coroutines.launch
 fun PicturesScreen(navController: NavController, viewModel: PicturesViewModel, viewModelDetails: DetailsViewModel)
 {
 	val context = LocalContext.current
-	val txt = context.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE).getString(SHARED_PREFS_PICTURES, null)
-	val clearedCache = context.getSharedPreferences(CACHE, MODE_PRIVATE).getBoolean(CACHE, false)
-	viewModelDetails.postUrl("default", "")
+	val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
+	val txt = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+	val clearedCache = sharedPreferences.getBoolean(CACHE, false)
+	viewModelDetails.postUrl(DEFAULT_STRING_VALUE, "")
 	viewModelDetails.postNegativeVisabilityState()
 
 	BackHandler {
@@ -230,11 +234,11 @@ fun itemNewsCard(item: String, nc: NavController, vm: PicturesViewModel): Boolea
 		if(isClicked)
 		{
 			isClicked = false
-			val sharedPreferences = context.getSharedPreferences(PICTURE, MODE_PRIVATE)
+			val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 			val editor = sharedPreferences.edit()
 			editor.putString(PICTURE, item)
 			editor.apply()
-			nc.navigate("details_screen")
+			nc.navigate(Screen.Details.route)
 		}
 		when
 		{
@@ -252,7 +256,7 @@ fun itemNewsCard(item: String, nc: NavController, vm: PicturesViewModel): Boolea
 							Toast.makeText(context, context.getString(R.string.reload), Toast.LENGTH_LONG).show()
 						},
 						dialogTitle = stringResource(R.string.error_ocurred_loading_img),
-						dialogText = "Ошибка: " + errorMessage.value + "\nПопробовать загрузить повторно?",
+						dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
 						icon = Icons.Default.Warning,
 						stringResource(R.string.cancel),
 						stringResource(R.string.confirm)
@@ -265,7 +269,6 @@ fun itemNewsCard(item: String, nc: NavController, vm: PicturesViewModel): Boolea
 						onConfirmation =
 						{
 							openAlertDialog.value = false
-							println("Confirmation registered")
 						},
 						dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
 				}
@@ -291,7 +294,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			is PictureState.SearchIsOk ->
 			{
 				val data = (value as PictureState.SearchIsOk).data
-				Toast.makeText(LocalContext.current, "Началась загрузка", Toast.LENGTH_SHORT).show()
+				Toast.makeText(LocalContext.current, stringResource(R.string.loading_has_been_started), Toast.LENGTH_SHORT).show()
 				Log.d("Now state is", "Loading")
 				saveToSharedPrefs(LocalContext.current, (value as PictureState.SearchIsOk).data)
 				val list = (value as PictureState.SearchIsOk).data.split("\n")
@@ -324,7 +327,7 @@ fun ShowList(s: String?, vm: PicturesViewModel, nv: NavController)
 			null -> Unit
 			is PictureState.Loaded ->
 			{
-				Toast.makeText(LocalContext.current, "Загрузка завершена", Toast.LENGTH_SHORT).show()
+				Toast.makeText(LocalContext.current, stringResource(R.string.loading_has_been_ended), Toast.LENGTH_SHORT).show()
 				Log.d("Now state is", "Loaded")
 				val list = (value as PictureState.Loaded).data.split("\n")
 				LazyVerticalGrid(
@@ -491,14 +494,11 @@ fun AlertDialogSecondary(
 
 private fun saveToSharedPrefs(context: Context, s: String)
 {
-	val sharedPreferencesPictures = context.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE)
+	val sharedPreferencesPictures = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 	val editorPictures = sharedPreferencesPictures.edit()
 	editorPictures.putString(SHARED_PREFS_PICTURES, s)
+	editorPictures.putBoolean(CACHE, false)
 	editorPictures.apply()
-	val sharedPreferences = context.getSharedPreferences(CACHE, MODE_PRIVATE)
-	val editor = sharedPreferences.edit()
-	editor.putBoolean(CACHE, false)
-	editor.apply()
 }
 
 fun isValidUrl(url: String): Boolean

@@ -82,8 +82,11 @@ import coil3.toBitmap
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity
+import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
+import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.MainActivity.Companion.NULL_STRING
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
+import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.MainActivity.Companion.TOP_BAR_VISABILITY_SHARED_PREFERENCE
 import com.example.gridpics.ui.activity.MainActivity.Companion.WE_WERE_HERE_BEFORE
@@ -111,29 +114,29 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 				if(it)
 				{
 					Log.d("we are out", "We are out")
-					vmDetails.postUrl("default", "")
+					vmDetails.postUrl(DEFAULT_STRING_VALUE, "")
 					vmDetails.changeVisabilityState()
 					nc.navigateUp()
 				}
 				else
 				{
 					Log.d("we are out", "We are without changing state")
-					vmDetails.postUrl("default", "")
+					vmDetails.postUrl(DEFAULT_STRING_VALUE, "")
 					nc.navigateUp()
 				}
 			}
 		}
 	}
-	val pictures = context.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE).getString(SHARED_PREFS_PICTURES, NULL_STRING)
-	val pic = context.getSharedPreferences(PICTURE, MODE_PRIVATE).getString(PICTURE, NULL_STRING)
-	var visible = context.getSharedPreferences(TOP_BAR_VISABILITY_SHARED_PREFERENCE, MODE_PRIVATE).getBoolean(TOP_BAR_VISABILITY_SHARED_PREFERENCE, true)
-	val weWereHere = context.getSharedPreferences(WE_WERE_HERE_BEFORE, MODE_PRIVATE).getBoolean(WE_WERE_HERE_BEFORE, false)
+	val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
+	val pictures = sharedPreferences.getString(SHARED_PREFS_PICTURES, NULL_STRING)
+	val pic = sharedPreferences.getString(PICTURE, NULL_STRING)
+	var visible = sharedPreferences.getBoolean(TOP_BAR_VISABILITY_SHARED_PREFERENCE, true)
+	val weWereHere = sharedPreferences.getBoolean(WE_WERE_HERE_BEFORE, false)
 	if(weWereHere)
 	{
 		visible = true
 	}
-	val vis = context.getSharedPreferences(WE_WERE_HERE_BEFORE, MODE_PRIVATE)
-	val editorVis = vis.edit()
+	val editorVis = sharedPreferences.edit()
 	editorVis.putBoolean(WE_WERE_HERE_BEFORE, true)
 	editorVis.apply()
 	if(pic != NULL_STRING && pictures != NULL_STRING)
@@ -151,16 +154,16 @@ fun DetailsScreen(nc: NavController, vmDetails: DetailsViewModel, vmPictures: Pi
 					.target {
 						val picture = it.toBitmap()
 						val baos = ByteArrayOutputStream()
-						if (picture.byteCount > 2*1024*1024)
+						if (picture.byteCount > 1024*1024)
 						{
-							// TODO: Одна корутина обгоняет другую, надо фиксить (большая картинка с ночью дохнет) 
-							picture.compress(Bitmap.CompressFormat.JPEG, 5, baos)
+							// todooshka: Одна корутина обгоняет другую, надо фиксить (большая картинка с ночью дохнет)
+							picture.compress(Bitmap.CompressFormat.JPEG, 3, baos)
 						} else {
 							picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)
 						}
 						val b = baos.toByteArray()
 						bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
-						Log.d("checkMa", "tipa zagruzilos'")
+						Log.d("checkMa", "tipa zagruzilos")
 					}
 					.networkCachePolicy(CachePolicy.ENABLED)
 					.diskCachePolicy(CachePolicy.ENABLED)
@@ -377,7 +380,7 @@ fun ShowError(
 	bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
 	val errorMessage = if(isValidUrl(list[currentPage]))
 	{
-		"HTTP error: 404"
+		HTTP_ERROR
 	}
 	else
 	{
@@ -491,14 +494,11 @@ fun AppBar(
 
 private fun saveToSharedPrefs(context: Context, s: String, vBoolean: Boolean)
 {
-	val pic = context.getSharedPreferences(PICTURE, MODE_PRIVATE)
+	val pic = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 	val editor = pic.edit()
 	editor.putString(PICTURE, s)
+	editor.putBoolean(TOP_BAR_VISABILITY_SHARED_PREFERENCE, vBoolean)
 	editor.apply()
-	val vis = context.getSharedPreferences(TOP_BAR_VISABILITY_SHARED_PREFERENCE, MODE_PRIVATE)
-	val editorVis = vis.edit()
-	editorVis.putBoolean(TOP_BAR_VISABILITY_SHARED_PREFERENCE, vBoolean)
-	editorVis.apply()
 }
 
 fun share(text: String, context: Context)

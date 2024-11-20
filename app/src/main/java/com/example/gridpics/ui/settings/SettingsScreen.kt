@@ -60,6 +60,8 @@ import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
+import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
+import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.AlertDialogMain
@@ -71,7 +73,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(vm: SettingsViewModel, navController: NavController, detailsViewModel: DetailsViewModel, option: Int)
 {
-	detailsViewModel.postUrl("default", "")
+	detailsViewModel.postUrl(DEFAULT_STRING_VALUE, "")
 	val orientation = LocalContext.current.resources.configuration.orientation
 	if(orientation == Configuration.ORIENTATION_LANDSCAPE)
 	{
@@ -268,14 +270,11 @@ fun SettingsCompose(vm: SettingsViewModel, option: Int)
 							val imageLoader = context.imageLoader
 							imageLoader.diskCache?.clear()
 							imageLoader.memoryCache?.clear()
-							val sharedPreferences = context.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE)
+							val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 							val editor = sharedPreferences.edit()
+							editor.putBoolean(CACHE, true)
 							editor.putString(SHARED_PREFS_PICTURES, null)
 							editor.apply()
-							val sharedPreferencesCache = context.getSharedPreferences(CACHE, MODE_PRIVATE)
-							val editorCache = sharedPreferencesCache.edit()
-							editorCache.putBoolean(CACHE, true)
-							editorCache.apply()
 							showDialog = false
 							Toast.makeText(context, context.getString(R.string.you_have_cleared_cache), Toast.LENGTH_SHORT).show()
 						},

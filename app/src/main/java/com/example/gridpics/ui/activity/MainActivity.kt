@@ -57,7 +57,7 @@ class MainActivity: AppCompatActivity()
 	private var picturesSharedPrefs: String? = null
 	private var themePick: Int = 2
 	private var serviceIntent = Intent()
-	private var description = "default"
+	private var description = DEFAULT_STRING_VALUE
 	private var job = jobForNotifications
 	private var scope = GlobalScope
 	private var bitmapString = ""
@@ -70,7 +70,8 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 
 		installSplashScreen()
-		themePick = getSharedPreferences(THEME_SHARED_PREFERENCE, MODE_PRIVATE).getInt(THEME_SHARED_PREFERENCE, 2)
+		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
+		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, 2)
 		val justChangedTheme = if(themePick == 2)
 		{
 			getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false)
@@ -81,9 +82,9 @@ class MainActivity: AppCompatActivity()
 		}
 
 		serviceIntent = Intent(this, MainNotificationService::class.java)
-		serviceIntent.putExtra("description", description)
+		serviceIntent.putExtra(DESCRIPTION_NAMING, description)
 		val darkThemeIsActive = isDarkTheme(this).toString()
-		val previousTheme = getSharedPreferences(IS_BLACK_THEME, MODE_PRIVATE).getString(IS_BLACK_THEME, darkThemeIsActive)
+		val previousTheme = sharedPreferences.getString(IS_BLACK_THEME, darkThemeIsActive)
 		Log.d("theme", "just changed theme? $justChangedTheme")
 
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !justChangedTheme && (previousTheme == darkThemeIsActive))
@@ -150,7 +151,7 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 
-		picturesSharedPrefs = this.getSharedPreferences(SHARED_PREFS_PICTURES, MODE_PRIVATE).getString(SHARED_PREFS_PICTURES, null)
+		picturesSharedPrefs = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		CoroutineScope(Dispatchers.Default).launch {
 			detailsViewModel.observeBitmapFlow().collectLatest { b ->
 				bitmapString = b
@@ -164,14 +165,14 @@ class MainActivity: AppCompatActivity()
 						Manifest.permission.POST_NOTIFICATIONS,
 					) == PackageManager.PERMISSION_GRANTED)
 				{
-					if(description != it || it == "default") //for optimization
+					if(description != it || it == DEFAULT_STRING_VALUE) //for optimization
 					{
 						Log.d("description in main", description)
 						val newIntent = serviceIntent
-						newIntent.putExtra("description", it)
+						newIntent.putExtra(DESCRIPTION_NAMING, it)
 						delay(400)
 						Log.d("wtf in activity", bitmapString)
-						newIntent.putExtra("picture_bitmap", bitmapString)
+						newIntent.putExtra(PICTURE_BITMAP, bitmapString)
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 						{
 							startForegroundService(newIntent)
@@ -185,14 +186,11 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-		val sharedPreferencesForDialog = this@MainActivity.getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE)
-		val editorForDialog = sharedPreferencesForDialog.edit()
-		editorForDialog.putBoolean(JUST_CHANGED_THEME, false)
-		editorForDialog.apply()
-		val sharedPreferencesForCheck = this.getSharedPreferences(IS_BLACK_THEME, MODE_PRIVATE)
-		val editorForCheck = sharedPreferencesForCheck.edit()
-		editorForCheck.putString(IS_BLACK_THEME, isDarkTheme(this).toString())
-		editorForCheck.apply()
+
+		val editorSharedPrefs = sharedPreferences.edit()
+		editorSharedPrefs.putBoolean(JUST_CHANGED_THEME, false)
+		editorSharedPrefs.putString(IS_BLACK_THEME, isDarkTheme(this).toString())
+		editorSharedPrefs.apply()
 
 		setContent {
 			ComposeTheme {
@@ -287,7 +285,7 @@ class MainActivity: AppCompatActivity()
 			) == PackageManager.PERMISSION_GRANTED)
 		{
 			val newIntent = serviceIntent
-			newIntent.putExtra("description", description)
+			newIntent.putExtra(DESCRIPTION_NAMING, description)
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
 				startForegroundService(newIntent)
@@ -364,5 +362,10 @@ class MainActivity: AppCompatActivity()
 		const val TOP_BAR_VISABILITY_SHARED_PREFERENCE = "TOP_BAR_VISABILITY_SHARED_PREFERENCE"
 		const val WE_WERE_HERE_BEFORE = "WE_WERE_HERE_BEFORE"
 		const val JUST_CHANGED_THEME = "JUST_CHANGED_THEME"
+		const val DESCRIPTION_NAMING = "description"
+		const val PICTURE_BITMAP = "picture_bitmap"
+		const val SHARED_PREFERENCE_GRIDPICS =  "SHARED_PREFERENCE_GRIDPICS"
+		const val DEFAULT_STRING_VALUE = "default"
+		const val HTTP_ERROR = "HTTP error: 404"
 	}
 }
