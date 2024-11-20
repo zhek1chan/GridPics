@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.settings
 
-import android.content.SharedPreferences
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ViewModel
