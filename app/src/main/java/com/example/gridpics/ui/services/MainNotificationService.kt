@@ -24,19 +24,28 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.DESCRIPTION_NAMIN
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE_BITMAP
 import com.example.gridpics.ui.activity.MainActivity.Companion.countExitNavigation
-import com.example.gridpics.ui.activity.MainActivity.Companion.jobForNotifications
+import com.example.gridpics.ui.activity.MainActivity.Companion.jobForNotification
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainNotificationService: Service()
 {
 	private val binder = NetworkServiceBinder()
 	private var isActive = true
-	private var job = jobForNotifications
 	private lateinit var contentText: String
+	private var count = 1
+
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
+		count = 1
+		Log.d("serviceCount", "$count")
+		jobForNotification.cancelChildren()
 		isActive = true
-		job.cancelChildren()
 		Log.d("service", "service onStartCommand")
 		val dontUseSound = countExitNavigation > 1
 		val resultIntent = Intent(instance, MainActivity::class.java)
@@ -93,6 +102,59 @@ class MainNotificationService: Service()
 
 	override fun onBind(intent: Intent?): IBinder
 	{
+		jobForNotification.cancelChildren()
+		isActive = true
+		Log.d("service", "service onStartCommand")
+		val dontUseSound = countExitNavigation > 1
+		val resultIntent = Intent(instance, MainActivity::class.java)
+		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
+			PendingIntent.FLAG_IMMUTABLE)
+		val extras = intent?.extras
+		contentText = if(!extras?.getString(DESCRIPTION_NAMING).isNullOrEmpty() && extras?.getString(DESCRIPTION_NAMING) != DEFAULT_STRING_VALUE)
+		{
+			extras!!.getString(DESCRIPTION_NAMING)!!
+		}
+		else
+		{
+			getString(R.string.notification_content_text)
+		}
+		if(!contentText.contains(getString(R.string.notification_content_text)))
+		{
+			val stringImage = extras?.getString(PICTURE_BITMAP)
+			Log.d("wtf", stringImage.toString())
+			val decoded = Base64.decode(stringImage, 0)
+			val bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+			Log.d("wtf", "$bitmap")
+			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
+				.setContentIntent(resultPendingIntent)
+				.setAutoCancel(true)
+				.setOngoing(true)
+				.setSilent(dontUseSound)
+				.setSmallIcon(R.mipmap.ic_launcher)
+				.setColor(getColor(R.color.green))
+				.setContentTitle(getString(R.string.gridpics))
+				.setContentText(contentText)
+				.setLargeIcon(bitmap)
+				.setStyle(NotificationCompat.BigPictureStyle()
+					.bigPicture(bitmap)
+					.bigLargeIcon(null as Icon?))
+			createNotificationChannel()
+			showNotification(builder)
+		}
+		else
+		{
+			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
+				.setContentIntent(resultPendingIntent)
+				.setAutoCancel(true)
+				.setOngoing(true)
+				.setSilent(dontUseSound)
+				.setSmallIcon(R.mipmap.ic_launcher)
+				.setColor(getColor(R.color.green))
+				.setContentTitle(getString(R.string.gridpics))
+				.setContentText(contentText)
+			createNotificationChannel()
+			showNotification(builder)
+		}
 		return binder
 	}
 
@@ -124,6 +186,34 @@ class MainNotificationService: Service()
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.notify(NOTIFICATION_ID, builder.build())
 		startForeground(NOTIFICATION_ID, builder.build())
+	}
+
+	override fun onUnbind(intent: Intent?): Boolean
+	{
+		isActive = false
+		stopNotificationCoroutine()
+		return super.onUnbind(intent)
+	}
+
+	@OptIn(DelicateCoroutinesApi::class)
+	private fun stopNotificationCoroutine()
+	{
+		GlobalScope.launch(Dispatchers.IO + jobForNotification) {
+			Log.d("service", "stopNotificationCoroutine has been started")
+			for(i in 0 .. 10)
+			{
+				delay(200)
+				if(isActive)
+				{
+					cancel()
+				}
+				else if(i == 10)
+				{
+					stopSelf()
+					Log.d("service", "service was stopped")
+				}
+			}
+		}
 	}
 
 	inner class NetworkServiceBinder: Binder()

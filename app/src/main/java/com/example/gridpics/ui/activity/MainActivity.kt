@@ -2,12 +2,15 @@ package com.example.gridpics.ui.activity
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -40,18 +43,14 @@ import com.example.gridpics.ui.state.BarsVisabilityState
 import com.example.gridpics.ui.state.MultiWindowState
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-@OptIn(DelicateCoroutinesApi::class)
 class MainActivity: AppCompatActivity()
 {
 	private var isActive: Boolean = false
@@ -62,12 +61,27 @@ class MainActivity: AppCompatActivity()
 	private var themePick: Int = 2
 	private var serviceIntent = Intent()
 	private var description = DEFAULT_STRING_VALUE
-	private var job = jobForNotifications
-	private var scope = GlobalScope
+	private var job = jobForNotification
 	private var bitmapString = ""
 	private var state = mutableStateOf<PictureState>(PictureState.NothingFound)
 	private var multiWindowState = mutableStateOf<MultiWindowState>(MultiWindowState.NotMultiWindow)
 	private var barsState = mutableStateOf<BarsVisabilityState>(BarsVisabilityState.IsVisible)
+	private var mainNotificationService = MainNotificationService()
+	private var mBound: Boolean = false
+	private val connection = object: ServiceConnection
+	{
+		override fun onServiceConnected(className: ComponentName, service: IBinder)
+		{
+			val binder = service as MainNotificationService.NetworkServiceBinder
+			mainNotificationService = binder.get()
+			mBound = true
+		}
+
+		override fun onServiceDisconnected(arg0: ComponentName)
+		{
+			mBound = false
+		}
+	}
 
 	@SuppressLint("UseCompatLoadingForDrawables")
 	override fun onCreate(savedInstanceState: Bundle?)
@@ -78,7 +92,13 @@ class MainActivity: AppCompatActivity()
 
 		installSplashScreen()
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
+		//serviceIntentForNotification
+		serviceIntent = Intent(this, MainNotificationService::class.java)
+		serviceIntent.putExtra(DESCRIPTION_NAMING, description)
+		//get theme pic
 		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, 2)
+		setTheme()
+		//check if theme was changed and activity recreated because of it
 		val justChangedTheme = if(themePick == 2)
 		{
 			getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false)
@@ -87,13 +107,10 @@ class MainActivity: AppCompatActivity()
 		{
 			isDarkTheme(this)
 		}
-
-		serviceIntent = Intent(this, MainNotificationService::class.java)
-		serviceIntent.putExtra(DESCRIPTION_NAMING, description)
 		val darkThemeIsActive = isDarkTheme(this).toString()
 		val previousTheme = sharedPreferences.getString(IS_BLACK_THEME, darkThemeIsActive)
 		Log.d("theme", "just changed theme? $justChangedTheme")
-
+		//Start showing notification
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !justChangedTheme && (previousTheme == darkThemeIsActive))
 		{
 			if(
@@ -104,6 +121,7 @@ class MainActivity: AppCompatActivity()
 			)
 			{
 				startForegroundService(serviceIntent)
+				bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
 			}
 			else
 			{
@@ -119,10 +137,12 @@ class MainActivity: AppCompatActivity()
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
 				startForegroundService(serviceIntent)
+				bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
 			}
 			else
 			{
 				startService(serviceIntent)
+				bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
 			}
 		}
 
@@ -135,8 +155,6 @@ class MainActivity: AppCompatActivity()
 		picturesViewModel.observeState().observeForever {
 			state.value = it
 		}
-		//theme pick
-		settingsViewModel.changeTheme(this, themePick)
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		lifecycleScope.launch {
 			detailsViewModel.observeVisabilityFlow().collectLatest {
@@ -190,10 +208,12 @@ class MainActivity: AppCompatActivity()
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 						{
 							startForegroundService(newIntent)
+							bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
 						}
 						else
 						{
 							startService(newIntent)
+							bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
 						}
 						description = it
 					}
@@ -291,10 +311,12 @@ class MainActivity: AppCompatActivity()
 				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 				{
 					startForegroundService(serviceIntent)
+					bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
 				}
 				else
 				{
 					startService(serviceIntent)
+					bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
 				}
 			}
 		}
@@ -331,11 +353,13 @@ class MainActivity: AppCompatActivity()
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
 				startForegroundService(newIntent)
+				bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
 				Log.d("description after pause", description)
 			}
 			else
 			{
 				startService(newIntent)
+				bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
 			}
 			countExitNavigation++
 		}
@@ -347,7 +371,11 @@ class MainActivity: AppCompatActivity()
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
-		stopNotificationCoroutine()
+		if(mBound)
+		{
+			unbindService(connection)
+			mBound = false
+		}
 		countExitNavigation++
 		isActive = false
 		super.onPause()
@@ -363,35 +391,20 @@ class MainActivity: AppCompatActivity()
 		super.onDestroy()
 	}
 
-	private fun stopNotificationCoroutine()
-	{
-		scope.launch(Dispatchers.IO + job) {
-			Log.d("service", "stopNotificationCoroutine has been started")
-			for(i in 0 .. 10)
-			{
-				delay(200)
-				if(isActive)
-				{
-					cancel()
-				}
-				else if(i == 10)
-				{
-					stopService(serviceIntent)
-					Log.d("service", "service was stopped")
-				}
-			}
-		}
-	}
-
 	private fun isDarkTheme(context: Context): Boolean
 	{
 		return context.resources.configuration.uiMode and
 			Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 	}
 
+	private fun setTheme()
+	{
+		settingsViewModel.changeTheme(this, themePick)
+	}
+
 	companion object
 	{
-		val jobForNotifications = Job()
+		val jobForNotification = Job()
 		var countExitNavigation = 0
 		const val NOTIFICATION_ID = 1337
 		const val CACHE = "CACHE_CACHE"
