@@ -73,7 +73,8 @@ class App: Application(), KoinComponent, SingletonImageLoader.Factory
 		}
 	}
 
-	override fun newImageLoader(context: Context): ImageLoader {
+	override fun newImageLoader(context: Context): ImageLoader
+	{
 		return ImageLoader.Builder(context)
 			.diskCache {
 				DiskCache.Builder()

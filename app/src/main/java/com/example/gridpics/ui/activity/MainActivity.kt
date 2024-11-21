@@ -42,25 +42,16 @@ import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.state.BarsVisabilityState
 import com.example.gridpics.ui.state.MultiWindowStateTracker
-import com.example.gridpics.ui.state.MultiWindowStateTracker.*
+import com.example.gridpics.ui.state.MultiWindowStateTracker.MultiWindowState
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import kotlin.collections.MutableList
-import kotlin.collections.MutableMap
-import kotlin.collections.isNotEmpty
-import kotlin.collections.last
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableMapOf
 import kotlin.collections.set
-import kotlin.collections.toList
 
 class MainActivity: AppCompatActivity()
 {
@@ -104,6 +95,7 @@ class MainActivity: AppCompatActivity()
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
+
 		description[DEFAULT_STRING_VALUE] = DEFAULT_STRING_VALUE
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		var getCurrentPictureSP = sharedPreferences.getString(PICTURE, NULL_STRING).toString()
@@ -119,11 +111,10 @@ class MainActivity: AppCompatActivity()
 		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		//check if theme was changed and activity recreated because of it
 		changedTheme = getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false)
-
 		val previousTheme = sharedPreferences.getString(IS_BLACK_THEME, isDarkTheme(this).toString())
 		Log.d("theme", "just changed theme? ")
 		//Start showing notification
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && setTheme(previousTheme!!)==Pair(false,true))
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && setTheme(previousTheme!!) == Pair(false, true))
 		{
 			if(
 				ContextCompat.checkSelfPermission(
@@ -324,7 +315,6 @@ class MainActivity: AppCompatActivity()
 		multiWindowStateTracker.multiWindowState.observe(this) { newState ->
 			multiWindowState.value = newState
 		}
-
 	}
 
 	override fun onRequestPermissionsResult(
@@ -389,28 +379,53 @@ class MainActivity: AppCompatActivity()
 				bindService(newIntent, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
 			countExitNavigation++
+			lifecycleScope.launch() {
+				while(true)
+				{
+					delay(1000)
+					mainNotificationService.subscriberCount.collect { count ->
+						if(count == 0)
+						{
+							Log.d("service22", "No subscribers")
+						}
+						else
+						{
+							Log.d("service22", "we have subscribers")
+						}
+					}
+				}
+			}
 		}
 		isActive = true
 		Log.d("lifecycle", "onResume()")
 		super.onResume()
 	}
 
-	@OptIn(DelicateCoroutinesApi::class)
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
-		lifecycleScope.launch(Dispatchers.IO) {
-			while(true) {
-				delay(1000)
-				Log.d("service is alive?", "$mBound")
-			}
-		}
-		//unbindService(connection)
+		unbindService(connection)
 		//без этого работает криво, основную логику я вынес
 		/*GlobalScope.launch(Dispatchers.IO + jobForNotification) {
 			delay(2000)
 			stopService(serviceIntent)
 		}*/
+		lifecycleScope.launch() {
+			while(true)
+			{
+				delay(1000)
+				mainNotificationService.subscriberCount.collectLatest { count ->
+					if(count == 0)
+					{
+						Log.d("service22", "No subscribers")
+					}
+					else
+					{
+						Log.d("service22", "we have subscribers")
+					}
+				}
+			}
+		}
 		allConnections.clear()
 		countExitNavigation++
 		isActive = false

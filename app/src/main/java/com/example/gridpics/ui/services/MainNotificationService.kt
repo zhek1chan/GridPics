@@ -43,18 +43,6 @@ class MainNotificationService: Service()
 	val subscriberCount: Flow<Int> = _subscriberCount
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
-		GlobalScope.launch {
-			subscriberCount.collect { count ->
-				if(count == 0)
-				{
-					Log.d("service","No subscribers")
-				}
-				else
-				{
-					Log.d("service","we have subscribers")
-				}
-			}
-		}
 		jobForNotification.cancelChildren()
 		isActive = true
 		Log.d("service", "service onStartCommand")
@@ -119,9 +107,7 @@ class MainNotificationService: Service()
 	@OptIn(DelicateCoroutinesApi::class)
 	override fun onBind(intent: Intent?): IBinder
 	{
-		GlobalScope.launch(Dispatchers.IO) {
-			_subscriberCount.emit(_subscriberCount.value + 1)
-		}
+		_subscriberCount.value += 1
 		isActive = true
 		Log.d("service", "service onBind")
 		val dontUseSound = countExitNavigation > 1
@@ -203,6 +189,13 @@ class MainNotificationService: Service()
 		}
 	}
 
+	override fun onRebind(intent: Intent?)
+	{
+		isActive = true
+		_subscriberCount.value += 2
+		super.onRebind(intent)
+	}
+
 	private fun showNotification(builder: Builder)
 	{
 		Log.d("description in service", contentText.length.toString())
@@ -211,8 +204,10 @@ class MainNotificationService: Service()
 		startForeground(NOTIFICATION_ID, builder.build())
 	}
 
+	@OptIn(DelicateCoroutinesApi::class)
 	override fun onUnbind(intent: Intent?): Boolean
 	{
+		_subscriberCount.value -= 1
 		isActive = false
 		Log.d("service", "onUnbind()")
 		//stopNotificationCoroutine()
