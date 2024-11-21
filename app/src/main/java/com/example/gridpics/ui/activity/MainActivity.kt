@@ -189,7 +189,7 @@ class MainActivity: AppCompatActivity()
 			picturesViewModel.observeBackNav().collectLatest {
 				if(it)
 				{
-					stopService(serviceIntentLocal)
+					//stopService(serviceIntentLocal)
 					this@MainActivity.finishAffinity()
 				}
 			}
@@ -382,7 +382,6 @@ class MainActivity: AppCompatActivity()
 				startService(newIntent)
 				bindService(newIntent, connectionLocal, Context.BIND_AUTO_CREATE)
 				Log.d("service", "connection $connectionLocal")
-				Log.d("description after pause", description.toList().last().toString())
 			}
 			else
 			{
@@ -400,12 +399,18 @@ class MainActivity: AppCompatActivity()
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
-		unbindService(connection)
+		lifecycleScope.launch(Dispatchers.IO) {
+			while(true) {
+				delay(1000)
+				Log.d("service is alive?", "$mBound")
+			}
+		}
+		//unbindService(connection)
 		//без этого работает криво, основную логику я вынес
-		GlobalScope.launch(Dispatchers.IO + jobForNotification) {
+		/*GlobalScope.launch(Dispatchers.IO + jobForNotification) {
 			delay(2000)
 			stopService(serviceIntent)
-		}
+		}*/
 		allConnections.clear()
 		countExitNavigation++
 		isActive = false

@@ -30,6 +30,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class MainNotificationService: Service()
@@ -37,8 +39,22 @@ class MainNotificationService: Service()
 	private val binder = NetworkServiceBinder()
 	private var isActive = true
 	private lateinit var contentText: String
+	private val _subscriberCount = MutableStateFlow(0)
+	val subscriberCount: Flow<Int> = _subscriberCount
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
+		GlobalScope.launch {
+			subscriberCount.collect { count ->
+				if(count == 0)
+				{
+					Log.d("service","No subscribers")
+				}
+				else
+				{
+					Log.d("service","we have subscribers")
+				}
+			}
+		}
 		jobForNotification.cancelChildren()
 		isActive = true
 		Log.d("service", "service onStartCommand")
@@ -100,8 +116,12 @@ class MainNotificationService: Service()
 		return START_NOT_STICKY
 	}
 
+	@OptIn(DelicateCoroutinesApi::class)
 	override fun onBind(intent: Intent?): IBinder
 	{
+		GlobalScope.launch(Dispatchers.IO) {
+			_subscriberCount.emit(_subscriberCount.value + 1)
+		}
 		isActive = true
 		Log.d("service", "service onBind")
 		val dontUseSound = countExitNavigation > 1
@@ -185,7 +205,7 @@ class MainNotificationService: Service()
 
 	private fun showNotification(builder: Builder)
 	{
-		Log.d("description in service", contentText)
+		Log.d("description in service", contentText.length.toString())
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.notify(NOTIFICATION_ID, builder.build())
 		startForeground(NOTIFICATION_ID, builder.build())
@@ -195,7 +215,7 @@ class MainNotificationService: Service()
 	{
 		isActive = false
 		Log.d("service", "onUnbind()")
-		stopNotificationCoroutine()
+		//stopNotificationCoroutine()
 		return super.onUnbind(intent)
 	}
 
