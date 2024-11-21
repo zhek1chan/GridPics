@@ -22,7 +22,6 @@ import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.DESCRIPTION_NAMING
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
-import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE_BITMAP
 import com.example.gridpics.ui.activity.MainActivity.Companion.countExitNavigation
 import com.example.gridpics.ui.activity.MainActivity.Companion.jobForNotification
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -56,10 +55,15 @@ class MainNotificationService: Service()
 		{
 			getString(R.string.notification_content_text)
 		}
+		Log.d("intent", "we got $contentText")
+
 		if(!contentText.contains(getString(R.string.notification_content_text)))
 		{
-			val stringImage = extras?.getString(PICTURE_BITMAP)
-			Log.d("wtf", stringImage.toString())
+			val words = contentText.substring(1, contentText.length - 1).split(",")
+			val description = words[0].trim()
+			val stringImage = words[1].trim()
+
+			Log.d("wtf", stringImage)
 			val decoded = Base64.decode(stringImage, 0)
 			val bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
 			Log.d("wtf", "$bitmap")
@@ -71,7 +75,7 @@ class MainNotificationService: Service()
 				.setSmallIcon(R.mipmap.ic_launcher)
 				.setColor(getColor(R.color.green))
 				.setContentTitle(getString(R.string.gridpics))
-				.setContentText(contentText)
+				.setContentText(description)
 				.setLargeIcon(bitmap)
 				.setStyle(NotificationCompat.BigPictureStyle()
 					.bigPicture(bitmap)
@@ -113,10 +117,14 @@ class MainNotificationService: Service()
 		{
 			getString(R.string.notification_content_text)
 		}
+		Log.d("intent", "we got $contentText")
 		if(!contentText.contains(getString(R.string.notification_content_text)))
 		{
-			val stringImage = extras?.getString(PICTURE_BITMAP)
-			Log.d("wtf", stringImage.toString())
+			val words = contentText.substring(1, contentText.length - 1).split(",")
+			val description = words[0].trim()
+			val stringImage = words[1].trim()
+
+			Log.d("wtf", stringImage)
 			val decoded = Base64.decode(stringImage, 0)
 			val bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
 			Log.d("wtf", "$bitmap")
@@ -128,7 +136,7 @@ class MainNotificationService: Service()
 				.setSmallIcon(R.mipmap.ic_launcher)
 				.setColor(getColor(R.color.green))
 				.setContentTitle(getString(R.string.gridpics))
-				.setContentText(contentText)
+				.setContentText(description)
 				.setLargeIcon(bitmap)
 				.setStyle(NotificationCompat.BigPictureStyle()
 					.bigPicture(bitmap)

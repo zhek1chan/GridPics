@@ -43,7 +43,6 @@ import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.state.BarsVisabilityState
 import com.example.gridpics.ui.state.MultiWindowState
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -63,8 +62,7 @@ class MainActivity: AppCompatActivity()
 	private var picturesSharedPrefs: String? = null
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var serviceIntent = Intent()
-	private var description = DEFAULT_STRING_VALUE
-	private var bitmapString = ""
+	private var description = mutableMapOf<String, String>()
 	private var state = mutableStateOf<PictureState>(PictureState.NothingFound)
 	private var multiWindowState = mutableStateOf<MultiWindowState>(MultiWindowState.NotMultiWindow)
 	private var barsState = mutableStateOf<BarsVisabilityState>(BarsVisabilityState.IsVisible)
@@ -93,10 +91,11 @@ class MainActivity: AppCompatActivity()
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
+		description[DEFAULT_STRING_VALUE] = DEFAULT_STRING_VALUE
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		//serviceIntentForNotification
 		serviceIntent = Intent(this, MainNotificationService::class.java)
-		serviceIntent.putExtra(DESCRIPTION_NAMING, description)
+		serviceIntent.putExtra(DESCRIPTION_NAMING, description.toList().last().toString())
 		//get theme pic
 		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		setTheme()
@@ -186,12 +185,6 @@ class MainActivity: AppCompatActivity()
 		}
 
 		picturesSharedPrefs = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
-		CoroutineScope(Dispatchers.Default).launch {
-			detailsViewModel.observeBitmapFlow().collectLatest { b ->
-				bitmapString = b
-			}
-		}
-
 		lifecycleScope.launch(Dispatchers.Default) {
 			detailsViewModel.observeUrlFlow().collectLatest {
 				if(ContextCompat.checkSelfPermission(
@@ -199,14 +192,11 @@ class MainActivity: AppCompatActivity()
 						Manifest.permission.POST_NOTIFICATIONS,
 					) == PackageManager.PERMISSION_GRANTED)
 				{
-					if(description != it || it == DEFAULT_STRING_VALUE) //for optimization
+					if(description != it && it.isNotEmpty()) //for optimization
 					{
-						Log.d("description in main", description)
+						Log.d("description in main", description.toString())
 						val newIntent = serviceIntent
-						newIntent.putExtra(DESCRIPTION_NAMING, it)
-						delay(400)
-						Log.d("wtf in activity", bitmapString)
-						newIntent.putExtra(PICTURE_BITMAP, bitmapString)
+						newIntent.putExtra(DESCRIPTION_NAMING, it.toList().last().toString())
 						serviceIntent = newIntent
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 						{
@@ -220,7 +210,7 @@ class MainActivity: AppCompatActivity()
 							bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
 							allConnections.add(connection)
 						}
-						description = it
+						description = it as MutableMap<String, String>
 					}
 				}
 			}
@@ -264,14 +254,14 @@ class MainActivity: AppCompatActivity()
 					state = state.value,
 					clearErrors = { picturesViewModel.clearErrors() },
 					postPositiveState = { detailsViewModel.postPositiveVisabilityState() },
-					postDefaultUrl = { detailsViewModel.postUrl(DEFAULT_STRING_VALUE, "") }
+					postDefaultUrl = { detailsViewModel.postUrl(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
 				SettingsScreen(
 					navController,
 					themePick,
-					postDefaultUrl = { detailsViewModel.postUrl(DEFAULT_STRING_VALUE, "") },
+					postDefaultUrl = { detailsViewModel.postUrl(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
 					changeTheme = { int -> settingsViewModel.changeTheme(int) },
 				)
 			}
@@ -282,7 +272,7 @@ class MainActivity: AppCompatActivity()
 					addError = { str -> picturesViewModel.addError(str) },
 					state = barsState.value,
 					removeSpecialError = { str -> picturesViewModel.removeSpecialError(str) },
-					postDefaultUrl = { detailsViewModel.postUrl(DEFAULT_STRING_VALUE, "") },
+					postDefaultUrl = { detailsViewModel.postUrl(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
 					changeVisabilityState = { detailsViewModel.changeVisabilityState() },
 					postUrl = { str, p -> detailsViewModel.postUrl(str, p) },
 					postPositiveState = { detailsViewModel.postPositiveVisabilityState() },
@@ -355,15 +345,14 @@ class MainActivity: AppCompatActivity()
 			) == PackageManager.PERMISSION_GRANTED)
 		{
 			val newIntent = serviceIntent
-			newIntent.putExtra(DESCRIPTION_NAMING, description)
-			newIntent.putExtra(PICTURE_BITMAP, bitmapString)
+			newIntent.putExtra(DESCRIPTION_NAMING, description.toList().last().toString())
 			serviceIntent = newIntent
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
 				startService(newIntent)
 				bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
 				Log.d("service", "connection $connection")
-				Log.d("description after pause", description)
+				Log.d("description after pause", description.toList().last().toString())
 			}
 			else
 			{
@@ -430,7 +419,6 @@ class MainActivity: AppCompatActivity()
 		const val WE_WERE_HERE_BEFORE = "WE_WERE_HERE_BEFORE"
 		const val JUST_CHANGED_THEME = "JUST_CHANGED_THEME"
 		const val DESCRIPTION_NAMING = "description"
-		const val PICTURE_BITMAP = "picture_bitmap"
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
 		const val DEFAULT_STRING_VALUE = "default"
 		const val HTTP_ERROR = "HTTP error: 404"

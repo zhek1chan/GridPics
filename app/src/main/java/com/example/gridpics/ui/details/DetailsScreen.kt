@@ -82,6 +82,7 @@ import coil3.toBitmap
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity
+import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.MainActivity.Companion.NULL_STRING
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
@@ -151,7 +152,7 @@ fun DetailsScreen(
 	{
 		val list = remember { pictures!!.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(initialPage = list.indexOf(pic), pageCount = { list.size })
-		val bitmapString = remember { mutableStateOf("") }
+		val bitmapString = remember { mutableStateOf(DEFAULT_STRING_VALUE) }
 		CoroutineScope(Dispatchers.Default).launch {
 			val imgRequest =
 				ImageRequest.Builder(context)
@@ -180,7 +181,6 @@ fun DetailsScreen(
 					.diskCacheKey(list[pagerState.currentPage])
 					.memoryCachePolicy(CachePolicy.ENABLED)
 					.build()
-
 			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
 		}
 		postUrl(list[pagerState.currentPage], bitmapString.value)
@@ -246,7 +246,7 @@ fun ShowDetails(
 	) { page ->
 		if(firstPage.value)
 		{
-			scope.launch{
+			scope.launch {
 				pagerState.scrollToPage(startPage)
 			}
 		}
