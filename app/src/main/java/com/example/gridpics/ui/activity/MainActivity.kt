@@ -92,15 +92,16 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		description[DEFAULT_STRING_VALUE] = DEFAULT_STRING_VALUE
+		val connectionLocal = connection
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		//serviceIntentForNotification
-		serviceIntent = Intent(this, MainNotificationService::class.java)
-		serviceIntent.putExtra(DESCRIPTION_NAMING, description.toList().last().toString())
+		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
+		serviceIntentLocal.putExtra(DESCRIPTION_NAMING, description.toList().last().toString())
 		//get theme pic
 		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		setTheme()
 		//check if theme was changed and activity recreated because of it
-		val justChangedTheme = if(themePick == 2)
+		val justChangedTheme = if(themePick == ThemePick.FOLLOW_SYSTEM.intValue)
 		{
 			getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false)
 		}
@@ -121,8 +122,8 @@ class MainActivity: AppCompatActivity()
 				) == PackageManager.PERMISSION_GRANTED
 			)
 			{
-				startForegroundService(serviceIntent)
-				bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+				startForegroundService(serviceIntentLocal)
+				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
 			else
 			{
@@ -137,13 +138,13 @@ class MainActivity: AppCompatActivity()
 		{
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
-				startForegroundService(serviceIntent)
-				bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+				startForegroundService(serviceIntentLocal)
+				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
 			else
 			{
-				startService(serviceIntent)
-				bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+				startService(serviceIntentLocal)
+				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
 		}
 
@@ -178,7 +179,7 @@ class MainActivity: AppCompatActivity()
 			picturesViewModel.observeBackNav().collectLatest {
 				if(it)
 				{
-					stopService(serviceIntent)
+					stopService(serviceIntentLocal)
 					this@MainActivity.finishAffinity()
 				}
 			}
@@ -195,20 +196,19 @@ class MainActivity: AppCompatActivity()
 					if(description != it && it.isNotEmpty()) //for optimization
 					{
 						Log.d("description in main", description.toString())
-						val newIntent = serviceIntent
-						newIntent.putExtra(DESCRIPTION_NAMING, it.toList().last().toString())
-						serviceIntent = newIntent
+						serviceIntentLocal.putExtra(DESCRIPTION_NAMING, it.toList().last().toString())
+						serviceIntent = serviceIntentLocal
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 						{
-							startForegroundService(newIntent)
-							bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
-							allConnections.add(connection)
+							startForegroundService(serviceIntentLocal)
+							bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+							allConnections.add(connectionLocal)
 						}
 						else
 						{
-							startService(newIntent)
-							bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
-							allConnections.add(connection)
+							startService(serviceIntentLocal)
+							bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+							allConnections.add(connectionLocal)
 						}
 						description = it as MutableMap<String, String>
 					}
@@ -219,6 +219,8 @@ class MainActivity: AppCompatActivity()
 		editorSharedPrefs.putBoolean(JUST_CHANGED_THEME, false)
 		editorSharedPrefs.putString(IS_BLACK_THEME, isDarkTheme(this).toString())
 		editorSharedPrefs.apply()
+
+		serviceIntent = serviceIntentLocal
 
 		setContent {
 			ComposeTheme {
@@ -302,17 +304,19 @@ class MainActivity: AppCompatActivity()
 					Manifest.permission.POST_NOTIFICATIONS,
 				) == PackageManager.PERMISSION_GRANTED)
 			{
+				val serviceIntentLocal = serviceIntent
+				val connectionLocal = connection
 				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 				{
-					startForegroundService(serviceIntent)
-					bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
-					allConnections.add(connection)
+					startForegroundService(serviceIntentLocal)
+					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+					allConnections.add(connectionLocal)
 				}
 				else
 				{
-					startService(serviceIntent)
-					bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
-					allConnections.add(connection)
+					startService(serviceIntentLocal)
+					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+					allConnections.add(connectionLocal)
 				}
 			}
 		}
@@ -345,19 +349,20 @@ class MainActivity: AppCompatActivity()
 			) == PackageManager.PERMISSION_GRANTED)
 		{
 			val newIntent = serviceIntent
+			val connectionLocal = connection
 			newIntent.putExtra(DESCRIPTION_NAMING, description.toList().last().toString())
 			serviceIntent = newIntent
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
 				startService(newIntent)
-				bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
-				Log.d("service", "connection $connection")
+				bindService(newIntent, connectionLocal, Context.BIND_AUTO_CREATE)
+				Log.d("service", "connection $connectionLocal")
 				Log.d("description after pause", description.toList().last().toString())
 			}
 			else
 			{
 				startService(newIntent)
-				bindService(newIntent, connection, Context.BIND_AUTO_CREATE)
+				bindService(newIntent, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
 			countExitNavigation++
 		}
