@@ -309,6 +309,7 @@ fun ShowList(
 	currentPicture: (String) -> Unit
 )
 {
+	val context = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
 	val scope = rememberCoroutineScope()
@@ -319,9 +320,9 @@ fun ShowList(
 		{
 			is PictureState.SearchIsOk ->
 			{
-				Toast.makeText(LocalContext.current, stringResource(R.string.loading_has_been_started), Toast.LENGTH_SHORT).show()
+				Toast.makeText(context, stringResource(R.string.loading_has_been_started), Toast.LENGTH_SHORT).show()
 				Log.d("Now state is", "Loading")
-				saveToSharedPrefs(LocalContext.current, (state.value as PictureState.SearchIsOk).data)
+				saveToSharedPrefs(context, (state.value as PictureState.SearchIsOk).data)
 				val list = (state.value as PictureState.SearchIsOk).data.split("\n")
 
 				LazyVerticalGrid(
@@ -365,7 +366,7 @@ fun ShowList(
 			PictureState.NothingFound -> Unit
 			is PictureState.Loaded ->
 			{
-				Toast.makeText(LocalContext.current, stringResource(R.string.loading_has_been_ended), Toast.LENGTH_SHORT).show()
+				Toast.makeText(context, stringResource(R.string.loading_has_been_ended), Toast.LENGTH_SHORT).show()
 				Log.d("Now state is", "Loaded")
 				val list = (state.value as PictureState.Loaded).data.split("\n")
 				LazyVerticalGrid(
@@ -390,7 +391,7 @@ fun ShowList(
 	else
 	{
 		Log.d("Now state is", "Loaded from sp")
-		saveToSharedPrefs(LocalContext.current, imagesUrlsSP)
+		saveToSharedPrefs(context, imagesUrlsSP)
 		val items = remember { imagesUrlsSP.split("\n") }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
@@ -581,10 +582,11 @@ fun isValidUrl(url: String): Boolean
 @Composable
 private fun calculateGridSpan(): Int
 {
+	val context = LocalContext.current
 	Log.d("HomeFragment", "Calculate span started")
 	val width = Resources.getSystem().displayMetrics.widthPixels
-	val orientation = LocalContext.current.resources.configuration.orientation
-	val density = LocalContext.current.resources.displayMetrics.density
+	val orientation = context.resources.configuration.orientation
+	val density = context.resources.displayMetrics.density
 	return if(orientation == Configuration.ORIENTATION_PORTRAIT)
 	{
 		((width / density).toInt() / 110)
