@@ -84,16 +84,14 @@ import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
-import com.example.gridpics.ui.activity.MainActivity.Companion.NULL_STRING
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
-import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.MainActivity.Companion.TOP_BAR_VISABILITY_SHARED_PREFERENCE
 import com.example.gridpics.ui.activity.MainActivity.Companion.WE_WERE_HERE_BEFORE
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.state.BarsVisabilityState
-import com.example.gridpics.ui.state.MultiWindowState
+import com.example.gridpics.ui.state.MultiWindowStateTracker.MultiWindowState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -105,52 +103,54 @@ import java.io.ByteArrayOutputStream
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailsScreen(
-	nc: NavController,
+	navController: NavController,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	state: BarsVisabilityState,
+	state: MutableState<BarsVisabilityState>,
 	removeSpecialError: (String) -> Unit,
 	postDefaultUrl: () -> Unit,
 	changeVisabilityState: () -> Unit,
 	postUrl: (String, String) -> Unit,
 	postPositiveState: () -> Unit,
-	multiWindowState: MultiWindowState,
+	multiWindowState: MutableState<MultiWindowState>,
+	pictures: String?,
+	pic: String?,
+	visibility: Boolean,
+	weWereHere: Boolean,
 )
 {
 	val context = LocalContext.current
 	val scope = rememberCoroutineScope()
 	BackHandler {
 		scope.launch {
-			if(state == BarsVisabilityState.NotVisible)
+			if(state.value == BarsVisabilityState.NotVisible)
 			{
 				Log.d("we are out", "We are out")
 				postDefaultUrl.invoke()
 				changeVisabilityState.invoke()
-				nc.navigateUp()
+				navController.navigateUp()
 			}
 			else
 			{
 				Log.d("we are out", "We are without changing state")
 				postDefaultUrl.invoke()
-				nc.navigateUp()
+				navController.navigateUp()
 			}
 		}
 	}
+	val isVisible = remember { mutableStateOf(visibility) }
 	val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-	val pictures = sharedPreferences.getString(SHARED_PREFS_PICTURES, NULL_STRING)
-	val pic = sharedPreferences.getString(PICTURE, NULL_STRING)
-	var visible = sharedPreferences.getBoolean(TOP_BAR_VISABILITY_SHARED_PREFERENCE, true)
-	val weWereHere = sharedPreferences.getBoolean(WE_WERE_HERE_BEFORE, false)
 	if(weWereHere)
 	{
-		visible = true
+		isVisible.value = true
 	}
 	val editorVis = sharedPreferences.edit()
 	editorVis.putBoolean(WE_WERE_HERE_BEFORE, true)
 	editorVis.apply()
-	if(pic != NULL_STRING && pictures != NULL_STRING)
+	if(pic != null && pictures != null)
 	{
-		val list = remember { pictures!!.split("\n").toMutableList() }
+		Log.d("pic", "$pic")
+		val list = remember { pictures.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(initialPage = list.indexOf(pic), pageCount = { list.size })
 		val bitmapString = remember { mutableStateOf(DEFAULT_STRING_VALUE) }
 		CoroutineScope(Dispatchers.Default).launch {
@@ -184,14 +184,13 @@ fun DetailsScreen(
 			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
 		}
 		postUrl(list[pagerState.currentPage], bitmapString.value)
-		val isVisible = remember { mutableStateOf(visible) }
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
-			topBar = { AppBar(isVisible, context, nc, list, pagerState) },
+			topBar = { AppBar(isVisible, context, navController, list, pagerState) },
 			content = { padding ->
 				ShowDetails(
-					img = pic!!,
-					nc = nc,
+					img = pic,
+					navController = navController,
 					isVisible = isVisible,
 					list = list,
 					pagerState = pagerState,
@@ -215,7 +214,7 @@ fun DetailsScreen(
 @Composable
 fun ShowDetails(
 	img: String,
-	nc: NavController,
+	navController: NavController,
 	isVisible: MutableState<Boolean>,
 	list: MutableList<String>,
 	pagerState: PagerState,
@@ -225,7 +224,7 @@ fun ShowDetails(
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
 	bitmapString: MutableState<String>,
-	multiWindowed: MultiWindowState,
+	multiWindowed: MutableState<MultiWindowState>,
 	changeVisabilityState: () -> Unit,
 	postPositiveState: () -> Unit,
 )
@@ -271,7 +270,7 @@ fun ShowDetails(
 					removeSpecialError = removeSpecialError,
 					changeVisabilityState = changeVisabilityState,
 					postPositiveState = postPositiveState,
-					nc = nc,
+					navController = navController,
 					isVisible = isVisible,
 					exit = exit,
 					multiWindow = multiWindowed,
@@ -293,15 +292,15 @@ fun ShowAsynchImage(
 	removeSpecialError: (String) -> Unit,
 	changeVisabilityState: () -> Unit,
 	postPositiveState: () -> Unit,
-	nc: NavController,
+	navController: NavController,
 	isVisible: MutableState<Boolean>,
 	exit: MutableState<Boolean>,
-	multiWindow: MultiWindowState,
+	multiWindow: MutableState<MultiWindowState>,
 	context: Context,
 )
 {
 	val orientation = context.resources.configuration.orientation
-	val scale = if(multiWindow == MultiWindowState.NotMultiWindow)
+	val scale = if(multiWindow.value == MultiWindowState.NotMultiWindow)
 	{
 		if(orientation == Configuration.ORIENTATION_PORTRAIT)
 		{
@@ -336,7 +335,7 @@ fun ShowAsynchImage(
 		},
 		onError = {
 			addError(list[page])
-			nc.navigate(Screen.Details.route)
+			navController.navigate(Screen.Details.route)
 		},
 		modifier = Modifier
 			.fillMaxSize()
@@ -363,7 +362,7 @@ fun ShowAsynchImage(
 							if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2)
 							{
 								postPositiveState.invoke()
-								nc.navigateUp()
+								navController.navigateUp()
 							}
 						}
 						countLastThree.clear()

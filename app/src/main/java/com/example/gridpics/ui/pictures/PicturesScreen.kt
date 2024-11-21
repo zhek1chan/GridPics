@@ -13,15 +13,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.displayCutoutPadding
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -38,6 +42,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,29 +78,30 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.placeholder.NoInternetScreen
-import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PicturesScreen(
 	navController: NavController,
-	viewModelPictures: PicturesViewModel,
 	postPressOnBackButton: () -> Unit,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	getPics: () -> Unit,
 	postState: (String) -> Unit,
-	state: PictureState,
+	state: MutableState<PictureState>,
 	clearErrors: () -> Unit,
 	postPositiveState: () -> Unit,
 	postDefaultUrl: () -> Unit,
+	resume: () -> Unit,
+	newState: () -> Unit,
+	sharedPrefsPictures: String?,
+	clearedCache: Boolean,
+	currentPicture: (String) -> Unit
 )
 {
 	val context = LocalContext.current
-	val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-	val txt = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
-	val clearedCache = sharedPreferences.getBoolean(CACHE, false)
 	postPositiveState.invoke()
 	postDefaultUrl.invoke()
 
@@ -103,184 +109,186 @@ fun PicturesScreen(
 		postPressOnBackButton.invoke()
 	}
 	val orientation = context.resources.configuration.orientation
-	if(orientation == Configuration.ORIENTATION_LANDSCAPE)
+	val windowInsets = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
 	{
-		Box(modifier = Modifier
-			.fillMaxSize()
-			.background(MaterialTheme.colorScheme.background)
-		) {
-			Scaffold(modifier = Modifier
-				.fillMaxWidth()
-				.displayCutoutPadding(),
-				bottomBar = { BottomNavigationBar(navController) },
-				content = { padding ->
-					Column(
-						modifier = Modifier
-							.padding(padding)
-							.consumeWindowInsets(padding)
-							.fillMaxSize()
-					) {
-						if(!txt.isNullOrEmpty() && !clearedCache)
-						{
-							viewModelPictures.newState()
-							ShowPictures(txt, checkIfExists, addError, getPics, postState, state, clearErrors, navController)
-						}
-						else if(!clearedCache && txt.isNullOrEmpty())
-						{
-							viewModelPictures.newState()
-							viewModelPictures.resume()
-							viewModelPictures.getPics()
-							ShowPictures(txt, checkIfExists, addError, getPics, postState, state, clearErrors, navController)
-						}
-						else if(clearedCache || txt.isNullOrEmpty())
-						{
-							viewModelPictures.resume()
-							viewModelPictures.newState()
-							viewModelPictures.getPics()
-							ShowPictures(txt, checkIfExists, addError, getPics, postState, state, clearErrors, navController)
-						}
-					}
-				}
-			)
-		}
+		WindowInsets.displayCutout.union(WindowInsets.systemBarsIgnoringVisibility)
 	}
 	else
 	{
-		Scaffold(modifier = Modifier
-			.fillMaxWidth(),
-			bottomBar = { BottomNavigationBar(navController) },
-			content = { padding ->
-				Column(
-					modifier = Modifier
-						.padding(padding)
-						.consumeWindowInsets(padding)
-						.fillMaxSize()
-				) {
-					if(!txt.isNullOrEmpty() && !clearedCache)
-					{
-						viewModelPictures.newState()
-						ShowPictures(txt, checkIfExists, addError, getPics, postState, state, clearErrors, navController)
-					}
-					else if(!clearedCache && txt.isNullOrEmpty())
-					{
-						viewModelPictures.newState()
-						viewModelPictures.resume()
-						viewModelPictures.getPics()
-						ShowPictures(txt, checkIfExists, addError, getPics, postState, state, clearErrors, navController)
-					}
-					else if(clearedCache || txt.isNullOrEmpty())
-					{
-						viewModelPictures.resume()
-						viewModelPictures.newState()
-						viewModelPictures.getPics()
-						ShowPictures(txt, checkIfExists, addError, getPics, postState, state, clearErrors, navController)
-					}
+		WindowInsets.systemBarsIgnoringVisibility
+	}
+	Scaffold(
+		modifier = Modifier.fillMaxSize(),
+		bottomBar = { BottomNavigationBar(navController) },
+		contentWindowInsets = windowInsets,
+		content = { padding ->
+			Column(
+				modifier = Modifier
+					.padding(padding)
+					.consumeWindowInsets(padding)
+					.fillMaxSize()
+			) {
+				if(!sharedPrefsPictures.isNullOrEmpty() && !clearedCache)
+				{
+					newState()
+					ShowPictures(
+						savedPicsUrls = sharedPrefsPictures,
+						checkIfExists = checkIfExists,
+						addError = addError,
+						getPics = getPics,
+						postState = postState,
+						state = state,
+						clearErrors = clearErrors,
+						navController = navController,
+						currentPicture = currentPicture
+					)
+				}
+				else if(!clearedCache && sharedPrefsPictures.isNullOrEmpty())
+				{
+					newState()
+					resume()
+					getPics()
+					ShowPictures(
+						savedPicsUrls = sharedPrefsPictures,
+						checkIfExists = checkIfExists,
+						addError = addError,
+						getPics = getPics,
+						postState = postState,
+						state = state,
+						clearErrors = clearErrors,
+						navController = navController,
+						currentPicture = currentPicture
+					)
+				}
+				else if(clearedCache || sharedPrefsPictures.isNullOrEmpty())
+				{
+					resume()
+					newState()
+					getPics()
+					ShowPictures(
+						savedPicsUrls = sharedPrefsPictures,
+						checkIfExists = checkIfExists,
+						addError = addError,
+						getPics = getPics,
+						postState = postState,
+						state = state,
+						clearErrors = clearErrors,
+						navController = navController,
+						currentPicture = currentPicture
+					)
 				}
 			}
-		)
-	}
+		}
+	)
 }
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun itemNewsCard(item: String, nc: NavController, checkIfExists: (String) -> Boolean, addError: (String) -> Unit, getPics: () -> Unit): Boolean
+fun itemNewsCard(
+	item: String,
+	navController: NavController,
+	checkIfExists: (String) -> Boolean,
+	addError: (String) -> Unit,
+	getPics: () -> Unit,
+	currentPicture: (String) -> Unit
+): Boolean
 {
 	var isError by remember { mutableStateOf(false) }
-	ComposeTheme {
-		val context = LocalContext.current
-		var isClicked by remember { mutableStateOf(false) }
-		val openAlertDialog = remember { mutableStateOf(false) }
-		val errorMessage = remember { mutableStateOf("") }
-		var pl = R.drawable.loading
-		if(checkIfExists(item))
-		{
-			pl = R.drawable.error
-			isError = true
-		}
-		val headers = NetworkHeaders.Builder()
-			.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
+	val context = LocalContext.current
+	var isClicked by remember { mutableStateOf(false) }
+	val openAlertDialog = remember { mutableStateOf(false) }
+	val errorMessage = remember { mutableStateOf("") }
+	var placeholder = R.drawable.loading
+	if(checkIfExists(item))
+	{
+		placeholder = R.drawable.error
+		isError = true
+	}
+	val headers = NetworkHeaders.Builder()
+		.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
+		.build()
+	val imgRequest = remember(item) {
+		ImageRequest.Builder(context)
+			.data(item)
+			.allowHardware(false)
+			.httpHeaders(headers)
+			.networkCachePolicy(CachePolicy.ENABLED)
+			.memoryCachePolicy(CachePolicy.ENABLED)
+			.diskCachePolicy(CachePolicy.ENABLED)
+			.placeholder(placeholder)
+			.error(R.drawable.error)
 			.build()
-		val imgRequest = remember(item) {
-			ImageRequest.Builder(context)
-				.data(item)
-				.allowHardware(false)
-				.httpHeaders(headers)
-				.networkCachePolicy(CachePolicy.ENABLED)
-				.memoryCachePolicy(CachePolicy.ENABLED)
-				.diskCachePolicy(CachePolicy.ENABLED)
-				.placeholder(pl)
-				.error(R.drawable.error)
-				.build()
-		}
-		AsyncImage(
-			model = (imgRequest),
-			contentDescription = item,
-			modifier = Modifier
-				.clickable {
-					if(!isError)
-					{
-						isClicked = true
-						openAlertDialog.value = false
-					}
-					else
-					{
-						openAlertDialog.value = true
-					}
-				}
-				.padding(10.dp)
-				.size(100.dp)
-				.clip(RoundedCornerShape(8.dp)),
-			contentScale = ContentScale.Crop,
-			onError = {
-				isError = true
-				errorMessage.value = it.result.throwable.message.toString()
-				addError(item)
-			},
-			onSuccess = {
-				isError = false
-			},
-		)
-		if(isClicked)
-		{
-			isClicked = false
-			val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-			val editor = sharedPreferences.edit()
-			editor.putString(PICTURE, item)
-			editor.apply()
-			nc.navigate(Screen.Details.route)
-		}
-		when
-		{
-			openAlertDialog.value ->
-			{
-				if(isValidUrl(item))
+	}
+	AsyncImage(
+		model = (imgRequest),
+		contentDescription = item,
+		modifier = Modifier
+			.clickable {
+				if(!isError)
 				{
-					AlertDialogMain(
-						onDismissRequest = { openAlertDialog.value = false },
-						onConfirmation =
-						{
-							openAlertDialog.value = false
-							println("Confirmation registered")
-							getPics()
-							Toast.makeText(context, context.getString(R.string.reload), Toast.LENGTH_LONG).show()
-						},
-						dialogTitle = stringResource(R.string.error_ocurred_loading_img),
-						dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
-						icon = Icons.Default.Warning,
-						stringResource(R.string.cancel),
-						stringResource(R.string.confirm)
-					)
+					isClicked = true
+					openAlertDialog.value = false
 				}
 				else
 				{
-					AlertDialogSecondary(
-						onDismissRequest = { openAlertDialog.value = false },
-						onConfirmation =
-						{
-							openAlertDialog.value = false
-						},
-						dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
+					openAlertDialog.value = true
 				}
+			}
+			.padding(10.dp)
+			.size(100.dp)
+			.clip(RoundedCornerShape(8.dp)),
+		contentScale = ContentScale.Crop,
+		onError = {
+			isError = true
+			errorMessage.value = it.result.throwable.message.toString()
+			addError(item)
+		},
+		onSuccess = {
+			isError = false
+		},
+	)
+	if(isClicked)
+	{
+
+		isClicked = false
+		currentPicture(item)
+		val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
+		val editor = sharedPreferences.edit()
+		editor.putString(PICTURE, item)
+		editor.apply()
+		navController.navigate(Screen.Details.route)
+	}
+	when
+	{
+		openAlertDialog.value ->
+		{
+			if(isValidUrl(item))
+			{
+				AlertDialogMain(
+					onDismissRequest = { openAlertDialog.value = false },
+					onConfirmation =
+					{
+						openAlertDialog.value = false
+						println("Confirmation registered")
+						getPics()
+						Toast.makeText(context, context.getString(R.string.reload), Toast.LENGTH_LONG).show()
+					},
+					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
+					dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
+					icon = Icons.Default.Warning,
+					stringResource(R.string.cancel),
+					stringResource(R.string.confirm)
+				)
+			}
+			else
+			{
+				AlertDialogSecondary(
+					onDismissRequest = { openAlertDialog.value = false },
+					onConfirmation =
+					{
+						openAlertDialog.value = false
+					},
+					dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
 			}
 		}
 	}
@@ -290,30 +298,31 @@ fun itemNewsCard(item: String, nc: NavController, checkIfExists: (String) -> Boo
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowList(
-	s: String?,
+	imagesUrlsSP: String?,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	getPics: () -> Unit,
 	postState: (String) -> Unit,
-	state: PictureState,
+	state: MutableState<PictureState>,
 	clearErrors: () -> Unit,
-	nv: NavController,
+	navController: NavController,
+	currentPicture: (String) -> Unit
 )
 {
-	Log.d("PicturesScreen", "From cache? ${!s.isNullOrEmpty()}")
-	Log.d("We got:", "$s")
+	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
+	Log.d("We got:", "$imagesUrlsSP")
 	val scope = rememberCoroutineScope()
 	val listState = rememberLazyGridState()
-	if(s == "null" || s.isNullOrEmpty())
+	if(imagesUrlsSP.isNullOrEmpty())
 	{
-		when(state)
+		when(state.value)
 		{
 			is PictureState.SearchIsOk ->
 			{
 				Toast.makeText(LocalContext.current, stringResource(R.string.loading_has_been_started), Toast.LENGTH_SHORT).show()
 				Log.d("Now state is", "Loading")
-				saveToSharedPrefs(LocalContext.current, state.data)
-				val list = state.data.split("\n")
+				saveToSharedPrefs(LocalContext.current, (state.value as PictureState.SearchIsOk).data)
+				val list = (state.value as PictureState.SearchIsOk).data.split("\n")
 
 				LazyVerticalGrid(
 					state = listState,
@@ -323,16 +332,17 @@ fun ShowList(
 					items(list) {
 						itemNewsCard(
 							item = it,
-							nc = nv,
+							navController = navController,
 							checkIfExists = checkIfExists,
 							addError = addError,
-							getPics = getPics
+							getPics = getPics,
+							currentPicture = currentPicture
 						)
 					}
 				}
 				scope.launch {
 					delay(6000)
-					postState(state.data)
+					postState((state.value as PictureState.SearchIsOk).data)
 				}
 			}
 			PictureState.ConnectionError ->
@@ -357,7 +367,7 @@ fun ShowList(
 			{
 				Toast.makeText(LocalContext.current, stringResource(R.string.loading_has_been_ended), Toast.LENGTH_SHORT).show()
 				Log.d("Now state is", "Loaded")
-				val list = state.data.split("\n")
+				val list = (state.value as PictureState.Loaded).data.split("\n")
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
@@ -366,10 +376,11 @@ fun ShowList(
 					items(list) {
 						itemNewsCard(
 							item = it,
-							nc = nv,
+							navController = navController,
 							checkIfExists = checkIfExists,
 							addError = addError,
-							getPics = getPics
+							getPics = getPics,
+							currentPicture = currentPicture
 						)
 					}
 				}
@@ -379,8 +390,8 @@ fun ShowList(
 	else
 	{
 		Log.d("Now state is", "Loaded from sp")
-		saveToSharedPrefs(LocalContext.current, s)
-		val items = remember { s.split("\n") }
+		saveToSharedPrefs(LocalContext.current, imagesUrlsSP)
+		val items = remember { imagesUrlsSP.split("\n") }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			state = listState,
@@ -391,10 +402,11 @@ fun ShowList(
 			items(items) {
 				itemNewsCard(
 					item = it,
-					nc = nv,
+					navController = navController,
 					checkIfExists = checkIfExists,
 					addError = addError,
-					getPics = getPics
+					getPics = getPics,
+					currentPicture = currentPicture
 				)
 			}
 		}
@@ -404,46 +416,46 @@ fun ShowList(
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ShowPictures(
-	s: String?,
+	savedPicsUrls: String?,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	getPics: () -> Unit,
 	postState: (String) -> Unit,
-	state: PictureState,
+	state: MutableState<PictureState>,
 	clearErrors: () -> Unit,
-	nv: NavController,
+	navController: NavController,
+	currentPicture: (String) -> Unit
 )
 {
-	ComposeTheme {
-		Scaffold(
-			topBar = {
-				Row(
-					verticalAlignment = Alignment.CenterVertically,
-					modifier = Modifier
-						.fillMaxWidth()
-						.padding(16.dp, 0.dp, 16.dp, 0.dp)
-						.height(60.dp)
-				) {
-					Text(
-						textAlign = TextAlign.Center,
-						text = stringResource(R.string.gridpics),
-						fontSize = 21.sp,
-						color = MaterialTheme.colorScheme.onPrimary
-					)
-				}
-			},
-		) {
-			ShowList(
-				s = s,
-				checkIfExists = checkIfExists,
-				addError = addError,
-				getPics = getPics,
-				postState = postState,
-				state = state,
-				clearErrors,
-				nv = nv
-			)
-		}
+	Scaffold(
+		topBar = {
+			Row(
+				verticalAlignment = Alignment.CenterVertically,
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(16.dp, 0.dp, 16.dp, 0.dp)
+					.height(60.dp)
+			) {
+				Text(
+					textAlign = TextAlign.Center,
+					text = stringResource(R.string.gridpics),
+					fontSize = 21.sp,
+					color = MaterialTheme.colorScheme.onPrimary
+				)
+			}
+		},
+	) {
+		ShowList(
+			imagesUrlsSP = savedPicsUrls,
+			checkIfExists = checkIfExists,
+			addError = addError,
+			getPics = getPics,
+			postState = postState,
+			state = state,
+			clearErrors,
+			navController = navController,
+			currentPicture = currentPicture
+		)
 	}
 }
 
@@ -454,7 +466,7 @@ fun GradientButton(
 	nameButton: String,
 	roundedCornerShape: RoundedCornerShape,
 	clearErrors: () -> Unit,
-	getPics: () -> Unit
+	getPics: () -> Unit,
 )
 {
 	Button(

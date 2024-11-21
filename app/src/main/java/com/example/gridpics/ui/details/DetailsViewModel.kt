@@ -9,8 +9,8 @@ class DetailsViewModel: ViewModel()
 {
 	private val visabilityFlow = MutableStateFlow<BarsVisabilityState>(BarsVisabilityState.IsVisible)
 	fun observeVisabilityFlow(): Flow<BarsVisabilityState> = visabilityFlow
-	private val urlFlow = MutableStateFlow(mapOf<String, String>())
-	fun observeUrlFlow() = urlFlow
+	private val imageFlow = MutableStateFlow(mapOf<String, String>())
+	fun observeUrlFlow() = imageFlow
 	fun changeVisabilityState()
 	{
 		if(visabilityFlow.value == BarsVisabilityState.NotVisible)
@@ -23,9 +23,9 @@ class DetailsViewModel: ViewModel()
 		}
 	}
 
-	fun postUrl(s: String, b: String)
+	fun postNewPic(url: String, bitmapString: String)
 	{
-		urlFlow.value = urlFlow.value.plus(Pair(s, b))
+		imageFlow.value = imageFlow.value.plus(Pair(url, bitmapString))
 	}
 
 	fun postPositiveVisabilityState()
