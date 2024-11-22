@@ -68,6 +68,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
@@ -153,54 +154,31 @@ fun DetailsScreen(
 		val list = remember { pictures.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(initialPage = list.indexOf(pic), pageCount = { list.size })
 		val bitmapString = remember { mutableStateOf(DEFAULT_STRING_VALUE) }
-		CoroutineScope(Dispatchers.Main).launch {
-			if(checkIfExists(list[pagerState.currentPage]))
-			{
-				val picture = context.getDrawable(R.drawable.error)?.toBitmap()
-				val baos = ByteArrayOutputStream()
-				if(picture!!.byteCount > 1024 * 1024)
-				{
-					picture.compress(Bitmap.CompressFormat.JPEG, 3, baos)
-				}
-				else
-				{
-					picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)
-				}
-				val b = baos.toByteArray()
-				bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
-				Log.d("checkMa", "error")
-			}
-			else
-			{
-				val imgRequest =
-					ImageRequest.Builder(context)
-						.data(list[pagerState.currentPage])
-						.placeholder(R.drawable.loading)
-						.error(R.drawable.error)
-						.allowHardware(false)
-						.target {
-							val picture = it.toBitmap()
-							val baos = ByteArrayOutputStream()
-							if(picture.byteCount > 1024 * 1024)
-							{
-								// todooshka: Одна корутина обгоняет другую, надо фиксить (большая картинка с ночью дохнет)
-								picture.compress(Bitmap.CompressFormat.JPEG, 3, baos)
-							}
-							else
-							{
-								picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)
-							}
-							val b = baos.toByteArray()
-							bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
-							Log.d("checkMa", "tipa zagruzilos")
-						}
-						.networkCachePolicy(CachePolicy.ENABLED)
-						.diskCachePolicy(CachePolicy.ENABLED)
-						.diskCacheKey(list[pagerState.currentPage])
-						.memoryCachePolicy(CachePolicy.ENABLED)
-						.build()
-				ImageLoader(context).newBuilder().build().enqueue(imgRequest)
-			}
+		if(checkIfExists(list[pagerState.currentPage]))
+		{
+			val picture = ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap()
+			Log.d("checkMa", "gruzim oshibku")
+			bitmapString.value = convertPictureToString(picture!!)
+		}
+		else
+		{
+			val imgRequest =
+				ImageRequest.Builder(context)
+					.data(list[pagerState.currentPage])
+					.placeholder(R.drawable.loading)
+					.error(R.drawable.error)
+					.allowHardware(false)
+					.target {
+						val picture = it.toBitmap()
+						Log.d("checkMa", "gruzim pic")
+						bitmapString.value = convertPictureToString(picture)
+					}
+					.networkCachePolicy(CachePolicy.ENABLED)
+					.diskCachePolicy(CachePolicy.ENABLED)
+					.diskCacheKey(list[pagerState.currentPage])
+					.memoryCachePolicy(CachePolicy.ENABLED)
+					.build()
+			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
 		}
 		postUrl(list[pagerState.currentPage], bitmapString.value)
 		Scaffold(
@@ -513,6 +491,22 @@ fun AppBar(
 			nc.navigate(BottomNavItem.Home.route)
 		}
 	}
+}
+
+private fun convertPictureToString(bitmap: Bitmap): String
+{
+	val baos = ByteArrayOutputStream()
+	if(bitmap.byteCount > 1024 * 1024)
+	{
+		// todooshka: Одна корутина обгоняет другую, надо фиксить (большая картинка с ночью дохнет)
+		bitmap.compress(Bitmap.CompressFormat.JPEG, 3, baos)
+	}
+	else
+	{
+		bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos)
+	}
+	val b = baos.toByteArray()
+	return Base64.encodeToString(b, Base64.DEFAULT)
 }
 
 private fun saveToSharedPrefs(context: Context, s: String, vBoolean: Boolean)
