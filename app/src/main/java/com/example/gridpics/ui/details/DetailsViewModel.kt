@@ -1,9 +1,11 @@
 package com.example.gridpics.ui.details
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.gridpics.ui.state.BarsVisabilityState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 class DetailsViewModel: ViewModel()
 {
@@ -25,7 +27,9 @@ class DetailsViewModel: ViewModel()
 
 	fun postNewPic(url: String, bitmapString: String)
 	{
-		imageFlow.value = mapOf(Pair(url, bitmapString))
+		viewModelScope.launch {
+			imageFlow.emit(mapOf(Pair(url, bitmapString)))
+		}
 	}
 
 	fun postPositiveVisabilityState()
