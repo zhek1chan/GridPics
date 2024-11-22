@@ -308,7 +308,6 @@ class MainActivity: AppCompatActivity()
 	{
 		super.onConfigurationChanged(newConfig)
 		val multiWindowStateTracker = MultiWindowStateTracker(this)
-
 		multiWindowStateTracker.multiWindowState.observe(this) { newState ->
 			multiWindowState.value = newState
 		}

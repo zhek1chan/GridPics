@@ -186,7 +186,7 @@ fun DetailsScreen(
 		postUrl(list[pagerState.currentPage], bitmapString.value)
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
-			topBar = { AppBar(isVisible, context, navController, list, pagerState) },
+			topBar = { AppBar(isVisible, context, navController, list, pagerState, postDefaultUrl) },
 			content = { padding ->
 				ShowDetails(
 					img = pic,
@@ -442,6 +442,7 @@ fun AppBar(
 	context: Context, nc: NavController,
 	list: MutableList<String>,
 	pagerState: PagerState,
+	postDefaultUrl: () -> Unit
 )
 {
 	var navBack by remember { mutableStateOf(false) }
@@ -504,6 +505,7 @@ fun AppBar(
 		if(navBack)
 		{
 			navBack = false
+			postDefaultUrl.invoke()
 			nc.navigate(BottomNavItem.Home.route)
 		}
 	}

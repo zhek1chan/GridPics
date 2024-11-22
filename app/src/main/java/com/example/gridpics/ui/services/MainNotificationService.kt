@@ -83,7 +83,6 @@ class MainNotificationService: Service()
 
 	private fun showNotification(builder: Builder)
 	{
-		Log.d("description in service", contentText.length.toString())
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.notify(NOTIFICATION_ID, builder.build())
 		startForeground(NOTIFICATION_ID, builder.build())
@@ -126,7 +125,7 @@ class MainNotificationService: Service()
 		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE)
 		val extras = intent?.extras
-		contentText = if(!extras?.getString(DESCRIPTION_NAMING).isNullOrEmpty() && extras?.getString(DESCRIPTION_NAMING) != DEFAULT_STRING_VALUE)
+		contentText = if(!extras?.getString(DESCRIPTION_NAMING).isNullOrEmpty() && extras?.getString(DESCRIPTION_NAMING) != DEFAULT_STRING_VALUE && extras?.getString(DESCRIPTION_NAMING)!="")
 		{
 			extras!!.getString(DESCRIPTION_NAMING)!!
 		}
@@ -135,12 +134,12 @@ class MainNotificationService: Service()
 			getString(R.string.notification_content_text)
 		}
 		Log.d("intent", "we got $contentText")
-		if(!contentText.contains(getString(R.string.notification_content_text)))
+		val words = contentText.substring(1, contentText.length - 1).split(",")
+		val description = words[0].trim()
+		Log.d("description in service", description)
+		val stringImage = words[1].trim()
+		if(!contentText.contains(getString(R.string.notification_content_text)) && description!= DEFAULT_STRING_VALUE)
 		{
-			val words = contentText.substring(1, contentText.length - 1).split(",")
-			val description = words[0].trim()
-			val stringImage = words[1].trim()
-
 			Log.d("wtf", stringImage)
 			val decoded = Base64.decode(stringImage, 0)
 			val bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
@@ -171,7 +170,7 @@ class MainNotificationService: Service()
 				.setSmallIcon(R.mipmap.ic_launcher)
 				.setColor(getColor(R.color.green))
 				.setContentTitle(getString(R.string.gridpics))
-				.setContentText(contentText)
+				.setContentText(getString(R.string.notification_content_text))
 			createNotificationChannel()
 			showNotification(builder)
 		}
