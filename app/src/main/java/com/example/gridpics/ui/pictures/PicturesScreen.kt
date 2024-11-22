@@ -218,7 +218,7 @@ fun itemNewsCard(
 	getPics: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postDefaultUrl: () -> Unit
+	postDefaultUrl: () -> Unit,
 ): Boolean
 {
 	postDefaultUrl.invoke()
@@ -336,10 +336,11 @@ fun ShowList(
 	navController: NavController,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postDefaultUrl: () -> Unit
+	postDefaultUrl: () -> Unit,
 )
 {
 	val context = LocalContext.current
+	val configuration = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
 	val scope = rememberCoroutineScope()
@@ -351,8 +352,8 @@ fun ShowList(
 			is PictureState.SearchIsOk ->
 			{
 				Log.d("Now state is", "Loading")
-				LaunchedEffect(CoroutineScope(Dispatchers.IO)) {
-					Toast.makeText(context, context.getString(R.string.loading_has_been_started), Toast.LENGTH_SHORT).show()
+				LaunchedEffect(CoroutineScope(Dispatchers.Main)) {
+					Toast.makeText(context, configuration.getString(R.string.loading_has_been_started), Toast.LENGTH_SHORT).show()
 					saveToSharedPrefs(context, (state.value as PictureState.SearchIsOk).data)
 				}
 				val list = remember { (state.value as PictureState.SearchIsOk).data.split("\n") }
@@ -399,8 +400,8 @@ fun ShowList(
 			PictureState.NothingFound -> Unit
 			is PictureState.Loaded ->
 			{
-				LaunchedEffect(CoroutineScope(Dispatchers.IO)) {
-					Toast.makeText(context, context.getString(R.string.loading_has_been_ended), Toast.LENGTH_SHORT).show()
+				LaunchedEffect(CoroutineScope(Dispatchers.Main)) {
+					Toast.makeText(context, configuration.getString(R.string.loading_has_been_ended), Toast.LENGTH_SHORT).show()
 				}
 				Log.d("Now state is", "Loaded")
 				val list = remember { (state.value as PictureState.Loaded).data.split("\n") }
@@ -428,7 +429,7 @@ fun ShowList(
 	else
 	{
 		Log.d("Now state is", "Loaded from sp")
-		LaunchedEffect(CoroutineScope(Dispatchers.IO)) {
+		LaunchedEffect(CoroutineScope(Dispatchers.Main)) {
 			saveToSharedPrefs(context, imagesUrlsSP)
 		}
 		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n") }
