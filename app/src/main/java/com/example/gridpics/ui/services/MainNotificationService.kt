@@ -125,7 +125,7 @@ class MainNotificationService: Service()
 		val description = words[0].trim()
 		Log.d("description in service", description)
 		val stringImage = words[1].trim()
-		if(!contentText.contains(getString(R.string.notification_content_text)) && description != DEFAULT_STRING_VALUE)
+		if(!contentText.contains(getString(R.string.notification_content_text)) && stringImage != DEFAULT_STRING_VALUE)
 		{
 			Log.d("wtf", stringImage)
 			val decoded = Base64.decode(stringImage, 0)

@@ -163,7 +163,8 @@ fun PicturesScreen(
 						clearErrors = clearErrors,
 						navController = navController,
 						currentPicture = currentPicture,
-						isValidUrl = isValidUrl
+						isValidUrl = isValidUrl,
+						postDefaultUrl = postDefaultUrl
 					)
 				}
 				else if(!clearedCache && sharedPrefsPictures.isNullOrEmpty())
@@ -180,7 +181,8 @@ fun PicturesScreen(
 						clearErrors = clearErrors,
 						navController = navController,
 						currentPicture = currentPicture,
-						isValidUrl = isValidUrl
+						isValidUrl = isValidUrl,
+						postDefaultUrl = postDefaultUrl
 					)
 				}
 				else if(clearedCache || sharedPrefsPictures.isNullOrEmpty())
@@ -197,7 +199,8 @@ fun PicturesScreen(
 						clearErrors = clearErrors,
 						navController = navController,
 						currentPicture = currentPicture,
-						isValidUrl = isValidUrl
+						isValidUrl = isValidUrl,
+						postDefaultUrl = postDefaultUrl
 					)
 				}
 			}
@@ -215,8 +218,10 @@ fun itemNewsCard(
 	getPics: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
+	postDefaultUrl: () -> Unit
 ): Boolean
 {
+	postDefaultUrl.invoke()
 	var isError by remember { mutableStateOf(false) }
 	val context = LocalContext.current
 	var isClicked by remember { mutableStateOf(false) }
@@ -331,6 +336,7 @@ fun ShowList(
 	navController: NavController,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
+	postDefaultUrl: () -> Unit
 )
 {
 	val context = LocalContext.current
@@ -363,7 +369,8 @@ fun ShowList(
 							addError = addError,
 							getPics = getPics,
 							currentPicture = currentPicture,
-							isValidUrl = isValidUrl
+							isValidUrl = isValidUrl,
+							postDefaultUrl = postDefaultUrl
 						)
 					}
 				}
@@ -410,7 +417,8 @@ fun ShowList(
 							addError = addError,
 							getPics = getPics,
 							currentPicture = currentPicture,
-							isValidUrl = isValidUrl
+							isValidUrl = isValidUrl,
+							postDefaultUrl = postDefaultUrl
 						)
 					}
 				}
@@ -439,7 +447,8 @@ fun ShowList(
 					addError = addError,
 					getPics = getPics,
 					currentPicture = currentPicture,
-					isValidUrl = isValidUrl
+					isValidUrl = isValidUrl,
+					postDefaultUrl = postDefaultUrl
 				)
 			}
 		}

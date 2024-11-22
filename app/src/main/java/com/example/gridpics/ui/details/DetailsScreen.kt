@@ -137,13 +137,13 @@ fun DetailsScreen(
 			}
 		}
 	}
-	val isVisible = remember { mutableStateOf(visibility) }
+	val isVisible = remember { mutableStateOf(!visibility) }
 	if(pic != null && pictures != null)
 	{
 		Log.d("pic", "$pic")
-		val list = remember { pictures.split("\n").toMutableList() }
+		val list = remember(pic) { pictures.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(initialPage = list.indexOf(pic), pageCount = { list.size })
-		val bitmapString = remember { mutableStateOf(DEFAULT_STRING_VALUE) }
+		val bitmapString = remember(pagerState) { mutableStateOf(DEFAULT_STRING_VALUE) }
 		if(checkIfExists(list[pagerState.currentPage]))
 		{
 			val picture = ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap()

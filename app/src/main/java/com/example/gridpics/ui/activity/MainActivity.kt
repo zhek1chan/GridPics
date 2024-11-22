@@ -194,7 +194,7 @@ class MainActivity: AppCompatActivity()
 						Manifest.permission.POST_NOTIFICATIONS,
 					) == PackageManager.PERMISSION_GRANTED)
 				{
-					if(description.isNotEmpty() && it.isNotEmpty())
+					if(it.isNotEmpty() )
 					{
 						Log.d("checkMa 22", it.toList().last().toString())
 						serviceIntentLocal.putExtra(DESCRIPTION_NAMING, it.toList().last().toString())
