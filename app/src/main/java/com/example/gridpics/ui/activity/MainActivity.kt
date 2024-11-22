@@ -265,7 +265,6 @@ class MainActivity: AppCompatActivity()
 						clearErrors = { picVM.clearErrors() },
 						postPositiveState = { detVM.postPositiveVisabilityState() },
 						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
-						resume = { picVM.resume() },
 						newState = { picVM.newState() },
 						sharedPrefsPictures = imagesStringUrlsSP,
 						clearedCache = changedTheme,

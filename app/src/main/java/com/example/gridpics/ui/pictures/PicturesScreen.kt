@@ -94,7 +94,6 @@ fun PicturesScreen(
 	clearErrors: () -> Unit,
 	postPositiveState: () -> Unit,
 	postDefaultUrl: () -> Unit,
-	resume: () -> Unit,
 	newState: () -> Unit,
 	sharedPrefsPictures: String?,
 	clearedCache: Boolean,
@@ -146,7 +145,6 @@ fun PicturesScreen(
 				else if(!clearedCache && sharedPrefsPictures.isNullOrEmpty())
 				{
 					newState()
-					resume()
 					getPics()
 					ShowPictures(
 						savedPicsUrls = sharedPrefsPictures,
@@ -162,7 +160,6 @@ fun PicturesScreen(
 				}
 				else if(clearedCache || sharedPrefsPictures.isNullOrEmpty())
 				{
-					resume()
 					newState()
 					getPics()
 					ShowPictures(

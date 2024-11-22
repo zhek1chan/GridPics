@@ -14,7 +14,6 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	private var isPaused = false
 	private val stateLiveData = MutableLiveData<PictureState>()
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
@@ -44,11 +43,6 @@ class PicturesViewModel(
 	fun newState()
 	{
 		stateLiveData.postValue(PictureState.NothingFound)
-	}
-
-	fun resume()
-	{
-		isPaused = true
 	}
 
 	fun addError(url: String)
