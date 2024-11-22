@@ -232,7 +232,7 @@ fun ShowDetails(
 		if(firstPage.value)
 		{
 			scope.launch {
-				pagerState.scrollToPage(startPage)
+				pagerState.animateScrollToPage(startPage)
 			}
 		}
 		firstPage.value = false
@@ -400,7 +400,7 @@ fun ShowError(
 				{
 					Toast.makeText(context, context.getString(R.string.reload_pic), Toast.LENGTH_LONG).show()
 					CoroutineScope(Dispatchers.Main).launch {
-						pagerState.scrollToPage(currentPage)
+						pagerState.animateScrollToPage(currentPage)
 					}
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
