@@ -19,9 +19,7 @@ val viewModelModule = module {
 
 	viewModelOf(::DetailsViewModel)
 
-	single {
-		SettingsViewModel()
-	}
+	single { SettingsViewModel() }
 
 	viewModelOf(::SettingsViewModel)
 }

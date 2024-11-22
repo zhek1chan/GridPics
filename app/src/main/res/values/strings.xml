@@ -7,6 +7,7 @@
     <string name="settings">Настройки</string>
     <string name="main">Главная</string>
     <string name="dark_theme">Тёмная тема</string>
+    <string name="light_theme">Светлая тема</string>
     <string name="nothing_found">Ничего не нашлось!\nПопробуйте позже</string>
     <string name="no_internet">Отсутсвует подключение к интернету</string>
     <string name="gridpics">GridPics</string>
@@ -21,6 +22,7 @@
     <string name="cancel">Отменить</string>
 	<string name="okey">Okey</string>
     <string name="reload">Обновляем данные...</string>
+    <string name="reload_pic">Обновляем картинку...</string>
     <string name="text_plain">text/plain</string>
     <string name="null_null">null</string>
     <string name="clear_cache">Очистить кэш изображений</string>
@@ -32,4 +34,9 @@
 	<string name="notification_content_text">Вы видите это уведомление, потому что приложение активно</string>
     <string name="my_notification_channel">My Notification Channel</string>
     <string name="channel_for_my_notification">Channel for my notification</string>
+    <string name="synch_with_sys">Следовать системной теме</string>
+	<string name="error_double_dot">"Ошибка: "</string>
+    <string name="question_retry_again">\nПопробовать загрузить повторно?</string>
+    <string name="loading_has_been_started">Началась загрузка</string>
+    <string name="loading_has_been_ended">Загрузка завершена</string>
 </resources>

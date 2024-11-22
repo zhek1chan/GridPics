@@ -1,22 +1,39 @@
 package com.example.gridpics.ui.details
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.gridpics.ui.state.BarsVisabilityState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 class DetailsViewModel: ViewModel()
 {
-	private val stateFlow = MutableStateFlow(false)
-	fun observeFlow(): Flow<Boolean> = stateFlow
-	fun changeState()
+	private val visabilityFlow = MutableStateFlow<BarsVisabilityState>(BarsVisabilityState.NotVisible)
+	fun observeVisabilityFlow(): Flow<BarsVisabilityState> = visabilityFlow
+	private val imageFlow = MutableStateFlow(mapOf<String, String>())
+	fun observeUrlFlow() = imageFlow
+	fun changeVisabilityState()
 	{
-		stateFlow.value = !stateFlow.value
+		if(visabilityFlow.value == BarsVisabilityState.NotVisible)
+		{
+			visabilityFlow.value = BarsVisabilityState.IsVisible
+		}
+		else
+		{
+			visabilityFlow.value = BarsVisabilityState.NotVisible
+		}
 	}
 
-	private val stateMultiWindowFlow = MutableStateFlow(false)
-	fun observeMultiWindowFlow(): Flow<Boolean> = stateMultiWindowFlow
-	fun postState(b: Boolean)
+	fun postNewPic(url: String, bitmapString: String)
 	{
-		stateMultiWindowFlow.value = b
+		viewModelScope.launch {
+			imageFlow.emit(mapOf(Pair(url, bitmapString)))
+		}
+	}
+
+	fun postPositiveVisabilityState()
+	{
+		visabilityFlow.value = BarsVisabilityState.IsVisible
 	}
 }

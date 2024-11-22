@@ -6,20 +6,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	private var isPaused = false
 	private val stateLiveData = MutableLiveData<PictureState>()
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
+	private val currentImg = MutableStateFlow("")
+	fun observeCurrentImg(): Flow<String> = currentImg
 	fun observeBackNav(): Flow<Boolean> = backNav
 	fun observeState(): LiveData<PictureState> = stateLiveData
 	fun getPics()
@@ -29,21 +28,16 @@ class PicturesViewModel(
 				when(news)
 				{
 					is Resource.Data -> stateLiveData.postValue(PictureState.SearchIsOk(news.value))
-					is Resource.ConnectionError ->
-					{
-						stateLiveData.postValue(PictureState.ConnectionError)
-						withContext(Dispatchers.IO) {
-						}
-					}
+					is Resource.ConnectionError -> stateLiveData.postValue(PictureState.ConnectionError)
 					is Resource.NotFound -> stateLiveData.postValue(PictureState.NothingFound)
 				}
 			}
 		}
 	}
 
-	fun postState(s: String)
+	fun postState(urls: String)
 	{
-		stateLiveData.postValue(PictureState.Loaded(s))
+		stateLiveData.postValue(PictureState.Loaded(urls))
 	}
 
 	fun newState()
@@ -51,19 +45,25 @@ class PicturesViewModel(
 		stateLiveData.postValue(PictureState.NothingFound)
 	}
 
-	fun resume()
+	fun addError(url: String)
 	{
-		isPaused = true
+		if(!errorsList.contains(url))
+		{
+			errorsList.add(url)
+		}
 	}
 
-	fun addError(s: String)
+	fun checkOnErrorExists(url: String): Boolean
 	{
-		errorsList.add(s)
+		return errorsList.contains(url)
 	}
 
-	fun checkOnErrorExists(s: String): Boolean
+	fun removeSpecialError(url: String)
 	{
-		return errorsList.contains(s)
+		if(errorsList.contains(url))
+		{
+			errorsList.remove(url)
+		}
 	}
 
 	fun clearErrors()
@@ -71,8 +71,19 @@ class PicturesViewModel(
 		errorsList.clear()
 	}
 
-	fun backNavButtonPress(b: Boolean)
+	fun backNavButtonPress(pressed: Boolean)
 	{
-		backNav.value = b
+		backNav.value = pressed
+	}
+
+	fun clickOnPicture(url: String)
+	{
+		currentImg.value = url
+	}
+
+	fun isValidUrl(url: String): Boolean
+	{
+		val urlPattern = Regex("^(https?|ftp)://([a-z0-9-]+\\.)+[a-z0-9]{2,6}(:[0-9]+)?(/\\S*)?$")
+		return urlPattern.matches(url)
 	}
 }

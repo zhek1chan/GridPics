@@ -79,6 +79,7 @@ dependencies {
 	implementation(libs.androidx.tools.core)
 	implementation(libs.androidx.espresso.core)
 	implementation(libs.volley)
+	implementation(libs.core)
 	testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

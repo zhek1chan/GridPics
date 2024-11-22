@@ -6,6 +6,7 @@ compose = "1.0.0-beta01"
 coreSplashscreen = "1.0.1"
 glide = "4.15.1"
 gson = "2.11.0"
+hiltCompilerVersion = "2.52"
 koinAndroid = "3.5.3"
 koinAndroidxCompose = "3.5.3"
 kotlin = "1.9.0"
@@ -46,6 +47,7 @@ toolsCore = "1.0.0-alpha10"
 activityKtx = "1.9.2"
 accompanistSystemuicontroller = "0.36.0"
 volley = "1.2.1"
+core = "1.46.0"
 
 [libraries]
 accompanist-drawablepainter = { module = "com.google.accompanist:accompanist-drawablepainter", version.ref = "accompanistSystemuicontroller" }
@@ -67,8 +69,10 @@ coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 compose = { module = "com.github.bumptech.glide:compose", version.ref = "compose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofitVersion" }
+dagger-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompilerVersion" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltCompilerVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -106,6 +110,7 @@ androidx-foundation-layout-android = { group = "androidx.compose.foundation", na
 androidx-fragment-compose = { group = "androidx.fragment", name = "fragment-compose", version.ref = "fragmentCompose" }
 androidx-tools-core = { group = "androidx.privacysandbox.tools", name = "tools-core", version.ref = "toolsCore" }
 volley = { group = "com.android.volley", name = "volley", version.ref = "volley" }
+core = { group = "com.google.ar", name = "core", version.ref = "core" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

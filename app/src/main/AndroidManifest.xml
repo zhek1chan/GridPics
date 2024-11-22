@@ -19,9 +19,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GridPics"
         android:usesCleartextTraffic="true"
-        tools:targetApi="31">
+        tools:targetApi="35">
         <service
-			android:name=".ui.services.NotificationService"
+			android:name=".ui.services.MainNotificationService"
 			android:foregroundServiceType="specialUse"
 			android:exported="false">
         </service>
@@ -29,7 +29,7 @@
         <activity
             android:name=".ui.activity.MainActivity"
             android:exported="true"
-            android:configChanges="orientation|screenSize|screenLayout|colorMode"
+            android:configChanges="screenSize|screenLayout|colorMode"
             android:theme="@style/Theme.SplashScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

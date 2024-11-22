@@ -5,7 +5,7 @@ import com.example.gridpics.App
 import com.example.gridpics.data.network.Api
 import com.example.gridpics.data.network.NetworkClient
 import com.example.gridpics.data.network.RetrofitNetworkClient
-import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SP_KEY
+import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import org.koin.android.ext.koin.androidContext
@@ -20,7 +20,7 @@ val dataModule = module {
 	}
 
 	single {
-		androidContext().getSharedPreferences(THEME_SP_KEY, Context.MODE_PRIVATE)
+		androidContext().getSharedPreferences(THEME_SHARED_PREFERENCE, Context.MODE_PRIVATE)
 	}
 
 
