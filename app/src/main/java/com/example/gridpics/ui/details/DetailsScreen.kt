@@ -153,35 +153,54 @@ fun DetailsScreen(
 		val list = remember { pictures.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(initialPage = list.indexOf(pic), pageCount = { list.size })
 		val bitmapString = remember { mutableStateOf(DEFAULT_STRING_VALUE) }
-		CoroutineScope(Dispatchers.Default).launch {
-			val imgRequest =
-				ImageRequest.Builder(context)
-					.data(list[pagerState.currentPage])
-					.placeholder(R.drawable.loading)
-					.error(R.drawable.error)
-					.allowHardware(false)
-					.target {
-						val picture = it.toBitmap()
-						val baos = ByteArrayOutputStream()
-						if(picture.byteCount > 1024 * 1024)
-						{
-							// todooshka: Одна корутина обгоняет другую, надо фиксить (большая картинка с ночью дохнет)
-							picture.compress(Bitmap.CompressFormat.JPEG, 3, baos)
+		CoroutineScope(Dispatchers.Main).launch {
+			if(checkIfExists(list[pagerState.currentPage]))
+			{
+				val picture = context.getDrawable(R.drawable.error)?.toBitmap()
+				val baos = ByteArrayOutputStream()
+				if(picture!!.byteCount > 1024 * 1024)
+				{
+					picture.compress(Bitmap.CompressFormat.JPEG, 3, baos)
+				}
+				else
+				{
+					picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)
+				}
+				val b = baos.toByteArray()
+				bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
+				Log.d("checkMa", "error")
+			}
+			else
+			{
+				val imgRequest =
+					ImageRequest.Builder(context)
+						.data(list[pagerState.currentPage])
+						.placeholder(R.drawable.loading)
+						.error(R.drawable.error)
+						.allowHardware(false)
+						.target {
+							val picture = it.toBitmap()
+							val baos = ByteArrayOutputStream()
+							if(picture.byteCount > 1024 * 1024)
+							{
+								// todooshka: Одна корутина обгоняет другую, надо фиксить (большая картинка с ночью дохнет)
+								picture.compress(Bitmap.CompressFormat.JPEG, 3, baos)
+							}
+							else
+							{
+								picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)
+							}
+							val b = baos.toByteArray()
+							bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
+							Log.d("checkMa", "tipa zagruzilos")
 						}
-						else
-						{
-							picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)
-						}
-						val b = baos.toByteArray()
-						bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
-						Log.d("checkMa", "tipa zagruzilos")
-					}
-					.networkCachePolicy(CachePolicy.ENABLED)
-					.diskCachePolicy(CachePolicy.ENABLED)
-					.diskCacheKey(list[pagerState.currentPage])
-					.memoryCachePolicy(CachePolicy.ENABLED)
-					.build()
-			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
+						.networkCachePolicy(CachePolicy.ENABLED)
+						.diskCachePolicy(CachePolicy.ENABLED)
+						.diskCacheKey(list[pagerState.currentPage])
+						.memoryCachePolicy(CachePolicy.ENABLED)
+						.build()
+				ImageLoader(context).newBuilder().build().enqueue(imgRequest)
+			}
 		}
 		postUrl(list[pagerState.currentPage], bitmapString.value)
 		Scaffold(
@@ -199,7 +218,6 @@ fun DetailsScreen(
 					checkIfExists = checkIfExists,
 					addError = addError,
 					removeSpecialError = removeSpecialError,
-					bitmapString = bitmapString,
 					changeVisabilityState = changeVisabilityState,
 					postPositiveState = postPositiveState,
 					multiWindowed = multiWindowState
@@ -223,7 +241,6 @@ fun ShowDetails(
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
-	bitmapString: MutableState<String>,
 	multiWindowed: MutableState<MultiWindowState>,
 	changeVisabilityState: () -> Unit,
 	postPositiveState: () -> Unit,
@@ -258,8 +275,8 @@ fun ShowDetails(
 					context = context,
 					list = list,
 					currentPage = page,
-					pagerState = pagerState,
-					bitmapString = bitmapString)
+					pagerState = pagerState
+				)
 			}
 			!checkIfExists(list[page]) ->
 			{
@@ -380,21 +397,8 @@ fun ShowError(
 	list: MutableList<String>,
 	currentPage: Int,
 	pagerState: PagerState,
-	bitmapString: MutableState<String>,
 )
 {
-	val picture = context.resources.getDrawable(R.drawable.error, null).toBitmap()
-	val baos = ByteArrayOutputStream()
-	if(picture.byteCount > 2 * 1024 * 1024)
-	{
-		picture.compress(Bitmap.CompressFormat.JPEG, 5, baos)
-	}
-	else
-	{
-		picture.compress(Bitmap.CompressFormat.JPEG, 50, baos)
-	}
-	val b = baos.toByteArray()
-	bitmapString.value = Base64.encodeToString(b, Base64.DEFAULT)
 	val errorMessage = if(isValidUrl(list[currentPage]))
 	{
 		HTTP_ERROR
@@ -442,7 +446,7 @@ fun AppBar(
 	context: Context, nc: NavController,
 	list: MutableList<String>,
 	pagerState: PagerState,
-	postDefaultUrl: () -> Unit
+	postDefaultUrl: () -> Unit,
 )
 {
 	var navBack by remember { mutableStateOf(false) }
