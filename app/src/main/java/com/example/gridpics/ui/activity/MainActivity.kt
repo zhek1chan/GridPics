@@ -208,7 +208,6 @@ class MainActivity: AppCompatActivity()
 							bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 						}
 						description = it as MutableMap<String, String>
-						Log.d("checkMa", description.keys.toString())
 					}
 				}
 			}
