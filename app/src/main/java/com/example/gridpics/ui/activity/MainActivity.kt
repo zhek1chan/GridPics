@@ -69,7 +69,6 @@ class MainActivity: AppCompatActivity()
 	private var currentPictureSP = ""
 	private var checkIfWeWereHereSP = false
 	private var imagesStringUrlsSP: String? = null
-	private var allConnections: MutableList<ServiceConnection> = mutableListOf()
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -108,6 +107,11 @@ class MainActivity: AppCompatActivity()
 		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		//check if theme was changed and activity recreated because of it
 		changedTheme = getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false)
+
+		val picVM = picturesViewModel
+		val detailsVM = detailsViewModel
+		val lifeCycScope = lifecycleScope
+
 		val previousTheme = sharedPreferences.getString(IS_BLACK_THEME, isDarkTheme(this).toString())
 		Log.d("theme", "just changed theme? ")
 		//Start showing notification
@@ -151,13 +155,13 @@ class MainActivity: AppCompatActivity()
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
 
-		picturesViewModel.getPics()
-		picturesViewModel.observeState().observeForever {
+		picVM.getPics()
+		picVM.observeState().observeForever {
 			state.value = it
 		}
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
-		lifecycleScope.launch {
-			detailsViewModel.observeVisabilityFlow().collectLatest {
+		lifeCycScope.launch {
+			detailsVM.observeVisabilityFlow().collectLatest {
 				if(it == BarsVisabilityState.NotVisible)
 				{
 					controller.hide(WindowInsetsCompat.Type.statusBars())
@@ -173,8 +177,8 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 
-		lifecycleScope.launch {
-			picturesViewModel.observeBackNav().collectLatest {
+		lifeCycScope.launch {
+			picVM.observeBackNav().collectLatest {
 				if(it)
 				{
 					stopService(serviceIntent)
@@ -183,29 +187,27 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 
-		lifecycleScope.launch {
-			detailsViewModel.observeUrlFlow().collectLatest {
+		lifeCycScope.launch {
+			detailsVM.observeUrlFlow().collectLatest {
 				if(ContextCompat.checkSelfPermission(
 						this@MainActivity,
 						Manifest.permission.POST_NOTIFICATIONS,
 					) == PackageManager.PERMISSION_GRANTED)
 				{
-					if(description != it && it.isNotEmpty()) //for optimization
+					if(description.isNotEmpty() && it.isNotEmpty())
 					{
-						Log.d("description in main", description.toString())
+						Log.d("checkMa", it.keys.toString())
 						serviceIntentLocal.putExtra(DESCRIPTION_NAMING, it.toList().last().toString())
 						serviceIntent = serviceIntentLocal
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 						{
 							startForegroundService(serviceIntentLocal)
 							bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-							allConnections.add(connectionLocal)
 						}
 						else
 						{
 							startService(serviceIntentLocal)
 							bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-							allConnections.add(connectionLocal)
 						}
 						description = it as MutableMap<String, String>
 					}
@@ -213,8 +215,8 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 
-		lifecycleScope.launch {
-			picturesViewModel.observeCurrentImg().collectLatest {
+		lifeCycScope.launch {
+			picVM.observeCurrentImg().collectLatest {
 				getCurrentPictureSP = it
 				currentPictureSP = getCurrentPictureSP
 			}
@@ -333,13 +335,11 @@ class MainActivity: AppCompatActivity()
 				{
 					startForegroundService(serviceIntentLocal)
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-					allConnections.add(connectionLocal)
 				}
 				else
 				{
 					startService(serviceIntentLocal)
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-					allConnections.add(connectionLocal)
 				}
 			}
 		}
@@ -390,7 +390,6 @@ class MainActivity: AppCompatActivity()
 		{
 			unbindService(connection)
 		}
-		allConnections.clear()
 		countExitNavigation++
 		isActive = false
 		val vis = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
