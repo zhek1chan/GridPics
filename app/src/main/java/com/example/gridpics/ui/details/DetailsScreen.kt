@@ -114,7 +114,6 @@ fun DetailsScreen(
 	multiWindowState: MutableState<MultiWindowState>,
 	pictures: String?,
 	pic: String?,
-	visibility: Boolean,
 	isValidUrl: (String) -> Boolean,
 )
 {
@@ -137,7 +136,7 @@ fun DetailsScreen(
 			}
 		}
 	}
-	val isVisible = remember { mutableStateOf(!visibility) }
+	val isVisible = remember { mutableStateOf(true) }
 	if(pic != null && pictures != null)
 	{
 		Log.d("pic", "$pic")

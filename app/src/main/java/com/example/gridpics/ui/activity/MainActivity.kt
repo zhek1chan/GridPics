@@ -197,7 +197,6 @@ class MainActivity: AppCompatActivity()
 					Log.d("checkma keys", "${it.keys}")
 					if(it.keys.isNotEmpty() )
 					{
-						//Log.d("checkMa 22", it.toList().last().toString())
 						serviceIntentLocal.putExtra(DESCRIPTION_NAMING, it.toList().last().toString())
 						serviceIntent = serviceIntentLocal
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -299,7 +298,6 @@ class MainActivity: AppCompatActivity()
 						multiWindowState = multiWindowState,
 						pictures = imagesStringUrlsSP,
 						pic = currentPictureSP,
-						visibility = barsVisabilitySP,
 						isValidUrl = { url -> picVM.isValidUrl(url) }
 					)
 				}
