@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
-import android.content.res.Resources
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -42,6 +42,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +56,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -78,6 +80,8 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.placeholder.NoInternetScreen
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -97,7 +101,8 @@ fun PicturesScreen(
 	newState: () -> Unit,
 	sharedPrefsPictures: String?,
 	clearedCache: Boolean,
-	currentPicture: (String) -> Unit
+	currentPicture: (String) -> Unit,
+	isValidUrl: (String) -> Boolean,
 )
 {
 	val context = LocalContext.current
@@ -110,16 +115,34 @@ fun PicturesScreen(
 	val orientation = context.resources.configuration.orientation
 	val windowInsets = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
 	{
-		WindowInsets.displayCutout.union(WindowInsets.systemBarsIgnoringVisibility)
+		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
 	}
 	else
 	{
-		WindowInsets.systemBarsIgnoringVisibility
+		WindowInsets.statusBarsIgnoringVisibility
 	}
 	Scaffold(
+		contentWindowInsets = windowInsets,
+		topBar = {
+			Row(
+				verticalAlignment = Alignment.CenterVertically,
+				modifier = Modifier
+					.fillMaxWidth()
+					.padding(WindowInsets.statusBarsIgnoringVisibility.asPaddingValues())
+					.consumeWindowInsets(WindowInsets.statusBarsIgnoringVisibility)
+					.padding(16.dp, 0.dp)
+					.height(60.dp)
+			) {
+				Text(
+					textAlign = TextAlign.Center,
+					text = stringResource(R.string.gridpics),
+					fontSize = 21.sp,
+					color = MaterialTheme.colorScheme.onPrimary
+				)
+			}
+		},
 		modifier = Modifier.fillMaxSize(),
 		bottomBar = { BottomNavigationBar(navController) },
-		contentWindowInsets = windowInsets,
 		content = { padding ->
 			Column(
 				modifier = Modifier
@@ -130,8 +153,8 @@ fun PicturesScreen(
 				if(!sharedPrefsPictures.isNullOrEmpty() && !clearedCache)
 				{
 					newState()
-					ShowPictures(
-						savedPicsUrls = sharedPrefsPictures,
+					ShowList(
+						imagesUrlsSP = sharedPrefsPictures,
 						checkIfExists = checkIfExists,
 						addError = addError,
 						getPics = getPics,
@@ -139,15 +162,16 @@ fun PicturesScreen(
 						state = state,
 						clearErrors = clearErrors,
 						navController = navController,
-						currentPicture = currentPicture
+						currentPicture = currentPicture,
+						isValidUrl = isValidUrl
 					)
 				}
 				else if(!clearedCache && sharedPrefsPictures.isNullOrEmpty())
 				{
 					newState()
 					getPics()
-					ShowPictures(
-						savedPicsUrls = sharedPrefsPictures,
+					ShowList(
+						imagesUrlsSP = sharedPrefsPictures,
 						checkIfExists = checkIfExists,
 						addError = addError,
 						getPics = getPics,
@@ -155,15 +179,16 @@ fun PicturesScreen(
 						state = state,
 						clearErrors = clearErrors,
 						navController = navController,
-						currentPicture = currentPicture
+						currentPicture = currentPicture,
+						isValidUrl = isValidUrl
 					)
 				}
 				else if(clearedCache || sharedPrefsPictures.isNullOrEmpty())
 				{
 					newState()
 					getPics()
-					ShowPictures(
-						savedPicsUrls = sharedPrefsPictures,
+					ShowList(
+						imagesUrlsSP = sharedPrefsPictures,
 						checkIfExists = checkIfExists,
 						addError = addError,
 						getPics = getPics,
@@ -171,7 +196,8 @@ fun PicturesScreen(
 						state = state,
 						clearErrors = clearErrors,
 						navController = navController,
-						currentPicture = currentPicture
+						currentPicture = currentPicture,
+						isValidUrl = isValidUrl
 					)
 				}
 			}
@@ -187,7 +213,8 @@ fun itemNewsCard(
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	getPics: () -> Unit,
-	currentPicture: (String) -> Unit
+	currentPicture: (String) -> Unit,
+	isValidUrl: (String) -> Boolean,
 ): Boolean
 {
 	var isError by remember { mutableStateOf(false) }
@@ -246,7 +273,6 @@ fun itemNewsCard(
 	)
 	if(isClicked)
 	{
-
 		isClicked = false
 		currentPicture(item)
 		val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
@@ -303,7 +329,8 @@ fun ShowList(
 	state: MutableState<PictureState>,
 	clearErrors: () -> Unit,
 	navController: NavController,
-	currentPicture: (String) -> Unit
+	currentPicture: (String) -> Unit,
+	isValidUrl: (String) -> Boolean,
 )
 {
 	val context = LocalContext.current
@@ -317,16 +344,17 @@ fun ShowList(
 		{
 			is PictureState.SearchIsOk ->
 			{
-				Toast.makeText(context, stringResource(R.string.loading_has_been_started), Toast.LENGTH_SHORT).show()
 				Log.d("Now state is", "Loading")
-				saveToSharedPrefs(context, (state.value as PictureState.SearchIsOk).data)
-				val list = (state.value as PictureState.SearchIsOk).data.split("\n")
+				LaunchedEffect(CoroutineScope(Dispatchers.IO)) {
+					Toast.makeText(context, context.getString(R.string.loading_has_been_started), Toast.LENGTH_SHORT).show()
+					saveToSharedPrefs(context, (state.value as PictureState.SearchIsOk).data)
+				}
+				val list = remember { (state.value as PictureState.SearchIsOk).data.split("\n") }
 
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
-						.fillMaxSize()
-						.padding(0.dp, 55.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+						.fillMaxSize(), columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
 						itemNewsCard(
 							item = it,
@@ -334,7 +362,8 @@ fun ShowList(
 							checkIfExists = checkIfExists,
 							addError = addError,
 							getPics = getPics,
-							currentPicture = currentPicture
+							currentPicture = currentPicture,
+							isValidUrl = isValidUrl
 						)
 					}
 				}
@@ -349,28 +378,30 @@ fun ShowList(
 				Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize()) {
 					NoInternetScreen()
 					val cornerRadius = 16.dp
-					val gradientColor = listOf(Color.Green, Color.Yellow)
+					val gradientColor = remember { listOf(Color.Green, Color.Yellow) }
 					GradientButton(
 						gradientColors = gradientColor,
 						cornerRadius = cornerRadius,
 						nameButton = stringResource(R.string.try_again),
 						roundedCornerShape = RoundedCornerShape(topStart = 30.dp, bottomEnd = 30.dp),
-						clearErrors,
-						getPics
+						clearErrors = clearErrors,
+						getPics = getPics
 					)
 				}
 			}
 			PictureState.NothingFound -> Unit
 			is PictureState.Loaded ->
 			{
-				Toast.makeText(context, stringResource(R.string.loading_has_been_ended), Toast.LENGTH_SHORT).show()
+				LaunchedEffect(CoroutineScope(Dispatchers.IO)) {
+					Toast.makeText(context, context.getString(R.string.loading_has_been_ended), Toast.LENGTH_SHORT).show()
+				}
 				Log.d("Now state is", "Loaded")
-				val list = (state.value as PictureState.Loaded).data.split("\n")
+				val list = remember { (state.value as PictureState.Loaded).data.split("\n") }
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
-						.fillMaxSize()
-						.padding(0.dp, 55.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+						.fillMaxSize(),
+					columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
 						itemNewsCard(
 							item = it,
@@ -378,7 +409,8 @@ fun ShowList(
 							checkIfExists = checkIfExists,
 							addError = addError,
 							getPics = getPics,
-							currentPicture = currentPicture
+							currentPicture = currentPicture,
+							isValidUrl = isValidUrl
 						)
 					}
 				}
@@ -388,14 +420,16 @@ fun ShowList(
 	else
 	{
 		Log.d("Now state is", "Loaded from sp")
-		saveToSharedPrefs(context, imagesUrlsSP)
-		val items = remember { imagesUrlsSP.split("\n") }
+		LaunchedEffect(CoroutineScope(Dispatchers.IO)) {
+			saveToSharedPrefs(context, imagesUrlsSP)
+		}
+		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n") }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			state = listState,
 			modifier = Modifier
-				.fillMaxSize()
-				.padding(0.dp, 55.dp, 0.dp, 0.dp), columns = GridCells.Fixed(count = calculateGridSpan())) {
+				.fillMaxSize(),
+			columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
 				itemNewsCard(
@@ -404,56 +438,11 @@ fun ShowList(
 					checkIfExists = checkIfExists,
 					addError = addError,
 					getPics = getPics,
-					currentPicture = currentPicture
+					currentPicture = currentPicture,
+					isValidUrl = isValidUrl
 				)
 			}
 		}
-	}
-}
-
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@Composable
-fun ShowPictures(
-	savedPicsUrls: String?,
-	checkIfExists: (String) -> Boolean,
-	addError: (String) -> Unit,
-	getPics: () -> Unit,
-	postState: (String) -> Unit,
-	state: MutableState<PictureState>,
-	clearErrors: () -> Unit,
-	navController: NavController,
-	currentPicture: (String) -> Unit
-)
-{
-	Scaffold(
-		topBar = {
-			Row(
-				verticalAlignment = Alignment.CenterVertically,
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(16.dp, 0.dp, 16.dp, 0.dp)
-					.height(60.dp)
-			) {
-				Text(
-					textAlign = TextAlign.Center,
-					text = stringResource(R.string.gridpics),
-					fontSize = 21.sp,
-					color = MaterialTheme.colorScheme.onPrimary
-				)
-			}
-		},
-	) {
-		ShowList(
-			imagesUrlsSP = savedPicsUrls,
-			checkIfExists = checkIfExists,
-			addError = addError,
-			getPics = getPics,
-			postState = postState,
-			state = state,
-			clearErrors,
-			navController = navController,
-			currentPicture = currentPicture
-		)
 	}
 }
 
@@ -570,19 +559,13 @@ private fun saveToSharedPrefs(context: Context, s: String)
 	editorPictures.apply()
 }
 
-fun isValidUrl(url: String): Boolean
-{
-	val urlPattern = Regex("^(https?|ftp)://([a-z0-9-]+\\.)+[a-z0-9]{2,6}(:[0-9]+)?(/\\S*)?$")
-	return urlPattern.matches(url)
-}
-
 @Composable
 private fun calculateGridSpan(): Int
 {
 	val context = LocalContext.current
 	Log.d("HomeFragment", "Calculate span started")
-	val width = Resources.getSystem().displayMetrics.widthPixels
-	val orientation = context.resources.configuration.orientation
+	val width = context.resources.displayMetrics.widthPixels
+	val orientation = LocalConfiguration.current.orientation
 	val density = context.resources.displayMetrics.density
 	return if(orientation == Configuration.ORIENTATION_PORTRAIT)
 	{

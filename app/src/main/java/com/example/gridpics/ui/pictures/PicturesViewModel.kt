@@ -80,4 +80,10 @@ class PicturesViewModel(
 	{
 		currentImg.value = url
 	}
+
+	fun isValidUrl(url: String): Boolean
+	{
+		val urlPattern = Regex("^(https?|ftp)://([a-z0-9-]+\\.)+[a-z0-9]{2,6}(:[0-9]+)?(/\\S*)?$")
+		return urlPattern.matches(url)
+	}
 }

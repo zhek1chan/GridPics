@@ -23,11 +23,10 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VA
 import com.example.gridpics.ui.activity.MainActivity.Companion.DESCRIPTION_NAMING
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.countExitNavigation
-import com.example.gridpics.ui.activity.MainActivity.Companion.jobForNotification
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -35,7 +34,7 @@ import kotlinx.coroutines.launch
 class MainNotificationService: Service()
 {
 	private val binder = NetworkServiceBinder()
-	private var isActive = true
+	private val jobForNotification = Job()
 	private lateinit var contentText: String
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
@@ -90,7 +89,6 @@ class MainNotificationService: Service()
 
 	override fun onUnbind(intent: Intent?): Boolean
 	{
-		isActive = false
 		Log.d("service", "onUnbind()")
 		stopNotificationCoroutine()
 		return true
@@ -101,31 +99,20 @@ class MainNotificationService: Service()
 	{
 		GlobalScope.launch(Dispatchers.IO + jobForNotification) {
 			Log.d("service", "stopNotificationCoroutine has been started")
-			for(i in 0 .. 10)
-			{
-				delay(200)
-				if(isActive)
-				{
-					cancel()
-				}
-				else if(i == 10)
-				{
-					stopSelf()
-					Log.d("service", "service was stopped")
-				}
-			}
+			delay(2000)
+			stopSelf()
+			Log.d("service", "service was stopped")
 		}
 	}
 
 	private fun createLogic(intent: Intent?)
 	{
-		isActive = true
 		val dontUseSound = countExitNavigation > 1
 		val resultIntent = Intent(instance, MainActivity::class.java)
 		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE)
 		val extras = intent?.extras
-		contentText = if(!extras?.getString(DESCRIPTION_NAMING).isNullOrEmpty() && extras?.getString(DESCRIPTION_NAMING) != DEFAULT_STRING_VALUE && extras?.getString(DESCRIPTION_NAMING)!="")
+		contentText = if(!extras?.getString(DESCRIPTION_NAMING).isNullOrEmpty() && extras?.getString(DESCRIPTION_NAMING) != DEFAULT_STRING_VALUE && extras?.getString(DESCRIPTION_NAMING) != "")
 		{
 			extras!!.getString(DESCRIPTION_NAMING)!!
 		}
@@ -138,7 +125,7 @@ class MainNotificationService: Service()
 		val description = words[0].trim()
 		Log.d("description in service", description)
 		val stringImage = words[1].trim()
-		if(!contentText.contains(getString(R.string.notification_content_text)) && description!= DEFAULT_STRING_VALUE)
+		if(!contentText.contains(getString(R.string.notification_content_text)) && description != DEFAULT_STRING_VALUE)
 		{
 			Log.d("wtf", stringImage)
 			val decoded = Base64.decode(stringImage, 0)

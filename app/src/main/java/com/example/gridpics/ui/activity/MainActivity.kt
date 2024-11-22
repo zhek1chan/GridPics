@@ -44,7 +44,6 @@ import com.example.gridpics.ui.state.BarsVisabilityState
 import com.example.gridpics.ui.state.MultiWindowStateTracker
 import com.example.gridpics.ui.state.MultiWindowStateTracker.MultiWindowState
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -52,7 +51,6 @@ import kotlin.collections.set
 
 class MainActivity: AppCompatActivity()
 {
-	private var isActive: Boolean = false
 	private val detailsViewModel by viewModel<DetailsViewModel>()
 	private val settingsViewModel by viewModel<SettingsViewModel>()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
@@ -67,7 +65,6 @@ class MainActivity: AppCompatActivity()
 	private var changedTheme = false
 	private var barsVisabilitySP = true
 	private var currentPictureSP = ""
-	private var checkIfWeWereHereSP = false
 	private var imagesStringUrlsSP: String? = null
 	private val connection = object: ServiceConnection
 	{
@@ -81,6 +78,12 @@ class MainActivity: AppCompatActivity()
 		override fun onServiceDisconnected(arg0: ComponentName)
 		{
 			mBound = false
+		}
+
+		override fun onBindingDied(name: ComponentName?)
+		{
+			mBound = false
+			super.onBindingDied(name)
 		}
 	}
 
@@ -97,7 +100,6 @@ class MainActivity: AppCompatActivity()
 		var getCurrentPictureSP = sharedPreferences.getString(PICTURE, NULL_STRING).toString()
 		currentPictureSP = getCurrentPictureSP
 		barsVisabilitySP = sharedPreferences.getBoolean(TOP_BAR_VISABILITY_SHARED_PREFERENCE, true)
-		checkIfWeWereHereSP = sharedPreferences.getBoolean(WE_WERE_HERE_BEFORE, false)
 		imagesStringUrlsSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		val connectionLocal = connection
 		//serviceIntentForNotification
@@ -266,7 +268,8 @@ class MainActivity: AppCompatActivity()
 						newState = { picVM.newState() },
 						sharedPrefsPictures = imagesStringUrlsSP,
 						clearedCache = changedTheme,
-						currentPicture = { url -> picVM.clickOnPicture(url) }
+						currentPicture = { url -> picVM.clickOnPicture(url) },
+						isValidUrl = { url -> picVM.isValidUrl(url) }
 					)
 				}
 			}
@@ -296,7 +299,7 @@ class MainActivity: AppCompatActivity()
 						pictures = imagesStringUrlsSP,
 						pic = currentPictureSP,
 						visibility = barsVisabilitySP,
-						weWereHere = checkIfWeWereHereSP
+						isValidUrl = { url -> picVM.isValidUrl(url) }
 					)
 				}
 			}
@@ -375,7 +378,6 @@ class MainActivity: AppCompatActivity()
 			}
 			countExitNavigation++
 		}
-		isActive = true
 		Log.d("lifecycle", "onResume()")
 		super.onResume()
 	}
@@ -388,11 +390,6 @@ class MainActivity: AppCompatActivity()
 			unbindService(connection)
 		}
 		countExitNavigation++
-		isActive = false
-		val vis = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-		val editorVis = vis.edit()
-		editorVis.putBoolean(WE_WERE_HERE_BEFORE, false)
-		editorVis.apply()
 		super.onPause()
 	}
 
@@ -425,7 +422,6 @@ class MainActivity: AppCompatActivity()
 
 	companion object
 	{
-		val jobForNotification = Job()
 		var countExitNavigation = 0
 		const val NOTIFICATION_ID = 1337
 		const val CACHE = "CACHE_CACHE"
@@ -436,7 +432,6 @@ class MainActivity: AppCompatActivity()
 		const val NULL_STRING = "NULL_STRING"
 		const val IS_BLACK_THEME = "IS_BLACK_THEME"
 		const val TOP_BAR_VISABILITY_SHARED_PREFERENCE = "TOP_BAR_VISABILITY_SHARED_PREFERENCE"
-		const val WE_WERE_HERE_BEFORE = "WE_WERE_HERE_BEFORE"
 		const val JUST_CHANGED_THEME = "JUST_CHANGED_THEME"
 		const val DESCRIPTION_NAMING = "description"
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"

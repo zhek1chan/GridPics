@@ -88,9 +88,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.TOP_BAR_VISABILITY_SHARED_PREFERENCE
-import com.example.gridpics.ui.activity.MainActivity.Companion.WE_WERE_HERE_BEFORE
 import com.example.gridpics.ui.activity.Screen
-import com.example.gridpics.ui.pictures.isValidUrl
 import com.example.gridpics.ui.state.BarsVisabilityState
 import com.example.gridpics.ui.state.MultiWindowStateTracker.MultiWindowState
 import kotlinx.coroutines.CoroutineScope
@@ -117,7 +115,7 @@ fun DetailsScreen(
 	pictures: String?,
 	pic: String?,
 	visibility: Boolean,
-	weWereHere: Boolean,
+	isValidUrl: (String) -> Boolean,
 )
 {
 	val context = LocalContext.current
@@ -140,14 +138,6 @@ fun DetailsScreen(
 		}
 	}
 	val isVisible = remember { mutableStateOf(visibility) }
-	val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-	if(weWereHere)
-	{
-		isVisible.value = true
-	}
-	val editorVis = sharedPreferences.edit()
-	editorVis.putBoolean(WE_WERE_HERE_BEFORE, true)
-	editorVis.apply()
 	if(pic != null && pictures != null)
 	{
 		Log.d("pic", "$pic")
@@ -198,7 +188,8 @@ fun DetailsScreen(
 					removeSpecialError = removeSpecialError,
 					changeVisabilityState = changeVisabilityState,
 					postPositiveState = postPositiveState,
-					multiWindowed = multiWindowState
+					multiWindowed = multiWindowState,
+					isValidUrl = isValidUrl
 				)
 			}
 		)
@@ -222,6 +213,7 @@ fun ShowDetails(
 	multiWindowed: MutableState<MultiWindowState>,
 	changeVisabilityState: () -> Unit,
 	postPositiveState: () -> Unit,
+	isValidUrl: (String) -> Boolean,
 )
 {
 	padding.calculateBottomPadding()
@@ -253,7 +245,8 @@ fun ShowDetails(
 					context = context,
 					list = list,
 					currentPage = page,
-					pagerState = pagerState
+					pagerState = pagerState,
+					isValidUrl = isValidUrl
 				)
 			}
 			!checkIfExists(list[page]) ->
@@ -375,6 +368,7 @@ fun ShowError(
 	list: MutableList<String>,
 	currentPage: Int,
 	pagerState: PagerState,
+	isValidUrl: (String) -> Boolean,
 )
 {
 	val errorMessage = if(isValidUrl(list[currentPage]))
@@ -486,8 +480,8 @@ fun AppBar(
 		)
 		if(navBack)
 		{
-			navBack = false
 			postDefaultUrl.invoke()
+			navBack = false
 			nc.navigate(BottomNavItem.Home.route)
 		}
 	}
