@@ -25,7 +25,7 @@ class DetailsViewModel: ViewModel()
 
 	fun postNewPic(url: String, bitmapString: String)
 	{
-		imageFlow.value = imageFlow.value.plus(Pair(url, bitmapString))
+		imageFlow.value = mapOf(Pair(url, bitmapString))
 	}
 
 	fun postPositiveVisabilityState()

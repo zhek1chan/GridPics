@@ -194,9 +194,10 @@ class MainActivity: AppCompatActivity()
 						Manifest.permission.POST_NOTIFICATIONS,
 					) == PackageManager.PERMISSION_GRANTED)
 				{
-					if(it.isNotEmpty() )
+					Log.d("checkma keys", "${it.keys}")
+					if(it.keys.isNotEmpty() )
 					{
-						Log.d("checkMa 22", it.toList().last().toString())
+						//Log.d("checkMa 22", it.toList().last().toString())
 						serviceIntentLocal.putExtra(DESCRIPTION_NAMING, it.toList().last().toString())
 						serviceIntent = serviceIntentLocal
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
