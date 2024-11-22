@@ -30,8 +30,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class MainNotificationService: Service()
@@ -39,131 +37,17 @@ class MainNotificationService: Service()
 	private val binder = NetworkServiceBinder()
 	private var isActive = true
 	private lateinit var contentText: String
-	private val _subscriberCount = MutableStateFlow(0)
-	val subscriberCount: Flow<Int> = _subscriberCount
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
-		jobForNotification.cancelChildren()
-		isActive = true
-		Log.d("service", "service onStartCommand")
-		val dontUseSound = countExitNavigation > 1
-		val resultIntent = Intent(instance, MainActivity::class.java)
-		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
-			PendingIntent.FLAG_IMMUTABLE)
-		val extras = intent?.extras
-		contentText = if(!extras?.getString(DESCRIPTION_NAMING).isNullOrEmpty() && extras?.getString(DESCRIPTION_NAMING) != DEFAULT_STRING_VALUE)
-		{
-			extras!!.getString(DESCRIPTION_NAMING)!!
-		}
-		else
-		{
-			getString(R.string.notification_content_text)
-		}
-		Log.d("intent", "we got $contentText")
-
-		if(!contentText.contains(getString(R.string.notification_content_text)))
-		{
-			val words = contentText.substring(1, contentText.length - 1).split(",")
-			val description = words[0].trim()
-			val stringImage = words[1].trim()
-
-			Log.d("wtf", stringImage)
-			val decoded = Base64.decode(stringImage, 0)
-			val bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
-			Log.d("wtf", "$bitmap")
-			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
-				.setContentIntent(resultPendingIntent)
-				.setAutoCancel(true)
-				.setOngoing(true)
-				.setSilent(dontUseSound)
-				.setSmallIcon(R.mipmap.ic_launcher)
-				.setColor(getColor(R.color.green))
-				.setContentTitle(getString(R.string.gridpics))
-				.setContentText(description)
-				.setLargeIcon(bitmap)
-				.setStyle(NotificationCompat.BigPictureStyle()
-					.bigPicture(bitmap)
-					.bigLargeIcon(null as Icon?))
-			createNotificationChannel()
-			showNotification(builder)
-		}
-		else
-		{
-			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
-				.setContentIntent(resultPendingIntent)
-				.setAutoCancel(true)
-				.setOngoing(true)
-				.setSilent(dontUseSound)
-				.setSmallIcon(R.mipmap.ic_launcher)
-				.setColor(getColor(R.color.green))
-				.setContentTitle(getString(R.string.gridpics))
-				.setContentText(contentText)
-			createNotificationChannel()
-			showNotification(builder)
-		}
+		Log.d("service", "onStartCommand()")
+		createLogic(intent)
 		return START_NOT_STICKY
 	}
 
-	@OptIn(DelicateCoroutinesApi::class)
 	override fun onBind(intent: Intent?): IBinder
 	{
-		_subscriberCount.value += 1
-		isActive = true
-		Log.d("service", "service onBind")
-		val dontUseSound = countExitNavigation > 1
-		val resultIntent = Intent(instance, MainActivity::class.java)
-		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
-			PendingIntent.FLAG_IMMUTABLE)
-		val extras = intent?.extras
-		contentText = if(!extras?.getString(DESCRIPTION_NAMING).isNullOrEmpty() && extras?.getString(DESCRIPTION_NAMING) != DEFAULT_STRING_VALUE)
-		{
-			extras!!.getString(DESCRIPTION_NAMING)!!
-		}
-		else
-		{
-			getString(R.string.notification_content_text)
-		}
-		Log.d("intent", "we got $contentText")
-		if(!contentText.contains(getString(R.string.notification_content_text)))
-		{
-			val words = contentText.substring(1, contentText.length - 1).split(",")
-			val description = words[0].trim()
-			val stringImage = words[1].trim()
-
-			Log.d("wtf", stringImage)
-			val decoded = Base64.decode(stringImage, 0)
-			val bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
-			Log.d("wtf", "$bitmap")
-			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
-				.setContentIntent(resultPendingIntent)
-				.setAutoCancel(true)
-				.setOngoing(true)
-				.setSilent(dontUseSound)
-				.setSmallIcon(R.mipmap.ic_launcher)
-				.setColor(getColor(R.color.green))
-				.setContentTitle(getString(R.string.gridpics))
-				.setContentText(description)
-				.setLargeIcon(bitmap)
-				.setStyle(NotificationCompat.BigPictureStyle()
-					.bigPicture(bitmap)
-					.bigLargeIcon(null as Icon?))
-			createNotificationChannel()
-			showNotification(builder)
-		}
-		else
-		{
-			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
-				.setContentIntent(resultPendingIntent)
-				.setAutoCancel(true)
-				.setOngoing(true)
-				.setSilent(dontUseSound)
-				.setSmallIcon(R.mipmap.ic_launcher)
-				.setColor(getColor(R.color.green))
-				.setContentTitle(getString(R.string.gridpics))
-				.setContentText(contentText)
-			createNotificationChannel()
-			showNotification(builder)
-		}
+		Log.d("service", "onBind()")
+		createLogic(intent)
 		return binder
 	}
 
@@ -191,8 +75,9 @@ class MainNotificationService: Service()
 
 	override fun onRebind(intent: Intent?)
 	{
-		isActive = true
-		_subscriberCount.value += 2
+		Log.d("service", "onRebind()")
+		jobForNotification.cancelChildren()
+		createLogic(intent)
 		super.onRebind(intent)
 	}
 
@@ -204,14 +89,12 @@ class MainNotificationService: Service()
 		startForeground(NOTIFICATION_ID, builder.build())
 	}
 
-	@OptIn(DelicateCoroutinesApi::class)
 	override fun onUnbind(intent: Intent?): Boolean
 	{
-		_subscriberCount.value -= 1
 		isActive = false
 		Log.d("service", "onUnbind()")
-		//stopNotificationCoroutine()
-		return super.onUnbind(intent)
+		stopNotificationCoroutine()
+		return true
 	}
 
 	@OptIn(DelicateCoroutinesApi::class)
@@ -232,6 +115,65 @@ class MainNotificationService: Service()
 					Log.d("service", "service was stopped")
 				}
 			}
+		}
+	}
+
+	private fun createLogic(intent: Intent?)
+	{
+		isActive = true
+		val dontUseSound = countExitNavigation > 1
+		val resultIntent = Intent(instance, MainActivity::class.java)
+		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
+			PendingIntent.FLAG_IMMUTABLE)
+		val extras = intent?.extras
+		contentText = if(!extras?.getString(DESCRIPTION_NAMING).isNullOrEmpty() && extras?.getString(DESCRIPTION_NAMING) != DEFAULT_STRING_VALUE)
+		{
+			extras!!.getString(DESCRIPTION_NAMING)!!
+		}
+		else
+		{
+			getString(R.string.notification_content_text)
+		}
+		Log.d("intent", "we got $contentText")
+		if(!contentText.contains(getString(R.string.notification_content_text)))
+		{
+			val words = contentText.substring(1, contentText.length - 1).split(",")
+			val description = words[0].trim()
+			val stringImage = words[1].trim()
+
+			Log.d("wtf", stringImage)
+			val decoded = Base64.decode(stringImage, 0)
+			val bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+			Log.d("wtf", "$bitmap")
+			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
+				.setContentIntent(resultPendingIntent)
+				.setAutoCancel(true)
+				.setOngoing(true)
+				.setSilent(dontUseSound)
+				.setSmallIcon(R.mipmap.ic_launcher)
+				.setColor(getColor(R.color.green))
+				.setContentTitle(getString(R.string.gridpics))
+				.setContentText(description)
+				.setLargeIcon(bitmap)
+				.setStyle(NotificationCompat.BigPictureStyle()
+					.bigPicture(bitmap)
+					.bigLargeIcon(null as Icon?))
+			createNotificationChannel()
+			showNotification(builder)
+		}
+		else
+		{
+			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
+				.setContentIntent(resultPendingIntent)
+				.setAutoCancel(true)
+				.setOngoing(true)
+				.setSilent(dontUseSound)
+				.setSmallIcon(R.mipmap.ic_launcher)
+				.setColor(getColor(R.color.green))
+				.setContentTitle(getString(R.string.gridpics))
+				.setContentText(contentText)
+			createNotificationChannel()
+			showNotification(builder)
 		}
 	}
 

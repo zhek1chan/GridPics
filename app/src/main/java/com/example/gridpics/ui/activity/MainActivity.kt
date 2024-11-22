@@ -44,10 +44,7 @@ import com.example.gridpics.ui.state.BarsVisabilityState
 import com.example.gridpics.ui.state.MultiWindowStateTracker
 import com.example.gridpics.ui.state.MultiWindowStateTracker.MultiWindowState
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -180,7 +177,7 @@ class MainActivity: AppCompatActivity()
 			picturesViewModel.observeBackNav().collectLatest {
 				if(it)
 				{
-					//stopService(serviceIntentLocal)
+					stopService(serviceIntent)
 					this@MainActivity.finishAffinity()
 				}
 			}
@@ -351,13 +348,13 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
-		jobForNotification.cancelChildren()
 		Log.d("lifecycle", "onRestart()")
 		super.onRestart()
 	}
 
 	override fun onResume()
 	{
+		Log.d("service", "is connected to Activity?: $mBound")
 		if(ContextCompat.checkSelfPermission(
 				this,
 				Manifest.permission.POST_NOTIFICATIONS,
@@ -370,31 +367,17 @@ class MainActivity: AppCompatActivity()
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
 				startService(newIntent)
+
 				bindService(newIntent, connectionLocal, Context.BIND_AUTO_CREATE)
 				Log.d("service", "connection $connectionLocal")
 			}
 			else
 			{
 				startService(newIntent)
+
 				bindService(newIntent, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
 			countExitNavigation++
-			lifecycleScope.launch() {
-				while(true)
-				{
-					delay(1000)
-					mainNotificationService.subscriberCount.collect { count ->
-						if(count == 0)
-						{
-							Log.d("service22", "No subscribers")
-						}
-						else
-						{
-							Log.d("service22", "we have subscribers")
-						}
-					}
-				}
-			}
 		}
 		isActive = true
 		Log.d("lifecycle", "onResume()")
@@ -404,27 +387,9 @@ class MainActivity: AppCompatActivity()
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
-		unbindService(connection)
-		//без этого работает криво, основную логику я вынес
-		/*GlobalScope.launch(Dispatchers.IO + jobForNotification) {
-			delay(2000)
-			stopService(serviceIntent)
-		}*/
-		lifecycleScope.launch() {
-			while(true)
-			{
-				delay(1000)
-				mainNotificationService.subscriberCount.collectLatest { count ->
-					if(count == 0)
-					{
-						Log.d("service22", "No subscribers")
-					}
-					else
-					{
-						Log.d("service22", "we have subscribers")
-					}
-				}
-			}
+		if(mBound)
+		{
+			unbindService(connection)
 		}
 		allConnections.clear()
 		countExitNavigation++
