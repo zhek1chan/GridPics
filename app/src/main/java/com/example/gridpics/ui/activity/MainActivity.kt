@@ -107,11 +107,9 @@ class MainActivity: AppCompatActivity()
 		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		//check if theme was changed and activity recreated because of it
 		changedTheme = getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false)
-
 		val picVM = picturesViewModel
 		val detailsVM = detailsViewModel
 		val lifeCycScope = lifecycleScope
-
 		val previousTheme = sharedPreferences.getString(IS_BLACK_THEME, isDarkTheme(this).toString())
 		Log.d("theme", "just changed theme? ")
 		//Start showing notification
@@ -196,7 +194,7 @@ class MainActivity: AppCompatActivity()
 				{
 					if(description.isNotEmpty() && it.isNotEmpty())
 					{
-						Log.d("checkMa", it.keys.toString())
+						Log.d("checkMa 22", it.toList().last().toString())
 						serviceIntentLocal.putExtra(DESCRIPTION_NAMING, it.toList().last().toString())
 						serviceIntent = serviceIntentLocal
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -210,6 +208,7 @@ class MainActivity: AppCompatActivity()
 							bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 						}
 						description = it as MutableMap<String, String>
+						Log.d("checkMa", description.keys.toString())
 					}
 				}
 			}
