@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 class DetailsViewModel: ViewModel()
 {
-	private val visabilityFlow = MutableStateFlow<BarsVisabilityState>(BarsVisabilityState.IsVisible)
+	private val visabilityFlow = MutableStateFlow<BarsVisabilityState>(BarsVisabilityState.NotVisible)
 	fun observeVisabilityFlow(): Flow<BarsVisabilityState> = visabilityFlow
 	private val imageFlow = MutableStateFlow(mapOf<String, String>())
 	fun observeUrlFlow() = imageFlow
