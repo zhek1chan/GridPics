@@ -4,24 +4,20 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
-import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -30,7 +26,6 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,20 +33,20 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -67,7 +62,6 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
 import com.example.gridpics.ui.pictures.AlertDialogMain
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -82,18 +76,32 @@ fun SettingsScreen(
 	val orientation = LocalContext.current.resources.configuration.orientation
 	val windowInsets = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
 	{
-		WindowInsets.displayCutout.union(WindowInsets.systemBarsIgnoringVisibility)
+		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
 	}
 	else
 	{
-		WindowInsets.systemBarsIgnoringVisibility
+		WindowInsets.statusBarsIgnoringVisibility
 	}
 	Scaffold(
-		modifier = Modifier
-			.fillMaxWidth(),
 		contentWindowInsets = windowInsets,
 		bottomBar = { BottomNavigationBar(navController) },
-		topBar = { SettingsTopBar() },
+		topBar = {
+			Row(
+				verticalAlignment = Alignment.CenterVertically,
+				modifier = Modifier
+					.fillMaxWidth()
+					.windowInsetsPadding(windowInsets)
+					.padding(16.dp, 0.dp)
+					.height(60.dp)
+			) {
+				Text(
+					textAlign = TextAlign.Center,
+					text = stringResource(R.string.settings),
+					fontSize = 21.sp,
+					color = MaterialTheme.colorScheme.onPrimary
+				)
+			}
+		},
 		content = { padding ->
 			Column(
 				modifier = Modifier
@@ -115,7 +123,6 @@ fun SettingsCompose(
 	changeTheme: (Int) -> Unit,
 )
 {
-	val scope = rememberCoroutineScope()
 	var showDialog by remember { mutableStateOf(false) }
 	val context = LocalContext.current
 	ConstraintLayout {
@@ -125,24 +132,10 @@ fun SettingsCompose(
 			start.linkTo(parent.start)
 			end.linkTo(parent.end)
 		}) {
-			Row(
-				verticalAlignment = Alignment.CenterVertically,
-				modifier = Modifier
-					.fillMaxWidth()
-					.padding(16.dp, 0.dp, 16.dp, 0.dp)
-					.height(60.dp)
-			) {
-				Text(
-					textAlign = TextAlign.Center,
-					text = stringResource(R.string.settings),
-					fontSize = 21.sp,
-					color = MaterialTheme.colorScheme.onPrimary
-				)
-			}
 			val listOfThemeOptions = listOf(
-				context.getString(R.string.light_theme),
-				context.getString(R.string.dark_theme),
-				context.getString(R.string.synch_with_sys)
+				stringResource(R.string.light_theme),
+				stringResource(R.string.dark_theme),
+				stringResource(R.string.synch_with_sys)
 			)
 			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option]) }
 			Column {
@@ -154,30 +147,27 @@ fun SettingsCompose(
 								.fillMaxWidth()
 								.padding(18.dp, 10.dp, 18.dp, 0.dp)
 								.clickable {
-									scope.launch {
-										onOptionSelected(text)
-										changeFromSettings(context)
-										saveThemeState(context, listOfThemeOptions.indexOf(text))
-										changeTheme(listOfThemeOptions.indexOf(text))
-									}
+									onOptionSelected(text)
+									changeFromSettings(context)
+									saveThemeState(context, listOfThemeOptions.indexOf(text))
+									changeTheme(listOfThemeOptions.indexOf(text))
 								}
 						) {
 							val painter = when(text)
 							{
 								listOfThemeOptions[0] ->
 								{
-									painterResource(R.drawable.ic_day)
+									rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_day))
 								}
 								listOfThemeOptions[1] ->
 								{
-									painterResource(R.drawable.ic_night)
+									rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_night))
 								}
 								else ->
 								{
-									painterResource(R.drawable.ic_sys_theme)
+									rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_sys_theme))
 								}
 							}
-
 							Icon(
 								modifier = Modifier.padding(0.dp, 0.dp),
 								painter = painter,
@@ -248,6 +238,7 @@ fun SettingsCompose(
 			}
 			if(showDialog)
 			{
+				val textClear = stringResource(R.string.you_have_cleared_cache)
 				AlertDialogMain(
 					dialogText = "",
 					dialogTitle = stringResource(R.string.delete_all_question),
@@ -261,7 +252,7 @@ fun SettingsCompose(
 						editor.putString(SHARED_PREFS_PICTURES, null)
 						editor.apply()
 						showDialog = false
-						Toast.makeText(context, context.getString(R.string.you_have_cleared_cache), Toast.LENGTH_SHORT).show()
+						Toast.makeText(context, textClear, Toast.LENGTH_SHORT).show()
 					},
 					onDismissRequest = { showDialog = false },
 					icon = Icons.Default.Delete,
@@ -273,45 +264,10 @@ fun SettingsCompose(
 	}
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable
-fun SettingsTopBar()
-{
-	Log.d("width", "${
-		WindowInsets.systemBarsIgnoringVisibility
-			.asPaddingValues()
-			.calculateTopPadding()
-	}")
-	Box(
-		modifier = Modifier
-			.background(MaterialTheme.colorScheme.background)
-			.height(WindowInsets.systemBarsIgnoringVisibility
-				.asPaddingValues()
-				.calculateTopPadding())
-			.fillMaxWidth()) {
-		TopAppBar(
-			modifier = Modifier
-				.height(60.dp)
-				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility),
-			title = {
-				Text(
-					text = LocalContext.current.getString(R.string.settings)
-				)
-			},
-			colors = TopAppBarDefaults.topAppBarColors(
-				titleContentColor = MaterialTheme.colorScheme.onPrimary,
-				navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-				actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-				containerColor = MaterialTheme.colorScheme.background
-			)
-		)
-	}
-}
-
-private fun saveThemeState(context: Context, i: Int)
+private fun saveThemeState(context: Context, barsVisabilityInt: Int)
 {
 	val editor = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
-	editor.putInt(THEME_SHARED_PREFERENCE, i)
+	editor.putInt(THEME_SHARED_PREFERENCE, barsVisabilityInt)
 	editor.apply()
 }
 

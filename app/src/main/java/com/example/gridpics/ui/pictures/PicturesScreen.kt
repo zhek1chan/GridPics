@@ -13,10 +13,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -80,6 +79,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.placeholder.NoInternetScreen
+import com.example.gridpics.ui.state.UiStateDataClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -94,15 +94,16 @@ fun PicturesScreen(
 	addError: (String) -> Unit,
 	getPics: () -> Unit,
 	postState: (String) -> Unit,
-	state: MutableState<PictureState>,
+	state: MutableState<UiStateDataClass>,
 	clearErrors: () -> Unit,
 	postPositiveState: () -> Unit,
 	postDefaultUrl: () -> Unit,
-	newState: () -> Unit,
 	sharedPrefsPictures: String?,
 	clearedCache: Boolean,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
+	postUrls: (String) -> Unit
+
 )
 {
 	val context = LocalContext.current
@@ -128,8 +129,7 @@ fun PicturesScreen(
 				verticalAlignment = Alignment.CenterVertically,
 				modifier = Modifier
 					.fillMaxWidth()
-					.padding(WindowInsets.statusBarsIgnoringVisibility.asPaddingValues())
-					.consumeWindowInsets(WindowInsets.statusBarsIgnoringVisibility)
+					.windowInsetsPadding(windowInsets)
 					.padding(16.dp, 0.dp)
 					.height(60.dp)
 			) {
@@ -141,7 +141,6 @@ fun PicturesScreen(
 				)
 			}
 		},
-		modifier = Modifier.fillMaxSize(),
 		bottomBar = { BottomNavigationBar(navController) },
 		content = { padding ->
 			Column(
@@ -152,7 +151,6 @@ fun PicturesScreen(
 			) {
 				if(!sharedPrefsPictures.isNullOrEmpty() && !clearedCache)
 				{
-					newState()
 					ShowList(
 						imagesUrlsSP = sharedPrefsPictures,
 						checkIfExists = checkIfExists,
@@ -164,13 +162,12 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postDefaultUrl = postDefaultUrl
+						postDefaultUrl = postDefaultUrl,
+						postUrls = postUrls
 					)
 				}
 				else if(!clearedCache && sharedPrefsPictures.isNullOrEmpty())
 				{
-					newState()
-					getPics()
 					ShowList(
 						imagesUrlsSP = sharedPrefsPictures,
 						checkIfExists = checkIfExists,
@@ -182,13 +179,12 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postDefaultUrl = postDefaultUrl
+						postDefaultUrl = postDefaultUrl,
+						postUrls = postUrls
 					)
 				}
 				else if(clearedCache || sharedPrefsPictures.isNullOrEmpty())
 				{
-					newState()
-					getPics()
 					ShowList(
 						imagesUrlsSP = sharedPrefsPictures,
 						checkIfExists = checkIfExists,
@@ -200,7 +196,8 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postDefaultUrl = postDefaultUrl
+						postDefaultUrl = postDefaultUrl,
+						postUrls = postUrls
 					)
 				}
 			}
@@ -219,6 +216,7 @@ fun itemNewsCard(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postDefaultUrl: () -> Unit,
+	urls: String
 ): Boolean
 {
 	postDefaultUrl.invoke()
@@ -282,6 +280,7 @@ fun itemNewsCard(
 		currentPicture(item)
 		val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		val editor = sharedPreferences.edit()
+		editor.putString(SHARED_PREFS_PICTURES, urls)
 		editor.putString(PICTURE, item)
 		editor.apply()
 		navController.navigate(Screen.Details.route)
@@ -292,6 +291,7 @@ fun itemNewsCard(
 		{
 			if(isValidUrl(item))
 			{
+				val reloadString = stringResource(R.string.reload)
 				AlertDialogMain(
 					onDismissRequest = { openAlertDialog.value = false },
 					onConfirmation =
@@ -299,7 +299,7 @@ fun itemNewsCard(
 						openAlertDialog.value = false
 						println("Confirmation registered")
 						getPics()
-						Toast.makeText(context, context.getString(R.string.reload), Toast.LENGTH_LONG).show()
+						Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
 					},
 					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
 					dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
@@ -331,32 +331,34 @@ fun ShowList(
 	addError: (String) -> Unit,
 	getPics: () -> Unit,
 	postState: (String) -> Unit,
-	state: MutableState<PictureState>,
+	state: MutableState<UiStateDataClass>,
 	clearErrors: () -> Unit,
 	navController: NavController,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postDefaultUrl: () -> Unit,
+	postUrls: (String) -> Unit
 )
 {
 	val context = LocalContext.current
-	val configuration = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
 	val scope = rememberCoroutineScope()
 	val listState = rememberLazyGridState()
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
-		when(state.value)
+		when(state.value.pictureScreenState)
 		{
-			is PictureState.SearchIsOk ->
+			is PicturesState.SearchIsOk ->
 			{
+				val loadingString = stringResource(R.string.loading_has_been_started)
 				Log.d("Now state is", "Loading")
-				LaunchedEffect(CoroutineScope(Dispatchers.Main)) {
-					Toast.makeText(context, configuration.getString(R.string.loading_has_been_started), Toast.LENGTH_SHORT).show()
-					saveToSharedPrefs(context, (state.value as PictureState.SearchIsOk).data)
+				LaunchedEffect(scope) {
+					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
+					postUrls((state.value.pictureScreenState as PicturesState.SearchIsOk).data)
+					saveToSharedPrefs(context, (state.value.pictureScreenState as PicturesState.SearchIsOk).data)
 				}
-				val list = remember { (state.value as PictureState.SearchIsOk).data.split("\n") }
+				val list = remember(state.value) { (state.value.pictureScreenState as PicturesState.SearchIsOk).data.split("\n") }
 
 				LazyVerticalGrid(
 					state = listState,
@@ -371,25 +373,25 @@ fun ShowList(
 							getPics = getPics,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							postDefaultUrl = postDefaultUrl
+							postDefaultUrl = postDefaultUrl,
+							urls = (state.value.pictureScreenState as PicturesState.SearchIsOk).data
 						)
 					}
 				}
 				scope.launch {
 					delay(6000)
-					postState((state.value as PictureState.SearchIsOk).data)
+					postState((state.value.pictureScreenState as PicturesState.SearchIsOk).data)
 				}
 			}
-			PictureState.ConnectionError ->
+			PicturesState.ConnectionError ->
 			{
 				Log.d("Net", "No internet")
 				Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize()) {
 					NoInternetScreen()
-					val cornerRadius = 16.dp
 					val gradientColor = remember { listOf(Color.Green, Color.Yellow) }
 					GradientButton(
 						gradientColors = gradientColor,
-						cornerRadius = cornerRadius,
+						cornerRadius = 16.dp,
 						nameButton = stringResource(R.string.try_again),
 						roundedCornerShape = RoundedCornerShape(topStart = 30.dp, bottomEnd = 30.dp),
 						clearErrors = clearErrors,
@@ -397,14 +399,16 @@ fun ShowList(
 					)
 				}
 			}
-			PictureState.NothingFound -> Unit
-			is PictureState.Loaded ->
+			PicturesState.NothingFound -> Unit
+			is PicturesState.Loaded ->
 			{
-				LaunchedEffect(CoroutineScope(Dispatchers.Main)) {
-					Toast.makeText(context, configuration.getString(R.string.loading_has_been_ended), Toast.LENGTH_SHORT).show()
+				val loadingEnded = stringResource(R.string.loading_has_been_ended)
+				LaunchedEffect(scope) {
+					postUrls((state.value.pictureScreenState as PicturesState.Loaded).data)
+					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
 				}
 				Log.d("Now state is", "Loaded")
-				val list = remember { (state.value as PictureState.Loaded).data.split("\n") }
+				val list = remember(state.value) { (state.value.pictureScreenState as PicturesState.Loaded).data.split("\n") }
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
@@ -419,7 +423,8 @@ fun ShowList(
 							getPics = getPics,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							postDefaultUrl = postDefaultUrl
+							postDefaultUrl = postDefaultUrl,
+							urls = (state.value.pictureScreenState as PicturesState.SearchIsOk).data
 						)
 					}
 				}
@@ -429,7 +434,7 @@ fun ShowList(
 	else
 	{
 		Log.d("Now state is", "Loaded from sp")
-		LaunchedEffect(CoroutineScope(Dispatchers.Main)) {
+		LaunchedEffect(CoroutineScope(Dispatchers.IO)) {
 			saveToSharedPrefs(context, imagesUrlsSP)
 		}
 		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n") }
@@ -449,7 +454,8 @@ fun ShowList(
 					getPics = getPics,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
-					postDefaultUrl = postDefaultUrl
+					postDefaultUrl = postDefaultUrl,
+					urls = (state.value.pictureScreenState as PicturesState.SearchIsOk).data
 				)
 			}
 		}
@@ -471,10 +477,9 @@ fun GradientButton(
 			.fillMaxWidth()
 			.padding(start = 32.dp, end = 32.dp),
 		onClick = {
-			clearErrors.invoke()
+			clearErrors()
 			getPics.invoke()
 		},
-		contentPadding = PaddingValues(),
 		colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
 		shape = RoundedCornerShape(cornerRadius)
 	)
@@ -560,11 +565,11 @@ fun AlertDialogSecondary(
 	})
 }
 
-private fun saveToSharedPrefs(context: Context, s: String)
+private fun saveToSharedPrefs(context: Context, picturesUrl: String)
 {
 	val sharedPreferencesPictures = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 	val editorPictures = sharedPreferencesPictures.edit()
-	editorPictures.putString(SHARED_PREFS_PICTURES, s)
+	editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
 	editorPictures.putBoolean(CACHE, false)
 	editorPictures.apply()
 }

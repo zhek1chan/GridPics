@@ -36,6 +36,7 @@ class MainNotificationService: Service()
 	private val binder = NetworkServiceBinder()
 	private val jobForNotification = Job()
 	private lateinit var contentText: String
+	private var values: Pair<String?, String?> = Pair(null, null)
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
 		Log.d("service", "onStartCommand()")
@@ -112,13 +113,19 @@ class MainNotificationService: Service()
 		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE)
 		val extras = intent?.extras
-		contentText = if(!extras?.getString(DESCRIPTION_NAMING).isNullOrEmpty() && extras?.getString(DESCRIPTION_NAMING) != DEFAULT_STRING_VALUE && extras?.getString(DESCRIPTION_NAMING) != "")
+		if (values == Pair(null, null))
 		{
-			extras!!.getString(DESCRIPTION_NAMING)!!
-		}
-		else
-		{
-			getString(R.string.notification_content_text)
+			contentText = if(!extras?.getString(DESCRIPTION_NAMING).isNullOrEmpty() && extras?.getString(DESCRIPTION_NAMING) != DEFAULT_STRING_VALUE && extras?.getString(DESCRIPTION_NAMING) != "")
+			{
+				extras!!.getString(DESCRIPTION_NAMING)!!
+			}
+			else
+			{
+				getString(R.string.notification_content_text)
+			}
+		} else {
+			contentText = values.toList().toString()
+			Log.d("wtfWtf", contentText)
 		}
 		Log.d("intent", "we got $contentText")
 		val words = contentText.substring(1, contentText.length - 1).split(",")
@@ -161,6 +168,11 @@ class MainNotificationService: Service()
 			createNotificationChannel()
 			showNotification(builder)
 		}
+	}
+
+	fun getValues(valuesPair: Pair<String, String?>)
+	{
+		values = valuesPair
 	}
 
 	inner class NetworkServiceBinder: Binder()

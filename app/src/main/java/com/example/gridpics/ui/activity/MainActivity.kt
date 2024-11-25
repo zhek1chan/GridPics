@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -19,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -33,21 +35,18 @@ import androidx.navigation.compose.rememberNavController
 import com.example.gridpics.R
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
-import com.example.gridpics.ui.pictures.PictureState
 import com.example.gridpics.ui.pictures.PicturesScreen
+import com.example.gridpics.ui.pictures.PicturesState
 import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.services.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.settings.ThemePick
-import com.example.gridpics.ui.state.BarsVisabilityState
-import com.example.gridpics.ui.state.MultiWindowStateTracker
-import com.example.gridpics.ui.state.MultiWindowStateTracker.MultiWindowState
+import com.example.gridpics.ui.state.UiStateDataClass
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import kotlin.collections.set
 
 class MainActivity: AppCompatActivity()
 {
@@ -56,14 +55,10 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var serviceIntent = Intent()
-	private var description = mutableMapOf<String, String>()
-	private var state = mutableStateOf<PictureState>(PictureState.NothingFound)
-	private var multiWindowState = mutableStateOf<MultiWindowState>(MultiWindowState.NotMultiWindow)
-	private var barsState = mutableStateOf<BarsVisabilityState>(BarsVisabilityState.IsVisible)
+	private var description: Pair<String, String?> = Pair(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE)
 	private var mainNotificationService = MainNotificationService()
 	private var mBound: Boolean = false
 	private var changedTheme = false
-	private var barsVisabilitySP = true
 	private var currentPictureSP = ""
 	private var imagesStringUrlsSP: String? = null
 	private val connection = object: ServiceConnection
@@ -94,28 +89,28 @@ class MainActivity: AppCompatActivity()
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
-
-		description[DEFAULT_STRING_VALUE] = DEFAULT_STRING_VALUE
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-		var getCurrentPictureSP = sharedPreferences.getString(PICTURE, NULL_STRING).toString()
-		currentPictureSP = getCurrentPictureSP
-		barsVisabilitySP = sharedPreferences.getBoolean(TOP_BAR_VISABILITY_SHARED_PREFERENCE, true)
-		imagesStringUrlsSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+		// currentPictureSP - Здесь мы получаем картинку, которая была выбранна пользователем при переходе на экран деталей,
+		// чтобы при смене темы и пересоздании MainActivity не было ошибки/потери значений.
+		currentPictureSP = sharedPreferences.getString(PICTURE, NULL_STRING)!! //100% won't be null as valu
 		val connectionLocal = connection
 		//serviceIntentForNotification
 		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 		serviceIntentLocal.putExtra(DESCRIPTION_NAMING, description.toList().last().toString())
-		//get theme pic
+		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
-		//check if theme was changed and activity recreated because of it
+		settingsViewModel.changeTheme(themePick)
+		// imagesStringUrlsSP - Здесь происходит получение всех кэшированных картинок,точнее их url,
+		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
+		var imagesStringUrls = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+		// Здесь мы проверяем менялась ли тема при прошлой жизни Activity, если да, то не создавать новое уведомление
 		changedTheme = getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false)
 		val picVM = picturesViewModel
 		val detailsVM = detailsViewModel
 		val lifeCycScope = lifecycleScope
-		val previousTheme = sharedPreferences.getString(IS_BLACK_THEME, isDarkTheme(this).toString())
 		Log.d("theme", "just changed theme? ")
 		//Start showing notification
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && setTheme(previousTheme!!) == Pair(false, true))
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !changedTheme)
 		{
 			if(
 				ContextCompat.checkSelfPermission(
@@ -154,26 +149,31 @@ class MainActivity: AppCompatActivity()
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
-
+		val uiState: MutableState<UiStateDataClass> = mutableStateOf(UiStateDataClass(isMultiWindowed = false, barsAreVisible = true, pictureScreenState = PicturesState.ConnectionError))
 		picVM.getPics()
-		picVM.observeState().observeForever {
-			state.value = it
+		lifeCycScope.launch {
+			picVM.observeCurrentImg().collectLatest {
+				currentPictureSP = it
+			}
 		}
+		val window = window
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		lifeCycScope.launch {
-			detailsVM.observeVisabilityFlow().collectLatest {
-				if(it == BarsVisabilityState.NotVisible)
+			picVM.observeUiState().collectLatest {
+				uiState.value = it
+				if(!it.barsAreVisible)
 				{
 					controller.hide(WindowInsetsCompat.Type.statusBars())
 					controller.hide(WindowInsetsCompat.Type.navigationBars())
-					barsState.value = it
 				}
 				else
 				{
 					controller.show(WindowInsetsCompat.Type.statusBars())
 					controller.show(WindowInsetsCompat.Type.navigationBars())
-					barsState.value = it
 				}
+				// imagesStringUrlsSP - Здесь происходит получение всех кэшированных картинок,точнее их url,
+				// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
+				imagesStringUrls = picVM.picturesUrls
 			}
 		}
 
@@ -195,10 +195,11 @@ class MainActivity: AppCompatActivity()
 					) == PackageManager.PERMISSION_GRANTED)
 				{
 					Log.d("checkma keys", "${it.keys}")
-					if(it.keys.isNotEmpty() )
+					if(it.keys.isNotEmpty())
 					{
-						serviceIntentLocal.putExtra(DESCRIPTION_NAMING, it.toList().last().toString())
-						serviceIntent = serviceIntentLocal
+						val e = it.keys.toList().last()
+						description = Pair(e, it[e])
+						mainNotificationService.getValues(description)
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 						{
 							startForegroundService(serviceIntentLocal)
@@ -209,21 +210,22 @@ class MainActivity: AppCompatActivity()
 							startService(serviceIntentLocal)
 							bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 						}
-						description = it as MutableMap<String, String>
 					}
 				}
 			}
 		}
 
-		lifeCycScope.launch {
-			picVM.observeCurrentImg().collectLatest {
-				getCurrentPictureSP = it
-				currentPictureSP = getCurrentPictureSP
-			}
+		imagesStringUrlsSP = if(imagesStringUrls == null && imagesStringUrls != " ")
+		{
+			sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+		}
+		else
+		{
+			imagesStringUrls
 		}
 		val editorSharedPrefs = sharedPreferences.edit()
 		editorSharedPrefs.putBoolean(JUST_CHANGED_THEME, false)
-		editorSharedPrefs.putString(IS_BLACK_THEME, isDarkTheme(this).toString())
+		editorSharedPrefs.putInt(THEME_SHARED_PREFERENCE, themePick)
 		editorSharedPrefs.apply()
 
 		serviceIntent = serviceIntentLocal
@@ -231,13 +233,13 @@ class MainActivity: AppCompatActivity()
 		setContent {
 			ComposeTheme {
 				val navController = rememberNavController()
-				NavigationSetup(navController = navController)
+				NavigationSetup(navController = navController, uiState)
 			}
 		}
 	}
 
 	@Composable
-	fun NavigationSetup(navController: NavHostController)
+	fun NavigationSetup(navController: NavHostController, uiState: MutableState<UiStateDataClass>)
 	{
 		NavHost(
 			navController,
@@ -261,15 +263,15 @@ class MainActivity: AppCompatActivity()
 						addError = { str -> picVM.addError(str) },
 						getPics = { picVM.getPics() },
 						postState = { str -> picVM.postState(str) },
-						state = state,
+						state = uiState,
 						clearErrors = { picVM.clearErrors() },
-						postPositiveState = { detVM.postPositiveVisabilityState() },
+						postPositiveState = { picVM.postPositiveVisabilityState() },
 						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
-						newState = { picVM.newState() },
 						sharedPrefsPictures = imagesStringUrlsSP,
 						clearedCache = changedTheme,
 						currentPicture = { url -> picVM.clickOnPicture(url) },
-						isValidUrl = { url -> picVM.isValidUrl(url) }
+						isValidUrl = { url -> picVM.isValidUrl(url) },
+						postUrls = { urls -> picVM.postPictures(urls) }
 					)
 				}
 			}
@@ -289,16 +291,16 @@ class MainActivity: AppCompatActivity()
 						navController = navController,
 						checkIfExists = { str -> picVM.checkOnErrorExists(str) },
 						addError = { str -> picVM.addError(str) },
-						state = barsState,
+						state = uiState,
 						removeSpecialError = { str -> picVM.removeSpecialError(str) },
 						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
-						changeVisabilityState = { detVM.changeVisabilityState() },
+						changeVisabilityState = { picVM.changeVisabilityState() },
 						postUrl = { str, p -> detVM.postNewPic(str, p) },
-						postPositiveState = { detVM.postPositiveVisabilityState() },
-						multiWindowState = multiWindowState,
+						postPositiveState = { picVM.postPositiveVisabilityState() },
 						pictures = imagesStringUrlsSP,
 						pic = currentPictureSP,
-						isValidUrl = { url -> picVM.isValidUrl(url) }
+						isValidUrl = { url -> picVM.isValidUrl(url) },
+						convertPicture = { bitmap: Bitmap -> detVM.convertPictureToString(bitmap) }
 					)
 				}
 			}
@@ -308,9 +310,13 @@ class MainActivity: AppCompatActivity()
 	override fun onConfigurationChanged(newConfig: Configuration)
 	{
 		super.onConfigurationChanged(newConfig)
-		val multiWindowStateTracker = MultiWindowStateTracker(this)
-		multiWindowStateTracker.multiWindowState.observe(this) { newState ->
-			multiWindowState.value = newState
+		if(isInMultiWindowMode || isInPictureInPictureMode)
+		{
+			picturesViewModel.changeMultiWindowState(true)
+		}
+		else if(!isInMultiWindowMode)
+		{
+			picturesViewModel.changeMultiWindowState(false)
 		}
 	}
 
@@ -360,19 +366,16 @@ class MainActivity: AppCompatActivity()
 		{
 			val newIntent = serviceIntent
 			val connectionLocal = connection
-			newIntent.putExtra(DESCRIPTION_NAMING, description.toList().last().toString())
-			serviceIntent = newIntent
+			mainNotificationService.getValues(description)
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
 				startService(newIntent)
-
 				bindService(newIntent, connectionLocal, Context.BIND_AUTO_CREATE)
 				Log.d("service", "connection $connectionLocal")
 			}
 			else
 			{
 				startService(newIntent)
-
 				bindService(newIntent, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
 			countExitNavigation++
@@ -398,27 +401,6 @@ class MainActivity: AppCompatActivity()
 		super.onDestroy()
 	}
 
-	private fun isDarkTheme(context: Context): Boolean
-	{
-		return context.resources.configuration.uiMode and
-			Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-	}
-
-	private fun setTheme(prev: String): Pair<Boolean, Boolean>
-	{
-		settingsViewModel.changeTheme(themePick)
-		val justChangedTheme = if(themePick == ThemePick.FOLLOW_SYSTEM.intValue)
-		{
-			changedTheme
-		}
-		else
-		{
-			isDarkTheme(this)
-		}
-		val darkThemeIsActive = isDarkTheme(this).toString()
-		return Pair(justChangedTheme, prev == darkThemeIsActive)
-	}
-
 	companion object
 	{
 		var countExitNavigation = 0
@@ -429,8 +411,6 @@ class MainActivity: AppCompatActivity()
 		const val THEME_SHARED_PREFERENCE = "THEME_SHARED_PREFERENCE"
 		const val CHANNEL_NOTIFICATIONS_ID = "GRID_PICS_CHANEL_NOTIFICATIONS_ID"
 		const val NULL_STRING = "NULL_STRING"
-		const val IS_BLACK_THEME = "IS_BLACK_THEME"
-		const val TOP_BAR_VISABILITY_SHARED_PREFERENCE = "TOP_BAR_VISABILITY_SHARED_PREFERENCE"
 		const val JUST_CHANGED_THEME = "JUST_CHANGED_THEME"
 		const val DESCRIPTION_NAMING = "description"
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"

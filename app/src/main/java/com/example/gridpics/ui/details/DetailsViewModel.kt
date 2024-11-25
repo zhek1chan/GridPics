@@ -1,30 +1,17 @@
 package com.example.gridpics.ui.details
 
+import android.graphics.Bitmap
+import android.util.Base64
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gridpics.ui.state.BarsVisabilityState
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 class DetailsViewModel: ViewModel()
 {
-	private val visabilityFlow = MutableStateFlow<BarsVisabilityState>(BarsVisabilityState.NotVisible)
-	fun observeVisabilityFlow(): Flow<BarsVisabilityState> = visabilityFlow
 	private val imageFlow = MutableStateFlow(mapOf<String, String>())
 	fun observeUrlFlow() = imageFlow
-	fun changeVisabilityState()
-	{
-		if(visabilityFlow.value == BarsVisabilityState.NotVisible)
-		{
-			visabilityFlow.value = BarsVisabilityState.IsVisible
-		}
-		else
-		{
-			visabilityFlow.value = BarsVisabilityState.NotVisible
-		}
-	}
-
 	fun postNewPic(url: String, bitmapString: String)
 	{
 		viewModelScope.launch {
@@ -32,8 +19,18 @@ class DetailsViewModel: ViewModel()
 		}
 	}
 
-	fun postPositiveVisabilityState()
+	fun convertPictureToString(bitmap: Bitmap): String
 	{
-		visabilityFlow.value = BarsVisabilityState.IsVisible
+		val baos = ByteArrayOutputStream()
+		if(bitmap.byteCount > 1024 * 1024)
+		{
+			bitmap.compress(Bitmap.CompressFormat.JPEG, 3, baos)
+		}
+		else
+		{
+			bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos)
+		}
+		val b = baos.toByteArray()
+		return Base64.encodeToString(b, Base64.DEFAULT)
 	}
 }
