@@ -99,6 +99,7 @@ fun PicturesScreen(
 	postDefaultUrl: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
+	postSavedUrls: (String) -> Unit
 )
 {
 	val context = LocalContext.current
@@ -158,6 +159,7 @@ fun PicturesScreen(
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
 						postDefaultUrl = postDefaultUrl,
+						postSavedUrls = postSavedUrls
 					)
 				}
 				else
@@ -174,6 +176,7 @@ fun PicturesScreen(
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
 						postDefaultUrl = postDefaultUrl,
+						postSavedUrls = postSavedUrls
 					)
 				}
 			}
@@ -320,6 +323,7 @@ fun ShowList(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postDefaultUrl: () -> Unit,
+	postSavedUrls: (String) -> Unit
 )
 {
 	val context = LocalContext.current
@@ -387,6 +391,7 @@ fun ShowList(
 				val loadingEnded = stringResource(R.string.loading_has_been_ended)
 				LaunchedEffect(state.value.loadingState) {
 					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
+					postSavedUrls((state.value.loadingState as PicturesState.Loaded).data)
 				}
 				Log.d("Now state is", "Loaded")
 				val list = remember(state.value.loadingState) { ((state.value.loadingState as PicturesState.Loaded).data).split("\n") }

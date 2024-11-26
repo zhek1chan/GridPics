@@ -90,6 +90,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
+import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -109,7 +110,7 @@ fun DetailsScreen(
 	changeVisabilityState: () -> Unit,
 	postUrl: (String, String) -> Unit,
 	postPositiveState: () -> Unit,
-	pictures: String?,
+	picturesScreenState: MutableState<PicturesScreenUiState>,
 	pic: String?,
 	isValidUrl: (String) -> Boolean,
 	convertPicture: (Bitmap) -> String,
@@ -133,6 +134,7 @@ fun DetailsScreen(
 		}
 	}
 	val isVisible = remember { mutableStateOf(true) }
+	val pictures = remember { picturesScreenState.value.picturesUrl }
 	if(pic != null && pictures != null)
 	{
 		Log.d("pic", "$pic")

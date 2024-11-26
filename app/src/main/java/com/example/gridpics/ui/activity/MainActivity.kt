@@ -20,8 +20,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -35,8 +33,6 @@ import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.pictures.PicturesViewModel
-import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
-import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.services.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
@@ -56,9 +52,7 @@ class MainActivity: AppCompatActivity()
 	private var description: Pair<String, String?> = Pair(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE)
 	private var mainNotificationService = MainNotificationService()
 	private var mBound: Boolean = false
-	private var changedTheme = false
 	private var currentPictureSP = ""
-	private var imagesStringUrlsSP: String? = null
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -88,6 +82,9 @@ class MainActivity: AppCompatActivity()
 		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
+		val picVM = picturesViewModel
+		val detailsVM = detailsViewModel
+		val lifeCycScope = lifecycleScope
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// currentPictureSP - Здесь мы получаем картинку, которая была выбранна пользователем при переходе на экран деталей,
 		// чтобы при смене темы и пересоздании MainActivity не было ошибки/потери значений.
@@ -98,14 +95,11 @@ class MainActivity: AppCompatActivity()
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		settingsViewModel.changeTheme(themePick)
-		// imagesStringUrlsSP - Здесь происходит получение всех кэшированных картинок,точнее их url,
+		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
-		imagesStringUrlsSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
 		// Здесь мы проверяем менялась ли тема при прошлой жизни Activity, если да, то не создавать новое уведомление
-		changedTheme = getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false)
-		val picVM = picturesViewModel
-		val detailsVM = detailsViewModel
-		val lifeCycScope = lifecycleScope
+		picVM.postCacheWasCleared(getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false))
 		Log.d("theme", "just changed theme? ")
 		//Start showing notification
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
@@ -164,13 +158,6 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-		val picturesScreenState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, imagesStringUrlsSP))
-		lifeCycScope.launch {
-			picVM.observePicturesFlow().collectLatest {
-				picturesScreenState.value = it
-				imagesStringUrlsSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
-			}
-		}
 
 		lifeCycScope.launch {
 			detailsVM.observeUrlFlow().collectLatest {
@@ -202,13 +189,13 @@ class MainActivity: AppCompatActivity()
 		setContent {
 			ComposeTheme {
 				val navController = rememberNavController()
-				NavigationSetup(navController = navController, picturesScreenState = picturesScreenState)
+				NavigationSetup(navController = navController)
 			}
 		}
 	}
 
 	@Composable
-	fun NavigationSetup(navController: NavHostController, picturesScreenState: MutableState<PicturesScreenUiState>)
+	fun NavigationSetup(navController: NavHostController)
 	{
 		NavHost(
 			navController,
@@ -232,12 +219,13 @@ class MainActivity: AppCompatActivity()
 						addError = { str -> picVM.addError(str) },
 						getPics = { picVM.getPics() },
 						postState = { urls -> picVM.postState(urls) },
-						state = picturesScreenState,
+						state = picVM.picturesUiState,
 						clearErrors = { picVM.clearErrors() },
 						postPositiveState = { detVM.postPositiveVisabilityState() },
 						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
 						currentPicture = { url -> picVM.clickOnPicture(url) },
-						isValidUrl = { url -> picVM.isValidUrl(url) }
+						isValidUrl = { url -> picVM.isValidUrl(url) },
+						postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
 					)
 				}
 			}
@@ -263,7 +251,7 @@ class MainActivity: AppCompatActivity()
 						changeVisabilityState = { detVM.changeVisabilityState() },
 						postUrl = { str, p -> detVM.postNewPic(str, p) },
 						postPositiveState = { detVM.postPositiveVisabilityState() },
-						pictures = imagesStringUrlsSP,
+						picturesScreenState = picVM.picturesUiState,
 						pic = currentPictureSP,
 						isValidUrl = { url -> picVM.isValidUrl(url) },
 						convertPicture = { bitmap: Bitmap -> detVM.convertPictureToString(bitmap) },

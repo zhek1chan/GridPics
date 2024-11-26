@@ -1,5 +1,6 @@
 package com.example.gridpics.ui.pictures
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.data.network.Resource
@@ -14,11 +15,10 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	private val picturesUiState = MutableStateFlow(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
 	private val currentImg = MutableStateFlow("")
-	fun observePicturesFlow(): Flow<PicturesScreenUiState> = picturesUiState
 	fun observeCurrentImg(): Flow<String> = currentImg
 	fun observeBackNav(): Flow<Boolean> = backNav
 	fun getPics()
@@ -38,21 +38,21 @@ class PicturesViewModel(
 	fun postState(urls: String)
 	{
 		viewModelScope.launch {
-			picturesUiState.emit(PicturesScreenUiState(PicturesState.Loaded(urls), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl))
+			picturesUiState.value = PicturesScreenUiState(PicturesState.Loaded(urls), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
 		}
 	}
 
-	fun postSavedUrls(urls: String)
+	fun postSavedUrls(urls: String?)
 	{
 		viewModelScope.launch {
-			picturesUiState.emit(PicturesScreenUiState(picturesUiState.value.loadingState, picturesUiState.value.clearedCache, urls))
+			picturesUiState.value = PicturesScreenUiState(picturesUiState.value.loadingState, picturesUiState.value.clearedCache, urls)
 		}
 	}
 
 	fun postCacheWasCleared(cacheWasCleared: Boolean)
 	{
 		viewModelScope.launch {
-			picturesUiState.emit(PicturesScreenUiState(picturesUiState.value.loadingState, cacheWasCleared, picturesUiState.value.picturesUrl))
+			picturesUiState.value = PicturesScreenUiState(picturesUiState.value.loadingState, cacheWasCleared, picturesUiState.value.picturesUrl)
 		}
 	}
 
