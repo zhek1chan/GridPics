@@ -21,8 +21,8 @@
 	<string name="confirm">Повторить</string>
     <string name="cancel">Отменить</string>
 	<string name="okey">Okey</string>
-    <string name="reload">Обновляем данные...</string>
-    <string name="reload_pic">Обновляем картинку...</string>
+    <string name="reload">Обновляем данные…</string>
+    <string name="reload_pic">Обновляем картинку…</string>
     <string name="text_plain">text/plain</string>
     <string name="null_null">null</string>
     <string name="clear_cache">Очистить кэш изображений</string>
@@ -39,4 +39,5 @@
     <string name="question_retry_again">\nПопробовать загрузить повторно?</string>
     <string name="loading_has_been_started">Началась загрузка</string>
     <string name="loading_has_been_ended">Загрузка завершена</string>
+    <string name="wait_for_loading_to_end">Дождитесь конца загрузки</string>
 </resources>

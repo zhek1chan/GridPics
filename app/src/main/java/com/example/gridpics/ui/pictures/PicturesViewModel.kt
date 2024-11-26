@@ -1,11 +1,12 @@
 package com.example.gridpics.ui.pictures
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
+import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
+import com.example.gridpics.ui.pictures.state.PicturesState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -14,22 +15,21 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	private val stateLiveData = MutableLiveData<PictureState>()
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
 	private val currentImg = MutableStateFlow("")
 	fun observeCurrentImg(): Flow<String> = currentImg
 	fun observeBackNav(): Flow<Boolean> = backNav
-	fun observeState(): LiveData<PictureState> = stateLiveData
 	fun getPics()
 	{
 		viewModelScope.launch {
 			interactor.getPics().collect { news ->
 				when(news)
 				{
-					is Resource.Data -> stateLiveData.postValue(PictureState.SearchIsOk(news.value))
-					is Resource.ConnectionError -> stateLiveData.postValue(PictureState.ConnectionError)
-					is Resource.NotFound -> stateLiveData.postValue(PictureState.NothingFound)
+					is Resource.Data -> picturesUiState.value = PicturesScreenUiState(PicturesState.SearchIsOk(news.value), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+					is Resource.ConnectionError -> picturesUiState.value = PicturesScreenUiState(PicturesState.ConnectionError, picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+					is Resource.NotFound -> picturesUiState.value = PicturesScreenUiState(PicturesState.NothingFound, picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
 				}
 			}
 		}
@@ -37,12 +37,23 @@ class PicturesViewModel(
 
 	fun postState(urls: String)
 	{
-		stateLiveData.postValue(PictureState.Loaded(urls))
+		viewModelScope.launch {
+			picturesUiState.value = PicturesScreenUiState(PicturesState.Loaded(urls), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+		}
 	}
 
-	fun newState()
+	fun postSavedUrls(urls: String?)
 	{
-		stateLiveData.postValue(PictureState.NothingFound)
+		viewModelScope.launch {
+			picturesUiState.value = PicturesScreenUiState(picturesUiState.value.loadingState, picturesUiState.value.clearedCache, urls)
+		}
+	}
+
+	fun postCacheWasCleared(cacheWasCleared: Boolean)
+	{
+		viewModelScope.launch {
+			picturesUiState.value = PicturesScreenUiState(picturesUiState.value.loadingState, cacheWasCleared, picturesUiState.value.picturesUrl)
+		}
 	}
 
 	fun addError(url: String)

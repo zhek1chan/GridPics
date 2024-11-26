@@ -6,8 +6,8 @@ import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import android.util.Base64
 import android.util.Log
+import android.view.Window
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -60,7 +60,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -71,6 +70,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
@@ -87,16 +88,14 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VA
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
-import com.example.gridpics.ui.activity.MainActivity.Companion.TOP_BAR_VISABILITY_SHARED_PREFERENCE
 import com.example.gridpics.ui.activity.Screen
-import com.example.gridpics.ui.state.BarsVisabilityState
-import com.example.gridpics.ui.state.MultiWindowStateTracker.MultiWindowState
+import com.example.gridpics.ui.details.state.DetailsScreenUiState
+import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
-import java.io.ByteArrayOutputStream
 
 @SuppressLint("RestrictedApi", "CommitPrefEdits", "ApplySharedPref", "UseCompatLoadingForDrawables", "CoroutineCreationDuringComposition")
 @OptIn(ExperimentalLayoutApi::class)
@@ -105,38 +104,37 @@ fun DetailsScreen(
 	navController: NavController,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	state: MutableState<BarsVisabilityState>,
+	state: MutableState<DetailsScreenUiState>,
 	removeSpecialError: (String) -> Unit,
 	postDefaultUrl: () -> Unit,
 	changeVisabilityState: () -> Unit,
 	postUrl: (String, String) -> Unit,
 	postPositiveState: () -> Unit,
-	multiWindowState: MutableState<MultiWindowState>,
-	pictures: String?,
+	picturesScreenState: MutableState<PicturesScreenUiState>,
 	pic: String?,
 	isValidUrl: (String) -> Boolean,
+	convertPicture: (Bitmap) -> String,
+	window: Window,
 )
 {
 	val context = LocalContext.current
-	val scope = rememberCoroutineScope()
 	BackHandler {
-		scope.launch {
-			if(state.value == BarsVisabilityState.NotVisible)
-			{
-				Log.d("we are out", "We are out")
-				postDefaultUrl.invoke()
-				changeVisabilityState.invoke()
-				navController.navigateUp()
-			}
-			else
-			{
-				Log.d("we are out", "We are without changing state")
-				postDefaultUrl.invoke()
-				navController.navigateUp()
-			}
+		if(!state.value.barsAreVisible)
+		{
+			Log.d("we are out", "We are out")
+			postDefaultUrl.invoke()
+			changeVisabilityState.invoke()
+			navController.navigateUp()
+		}
+		else
+		{
+			Log.d("we are out", "We are without changing state")
+			postDefaultUrl.invoke()
+			navController.navigateUp()
 		}
 	}
 	val isVisible = remember { mutableStateOf(true) }
+	val pictures = remember { picturesScreenState.value.picturesUrl }
 	if(pic != null && pictures != null)
 	{
 		Log.d("pic", "$pic")
@@ -147,11 +145,11 @@ fun DetailsScreen(
 		{
 			val picture = ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap()
 			Log.d("checkMa", "gruzim oshibku")
-			bitmapString.value = convertPictureToString(picture!!)
+			bitmapString.value = convertPicture(picture!!)
 		}
 		else
 		{
-			val imgRequest =
+			val imgRequest = remember(list[pagerState.currentPage]) {
 				ImageRequest.Builder(context)
 					.data(list[pagerState.currentPage])
 					.placeholder(R.drawable.loading)
@@ -160,13 +158,14 @@ fun DetailsScreen(
 					.target {
 						val picture = it.toBitmap()
 						Log.d("checkMa", "gruzim pic")
-						bitmapString.value = convertPictureToString(picture)
+						bitmapString.value = convertPicture(picture)
 					}
 					.networkCachePolicy(CachePolicy.ENABLED)
 					.diskCachePolicy(CachePolicy.ENABLED)
 					.diskCacheKey(list[pagerState.currentPage])
 					.memoryCachePolicy(CachePolicy.ENABLED)
 					.build()
+			}
 			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
 		}
 		postUrl(list[pagerState.currentPage], bitmapString.value)
@@ -187,8 +186,9 @@ fun DetailsScreen(
 					removeSpecialError = removeSpecialError,
 					changeVisabilityState = changeVisabilityState,
 					postPositiveState = postPositiveState,
-					multiWindowed = multiWindowState,
-					isValidUrl = isValidUrl
+					multiWindowed = state,
+					isValidUrl = isValidUrl,
+					window = window
 				)
 			}
 		)
@@ -209,10 +209,11 @@ fun ShowDetails(
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
-	multiWindowed: MutableState<MultiWindowState>,
+	multiWindowed: MutableState<DetailsScreenUiState>,
 	changeVisabilityState: () -> Unit,
 	postPositiveState: () -> Unit,
 	isValidUrl: (String) -> Boolean,
+	window: Window,
 )
 {
 	padding.calculateBottomPadding()
@@ -261,12 +262,13 @@ fun ShowDetails(
 					isVisible = isVisible,
 					exit = exit,
 					multiWindow = multiWindowed,
-					context = context
+					context = context,
+					window = window
 				)
 			}
 		}
 		MainActivity.countExitNavigation++
-		saveToSharedPrefs(context, list[pagerState.currentPage], isVisible.value)
+		saveToSharedPrefs(context, list[pagerState.currentPage])
 	}
 }
 
@@ -282,12 +284,13 @@ fun ShowAsynchImage(
 	navController: NavController,
 	isVisible: MutableState<Boolean>,
 	exit: MutableState<Boolean>,
-	multiWindow: MutableState<MultiWindowState>,
+	multiWindow: MutableState<DetailsScreenUiState>,
 	context: Context,
+	window: Window,
 )
 {
 	val orientation = context.resources.configuration.orientation
-	val scale = if(multiWindow.value == MultiWindowState.NotMultiWindow)
+	val scale = if(!multiWindow.value.isMultiWindowed)
 	{
 		if(orientation == Configuration.ORIENTATION_PORTRAIT)
 		{
@@ -305,14 +308,17 @@ fun ShowAsynchImage(
 	val zoom = rememberZoomState(2.8f, Size.Zero)
 	val count = remember { listOf(0).toMutableList() }
 	val countLastThree = remember { listOf(0).toMutableList() }
-	val imgRequest = ImageRequest.Builder(context)
-		.data(list[page])
-		.placeholder(R.drawable.loading)
-		.error(R.drawable.loading)
-		.allowHardware(false)
-		.diskCacheKey(list[page])
-		.networkCachePolicy(CachePolicy.ENABLED)
-		.build()
+	val imgRequest = remember(list[page]) {
+		ImageRequest.Builder(context)
+			.data(list[page])
+			.placeholder(R.drawable.loading)
+			.error(R.drawable.loading)
+			.allowHardware(false)
+			.diskCacheKey(list[page])
+			.networkCachePolicy(CachePolicy.ENABLED)
+			.build()
+	}
+	val scope = rememberCoroutineScope()
 	AsyncImage(
 		model = imgRequest,
 		contentDescription = "",
@@ -328,6 +334,19 @@ fun ShowAsynchImage(
 			.fillMaxSize()
 			.zoomable(zoom, enableOneFingerZoom = false, onTap = {
 				changeVisabilityState.invoke()
+				val controller = WindowCompat.getInsetsController(window, window.decorView)
+				scope.launch {
+					if(!isVisible.value)
+					{
+						controller.hide(WindowInsetsCompat.Type.statusBars())
+						controller.hide(WindowInsetsCompat.Type.navigationBars())
+					}
+					else
+					{
+						controller.show(WindowInsetsCompat.Type.statusBars())
+						controller.show(WindowInsetsCompat.Type.navigationBars())
+					}
+				}
 				isVisible.value = !isVisible.value
 			})
 			.pointerInput(Unit) {
@@ -376,7 +395,7 @@ fun ShowError(
 	}
 	else
 	{
-		context.getString(R.string.link_is_not_valid)
+		stringResource(R.string.link_is_not_valid)
 	}
 	Column(
 		modifier = Modifier.fillMaxSize(),
@@ -393,12 +412,13 @@ fun ShowError(
 			modifier = Modifier.padding(10.dp),
 			color = MaterialTheme.colorScheme.onPrimary
 		)
-		if(errorMessage != context.getString(R.string.link_is_not_valid))
+		if(errorMessage != stringResource(R.string.link_is_not_valid))
 		{
+			val textButton = stringResource(R.string.reload_pic)
 			Button(
 				onClick =
 				{
-					Toast.makeText(context, context.getString(R.string.reload_pic), Toast.LENGTH_LONG).show()
+					Toast.makeText(context, textButton, Toast.LENGTH_LONG).show()
 					CoroutineScope(Dispatchers.Main).launch {
 						pagerState.animateScrollToPage(currentPage)
 					}
@@ -463,14 +483,15 @@ fun AppBar(
 				containerColor = MaterialTheme.colorScheme.background
 			),
 			actions = {
+				val plain = stringResource(R.string.text_plain)
 				IconButton(
 					onClick =
 					{
-						share(list[pagerState.currentPage], context)
+						share(list[pagerState.currentPage], context, plain)
 					}
 				) {
 					Icon(
-						painter = rememberVectorPainter(Icons.Default.Share),
+						Icons.Default.Share,
 						contentDescription = "share",
 						tint = MaterialTheme.colorScheme.onPrimary,
 					)
@@ -486,36 +507,19 @@ fun AppBar(
 	}
 }
 
-private fun convertPictureToString(bitmap: Bitmap): String
-{
-	val baos = ByteArrayOutputStream()
-	if(bitmap.byteCount > 1024 * 1024)
-	{
-		// todooshka: Одна корутина обгоняет другую, надо фиксить (большая картинка с ночью дохнет)
-		bitmap.compress(Bitmap.CompressFormat.JPEG, 3, baos)
-	}
-	else
-	{
-		bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos)
-	}
-	val b = baos.toByteArray()
-	return Base64.encodeToString(b, Base64.DEFAULT)
-}
-
-private fun saveToSharedPrefs(context: Context, s: String, vBoolean: Boolean)
+private fun saveToSharedPrefs(context: Context, pictureUrl: String)
 {
 	val pic = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 	val editor = pic.edit()
-	editor.putString(PICTURE, s)
-	editor.putBoolean(TOP_BAR_VISABILITY_SHARED_PREFERENCE, vBoolean)
+	editor.putString(PICTURE, pictureUrl)
 	editor.apply()
 }
 
-fun share(text: String, context: Context)
+fun share(text: String, context: Context, plain: String)
 {
 	val sendIntent = Intent(Intent.ACTION_SEND).apply {
 		putExtra(Intent.EXTRA_TEXT, text)
-		type = context.resources.getString(R.string.text_plain)
+		type = plain
 	}
 	val shareIntent = Intent.createChooser(sendIntent, null)
 	startActivity(context, shareIntent, null)

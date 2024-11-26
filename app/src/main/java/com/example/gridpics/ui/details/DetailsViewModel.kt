@@ -1,30 +1,20 @@
 package com.example.gridpics.ui.details
 
+import android.graphics.Bitmap
+import android.util.Base64
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gridpics.ui.state.BarsVisabilityState
-import kotlinx.coroutines.flow.Flow
+import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 class DetailsViewModel: ViewModel()
 {
-	private val visabilityFlow = MutableStateFlow<BarsVisabilityState>(BarsVisabilityState.NotVisible)
-	fun observeVisabilityFlow(): Flow<BarsVisabilityState> = visabilityFlow
 	private val imageFlow = MutableStateFlow(mapOf<String, String>())
+	val uiStateFlow = mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = false))
 	fun observeUrlFlow() = imageFlow
-	fun changeVisabilityState()
-	{
-		if(visabilityFlow.value == BarsVisabilityState.NotVisible)
-		{
-			visabilityFlow.value = BarsVisabilityState.IsVisible
-		}
-		else
-		{
-			visabilityFlow.value = BarsVisabilityState.NotVisible
-		}
-	}
-
 	fun postNewPic(url: String, bitmapString: String)
 	{
 		viewModelScope.launch {
@@ -32,8 +22,53 @@ class DetailsViewModel: ViewModel()
 		}
 	}
 
+	fun changeVisabilityState()
+	{
+		viewModelScope.launch {
+			if(!uiStateFlow.value.barsAreVisible)
+			{
+				uiStateFlow.value = (DetailsScreenUiState(uiStateFlow.value.isMultiWindowed, true))
+			}
+			else
+			{
+				uiStateFlow.value = (DetailsScreenUiState(uiStateFlow.value.isMultiWindowed, false))
+			}
+		}
+	}
+
+	fun changeMultiWindowState(isMultiWindowed: Boolean)
+	{
+		viewModelScope.launch {
+			if(!isMultiWindowed)
+			{
+				uiStateFlow.value = (DetailsScreenUiState(true, uiStateFlow.value.barsAreVisible))
+			}
+			else
+			{
+				uiStateFlow.value = (DetailsScreenUiState(false, uiStateFlow.value.barsAreVisible))
+			}
+		}
+	}
+
 	fun postPositiveVisabilityState()
 	{
-		visabilityFlow.value = BarsVisabilityState.IsVisible
+		viewModelScope.launch {
+			uiStateFlow.value = (DetailsScreenUiState(uiStateFlow.value.isMultiWindowed, true))
+		}
+	}
+
+	fun convertPictureToString(bitmap: Bitmap): String
+	{
+		val baos = ByteArrayOutputStream()
+		if(bitmap.byteCount > 1024 * 1024)
+		{
+			bitmap.compress(Bitmap.CompressFormat.JPEG, 3, baos)
+		}
+		else
+		{
+			bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos)
+		}
+		val b = baos.toByteArray()
+		return Base64.encodeToString(b, Base64.DEFAULT)
 	}
 }
