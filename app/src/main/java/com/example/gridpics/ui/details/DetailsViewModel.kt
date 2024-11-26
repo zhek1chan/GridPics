@@ -27,11 +27,11 @@ class DetailsViewModel: ViewModel()
 		viewModelScope.launch {
 			if(!uiStateFlow.value.barsAreVisible)
 			{
-				uiStateFlow.value = (DetailsScreenUiState(uiStateFlow.value.isMultiWindowed, true))
+				uiStateFlow.value = uiStateFlow.value.copy(barsAreVisible = true)
 			}
 			else
 			{
-				uiStateFlow.value = (DetailsScreenUiState(uiStateFlow.value.isMultiWindowed, false))
+				uiStateFlow.value = uiStateFlow.value.copy(barsAreVisible = false)
 			}
 		}
 	}
@@ -41,11 +41,11 @@ class DetailsViewModel: ViewModel()
 		viewModelScope.launch {
 			if(!isMultiWindowed)
 			{
-				uiStateFlow.value = (DetailsScreenUiState(true, uiStateFlow.value.barsAreVisible))
+				uiStateFlow.value = uiStateFlow.value.copy(isMultiWindowed = true)
 			}
 			else
 			{
-				uiStateFlow.value = (DetailsScreenUiState(false, uiStateFlow.value.barsAreVisible))
+				uiStateFlow.value = uiStateFlow.value.copy(isMultiWindowed = false)
 			}
 		}
 	}
@@ -53,7 +53,7 @@ class DetailsViewModel: ViewModel()
 	fun postPositiveVisabilityState()
 	{
 		viewModelScope.launch {
-			uiStateFlow.value = (DetailsScreenUiState(uiStateFlow.value.isMultiWindowed, true))
+			uiStateFlow.value = uiStateFlow.value.copy(barsAreVisible = true)
 		}
 	}
 

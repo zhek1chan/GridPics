@@ -45,14 +45,14 @@ class PicturesViewModel(
 	fun postSavedUrls(urls: String?)
 	{
 		viewModelScope.launch {
-			picturesUiState.value = PicturesScreenUiState(picturesUiState.value.loadingState, picturesUiState.value.clearedCache, urls)
+			picturesUiState.value = picturesUiState.value.copy(picturesUrl = urls)
 		}
 	}
 
 	fun postCacheWasCleared(cacheWasCleared: Boolean)
 	{
 		viewModelScope.launch {
-			picturesUiState.value = PicturesScreenUiState(picturesUiState.value.loadingState, cacheWasCleared, picturesUiState.value.picturesUrl)
+			picturesUiState.value = picturesUiState.value.copy(clearedCache = cacheWasCleared)
 		}
 	}
 
