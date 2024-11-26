@@ -144,7 +144,7 @@ fun DetailsScreen(
 		}
 		else
 		{
-			val imgRequest =
+			val imgRequest = remember (list[pagerState.currentPage]) {
 				ImageRequest.Builder(context)
 					.data(list[pagerState.currentPage])
 					.placeholder(R.drawable.loading)
@@ -160,6 +160,7 @@ fun DetailsScreen(
 					.diskCacheKey(list[pagerState.currentPage])
 					.memoryCachePolicy(CachePolicy.ENABLED)
 					.build()
+			}
 			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
 		}
 		postUrl(list[pagerState.currentPage], bitmapString.value)

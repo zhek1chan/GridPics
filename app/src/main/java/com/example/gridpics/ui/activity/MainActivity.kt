@@ -67,6 +67,7 @@ class MainActivity: AppCompatActivity()
 		{
 			val binder = service as MainNotificationService.NetworkServiceBinder
 			mainNotificationService = binder.get()
+			mainNotificationService.putValues(description)
 			mBound = true
 		}
 
@@ -96,7 +97,6 @@ class MainActivity: AppCompatActivity()
 		val connectionLocal = connection
 		//serviceIntentForNotification
 		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
-		serviceIntentLocal.putExtra(DESCRIPTION_NAMING, description.toList().last().toString())
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		settingsViewModel.changeTheme(themePick)
@@ -203,16 +203,9 @@ class MainActivity: AppCompatActivity()
 					{
 						val e = it.keys.toList().last()
 						description = Pair(e, it[e])
-						mainNotificationService.getValues(description)
-						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+						if(mBound)
 						{
-							startForegroundService(serviceIntentLocal)
-							bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-						}
-						else
-						{
-							startService(serviceIntentLocal)
-							bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+							mainNotificationService.putValues(description)
 						}
 					}
 				}
@@ -358,20 +351,7 @@ class MainActivity: AppCompatActivity()
 				Manifest.permission.POST_NOTIFICATIONS,
 			) == PackageManager.PERMISSION_GRANTED)
 		{
-			val newIntent = serviceIntent
-			val connectionLocal = connection
-			mainNotificationService.getValues(description)
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-			{
-				startService(newIntent)
-				bindService(newIntent, connectionLocal, Context.BIND_AUTO_CREATE)
-				Log.d("service", "connection $connectionLocal")
-			}
-			else
-			{
-				startService(newIntent)
-				bindService(newIntent, connectionLocal, Context.BIND_AUTO_CREATE)
-			}
+			bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
 			countExitNavigation++
 		}
 		Log.d("lifecycle", "onResume()")
@@ -406,7 +386,6 @@ class MainActivity: AppCompatActivity()
 		const val CHANNEL_NOTIFICATIONS_ID = "GRID_PICS_CHANEL_NOTIFICATIONS_ID"
 		const val NULL_STRING = "NULL_STRING"
 		const val JUST_CHANGED_THEME = "JUST_CHANGED_THEME"
-		const val DESCRIPTION_NAMING = "description"
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
 		const val DEFAULT_STRING_VALUE = "default"
 		const val HTTP_ERROR = "HTTP error: 404"
