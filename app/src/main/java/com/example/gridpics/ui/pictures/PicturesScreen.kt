@@ -339,7 +339,7 @@ fun ShowList(
 			{
 				val loadingString = stringResource(R.string.loading_has_been_started)
 				Log.d("Now state is", "Loading")
-				LaunchedEffect(state.value.loadingState) {
+				LaunchedEffect(Unit) {
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 					saveToSharedPrefs(context, (state.value.loadingState as PicturesState.SearchIsOk).data)
 				}
@@ -389,7 +389,7 @@ fun ShowList(
 			is PicturesState.Loaded ->
 			{
 				val loadingEnded = stringResource(R.string.loading_has_been_ended)
-				LaunchedEffect(state.value.loadingState) {
+				LaunchedEffect(Unit) {
 					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
 					postSavedUrls((state.value.loadingState as PicturesState.Loaded).data)
 				}
@@ -420,7 +420,7 @@ fun ShowList(
 	else
 	{
 		Log.d("Now state is", "Loaded from sp")
-		LaunchedEffect(state.value.loadingState) {
+		LaunchedEffect(Unit) {
 			saveToSharedPrefs(context, imagesUrlsSP)
 		}
 		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n") }
