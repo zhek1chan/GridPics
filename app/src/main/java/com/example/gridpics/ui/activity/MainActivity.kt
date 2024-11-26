@@ -27,9 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -185,13 +183,11 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-
 		val picturesScreenState: MutableState<PicturesState> = mutableStateOf(PicturesState.NothingFound)
 		lifeCycScope.launch {
-			repeatOnLifecycle(Lifecycle.State.STARTED) {
-				picVM.observePicturesFlow().collectLatest {
-					picturesScreenState.value = it!!
-				}
+			picVM.observePicturesFlow().collectLatest {
+				picturesScreenState.value = it
+				imagesStringUrlsSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 			}
 		}
 
@@ -222,7 +218,6 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-
 		val editorSharedPrefs = sharedPreferences.edit()
 		editorSharedPrefs.putBoolean(JUST_CHANGED_THEME, false)
 		editorSharedPrefs.putInt(THEME_SHARED_PREFERENCE, themePick)
@@ -262,7 +257,7 @@ class MainActivity: AppCompatActivity()
 						checkIfExists = { str -> picVM.checkOnErrorExists(str) },
 						addError = { str -> picVM.addError(str) },
 						getPics = { picVM.getPics() },
-						postState = { picVM.postState() },
+						postState = { urls -> picVM.postState(urls) },
 						state = picturesScreenState,
 						clearErrors = { picVM.clearErrors() },
 						postPositiveState = { picVM.postPositiveVisabilityState() },

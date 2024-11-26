@@ -210,7 +210,7 @@ fun itemNewsCard(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postDefaultUrl: () -> Unit,
-	urls: String,
+	loadingHasBeenEnded: Boolean
 ): Boolean
 {
 	postDefaultUrl.invoke()
@@ -270,14 +270,20 @@ fun itemNewsCard(
 	)
 	if(isClicked)
 	{
-		isClicked = false
-		currentPicture(item)
-		val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-		val editor = sharedPreferences.edit()
-		editor.putString(SHARED_PREFS_PICTURES, urls)
-		editor.putString(PICTURE, item)
-		editor.apply()
-		navController.navigate(Screen.Details.route)
+		if (loadingHasBeenEnded)
+		{
+			isClicked = false
+			currentPicture(item)
+			val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
+			val editor = sharedPreferences.edit()
+			editor.putString(PICTURE, item)
+			editor.apply()
+			navController.navigate(Screen.Details.route)
+		} else {
+			val txt = stringResource(R.string.wait_for_loading_to_end)
+			LaunchedEffect(rememberCoroutineScope()) { Toast.makeText(context, txt, Toast.LENGTH_SHORT).show() }
+
+		}
 	}
 	when
 	{
@@ -350,7 +356,8 @@ fun ShowList(
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 					saveToSharedPrefs(context, (state.value as PicturesState.SearchIsOk).data)
 				}
-				val list = remember(state.value) { (state.value as PicturesState.SearchIsOk).data.split("\n") }
+				val value = remember(state.value) { (state.value as PicturesState.SearchIsOk).data }
+				val list = remember(state.value) { value.split("\n") }
 
 				LazyVerticalGrid(
 					state = listState,
@@ -366,16 +373,16 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postDefaultUrl = postDefaultUrl,
-							urls = (state.value as PicturesState.SearchIsOk).data
+							loadingHasBeenEnded = false
 						)
 					}
 				}
 				scope.launch {
 					delay(6000)
-					postState((state.value as PicturesState.SearchIsOk).data)
+					postState(value)
 				}
 			}
-			PicturesState.ConnectionError ->
+			is PicturesState.ConnectionError ->
 			{
 				Log.d("Net", "No internet")
 				Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize()) {
@@ -391,7 +398,7 @@ fun ShowList(
 					)
 				}
 			}
-			PicturesState.NothingFound -> Unit
+			is PicturesState.NothingFound -> Unit
 			is PicturesState.Loaded ->
 			{
 				val loadingEnded = stringResource(R.string.loading_has_been_ended)
@@ -399,7 +406,7 @@ fun ShowList(
 					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
 				}
 				Log.d("Now state is", "Loaded")
-				val list = remember(state.value) { (state.value as PicturesState.Loaded).data.split("\n") }
+				val list = remember(state.value) { ((state.value as PicturesState.Loaded).data).split("\n") }
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
@@ -415,7 +422,7 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postDefaultUrl = postDefaultUrl,
-							urls = (state.value as PicturesState.SearchIsOk).data
+							loadingHasBeenEnded = true
 						)
 					}
 				}
@@ -446,7 +453,7 @@ fun ShowList(
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					postDefaultUrl = postDefaultUrl,
-					urls = (state.value as PicturesState.SearchIsOk).data
+					loadingHasBeenEnded = true
 				)
 			}
 		}

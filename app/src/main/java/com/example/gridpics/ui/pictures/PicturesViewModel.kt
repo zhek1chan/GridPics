@@ -7,7 +7,6 @@ import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.state.UiStateDataClass
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 class PicturesViewModel(
@@ -17,22 +16,21 @@ class PicturesViewModel(
 	private val uiStateFlow = MutableStateFlow(UiStateDataClass(isMultiWindowed = false, barsAreVisible = false))
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
-	private val picturesFlow = MutableStateFlow <PicturesState?>(null)
+	private val picturesFlow = MutableStateFlow<PicturesState>(PicturesState.NothingFound)
 	private val currentImg = MutableStateFlow("")
-	fun observePicturesFlow(): Flow<PicturesState?> = picturesFlow
+	fun observePicturesFlow(): Flow<PicturesState> = picturesFlow
 	fun observeCurrentImg(): Flow<String> = currentImg
 	fun observeBackNav(): Flow<Boolean> = backNav
 	fun observeUiState(): Flow<UiStateDataClass> = uiStateFlow
 	fun getPics()
 	{
 		viewModelScope.launch {
-			picturesFlow.drop(1)
 			interactor.getPics().collect { news ->
 				when(news)
 				{
-					is Resource.Data -> picturesFlow.emit(PicturesState.SearchIsOk(news.value))
-					is Resource.ConnectionError -> picturesFlow.emit(PicturesState.ConnectionError)
-					is Resource.NotFound -> picturesFlow.emit(PicturesState.NothingFound)
+					is Resource.Data -> picturesFlow.value = (PicturesState.SearchIsOk(news.value))
+					is Resource.ConnectionError -> picturesFlow.value = (PicturesState.ConnectionError)
+					is Resource.NotFound -> picturesFlow.value = (PicturesState.NothingFound)
 				}
 			}
 		}
@@ -73,10 +71,10 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postState()
+	fun postState(urls: String)
 	{
 		viewModelScope.launch {
-			uiStateFlow.emit(UiStateDataClass(uiStateFlow.value.isMultiWindowed, uiStateFlow.value.barsAreVisible))
+			picturesFlow.value = (PicturesState.Loaded(urls))
 		}
 	}
 
