@@ -27,7 +27,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -102,7 +104,7 @@ class MainActivity: AppCompatActivity()
 		settingsViewModel.changeTheme(themePick)
 		// imagesStringUrlsSP - Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
-		var imagesStringUrls = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+		imagesStringUrlsSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		// Здесь мы проверяем менялась ли тема при прошлой жизни Activity, если да, то не создавать новое уведомление
 		changedTheme = getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false)
 		val picVM = picturesViewModel
@@ -149,7 +151,7 @@ class MainActivity: AppCompatActivity()
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
-		val uiState: MutableState<UiStateDataClass> = mutableStateOf(UiStateDataClass(isMultiWindowed = false, barsAreVisible = true, pictureScreenState = PicturesState.ConnectionError))
+		val uiState: MutableState<UiStateDataClass> = mutableStateOf(UiStateDataClass(isMultiWindowed = false, barsAreVisible = true))
 		picVM.getPics()
 		lifeCycScope.launch {
 			picVM.observeCurrentImg().collectLatest {
@@ -171,9 +173,6 @@ class MainActivity: AppCompatActivity()
 					controller.show(WindowInsetsCompat.Type.statusBars())
 					controller.show(WindowInsetsCompat.Type.navigationBars())
 				}
-				// imagesStringUrlsSP - Здесь происходит получение всех кэшированных картинок,точнее их url,
-				// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
-				imagesStringUrls = picVM.picturesUrls
 			}
 		}
 
@@ -183,6 +182,15 @@ class MainActivity: AppCompatActivity()
 				{
 					stopService(serviceIntent)
 					this@MainActivity.finishAffinity()
+				}
+			}
+		}
+
+		val picturesScreenState: MutableState<PicturesState> = mutableStateOf(PicturesState.NothingFound)
+		lifeCycScope.launch {
+			repeatOnLifecycle(Lifecycle.State.STARTED) {
+				picVM.observePicturesFlow().collectLatest {
+					picturesScreenState.value = it!!
 				}
 			}
 		}
@@ -215,14 +223,6 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 
-		imagesStringUrlsSP = if(imagesStringUrls == null && imagesStringUrls != " ")
-		{
-			sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
-		}
-		else
-		{
-			imagesStringUrls
-		}
 		val editorSharedPrefs = sharedPreferences.edit()
 		editorSharedPrefs.putBoolean(JUST_CHANGED_THEME, false)
 		editorSharedPrefs.putInt(THEME_SHARED_PREFERENCE, themePick)
@@ -233,13 +233,13 @@ class MainActivity: AppCompatActivity()
 		setContent {
 			ComposeTheme {
 				val navController = rememberNavController()
-				NavigationSetup(navController = navController, uiState)
+				NavigationSetup(navController = navController, uiState = uiState, picturesScreenState = picturesScreenState)
 			}
 		}
 	}
 
 	@Composable
-	fun NavigationSetup(navController: NavHostController, uiState: MutableState<UiStateDataClass>)
+	fun NavigationSetup(navController: NavHostController, uiState: MutableState<UiStateDataClass>, picturesScreenState: MutableState<PicturesState>)
 	{
 		NavHost(
 			navController,
@@ -262,16 +262,15 @@ class MainActivity: AppCompatActivity()
 						checkIfExists = { str -> picVM.checkOnErrorExists(str) },
 						addError = { str -> picVM.addError(str) },
 						getPics = { picVM.getPics() },
-						postState = { str -> picVM.postState(str) },
-						state = uiState,
+						postState = { picVM.postState() },
+						state = picturesScreenState,
 						clearErrors = { picVM.clearErrors() },
 						postPositiveState = { picVM.postPositiveVisabilityState() },
 						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
 						sharedPrefsPictures = imagesStringUrlsSP,
 						clearedCache = changedTheme,
 						currentPicture = { url -> picVM.clickOnPicture(url) },
-						isValidUrl = { url -> picVM.isValidUrl(url) },
-						postUrls = { urls -> picVM.postPictures(urls) }
+						isValidUrl = { url -> picVM.isValidUrl(url) }
 					)
 				}
 			}
