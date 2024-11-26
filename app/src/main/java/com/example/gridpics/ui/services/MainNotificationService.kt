@@ -45,6 +45,7 @@ class MainNotificationService: Service()
 	override fun onBind(intent: Intent?): IBinder
 	{
 		Log.d("service", "onBind()")
+		createLogic(Pair(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE))
 		return binder
 	}
 
