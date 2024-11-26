@@ -1,4 +1,4 @@
-package com.example.gridpics.ui.pictures
+package com.example.gridpics.ui.pictures.state
 
 sealed class PicturesState
 {

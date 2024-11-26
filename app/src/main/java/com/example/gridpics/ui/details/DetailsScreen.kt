@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.util.Log
+import android.view.Window
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -59,7 +60,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -70,6 +70,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
@@ -87,7 +89,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.Screen
-import com.example.gridpics.ui.state.UiStateDataClass
+import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -101,7 +103,7 @@ fun DetailsScreen(
 	navController: NavController,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	state: MutableState<UiStateDataClass>,
+	state: MutableState<DetailsScreenUiState>,
 	removeSpecialError: (String) -> Unit,
 	postDefaultUrl: () -> Unit,
 	changeVisabilityState: () -> Unit,
@@ -111,6 +113,7 @@ fun DetailsScreen(
 	pic: String?,
 	isValidUrl: (String) -> Boolean,
 	convertPicture: (Bitmap) -> String,
+	window: Window,
 )
 {
 	val context = LocalContext.current
@@ -144,7 +147,7 @@ fun DetailsScreen(
 		}
 		else
 		{
-			val imgRequest = remember (list[pagerState.currentPage]) {
+			val imgRequest = remember(list[pagerState.currentPage]) {
 				ImageRequest.Builder(context)
 					.data(list[pagerState.currentPage])
 					.placeholder(R.drawable.loading)
@@ -182,7 +185,8 @@ fun DetailsScreen(
 					changeVisabilityState = changeVisabilityState,
 					postPositiveState = postPositiveState,
 					multiWindowed = state,
-					isValidUrl = isValidUrl
+					isValidUrl = isValidUrl,
+					window = window
 				)
 			}
 		)
@@ -203,10 +207,11 @@ fun ShowDetails(
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
-	multiWindowed: MutableState<UiStateDataClass>,
+	multiWindowed: MutableState<DetailsScreenUiState>,
 	changeVisabilityState: () -> Unit,
 	postPositiveState: () -> Unit,
 	isValidUrl: (String) -> Boolean,
+	window: Window,
 )
 {
 	padding.calculateBottomPadding()
@@ -255,7 +260,8 @@ fun ShowDetails(
 					isVisible = isVisible,
 					exit = exit,
 					multiWindow = multiWindowed,
-					context = context
+					context = context,
+					window = window
 				)
 			}
 		}
@@ -276,8 +282,9 @@ fun ShowAsynchImage(
 	navController: NavController,
 	isVisible: MutableState<Boolean>,
 	exit: MutableState<Boolean>,
-	multiWindow: MutableState<UiStateDataClass>,
+	multiWindow: MutableState<DetailsScreenUiState>,
 	context: Context,
+	window: Window,
 )
 {
 	val orientation = context.resources.configuration.orientation
@@ -309,6 +316,7 @@ fun ShowAsynchImage(
 			.networkCachePolicy(CachePolicy.ENABLED)
 			.build()
 	}
+	val scope = rememberCoroutineScope()
 	AsyncImage(
 		model = imgRequest,
 		contentDescription = "",
@@ -324,6 +332,19 @@ fun ShowAsynchImage(
 			.fillMaxSize()
 			.zoomable(zoom, enableOneFingerZoom = false, onTap = {
 				changeVisabilityState.invoke()
+				val controller = WindowCompat.getInsetsController(window, window.decorView)
+				scope.launch {
+					if(!isVisible.value)
+					{
+						controller.hide(WindowInsetsCompat.Type.statusBars())
+						controller.hide(WindowInsetsCompat.Type.navigationBars())
+					}
+					else
+					{
+						controller.show(WindowInsetsCompat.Type.statusBars())
+						controller.show(WindowInsetsCompat.Type.navigationBars())
+					}
+				}
 				isVisible.value = !isVisible.value
 			})
 			.pointerInput(Unit) {
@@ -468,7 +489,7 @@ fun AppBar(
 					}
 				) {
 					Icon(
-						painter = rememberVectorPainter(Icons.Default.Share),
+						Icons.Default.Share,
 						contentDescription = "share",
 						tint = MaterialTheme.colorScheme.onPrimary,
 					)

@@ -25,8 +25,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -36,13 +34,13 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
-import com.example.gridpics.ui.pictures.PicturesState
 import com.example.gridpics.ui.pictures.PicturesViewModel
+import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
+import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.services.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.settings.ThemePick
-import com.example.gridpics.ui.state.UiStateDataClass
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -110,7 +108,7 @@ class MainActivity: AppCompatActivity()
 		val lifeCycScope = lifecycleScope
 		Log.d("theme", "just changed theme? ")
 		//Start showing notification
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !changedTheme)
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
 		{
 			if(
 				ContextCompat.checkSelfPermission(
@@ -149,28 +147,11 @@ class MainActivity: AppCompatActivity()
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
 		)
-		val uiState: MutableState<UiStateDataClass> = mutableStateOf(UiStateDataClass(isMultiWindowed = false, barsAreVisible = true))
+
 		picVM.getPics()
 		lifeCycScope.launch {
 			picVM.observeCurrentImg().collectLatest {
 				currentPictureSP = it
-			}
-		}
-		val window = window
-		val controller = WindowCompat.getInsetsController(window, window.decorView)
-		lifeCycScope.launch {
-			picVM.observeUiState().collectLatest {
-				uiState.value = it
-				if(!it.barsAreVisible)
-				{
-					controller.hide(WindowInsetsCompat.Type.statusBars())
-					controller.hide(WindowInsetsCompat.Type.navigationBars())
-				}
-				else
-				{
-					controller.show(WindowInsetsCompat.Type.statusBars())
-					controller.show(WindowInsetsCompat.Type.navigationBars())
-				}
 			}
 		}
 
@@ -183,7 +164,7 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-		val picturesScreenState: MutableState<PicturesState> = mutableStateOf(PicturesState.NothingFound)
+		val picturesScreenState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, imagesStringUrlsSP))
 		lifeCycScope.launch {
 			picVM.observePicturesFlow().collectLatest {
 				picturesScreenState.value = it
@@ -221,13 +202,13 @@ class MainActivity: AppCompatActivity()
 		setContent {
 			ComposeTheme {
 				val navController = rememberNavController()
-				NavigationSetup(navController = navController, uiState = uiState, picturesScreenState = picturesScreenState)
+				NavigationSetup(navController = navController, picturesScreenState = picturesScreenState)
 			}
 		}
 	}
 
 	@Composable
-	fun NavigationSetup(navController: NavHostController, uiState: MutableState<UiStateDataClass>, picturesScreenState: MutableState<PicturesState>)
+	fun NavigationSetup(navController: NavHostController, picturesScreenState: MutableState<PicturesScreenUiState>)
 	{
 		NavHost(
 			navController,
@@ -253,10 +234,8 @@ class MainActivity: AppCompatActivity()
 						postState = { urls -> picVM.postState(urls) },
 						state = picturesScreenState,
 						clearErrors = { picVM.clearErrors() },
-						postPositiveState = { picVM.postPositiveVisabilityState() },
+						postPositiveState = { detVM.postPositiveVisabilityState() },
 						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
-						sharedPrefsPictures = imagesStringUrlsSP,
-						clearedCache = changedTheme,
 						currentPicture = { url -> picVM.clickOnPicture(url) },
 						isValidUrl = { url -> picVM.isValidUrl(url) }
 					)
@@ -278,16 +257,17 @@ class MainActivity: AppCompatActivity()
 						navController = navController,
 						checkIfExists = { str -> picVM.checkOnErrorExists(str) },
 						addError = { str -> picVM.addError(str) },
-						state = uiState,
+						state = detVM.uiStateFlow,
 						removeSpecialError = { str -> picVM.removeSpecialError(str) },
 						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
-						changeVisabilityState = { picVM.changeVisabilityState() },
+						changeVisabilityState = { detVM.changeVisabilityState() },
 						postUrl = { str, p -> detVM.postNewPic(str, p) },
-						postPositiveState = { picVM.postPositiveVisabilityState() },
+						postPositiveState = { detVM.postPositiveVisabilityState() },
 						pictures = imagesStringUrlsSP,
 						pic = currentPictureSP,
 						isValidUrl = { url -> picVM.isValidUrl(url) },
-						convertPicture = { bitmap: Bitmap -> detVM.convertPictureToString(bitmap) }
+						convertPicture = { bitmap: Bitmap -> detVM.convertPictureToString(bitmap) },
+						window = window
 					)
 				}
 			}
@@ -299,11 +279,11 @@ class MainActivity: AppCompatActivity()
 		super.onConfigurationChanged(newConfig)
 		if(isInMultiWindowMode || isInPictureInPictureMode)
 		{
-			picturesViewModel.changeMultiWindowState(true)
+			detailsViewModel.changeMultiWindowState(true)
 		}
 		else if(!isInMultiWindowMode)
 		{
-			picturesViewModel.changeMultiWindowState(false)
+			detailsViewModel.changeMultiWindowState(false)
 		}
 	}
 

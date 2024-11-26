@@ -78,9 +78,9 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.Screen
+import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
+import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -93,12 +93,10 @@ fun PicturesScreen(
 	addError: (String) -> Unit,
 	getPics: () -> Unit,
 	postState: (String) -> Unit,
-	state: MutableState<PicturesState>,
+	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	postPositiveState: () -> Unit,
 	postDefaultUrl: () -> Unit,
-	sharedPrefsPictures: String?,
-	clearedCache: Boolean,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 )
@@ -146,10 +144,10 @@ fun PicturesScreen(
 					.consumeWindowInsets(padding)
 					.fillMaxSize()
 			) {
-				if(!sharedPrefsPictures.isNullOrEmpty() && !clearedCache)
+				if(!state.value.picturesUrl.isNullOrEmpty() && !state.value.clearedCache)
 				{
 					ShowList(
-						imagesUrlsSP = sharedPrefsPictures,
+						imagesUrlsSP = state.value.picturesUrl,
 						checkIfExists = checkIfExists,
 						addError = addError,
 						getPics = getPics,
@@ -162,26 +160,10 @@ fun PicturesScreen(
 						postDefaultUrl = postDefaultUrl,
 					)
 				}
-				else if(!clearedCache && sharedPrefsPictures.isNullOrEmpty())
+				else
 				{
 					ShowList(
-						imagesUrlsSP = sharedPrefsPictures,
-						checkIfExists = checkIfExists,
-						addError = addError,
-						getPics = getPics,
-						postState = postState,
-						state = state,
-						clearErrors = clearErrors,
-						navController = navController,
-						currentPicture = currentPicture,
-						isValidUrl = isValidUrl,
-						postDefaultUrl = postDefaultUrl,
-					)
-				}
-				else if(clearedCache || sharedPrefsPictures.isNullOrEmpty())
-				{
-					ShowList(
-						imagesUrlsSP = sharedPrefsPictures,
+						imagesUrlsSP = null,
 						checkIfExists = checkIfExists,
 						addError = addError,
 						getPics = getPics,
@@ -210,7 +192,7 @@ fun itemNewsCard(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postDefaultUrl: () -> Unit,
-	loadingHasBeenEnded: Boolean
+	loadingHasBeenEnded: Boolean,
 ): Boolean
 {
 	postDefaultUrl.invoke()
@@ -266,11 +248,11 @@ fun itemNewsCard(
 		},
 		onSuccess = {
 			isError = false
-		},
+		}
 	)
 	if(isClicked)
 	{
-		if (loadingHasBeenEnded)
+		if(loadingHasBeenEnded)
 		{
 			isClicked = false
 			currentPicture(item)
@@ -279,10 +261,11 @@ fun itemNewsCard(
 			editor.putString(PICTURE, item)
 			editor.apply()
 			navController.navigate(Screen.Details.route)
-		} else {
+		}
+		else
+		{
 			val txt = stringResource(R.string.wait_for_loading_to_end)
-			LaunchedEffect(rememberCoroutineScope()) { Toast.makeText(context, txt, Toast.LENGTH_SHORT).show() }
-
+			LaunchedEffect(item) { Toast.makeText(context, txt, Toast.LENGTH_SHORT).show() }
 		}
 	}
 	when
@@ -331,7 +314,7 @@ fun ShowList(
 	addError: (String) -> Unit,
 	getPics: () -> Unit,
 	postState: (String) -> Unit,
-	state: MutableState<PicturesState>,
+	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	navController: NavController,
 	currentPicture: (String) -> Unit,
@@ -346,18 +329,18 @@ fun ShowList(
 	val listState = rememberLazyGridState()
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
-		when(state.value)
+		when(state.value.loadingState)
 		{
 			is PicturesState.SearchIsOk ->
 			{
 				val loadingString = stringResource(R.string.loading_has_been_started)
 				Log.d("Now state is", "Loading")
-				LaunchedEffect(scope) {
+				LaunchedEffect(state.value.loadingState) {
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
-					saveToSharedPrefs(context, (state.value as PicturesState.SearchIsOk).data)
+					saveToSharedPrefs(context, (state.value.loadingState as PicturesState.SearchIsOk).data)
 				}
-				val value = remember(state.value) { (state.value as PicturesState.SearchIsOk).data }
-				val list = remember(state.value) { value.split("\n") }
+				val value = remember(state.value.loadingState) { (state.value.loadingState as PicturesState.SearchIsOk).data }
+				val list = remember(state.value.loadingState) { value.split("\n") }
 
 				LazyVerticalGrid(
 					state = listState,
@@ -402,11 +385,11 @@ fun ShowList(
 			is PicturesState.Loaded ->
 			{
 				val loadingEnded = stringResource(R.string.loading_has_been_ended)
-				LaunchedEffect(scope) {
+				LaunchedEffect(state.value.loadingState) {
 					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
 				}
 				Log.d("Now state is", "Loaded")
-				val list = remember(state.value) { ((state.value as PicturesState.Loaded).data).split("\n") }
+				val list = remember(state.value.loadingState) { ((state.value.loadingState as PicturesState.Loaded).data).split("\n") }
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
@@ -432,7 +415,7 @@ fun ShowList(
 	else
 	{
 		Log.d("Now state is", "Loaded from sp")
-		LaunchedEffect(CoroutineScope(Dispatchers.IO)) {
+		LaunchedEffect(state.value.loadingState) {
 			saveToSharedPrefs(context, imagesUrlsSP)
 		}
 		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n") }

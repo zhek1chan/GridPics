@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
-import com.example.gridpics.ui.state.UiStateDataClass
+import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
+import com.example.gridpics.ui.pictures.state.PicturesState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -13,68 +14,45 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	private val uiStateFlow = MutableStateFlow(UiStateDataClass(isMultiWindowed = false, barsAreVisible = false))
+	private val picturesUiState = MutableStateFlow(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
-	private val picturesFlow = MutableStateFlow<PicturesState>(PicturesState.NothingFound)
 	private val currentImg = MutableStateFlow("")
-	fun observePicturesFlow(): Flow<PicturesState> = picturesFlow
+	fun observePicturesFlow(): Flow<PicturesScreenUiState> = picturesUiState
 	fun observeCurrentImg(): Flow<String> = currentImg
 	fun observeBackNav(): Flow<Boolean> = backNav
-	fun observeUiState(): Flow<UiStateDataClass> = uiStateFlow
 	fun getPics()
 	{
 		viewModelScope.launch {
 			interactor.getPics().collect { news ->
 				when(news)
 				{
-					is Resource.Data -> picturesFlow.value = (PicturesState.SearchIsOk(news.value))
-					is Resource.ConnectionError -> picturesFlow.value = (PicturesState.ConnectionError)
-					is Resource.NotFound -> picturesFlow.value = (PicturesState.NothingFound)
+					is Resource.Data -> picturesUiState.value = PicturesScreenUiState(PicturesState.SearchIsOk(news.value), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+					is Resource.ConnectionError -> picturesUiState.value = PicturesScreenUiState(PicturesState.ConnectionError, picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+					is Resource.NotFound -> picturesUiState.value = PicturesScreenUiState(PicturesState.NothingFound, picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
 				}
 			}
-		}
-	}
-
-	fun changeVisabilityState()
-	{
-		viewModelScope.launch {
-			if(!uiStateFlow.value.barsAreVisible)
-			{
-				uiStateFlow.emit(UiStateDataClass(uiStateFlow.value.isMultiWindowed, true))
-			}
-			else
-			{
-				uiStateFlow.emit(UiStateDataClass(uiStateFlow.value.isMultiWindowed, false))
-			}
-		}
-	}
-
-	fun changeMultiWindowState(isMultiWindowed: Boolean)
-	{
-		viewModelScope.launch {
-			if(!isMultiWindowed)
-			{
-				uiStateFlow.emit(UiStateDataClass(true, uiStateFlow.value.barsAreVisible))
-			}
-			else
-			{
-				uiStateFlow.emit(UiStateDataClass(false, uiStateFlow.value.barsAreVisible))
-			}
-		}
-	}
-
-	fun postPositiveVisabilityState()
-	{
-		viewModelScope.launch {
-			uiStateFlow.emit(UiStateDataClass(uiStateFlow.value.isMultiWindowed, true))
 		}
 	}
 
 	fun postState(urls: String)
 	{
 		viewModelScope.launch {
-			picturesFlow.value = (PicturesState.Loaded(urls))
+			picturesUiState.emit(PicturesScreenUiState(PicturesState.Loaded(urls), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl))
+		}
+	}
+
+	fun postSavedUrls(urls: String)
+	{
+		viewModelScope.launch {
+			picturesUiState.emit(PicturesScreenUiState(picturesUiState.value.loadingState, picturesUiState.value.clearedCache, urls))
+		}
+	}
+
+	fun postCacheWasCleared(cacheWasCleared: Boolean)
+	{
+		viewModelScope.launch {
+			picturesUiState.emit(PicturesScreenUiState(picturesUiState.value.loadingState, cacheWasCleared, picturesUiState.value.picturesUrl))
 		}
 	}
 

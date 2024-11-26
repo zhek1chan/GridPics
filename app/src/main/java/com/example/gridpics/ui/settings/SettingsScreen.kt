@@ -44,7 +44,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
@@ -221,7 +220,7 @@ fun SettingsCompose(
 			) {
 				Icon(
 					modifier = Modifier.padding(0.dp, 0.dp),
-					painter = painterResource(R.drawable.ic_delete),
+					painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_delete)),
 					contentDescription = "CommentIcon",
 					tint = MaterialTheme.colorScheme.onPrimary
 				)
