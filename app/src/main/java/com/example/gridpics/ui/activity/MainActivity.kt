@@ -49,7 +49,6 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var serviceIntent = Intent()
-	private var description: Pair<String, String?> = Pair(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE)
 	private var mainNotificationService = MainNotificationService()
 	private var mBound: Boolean = false
 	private var currentPictureSP = ""
@@ -59,7 +58,26 @@ class MainActivity: AppCompatActivity()
 		{
 			val binder = service as MainNotificationService.NetworkServiceBinder
 			mainNotificationService = binder.get()
-			mainNotificationService.putValues(description)
+			lifecycleScope.launch {
+				detailsViewModel.observeUrlFlow().collectLatest {
+					if(ContextCompat.checkSelfPermission(
+							this@MainActivity,
+							Manifest.permission.POST_NOTIFICATIONS,
+						) == PackageManager.PERMISSION_GRANTED)
+					{
+						Log.d("checkma keys", "${it.keys}")
+						if(it.keys.isNotEmpty())
+						{
+							val e = it.keys.toList().last()
+							val newValues = Pair(e, it[e])
+							if(mBound)
+							{
+								mainNotificationService.putValues(newValues)
+							}
+						}
+					}
+				}
+			}
 			mBound = true
 		}
 
@@ -83,7 +101,6 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		val picVM = picturesViewModel
-		val detailsVM = detailsViewModel
 		val lifeCycScope = lifecycleScope
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// currentPictureSP - Здесь мы получаем картинку, которая была выбранна пользователем при переходе на экран деталей,
@@ -155,27 +172,6 @@ class MainActivity: AppCompatActivity()
 				{
 					stopService(serviceIntent)
 					this@MainActivity.finishAffinity()
-				}
-			}
-		}
-
-		lifeCycScope.launch {
-			detailsVM.observeUrlFlow().collectLatest {
-				if(ContextCompat.checkSelfPermission(
-						this@MainActivity,
-						Manifest.permission.POST_NOTIFICATIONS,
-					) == PackageManager.PERMISSION_GRANTED)
-				{
-					Log.d("checkma keys", "${it.keys}")
-					if(it.keys.isNotEmpty())
-					{
-						val e = it.keys.toList().last()
-						description = Pair(e, it[e])
-						if(mBound)
-						{
-							mainNotificationService.putValues(description)
-						}
-					}
 				}
 			}
 		}
