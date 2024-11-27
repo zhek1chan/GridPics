@@ -36,6 +36,7 @@ import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -103,6 +104,10 @@ class MainActivity: AppCompatActivity()
 				{
 					if(mainNotificationService != null)
 					{
+						if(it.first == DEFAULT_STRING_VALUE){
+							mainNotificationService!!.putValues(it)
+							delay(150)
+						}
 						mainNotificationService!!.putValues(it)
 					}
 				}
