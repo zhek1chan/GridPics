@@ -104,7 +104,6 @@ fun PicturesScreen(
 	val context = LocalContext.current
 	postPositiveState.invoke()
 	postDefaultUrl.invoke()
-
 	BackHandler {
 		postPressOnBackButton.invoke()
 	}
@@ -157,7 +156,6 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postDefaultUrl = postDefaultUrl,
 						postSavedUrls = postSavedUrls
 					)
 				}
@@ -174,7 +172,6 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postDefaultUrl = postDefaultUrl,
 						postSavedUrls = postSavedUrls
 					)
 				}
@@ -192,11 +189,9 @@ fun itemNewsCard(
 	getPics: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postDefaultUrl: () -> Unit,
 	loadingHasBeenEnded: Boolean,
 ): Boolean
 {
-	postDefaultUrl.invoke()
 	var isError by remember { mutableStateOf(false) }
 	val context = LocalContext.current
 	var isClicked by remember { mutableStateOf(false) }
@@ -316,7 +311,6 @@ fun ShowList(
 	navController: NavController,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postDefaultUrl: () -> Unit,
 	postSavedUrls: (String) -> Unit,
 )
 {
@@ -353,7 +347,6 @@ fun ShowList(
 							getPics = getPics,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							postDefaultUrl = postDefaultUrl,
 							loadingHasBeenEnded = false
 						)
 					}
@@ -403,7 +396,6 @@ fun ShowList(
 							getPics = getPics,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							postDefaultUrl = postDefaultUrl,
 							loadingHasBeenEnded = true
 						)
 					}
@@ -434,7 +426,6 @@ fun ShowList(
 					getPics = getPics,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
-					postDefaultUrl = postDefaultUrl,
 					loadingHasBeenEnded = true
 				)
 			}

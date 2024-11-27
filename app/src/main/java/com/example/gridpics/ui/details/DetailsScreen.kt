@@ -83,7 +83,6 @@ import coil3.toBitmap
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity
-import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
@@ -118,13 +117,11 @@ fun DetailsScreen(
 		{
 			Log.d("we are out", "We are out")
 			changeVisabilityState.invoke()
-			postUrl(DEFAULT_STRING_VALUE, null)
 			navController.navigateUp()
 		}
 		else
 		{
 			Log.d("we are out", "We are without changing state")
-			postUrl(DEFAULT_STRING_VALUE, null)
 			navController.navigateUp()
 		}
 	}
