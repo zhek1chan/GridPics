@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.settings
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
@@ -55,8 +54,7 @@ import androidx.navigation.NavController
 import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
-import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
-import com.example.gridpics.ui.activity.MainActivity.Companion.JUST_CHANGED_THEME
+import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE_IS_SAVED
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
@@ -69,6 +67,7 @@ fun SettingsScreen(
 	option: Int,
 	postDefaultUrl: () -> Unit,
 	changeTheme: (Int) -> Unit,
+	justChangedTheme: () -> Unit,
 )
 {
 	postDefaultUrl.invoke()
@@ -109,17 +108,17 @@ fun SettingsScreen(
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
-				SettingsCompose(option, changeTheme)
+				SettingsCompose(option, changeTheme, justChangedTheme)
 			}
 		}
 	)
 }
 
-@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun SettingsCompose(
 	option: Int,
 	changeTheme: (Int) -> Unit,
+	justChangedTheme: () -> Unit,
 )
 {
 	var showDialog by remember { mutableStateOf(false) }
@@ -147,7 +146,6 @@ fun SettingsCompose(
 								.padding(18.dp, 10.dp, 18.dp, 0.dp)
 								.clickable {
 									onOptionSelected(text)
-									changeFromSettings(context)
 									saveThemeState(context, listOfThemeOptions.indexOf(text))
 									changeTheme(listOfThemeOptions.indexOf(text))
 								}
@@ -192,8 +190,8 @@ fun SettingsCompose(
 								selected = (text == selectedOption),
 								onClick =
 								{
+									justChangedTheme.invoke()
 									onOptionSelected(text)
-									changeFromSettings(context)
 									saveThemeState(context, listOfThemeOptions.indexOf(text))
 									changeTheme(listOfThemeOptions.indexOf(text))
 								},
@@ -247,7 +245,7 @@ fun SettingsCompose(
 						imageLoader.memoryCache?.clear()
 						val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 						val editor = sharedPreferences.edit()
-						editor.putBoolean(CACHE, true)
+						editor.putBoolean(CACHE_IS_SAVED, true)
 						editor.putString(SHARED_PREFS_PICTURES, null)
 						editor.apply()
 						showDialog = false
@@ -263,16 +261,9 @@ fun SettingsCompose(
 	}
 }
 
-private fun saveThemeState(context: Context, barsVisabilityInt: Int)
+private fun saveThemeState(context: Context, chosenOption: Int)
 {
 	val editor = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
-	editor.putInt(THEME_SHARED_PREFERENCE, barsVisabilityInt)
+	editor.putInt(THEME_SHARED_PREFERENCE, chosenOption)
 	editor.apply()
-}
-
-fun changeFromSettings(context: Context)
-{
-	val editorForDialog = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
-	editorForDialog.putBoolean(JUST_CHANGED_THEME, true)
-	editorForDialog.apply()
 }

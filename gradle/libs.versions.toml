@@ -2,56 +2,30 @@
 agp = "8.5.2"
 coil = "2.7.0"
 coilCompose = "3.0.0-rc01"
-compose = "1.0.0-beta01"
 coreSplashscreen = "1.0.1"
-glide = "4.15.1"
 gson = "2.11.0"
-koinAndroid = "3.5.3"
 koinAndroidxCompose = "3.5.3"
 kotlin = "1.9.0"
-coreKtx = "1.13.1"
-junit = "4.13.2"
-junitVersion = "1.2.1"
-espressoCore = "3.6.1"
-appcompat = "1.7.0"
 material = "1.12.0"
-constraintlayout = "2.1.4"
 lifecycleLivedataKtx = "2.8.6"
-lifecycleViewmodelKtx = "2.8.6"
 materialVersion = "1.7.3"
 navigationCompose = "2.7.6"
 navigationFragmentKtx = "2.8.1"
-navigationUiKtx = "2.8.1"
 okhttp = "4.12.0"
 pagingCompose = "3.3.2"
 photoviewVersion = "2.3.0"
 retrofit = "2.11.0"
 retrofitVersion = "2.3.0"
-swiperefreshlayout = "1.1.0"
-touchimageview = "1.4.1"
 transformations = "2.0.3"
 ui = "1.0.0"
 uiGraphicsAndroid = "1.7.3"
 constraintlayoutCompose = "1.0.1"
 library = "1.0.0"
 runtimeLivedata = "1.7.1"
-databindingCompiler = "8.7.0"
 workRuntimeKtx = "2.9.1"
 zoomable = "1.6.2"
-zoomimageViewCoil = "1.0.0"
-foundationLayoutAndroid = "1.7.2"
-fragmentCompose = "1.8.4"
-toolsCore = "1.0.0-alpha10"
-activityKtx = "1.9.2"
-accompanistSystemuicontroller = "0.36.0"
-volley = "1.2.1"
-core = "1.46.0"
 
 [libraries]
-accompanist-drawablepainter = { module = "com.google.accompanist:accompanist-drawablepainter", version.ref = "accompanistSystemuicontroller" }
-accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
-androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activityKtx" }
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleLivedataKtx" }
 androidx-material = { module = "androidx.compose.material:material", version.ref = "materialVersion" }
@@ -64,29 +38,14 @@ androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilCompose" }
-compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
-compose = { module = "com.github.bumptech.glide:compose", version.ref = "compose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofitVersion" }
-glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
-androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-koin-android = { module = "io.insert-koin:koin-android", version.ref = "koinAndroid" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinAndroidxCompose" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
-androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
-androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
-androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
-androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 photoview-v230 = { module = "com.github.chrisbanes:PhotoView", version.ref = "photoviewVersion" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-v230 = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofitVersion" }
-androidx-ui-graphics-android = { group = "androidx.compose.ui", name = "ui-graphics-android", version.ref = "uiGraphicsAndroid" }
-touchimageview = { module = "com.github.MikeOrtiz:TouchImageView", version.ref = "touchimageview" }
 androidx-material3 = { module = "androidx.compose.material3:material3" }
 transformations = { module = "com.github.Commit451.coil-transformations:transformations", version.ref = "transformations" }
 ui = { module = "androidx.compose.ui:ui" }
@@ -97,14 +56,7 @@ androidx-constraintlayout-compose = { module = "androidx.constraintlayout:constr
 library = { module = "me.zhanghai.compose.preference:library", version.ref = "library" }
 androidx-runtime-livedata = { module = "androidx.compose.runtime:runtime-livedata", version.ref = "runtimeLivedata" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "uiGraphicsAndroid" }
-androidx-databinding-compiler = { group = "androidx.databinding", name = "databinding-compiler", version.ref = "databindingCompiler" }
 zoomable = { module = "net.engawapg.lib:zoomable", version.ref = "zoomable" }
-zoomimage-view-coil = { module = "io.github.panpf.zoomimage:zoomimage-view-coil", version.ref = "zoomimageViewCoil" }
-androidx-foundation-layout-android = { group = "androidx.compose.foundation", name = "foundation-layout-android", version.ref = "foundationLayoutAndroid" }
-androidx-fragment-compose = { group = "androidx.fragment", name = "fragment-compose", version.ref = "fragmentCompose" }
-androidx-tools-core = { group = "androidx.privacysandbox.tools", name = "tools-core", version.ref = "toolsCore" }
-volley = { group = "com.android.volley", name = "volley", version.ref = "volley" }
-core = { group = "com.google.ar", name = "core", version.ref = "core" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

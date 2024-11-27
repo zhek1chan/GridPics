@@ -1,4 +1,4 @@
-package com.example.gridpics.ui.services
+package com.example.gridpics.ui.service
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -6,13 +6,12 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
+import android.graphics.Bitmap
 import android.graphics.drawable.Icon
 import android.os.Binder
 import android.os.Build
 import android.os.Build.VERSION_CODES
 import android.os.IBinder
-import android.util.Base64
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.Builder
@@ -23,7 +22,6 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VA
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.countExitNavigation
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
@@ -34,7 +32,6 @@ class MainNotificationService: Service()
 {
 	private val binder = NetworkServiceBinder()
 	private val jobForNotification = Job()
-	private lateinit var contentText: String
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
 		Log.d("service", "onStartCommand()")
@@ -44,7 +41,7 @@ class MainNotificationService: Service()
 	override fun onBind(intent: Intent?): IBinder
 	{
 		Log.d("service", "onBind()")
-		createLogic(Pair(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE))
+		createLogic(Pair(DEFAULT_STRING_VALUE, null))
 		return binder
 	}
 
@@ -94,25 +91,24 @@ class MainNotificationService: Service()
 	@OptIn(DelicateCoroutinesApi::class)
 	private fun stopNotificationCoroutine()
 	{
-		GlobalScope.launch(Dispatchers.Default + jobForNotification) {
+		GlobalScope.launch(jobForNotification) {
 			Log.d("service", "stopNotificationCoroutine has been started")
 			delay(2000)
-			val notificationManager = this@MainNotificationService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-			notificationManager.cancelAll()
 			stopSelf()
 			Log.d("service", "service was stopped")
 		}
 	}
 
-	private fun createLogic(values: Pair<String, String?>)
+	private fun createLogic(values: Pair<String, Bitmap?>)
 	{
 		val dontUseSound = countExitNavigation > 1
 		val resultIntent = Intent(instance, MainActivity::class.java)
 		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE)
-		if(values.first == DEFAULT_STRING_VALUE)
+		val contentText: String
+		if(values == Pair(DEFAULT_STRING_VALUE, null))
 		{
-			contentText = getString(R.string.notification_content_text)
+			Log.d("description in service", DEFAULT_STRING_VALUE)
 			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
 				.setContentIntent(resultPendingIntent)
 				.setAutoCancel(true)
@@ -127,17 +123,11 @@ class MainNotificationService: Service()
 		}
 		else
 		{
-			contentText = values.toList().toString()
+			contentText = values.first
 			Log.d("wtfWtf", contentText)
-			val words = contentText.substring(1, contentText.length - 1).split(",")
-			val description = words[0].trim()
-			val stringImage = words[1].trim()
+			val description = values.first
+			val stringImage = values.second
 			Log.d("description in service", description)
-			Log.d("intent", "we got $contentText")
-			Log.d("wtf", stringImage)
-			val decoded = Base64.decode(stringImage, 0)
-			val bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
-			Log.d("wtf", "$bitmap")
 			val builder = Builder(this@MainNotificationService, MainActivity.CHANNEL_NOTIFICATIONS_ID)
 				.setContentIntent(resultPendingIntent)
 				.setAutoCancel(true)
@@ -147,16 +137,16 @@ class MainNotificationService: Service()
 				.setColor(this@MainNotificationService.resources.getColor(R.color.green, theme))
 				.setContentTitle(this@MainNotificationService.getString(R.string.gridpics))
 				.setContentText(description)
-				.setLargeIcon(bitmap)
+				.setLargeIcon(stringImage)
 				.setStyle(NotificationCompat.BigPictureStyle()
-					.bigPicture(bitmap)
+					.bigPicture(stringImage)
 					.bigLargeIcon(null as Icon?))
 			createNotificationChannel()
 			showNotification(builder)
 		}
 	}
 
-	fun putValues(valuesPair: Pair<String, String?>)
+	fun putValues(valuesPair: Pair<String, Bitmap?>)
 	{
 		createLogic(valuesPair)
 	}

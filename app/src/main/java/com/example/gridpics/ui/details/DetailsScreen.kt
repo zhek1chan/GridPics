@@ -2,7 +2,6 @@ package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
@@ -86,8 +85,6 @@ import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
-import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
-import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
@@ -97,7 +94,6 @@ import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
-@SuppressLint("RestrictedApi", "CommitPrefEdits", "ApplySharedPref", "UseCompatLoadingForDrawables", "CoroutineCreationDuringComposition")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailsScreen(
@@ -106,46 +102,44 @@ fun DetailsScreen(
 	addError: (String) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	removeSpecialError: (String) -> Unit,
-	postDefaultUrl: () -> Unit,
 	changeVisabilityState: () -> Unit,
-	postUrl: (String, String) -> Unit,
+	postUrl: (String, Bitmap) -> Unit,
 	postPositiveState: () -> Unit,
 	picturesScreenState: MutableState<PicturesScreenUiState>,
-	pic: String?,
+	currentPicture: MutableState<String>,
 	isValidUrl: (String) -> Boolean,
-	convertPicture: (Bitmap) -> String,
 	window: Window,
 )
 {
 	val context = LocalContext.current
+	val pictureErrorBitmap = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 	BackHandler {
 		if(!state.value.barsAreVisible)
 		{
 			Log.d("we are out", "We are out")
-			postDefaultUrl.invoke()
 			changeVisabilityState.invoke()
+			postUrl(DEFAULT_STRING_VALUE, pictureErrorBitmap!!)
 			navController.navigateUp()
 		}
 		else
 		{
 			Log.d("we are out", "We are without changing state")
-			postDefaultUrl.invoke()
+			postUrl(DEFAULT_STRING_VALUE, pictureErrorBitmap!!)
 			navController.navigateUp()
 		}
 	}
 	val isVisible = remember { mutableStateOf(true) }
 	val pictures = remember { picturesScreenState.value.picturesUrl }
-	if(pic != null && pictures != null)
+	if(pictures != null)
 	{
-		Log.d("pic", "$pic")
-		val list = remember(pic) { pictures.split("\n").toMutableList() }
-		val pagerState = rememberPagerState(initialPage = list.indexOf(pic), pageCount = { list.size })
-		val bitmapString = remember(pagerState) { mutableStateOf(DEFAULT_STRING_VALUE) }
+		Log.d("pic", "$currentPicture")
+		val list = remember(currentPicture) { pictures.split("\n").toMutableList() }
+		val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture.value), pageCount = { list.size })
+		val bitmapString = remember(pagerState) { mutableStateOf(Bitmap.createBitmap(ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap()!!)) }
 		if(checkIfExists(list[pagerState.currentPage]))
 		{
-			val picture = ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap()
 			Log.d("checkMa", "gruzim oshibku")
-			bitmapString.value = convertPicture(picture!!)
+			bitmapString.value = pictureErrorBitmap!!
 		}
 		else
 		{
@@ -156,9 +150,9 @@ fun DetailsScreen(
 					.error(R.drawable.error)
 					.allowHardware(false)
 					.target {
-						val picture = it.toBitmap()
+						val loadedPic = it.toBitmap()
 						Log.d("checkMa", "gruzim pic")
-						bitmapString.value = convertPicture(picture)
+						bitmapString.value = loadedPic
 					}
 					.networkCachePolicy(CachePolicy.ENABLED)
 					.diskCachePolicy(CachePolicy.ENABLED)
@@ -171,10 +165,10 @@ fun DetailsScreen(
 		postUrl(list[pagerState.currentPage], bitmapString.value)
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
-			topBar = { AppBar(isVisible, context, navController, list, pagerState, postDefaultUrl) },
+			topBar = { AppBar(isVisible, context, navController, list, pagerState) },
 			content = { padding ->
 				ShowDetails(
-					img = pic,
+					img = currentPicture,
 					navController = navController,
 					isVisible = isVisible,
 					list = list,
@@ -195,11 +189,11 @@ fun DetailsScreen(
 	}
 }
 
-@SuppressLint("CoroutineCreationDuringComposition", "UseCompatLoadingForDrawables")
 @OptIn(ExperimentalLayoutApi::class)
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowDetails(
-	img: String,
+	img: MutableState<String>,
 	navController: NavController,
 	isVisible: MutableState<Boolean>,
 	list: MutableList<String>,
@@ -217,8 +211,8 @@ fun ShowDetails(
 )
 {
 	padding.calculateBottomPadding()
-	val firstPage = remember { mutableStateOf(true) }
-	val startPage = list.indexOf(img)
+	val firstPage = remember(img.value) { mutableStateOf(true) }
+	val startPage = remember(img.value) { list.indexOf(img.value) }
 	val exit = remember { mutableStateOf(false) }
 	val topBarHeight = 64.dp
 	val scope = rememberCoroutineScope()
@@ -268,11 +262,9 @@ fun ShowDetails(
 			}
 		}
 		MainActivity.countExitNavigation++
-		saveToSharedPrefs(context, list[pagerState.currentPage])
 	}
 }
 
-@SuppressLint("UseCompatLoadingForDrawables")
 @Composable
 fun ShowAsynchImage(
 	list: MutableList<String>,
@@ -379,7 +371,6 @@ fun ShowAsynchImage(
 	)
 }
 
-@SuppressLint("UseCompatLoadingForDrawables")
 @Composable
 fun ShowError(
 	context: Context,
@@ -437,7 +428,6 @@ fun AppBar(
 	context: Context, nc: NavController,
 	list: MutableList<String>,
 	pagerState: PagerState,
-	postDefaultUrl: () -> Unit,
 )
 {
 	var navBack by remember { mutableStateOf(false) }
@@ -500,19 +490,10 @@ fun AppBar(
 		)
 		if(navBack)
 		{
-			postDefaultUrl.invoke()
 			navBack = false
 			nc.navigate(BottomNavItem.Home.route)
 		}
 	}
-}
-
-private fun saveToSharedPrefs(context: Context, pictureUrl: String)
-{
-	val pic = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-	val editor = pic.edit()
-	editor.putString(PICTURE, pictureUrl)
-	editor.apply()
 }
 
 fun share(text: String, context: Context, plain: String)

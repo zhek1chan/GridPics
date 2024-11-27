@@ -1,14 +1,12 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -33,13 +31,11 @@ import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.pictures.PicturesViewModel
-import com.example.gridpics.ui.services.MainNotificationService
+import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -51,32 +47,27 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var serviceIntent = Intent()
-	private var mainNotificationService = MainNotificationService()
-	private var mBound: Boolean = false
-	private var currentPictureSP = ""
-	private val jobForNotificationCreation = Job()
+	private var mainNotificationService: MainNotificationService? = null
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
 		{
 			val binder = service as MainNotificationService.NetworkServiceBinder
 			mainNotificationService = binder.get()
-			mBound = true
 		}
 
 		override fun onServiceDisconnected(arg0: ComponentName)
 		{
-			mBound = false
+			mainNotificationService = null
 		}
 
 		override fun onBindingDied(name: ComponentName?)
 		{
-			mBound = false
+			mainNotificationService = null
 			super.onBindingDied(name)
 		}
 	}
 
-	@SuppressLint("UseCompatLoadingForDrawables")
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
@@ -86,9 +77,6 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val lifeCycScope = lifecycleScope
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-		// currentPictureSP - Здесь мы получаем картинку, которая была выбранна пользователем при переходе на экран деталей,
-		// чтобы при смене темы и пересоздании MainActivity не было ошибки/потери значений.
-		currentPictureSP = sharedPreferences.getString(PICTURE, NULL_STRING)!! //100% won't be null as valu
 		//serviceIntentForNotification
 		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
@@ -103,15 +91,24 @@ class MainActivity: AppCompatActivity()
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
 		// Здесь мы проверяем менялась ли тема при прошлой жизни Activity, если да, то не создавать новое уведомление
-		picVM.postCacheWasCleared(getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false))
-		Log.d("theme", "just changed theme? ")
-
+		picVM.postCacheWasCleared(sharedPreferences.getBoolean(CACHE_IS_SAVED, true))
 		picVM.getPics()
+
 		lifeCycScope.launch {
-			picVM.observeCurrentImg().collectLatest {
-				currentPictureSP = it
+			detailsViewModel.observeUrlFlow().collectLatest {
+				if(ContextCompat.checkSelfPermission(
+						this@MainActivity,
+						Manifest.permission.POST_NOTIFICATIONS,
+					) == PackageManager.PERMISSION_GRANTED)
+				{
+					if(mainNotificationService != null)
+					{
+						mainNotificationService!!.putValues(it)
+					}
+				}
 			}
 		}
+
 
 		lifeCycScope.launch {
 			picVM.observeBackNav().collectLatest {
@@ -123,7 +120,7 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 		val editorSharedPrefs = sharedPreferences.edit()
-		editorSharedPrefs.putBoolean(JUST_CHANGED_THEME, false)
+		editorSharedPrefs.putBoolean(CACHE_IS_SAVED, false)
 		editorSharedPrefs.putInt(THEME_SHARED_PREFERENCE, themePick)
 		editorSharedPrefs.apply()
 
@@ -165,7 +162,7 @@ class MainActivity: AppCompatActivity()
 						state = picVM.picturesUiState,
 						clearErrors = { picVM.clearErrors() },
 						postPositiveState = { detVM.postPositiveVisabilityState() },
-						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
+						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) },
 						currentPicture = { url -> picVM.clickOnPicture(url) },
 						isValidUrl = { url -> picVM.isValidUrl(url) },
 						postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
@@ -177,8 +174,9 @@ class MainActivity: AppCompatActivity()
 					SettingsScreen(
 						navController,
 						themePick,
-						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
+						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) },
 						changeTheme = { int -> settingsViewModel.changeTheme(int) },
+						justChangedTheme = { settingsViewModel.justChangedTheme }
 					)
 				}
 			}
@@ -190,14 +188,12 @@ class MainActivity: AppCompatActivity()
 						addError = { str -> picVM.addError(str) },
 						state = detVM.uiStateFlow,
 						removeSpecialError = { str -> picVM.removeSpecialError(str) },
-						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
 						changeVisabilityState = { detVM.changeVisabilityState() },
 						postUrl = { str, p -> detVM.postNewPic(str, p) },
 						postPositiveState = { detVM.postPositiveVisabilityState() },
 						picturesScreenState = picVM.picturesUiState,
-						pic = currentPictureSP,
+						currentPicture = picVM.currentPicture,
 						isValidUrl = { url -> picVM.isValidUrl(url) },
-						convertPicture = { bitmap: Bitmap -> detVM.convertPictureToString(bitmap) },
 						window = window
 					)
 				}
@@ -251,7 +247,7 @@ class MainActivity: AppCompatActivity()
 	override fun onRestart()
 	{
 		Log.d("lifecycle", "onRestart()")
-		mBound = false
+		mainNotificationService = null
 		super.onRestart()
 	}
 
@@ -259,8 +255,7 @@ class MainActivity: AppCompatActivity()
 	{
 		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 		val connectionLocal = connection
-		jobForNotificationCreation.cancelChildren()
-		if(!mBound)
+		if(mainNotificationService == null)
 		{
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
 			{
@@ -296,22 +291,8 @@ class MainActivity: AppCompatActivity()
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 				}
 			}
-			lifecycleScope.launch(jobForNotificationCreation) {
-				detailsViewModel.observeUrlFlow().collectLatest {
-					if(ContextCompat.checkSelfPermission(
-							this@MainActivity,
-							Manifest.permission.POST_NOTIFICATIONS,
-						) == PackageManager.PERMISSION_GRANTED)
-					{
-						if(mBound)
-						{
-							mainNotificationService.putValues(it)
-						}
-					}
-				}
-			}
 		}
-		Log.d("service", "is connected to Activity?: $mBound")
+		Log.d("service", "is connected to Activity?: ${mainNotificationService != null}")
 		countExitNavigation++
 		Log.d("lifecycle", "onResume()")
 		super.onResume()
@@ -320,7 +301,7 @@ class MainActivity: AppCompatActivity()
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
-		if(mBound)
+		if(mainNotificationService != null)
 		{
 			Log.d("Hello", "This method wont work .-.")
 			unbindService(connection)
@@ -339,13 +320,10 @@ class MainActivity: AppCompatActivity()
 	{
 		var countExitNavigation = 0
 		const val NOTIFICATION_ID = 1337
-		const val CACHE = "CACHE_CACHE"
+		const val CACHE_IS_SAVED = "CACHE_IS_SAVED"
 		const val SHARED_PREFS_PICTURES = "SHARED_PREFS_PICTURES"
-		const val PICTURE = "PICTURE"
 		const val THEME_SHARED_PREFERENCE = "THEME_SHARED_PREFERENCE"
 		const val CHANNEL_NOTIFICATIONS_ID = "GRID_PICS_CHANEL_NOTIFICATIONS_ID"
-		const val NULL_STRING = "NULL_STRING"
-		const val JUST_CHANGED_THEME = "JUST_CHANGED_THEME"
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
 		const val DEFAULT_STRING_VALUE = "default"
 		const val HTTP_ERROR = "HTTP error: 404"

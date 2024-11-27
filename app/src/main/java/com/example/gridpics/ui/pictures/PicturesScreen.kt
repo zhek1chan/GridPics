@@ -73,8 +73,7 @@ import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
-import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
-import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
+import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE_IS_SAVED
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.Screen
@@ -99,7 +98,7 @@ fun PicturesScreen(
 	postDefaultUrl: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (String) -> Unit
+	postSavedUrls: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -184,7 +183,6 @@ fun PicturesScreen(
 	)
 }
 
-@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun itemNewsCard(
 	item: String,
@@ -259,10 +257,6 @@ fun itemNewsCard(
 		{
 			isClicked = false
 			currentPicture(item)
-			val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-			val editor = sharedPreferences.edit()
-			editor.putString(PICTURE, item)
-			editor.apply()
 			navController.navigate(Screen.Details.route)
 		}
 		else
@@ -323,7 +317,7 @@ fun ShowList(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postDefaultUrl: () -> Unit,
-	postSavedUrls: (String) -> Unit
+	postSavedUrls: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -556,7 +550,7 @@ private fun saveToSharedPrefs(context: Context, picturesUrl: String)
 	val sharedPreferencesPictures = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 	val editorPictures = sharedPreferencesPictures.edit()
 	editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
-	editorPictures.putBoolean(CACHE, false)
+	editorPictures.putBoolean(CACHE_IS_SAVED, false)
 	editorPictures.apply()
 }
 

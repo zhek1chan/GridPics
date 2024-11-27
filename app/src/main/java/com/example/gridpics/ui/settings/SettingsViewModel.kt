@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 
 class SettingsViewModel: ViewModel()
 {
+	var justChangedTheme = false
 	fun changeTheme(option: Int)
 	{
 		Log.d("theme option", "theme option: $option")
