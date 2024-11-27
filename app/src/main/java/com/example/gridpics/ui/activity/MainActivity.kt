@@ -110,27 +110,6 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 
-		if(ContextCompat.checkSelfPermission(
-				this,
-				Manifest.permission.POST_NOTIFICATIONS,
-			) == PackageManager.PERMISSION_GRANTED)
-		{
-			lifecycleScope.launch {
-				detailsViewModel.observeUrlFlow().collectLatest {
-					if(ContextCompat.checkSelfPermission(
-							this@MainActivity,
-							Manifest.permission.POST_NOTIFICATIONS,
-						) == PackageManager.PERMISSION_GRANTED)
-					{
-						if(mBound)
-						{
-							mainNotificationService.putValues(it)
-						}
-					}
-				}
-			}
-		}
-
 		lifeCycScope.launch {
 			picVM.observeBackNav().collectLatest {
 				if(it)
@@ -311,6 +290,20 @@ class MainActivity: AppCompatActivity()
 				{
 					startService(serviceIntentLocal)
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+				}
+			}
+			lifecycleScope.launch {
+				detailsViewModel.observeUrlFlow().collectLatest {
+					if(ContextCompat.checkSelfPermission(
+							this@MainActivity,
+							Manifest.permission.POST_NOTIFICATIONS,
+						) == PackageManager.PERMISSION_GRANTED)
+					{
+						if(mBound)
+						{
+							mainNotificationService.putValues(it)
+						}
+					}
 				}
 			}
 		}
