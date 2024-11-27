@@ -189,7 +189,7 @@ class MainActivity: AppCompatActivity()
 						state = detVM.uiStateFlow,
 						removeSpecialError = { str -> picVM.removeSpecialError(str) },
 						changeVisabilityState = { detVM.changeVisabilityState() },
-						postUrl = { str, p -> detVM.postNewPic(str, p) },
+						postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
 						postPositiveState = { detVM.postPositiveVisabilityState() },
 						picturesScreenState = picVM.picturesUiState,
 						currentPicture = picVM.currentPicture,

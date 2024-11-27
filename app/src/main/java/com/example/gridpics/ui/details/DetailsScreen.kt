@@ -103,7 +103,7 @@ fun DetailsScreen(
 	state: MutableState<DetailsScreenUiState>,
 	removeSpecialError: (String) -> Unit,
 	changeVisabilityState: () -> Unit,
-	postUrl: (String, Bitmap) -> Unit,
+	postUrl: (String, Bitmap?) -> Unit,
 	postPositiveState: () -> Unit,
 	picturesScreenState: MutableState<PicturesScreenUiState>,
 	currentPicture: MutableState<String>,
@@ -118,13 +118,13 @@ fun DetailsScreen(
 		{
 			Log.d("we are out", "We are out")
 			changeVisabilityState.invoke()
-			postUrl(DEFAULT_STRING_VALUE, pictureErrorBitmap!!)
+			postUrl(DEFAULT_STRING_VALUE, null)
 			navController.navigateUp()
 		}
 		else
 		{
 			Log.d("we are out", "We are without changing state")
-			postUrl(DEFAULT_STRING_VALUE, pictureErrorBitmap!!)
+			postUrl(DEFAULT_STRING_VALUE, null)
 			navController.navigateUp()
 		}
 	}
