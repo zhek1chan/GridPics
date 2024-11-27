@@ -4,7 +4,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
@@ -95,7 +94,7 @@ class MainNotificationService: Service()
 	@OptIn(DelicateCoroutinesApi::class)
 	private fun stopNotificationCoroutine()
 	{
-		GlobalScope.launch(Dispatchers.IO + jobForNotification) {
+		GlobalScope.launch(Dispatchers.Default + jobForNotification) {
 			Log.d("service", "stopNotificationCoroutine has been started")
 			delay(2000)
 			val notificationManager = this@MainNotificationService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -155,11 +154,6 @@ class MainNotificationService: Service()
 			createNotificationChannel()
 			showNotification(builder)
 		}
-	}
-
-	override fun startForegroundService(service: Intent?): ComponentName?
-	{
-		return super.startForegroundService(service)
 	}
 
 	fun putValues(valuesPair: Pair<String, String?>)

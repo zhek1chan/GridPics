@@ -58,26 +58,6 @@ class MainActivity: AppCompatActivity()
 		{
 			val binder = service as MainNotificationService.NetworkServiceBinder
 			mainNotificationService = binder.get()
-			lifecycleScope.launch {
-				detailsViewModel.observeUrlFlow().collectLatest {
-					if(ContextCompat.checkSelfPermission(
-							this@MainActivity,
-							Manifest.permission.POST_NOTIFICATIONS,
-						) == PackageManager.PERMISSION_GRANTED)
-					{
-						Log.d("checkma keys", "${it.keys}")
-						if(it.keys.isNotEmpty())
-						{
-							val e = it.keys.toList().last()
-							val newValues = Pair(e, it[e])
-							if(mBound)
-							{
-								mainNotificationService.putValues(newValues)
-							}
-						}
-					}
-				}
-			}
 			mBound = true
 		}
 
@@ -106,63 +86,48 @@ class MainActivity: AppCompatActivity()
 		// currentPictureSP - Здесь мы получаем картинку, которая была выбранна пользователем при переходе на экран деталей,
 		// чтобы при смене темы и пересоздании MainActivity не было ошибки/потери значений.
 		currentPictureSP = sharedPreferences.getString(PICTURE, NULL_STRING)!! //100% won't be null as valu
-		val connectionLocal = connection
 		//serviceIntentForNotification
 		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		settingsViewModel.changeTheme(themePick)
+
+		enableEdgeToEdge(
+			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
+			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
+		)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
 		// Здесь мы проверяем менялась ли тема при прошлой жизни Activity, если да, то не создавать новое уведомление
 		picVM.postCacheWasCleared(getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false))
 		Log.d("theme", "just changed theme? ")
-		//Start showing notification
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-		{
-			if(
-				ContextCompat.checkSelfPermission(
-					this,
-					Manifest.permission.POST_NOTIFICATIONS,
-				) == PackageManager.PERMISSION_GRANTED
-			)
-			{
-				startForegroundService(serviceIntentLocal)
-				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-			}
-			else
-			{
-				ActivityCompat.requestPermissions(
-					this,
-					arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-					100
-				)
-			}
-		}
-		else
-		{
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-			{
-				startForegroundService(serviceIntentLocal)
-				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-			}
-			else
-			{
-				startService(serviceIntentLocal)
-				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-			}
-		}
-
-		enableEdgeToEdge(
-			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
-			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
-		)
 
 		picVM.getPics()
 		lifeCycScope.launch {
 			picVM.observeCurrentImg().collectLatest {
 				currentPictureSP = it
+			}
+		}
+
+		if(ContextCompat.checkSelfPermission(
+				this,
+				Manifest.permission.POST_NOTIFICATIONS,
+			) == PackageManager.PERMISSION_GRANTED)
+		{
+			lifecycleScope.launch {
+				detailsViewModel.observeUrlFlow().collectLatest {
+					if(ContextCompat.checkSelfPermission(
+							this@MainActivity,
+							Manifest.permission.POST_NOTIFICATIONS,
+						) == PackageManager.PERMISSION_GRANTED)
+					{
+						if(mBound)
+						{
+							mainNotificationService.putValues(it)
+						}
+					}
+				}
 			}
 		}
 
@@ -304,20 +269,53 @@ class MainActivity: AppCompatActivity()
 	override fun onRestart()
 	{
 		Log.d("lifecycle", "onRestart()")
+		mBound = false
 		super.onRestart()
 	}
 
 	override fun onResume()
 	{
-		Log.d("service", "is connected to Activity?: $mBound")
-		if(ContextCompat.checkSelfPermission(
-				this,
-				Manifest.permission.POST_NOTIFICATIONS,
-			) == PackageManager.PERMISSION_GRANTED)
+		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
+		val connectionLocal = connection
+		if(!mBound)
 		{
-			bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
-			countExitNavigation++
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+			{
+				if(
+					ContextCompat.checkSelfPermission(
+						this,
+						Manifest.permission.POST_NOTIFICATIONS,
+					) == PackageManager.PERMISSION_GRANTED
+				)
+				{
+					startForegroundService(serviceIntentLocal)
+					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+				}
+				else
+				{
+					ActivityCompat.requestPermissions(
+						this,
+						arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+						100
+					)
+				}
+			}
+			else
+			{
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				{
+					startForegroundService(serviceIntentLocal)
+					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+				}
+				else
+				{
+					startService(serviceIntentLocal)
+					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+				}
+			}
 		}
+		Log.d("service", "is connected to Activity?: $mBound")
+		countExitNavigation++
 		Log.d("lifecycle", "onResume()")
 		super.onResume()
 	}
@@ -327,6 +325,7 @@ class MainActivity: AppCompatActivity()
 		Log.d("lifecycle", "onPause()")
 		if(mBound)
 		{
+			Log.d("Hello", "This method wont work .-.")
 			unbindService(connection)
 		}
 		countExitNavigation++

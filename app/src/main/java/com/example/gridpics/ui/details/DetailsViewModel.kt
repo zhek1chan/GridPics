@@ -5,6 +5,7 @@ import android.util.Base64
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -12,13 +13,13 @@ import java.io.ByteArrayOutputStream
 
 class DetailsViewModel: ViewModel()
 {
-	private val imageFlow = MutableStateFlow(mapOf<String, String>())
+	private val imageFlow = MutableStateFlow(Pair(DEFAULT_STRING_VALUE ,DEFAULT_STRING_VALUE))
 	val uiStateFlow = mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = false))
 	fun observeUrlFlow() = imageFlow
 	fun postNewPic(url: String, bitmapString: String)
 	{
 		viewModelScope.launch {
-			imageFlow.emit(mapOf(Pair(url, bitmapString)))
+			imageFlow.emit(Pair(url, bitmapString))
 		}
 	}
 
