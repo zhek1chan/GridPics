@@ -38,6 +38,8 @@ import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -52,6 +54,7 @@ class MainActivity: AppCompatActivity()
 	private var mainNotificationService = MainNotificationService()
 	private var mBound: Boolean = false
 	private var currentPictureSP = ""
+	private val jobForNotificationCreation = Job()
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -256,6 +259,7 @@ class MainActivity: AppCompatActivity()
 	{
 		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 		val connectionLocal = connection
+		jobForNotificationCreation.cancelChildren()
 		if(!mBound)
 		{
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
@@ -292,7 +296,7 @@ class MainActivity: AppCompatActivity()
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 				}
 			}
-			lifecycleScope.launch {
+			lifecycleScope.launch(jobForNotificationCreation) {
 				detailsViewModel.observeUrlFlow().collectLatest {
 					if(ContextCompat.checkSelfPermission(
 							this@MainActivity,
