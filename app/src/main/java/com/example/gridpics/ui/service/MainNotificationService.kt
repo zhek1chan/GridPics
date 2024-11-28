@@ -15,7 +15,6 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.Builder
-import com.example.gridpics.App.Companion.instance
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
@@ -102,8 +101,8 @@ class MainNotificationService: Service()
 	private fun createLogic(values: Pair<String, Bitmap?>)
 	{
 		val dontUseSound = count > 1
-		val resultIntent = Intent(instance, MainActivity::class.java)
-		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
+		val resultIntent = Intent(this, MainActivity::class.java)
+		val resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE)
 		val contentText: String
 		if(values == Pair(DEFAULT_STRING_VALUE, null))

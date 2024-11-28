@@ -3,7 +3,6 @@ package com.example.gridpics
 import android.app.Application
 import android.content.Context
 import android.os.Build
-import androidx.appcompat.app.AppCompatDelegate
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
@@ -14,7 +13,6 @@ import com.example.gridpics.data.network.getUnsafeOkHttpClient
 import com.example.gridpics.di.dataModule
 import com.example.gridpics.di.domainModule
 import com.example.gridpics.di.viewModelModule
-import com.example.gridpics.domain.interactor.SettingsInteractor
 import okhttp3.OkHttpClient
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.component.KoinComponent
@@ -34,9 +32,6 @@ class App: Application(), KoinComponent, SingletonImageLoader.Factory
 			)
 		}
 
-		instance = this
-		val settingsInteractor = getKoin().get<SettingsInteractor>()
-		switchTheme(settingsInteractor.isAppThemeDark())
 		SingletonImageLoader.setSafe {
 			ImageLoader.Builder(this)
 				.allowHardware(true)
@@ -61,18 +56,6 @@ class App: Application(), KoinComponent, SingletonImageLoader.Factory
 		}
 	}
 
-	private fun switchTheme(darkThemeIsEnabled: Boolean)
-	{
-		if(darkThemeIsEnabled)
-		{
-			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-		}
-		else
-		{
-			AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-		}
-	}
-
 	override fun newImageLoader(context: Context): ImageLoader
 	{
 		return ImageLoader.Builder(context)
@@ -87,7 +70,6 @@ class App: Application(), KoinComponent, SingletonImageLoader.Factory
 
 	companion object
 	{
-		lateinit var instance: App
 		lateinit var client: OkHttpClient
 	}
 }
