@@ -113,9 +113,7 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-		val editorSharedPrefs = sharedPreferences.edit()
-		editorSharedPrefs.putInt(THEME_SHARED_PREFERENCE, themePick)
-		editorSharedPrefs.apply()
+
 		serviceIntent = serviceIntentLocal
 
 		setContent {
