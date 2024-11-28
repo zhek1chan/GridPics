@@ -95,7 +95,7 @@ fun PicturesScreen(
 	postPositiveState: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (String) -> Unit
+	postSavedUrls: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -182,9 +182,8 @@ fun itemNewsCard(
 	addError: (String) -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	loadingHasBeenEnded: Boolean,
 	postState: (Boolean, String) -> Unit,
-	urls: String
+	urls: String,
 ): Boolean
 {
 	var isError by remember { mutableStateOf(false) }
@@ -243,17 +242,9 @@ fun itemNewsCard(
 	)
 	if(isClicked)
 	{
-		if(loadingHasBeenEnded)
-		{
-			isClicked = false
-			currentPicture(item)
-			navController.navigate(Screen.Details.route)
-		}
-		else
-		{
-			val txt = stringResource(R.string.wait_for_loading_to_end)
-			LaunchedEffect(item) { Toast.makeText(context, txt, Toast.LENGTH_SHORT).show() }
-		}
+		isClicked = false
+		currentPicture(item)
+		navController.navigate(Screen.Details.route)
 	}
 	when
 	{
@@ -327,7 +318,7 @@ fun ShowList(
 				}
 				val value = remember(state.value.loadingState) { (state.value.loadingState as PicturesState.SearchIsOk).data }
 				val list = remember(state.value.loadingState) { value.split("\n") }
-
+				postSavedUrls(value)
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
@@ -340,7 +331,6 @@ fun ShowList(
 							addError = addError,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							loadingHasBeenEnded = false,
 							postState = postState,
 							urls = value
 						)
@@ -390,7 +380,6 @@ fun ShowList(
 							addError = addError,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							loadingHasBeenEnded = true,
 							postState = postState,
 							urls = value
 						)
@@ -421,7 +410,6 @@ fun ShowList(
 					addError = addError,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
-					loadingHasBeenEnded = true,
 					postState = postState,
 					urls = imagesUrlsSP
 				)
