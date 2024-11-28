@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.util.Log
-import android.view.Window
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -24,7 +23,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
@@ -62,14 +63,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.graphics.drawable.toBitmap
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
@@ -104,7 +102,7 @@ fun DetailsScreen(
 	picturesScreenState: MutableState<PicturesScreenUiState>,
 	updatedCurrentPicture: String,
 	isValidUrl: (String) -> Boolean,
-	window: () -> Window,
+	changeBarsVisability: (Boolean) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -113,6 +111,7 @@ fun DetailsScreen(
 		{
 			Log.d("we are out", "We are out")
 			changeVisabilityState.invoke()
+			changeBarsVisability(true)
 			postUrl(DEFAULT_STRING_VALUE, null)
 			navController.navigateUp()
 		}
@@ -120,6 +119,7 @@ fun DetailsScreen(
 		{
 			Log.d("we are out", "We are without changing state")
 			postUrl(DEFAULT_STRING_VALUE, null)
+			changeBarsVisability(true)
 			navController.navigateUp()
 		}
 	}
@@ -177,15 +177,15 @@ fun DetailsScreen(
 					changeVisabilityState = changeVisabilityState,
 					postPositiveState = postPositiveState,
 					isValidUrl = isValidUrl,
-					window = window,
-					statusBarHeightFixed = padding.calculateTopPadding(),
-					bottomBarHeightFixed = padding.calculateBottomPadding()
+					padding = padding,
+					changeBarsVisability = changeBarsVisability
 				)
 			}
 		)
 	}
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ShowDetails(
 	img: String,
@@ -201,16 +201,20 @@ fun ShowDetails(
 	changeVisabilityState: () -> Unit,
 	postPositiveState: () -> Unit,
 	isValidUrl: (String) -> Boolean,
-	window: () -> Window,
-	statusBarHeightFixed: Dp,
-	bottomBarHeightFixed: Dp,
+	padding: PaddingValues,
+	changeBarsVisability: (Boolean) -> Unit,
 )
 {
+	padding.calculateBottomPadding()
 	val firstPage = remember(img) { mutableStateOf(true) }
 	val startPage = remember(img) { list.indexOf(img) }
 	val exit = remember { mutableStateOf(false) }
+	Log.d("padding", "$padding")
 	val topBarHeight = 64.dp
 	val scope = rememberCoroutineScope()
+	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
+	Log.d("padding", "$padding")
+	val bottomBarHeightFixed = WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateBottomPadding()
 	HorizontalPager(
 		state = pagerState,
 		pageSize = PageSize.Fill,
@@ -252,7 +256,7 @@ fun ShowDetails(
 					exit = exit,
 					multiWindow = multiWindowed,
 					context = context,
-					window = window
+					changeBarsVisability = changeBarsVisability
 				)
 			}
 		}
@@ -272,7 +276,7 @@ fun ShowAsynchImage(
 	exit: MutableState<Boolean>,
 	multiWindow: MutableState<DetailsScreenUiState>,
 	context: Context,
-	window: () -> Window,
+	changeBarsVisability: (Boolean) -> Unit,
 )
 {
 	val orientation = context.resources.configuration.orientation
@@ -319,18 +323,8 @@ fun ShowAsynchImage(
 			.fillMaxSize()
 			.zoomable(zoom, enableOneFingerZoom = false, onTap = {
 				changeVisabilityState()
-				val controller = WindowCompat.getInsetsController(window(), window().decorView)
-				if(!isVisible.value)
-				{
-					controller.hide(WindowInsetsCompat.Type.statusBars())
-					controller.hide(WindowInsetsCompat.Type.navigationBars())
-				}
-				else
-				{
-					controller.show(WindowInsetsCompat.Type.statusBars())
-					controller.show(WindowInsetsCompat.Type.navigationBars())
-				}
 				isVisible.value = !isVisible.value
+				changeBarsVisability(isVisible.value)
 			})
 			.pointerInput(Unit) {
 				awaitEachGesture {
@@ -351,6 +345,7 @@ fun ShowAsynchImage(
 							if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2)
 							{
 								postPositiveState.invoke()
+								changeBarsVisability(true)
 								navController.navigateUp()
 							}
 						}
@@ -413,7 +408,6 @@ fun ShowError(
 		}
 	}
 }
-
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable

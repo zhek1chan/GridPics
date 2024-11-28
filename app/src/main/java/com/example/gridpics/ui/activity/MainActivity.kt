@@ -21,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -75,6 +77,7 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		val picVM = picturesViewModel
+		val detVM = detailsViewModel
 		val lifeCycScope = lifecycleScope
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		//serviceIntentForNotification
@@ -92,7 +95,7 @@ class MainActivity: AppCompatActivity()
 		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
 		// Здесь мы проверяем менялась ли тема при прошлой жизни Activity, если да, то не создавать новое уведомление
 		lifeCycScope.launch {
-			detailsViewModel.observeUrlFlow().collectLatest {
+			detVM.observeUrlFlow().collectLatest {
 				if(ContextCompat.checkSelfPermission(
 						this@MainActivity,
 						Manifest.permission.POST_NOTIFICATIONS,
@@ -102,7 +105,6 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-
 
 		lifeCycScope.launch {
 			picVM.observeBackNav().collectLatest {
@@ -184,7 +186,7 @@ class MainActivity: AppCompatActivity()
 						picturesScreenState = picVM.picturesUiState,
 						updatedCurrentPicture = picVM.currentPicture,
 						isValidUrl = { url -> picVM.isValidUrl(url) },
-						window = { window }
+						changeBarsVisability = { visability -> changeBarsVisability(visability) }
 					)
 				}
 			}
@@ -301,6 +303,20 @@ class MainActivity: AppCompatActivity()
 	{
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
+	}
+
+	private fun changeBarsVisability(visible: Boolean) {
+		val controller = WindowCompat.getInsetsController(window, window.decorView)
+		if(!visible)
+		{
+			controller.hide(WindowInsetsCompat.Type.statusBars())
+			controller.hide(WindowInsetsCompat.Type.navigationBars())
+		}
+		else
+		{
+			controller.show(WindowInsetsCompat.Type.statusBars())
+			controller.show(WindowInsetsCompat.Type.navigationBars())
+		}
 	}
 
 	companion object
