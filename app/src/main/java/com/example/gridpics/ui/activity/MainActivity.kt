@@ -82,7 +82,7 @@ class MainActivity: AppCompatActivity()
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		settingsViewModel.changeTheme(themePick)
-
+		picVM.postCacheWasCleared(false)
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
@@ -91,9 +91,6 @@ class MainActivity: AppCompatActivity()
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
 		// Здесь мы проверяем менялась ли тема при прошлой жизни Activity, если да, то не создавать новое уведомление
-		picVM.postCacheWasCleared(sharedPreferences.getBoolean(CACHE_IS_SAVED, true))
-		picVM.getPics()
-
 		lifeCycScope.launch {
 			detailsViewModel.observeUrlFlow().collectLatest {
 				if(ContextCompat.checkSelfPermission(
@@ -101,10 +98,7 @@ class MainActivity: AppCompatActivity()
 						Manifest.permission.POST_NOTIFICATIONS,
 					) == PackageManager.PERMISSION_GRANTED)
 				{
-					if(mainNotificationService != null)
-					{
-						mainNotificationService!!.putValues(it)
-					}
+					mainNotificationService?.putValues(it)
 				}
 			}
 		}
@@ -120,10 +114,8 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 		val editorSharedPrefs = sharedPreferences.edit()
-		editorSharedPrefs.putBoolean(CACHE_IS_SAVED, false)
 		editorSharedPrefs.putInt(THEME_SHARED_PREFERENCE, themePick)
 		editorSharedPrefs.apply()
-
 		serviceIntent = serviceIntentLocal
 
 		setContent {
@@ -157,8 +149,7 @@ class MainActivity: AppCompatActivity()
 						postPressOnBackButton = { picVM.backNavButtonPress(true) },
 						checkIfExists = { str -> picVM.checkOnErrorExists(str) },
 						addError = { str -> picVM.addError(str) },
-						getPics = { picVM.getPics() },
-						postState = { urls -> picVM.postState(urls) },
+						postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
 						state = picVM.picturesUiState,
 						clearErrors = { picVM.clearErrors() },
 						postPositiveState = { detVM.postPositiveVisabilityState() },
@@ -175,12 +166,14 @@ class MainActivity: AppCompatActivity()
 						themePick,
 						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) },
 						changeTheme = { int -> settingsViewModel.changeTheme(int) },
-						justChangedTheme = { settingsViewModel.justChangedTheme }
+						justChangedTheme = { settingsViewModel.justChangedTheme },
+						postCacheWasCleared = { cleared -> picVM.postCacheWasCleared(cleared)}
 					)
 				}
 			}
 			composable(Screen.Details.route) {
 				ComposeTheme {
+					//WINDOW NADO UBRAT
 					DetailsScreen(
 						navController = navController,
 						checkIfExists = { str -> picVM.checkOnErrorExists(str) },
@@ -193,7 +186,7 @@ class MainActivity: AppCompatActivity()
 						picturesScreenState = picVM.picturesUiState,
 						updatedCurrentPicture = picVM.currentPicture,
 						isValidUrl = { url -> picVM.isValidUrl(url) },
-						window = window
+						window = { window }
 					)
 				}
 			}
@@ -291,7 +284,6 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 		Log.d("service", "is connected to Activity?: ${mainNotificationService != null}")
-		countExitNavigation++
 		Log.d("lifecycle", "onResume()")
 		super.onResume()
 	}
@@ -304,7 +296,6 @@ class MainActivity: AppCompatActivity()
 			unbindService(connection)
 			mainNotificationService = null
 		}
-		countExitNavigation++
 		super.onPause()
 	}
 
@@ -316,9 +307,7 @@ class MainActivity: AppCompatActivity()
 
 	companion object
 	{
-		var countExitNavigation = 0
 		const val NOTIFICATION_ID = 1337
-		const val CACHE_IS_SAVED = "CACHE_IS_SAVED"
 		const val SHARED_PREFS_PICTURES = "SHARED_PREFS_PICTURES"
 		const val THEME_SHARED_PREFERENCE = "THEME_SHARED_PREFERENCE"
 		const val CHANNEL_NOTIFICATIONS_ID = "GRID_PICS_CHANEL_NOTIFICATIONS_ID"

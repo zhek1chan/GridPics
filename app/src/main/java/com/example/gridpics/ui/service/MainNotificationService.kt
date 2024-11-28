@@ -20,18 +20,17 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
-import com.example.gridpics.ui.activity.MainActivity.Companion.countExitNavigation
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainNotificationService: Service()
 {
 	private val binder = NetworkServiceBinder()
-	private val jobForNotification = Job()
+	private var jobForNotification: Job? = null
+	private var count = 0
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
 		Log.d("service", "onStartCommand()")
@@ -52,7 +51,7 @@ class MainNotificationService: Service()
 
 		if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
 		{
-			val importance = if(countExitNavigation < 1)
+			val importance = if(count < 1)
 			{
 				NotificationManager.IMPORTANCE_MAX
 			}
@@ -60,6 +59,7 @@ class MainNotificationService: Service()
 			{
 				NotificationManager.IMPORTANCE_DEFAULT
 			}
+			count++
 			val channel = NotificationChannel(MainActivity.CHANNEL_NOTIFICATIONS_ID, name, importance)
 			channel.description = description
 			val notificationManager = this@MainNotificationService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -70,7 +70,7 @@ class MainNotificationService: Service()
 	override fun onRebind(intent: Intent?)
 	{
 		Log.d("service", "onRebind()")
-		jobForNotification.cancelChildren()
+		jobForNotification?.cancel()
 		super.onRebind(intent)
 	}
 
@@ -91,7 +91,7 @@ class MainNotificationService: Service()
 	@OptIn(DelicateCoroutinesApi::class)
 	private fun stopNotificationCoroutine()
 	{
-		GlobalScope.launch(jobForNotification) {
+		jobForNotification = GlobalScope.launch {
 			Log.d("service", "stopNotificationCoroutine has been started")
 			delay(2000)
 			stopSelf()
@@ -101,7 +101,7 @@ class MainNotificationService: Service()
 
 	private fun createLogic(values: Pair<String, Bitmap?>)
 	{
-		val dontUseSound = countExitNavigation > 1
+		val dontUseSound = count > 1
 		val resultIntent = Intent(instance, MainActivity::class.java)
 		val resultPendingIntent = PendingIntent.getActivity(instance, 0, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE)

@@ -13,19 +13,26 @@ class ImagesRepositoryImpl(
 ): ImagesRepository
 {
 	override suspend fun getPics(): Flow<Resource<String>> = flow {
-		when(val response = networkClient.getPics())
+		while(true)
 		{
-			is Resource.Data ->
+			when(val response = networkClient.getPics())
 			{
-				with(response) {
-					val data = value
-					emit(Resource.Data(data))
+				is Resource.Data ->
+				{
+					with(response) {
+						val data = value
+						emit(Resource.Data(data))
+					}
+					break
 				}
-			}
-			is Resource.NotFound -> emit(Resource.NotFound(response.message))
-			is Resource.ConnectionError ->
-			{
-				emit(Resource.ConnectionError(response.message))
+				is Resource.NotFound -> {
+					emit(Resource.NotFound(response.message))
+					break
+				}
+				is Resource.ConnectionError ->
+				{
+					emit(Resource.ConnectionError(response.message))
+				}
 			}
 		}
 	}.flowOn(Dispatchers.IO)

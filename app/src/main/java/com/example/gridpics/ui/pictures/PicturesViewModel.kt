@@ -21,13 +21,13 @@ class PicturesViewModel(
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
 	fun observeBackNav(): Flow<Boolean> = backNav
-	fun getPics()
+	init
 	{
 		viewModelScope.launch {
-			interactor.getPics().collect { news ->
-				when(news)
+			interactor.getPics().collect { urls ->
+				when(urls)
 				{
-					is Resource.Data -> picturesUiState.value = PicturesScreenUiState(PicturesState.SearchIsOk(news.value), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+					is Resource.Data -> picturesUiState.value = PicturesScreenUiState(PicturesState.SearchIsOk(urls.value), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
 					is Resource.ConnectionError -> picturesUiState.value = PicturesScreenUiState(PicturesState.ConnectionError, picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
 					is Resource.NotFound -> picturesUiState.value = PicturesScreenUiState(PicturesState.NothingFound, picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
 				}
@@ -35,10 +35,16 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postState(urls: String)
+	fun postState(useLoadedState: Boolean, urls: String)
 	{
 		viewModelScope.launch {
-			picturesUiState.value = PicturesScreenUiState(PicturesState.Loaded(urls), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+			if(useLoadedState)
+			{
+				picturesUiState.value = PicturesScreenUiState(PicturesState.Loaded(urls), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+			} else
+			{
+				picturesUiState.value = PicturesScreenUiState(PicturesState.SearchIsOk(urls), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+			}
 		}
 	}
 

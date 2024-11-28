@@ -54,7 +54,6 @@ import androidx.navigation.NavController
 import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
-import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE_IS_SAVED
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
@@ -68,6 +67,7 @@ fun SettingsScreen(
 	postDefaultUrl: () -> Unit,
 	changeTheme: (Int) -> Unit,
 	justChangedTheme: () -> Unit,
+	postCacheWasCleared: (Boolean) -> Unit
 )
 {
 	postDefaultUrl.invoke()
@@ -108,7 +108,7 @@ fun SettingsScreen(
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
-				SettingsCompose(option, changeTheme, justChangedTheme)
+				SettingsCompose(option, changeTheme, justChangedTheme, postCacheWasCleared)
 			}
 		}
 	)
@@ -119,6 +119,7 @@ fun SettingsCompose(
 	option: Int,
 	changeTheme: (Int) -> Unit,
 	justChangedTheme: () -> Unit,
+	postCacheWasCleared: (Boolean) -> Unit
 )
 {
 	var showDialog by remember { mutableStateOf(false) }
@@ -240,12 +241,12 @@ fun SettingsCompose(
 					dialogText = "",
 					dialogTitle = stringResource(R.string.delete_all_question),
 					onConfirmation = {
+						postCacheWasCleared(true)
 						val imageLoader = context.imageLoader
 						imageLoader.diskCache?.clear()
 						imageLoader.memoryCache?.clear()
 						val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 						val editor = sharedPreferences.edit()
-						editor.putBoolean(CACHE_IS_SAVED, true)
 						editor.putString(SHARED_PREFS_PICTURES, null)
 						editor.apply()
 						showDialog = false

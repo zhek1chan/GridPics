@@ -73,7 +73,6 @@ import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
-import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE_IS_SAVED
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.Screen
@@ -90,14 +89,13 @@ fun PicturesScreen(
 	postPressOnBackButton: () -> Unit,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	getPics: () -> Unit,
-	postState: (String) -> Unit,
+	postState: (Boolean, String) -> Unit,
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	postPositiveState: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (String) -> Unit,
+	postSavedUrls: (String) -> Unit
 )
 {
 	val context = LocalContext.current
@@ -147,7 +145,6 @@ fun PicturesScreen(
 						imagesUrlsSP = state.value.picturesUrl,
 						checkIfExists = checkIfExists,
 						addError = addError,
-						getPics = getPics,
 						postState = postState,
 						state = state,
 						clearErrors = clearErrors,
@@ -163,7 +160,6 @@ fun PicturesScreen(
 						imagesUrlsSP = null,
 						checkIfExists = checkIfExists,
 						addError = addError,
-						getPics = getPics,
 						postState = postState,
 						state = state,
 						clearErrors = clearErrors,
@@ -184,10 +180,11 @@ fun itemNewsCard(
 	navController: NavController,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	getPics: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	loadingHasBeenEnded: Boolean,
+	postState: (Boolean, String) -> Unit,
+	urls: String
 ): Boolean
 {
 	var isError by remember { mutableStateOf(false) }
@@ -271,7 +268,7 @@ fun itemNewsCard(
 					{
 						openAlertDialog.value = false
 						println("Confirmation registered")
-						getPics()
+						postState(false, urls)
 						Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
 					},
 					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
@@ -302,8 +299,7 @@ fun ShowList(
 	imagesUrlsSP: String?,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	getPics: () -> Unit,
-	postState: (String) -> Unit,
+	postState: (Boolean, String) -> Unit,
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	navController: NavController,
@@ -342,16 +338,17 @@ fun ShowList(
 							navController = navController,
 							checkIfExists = checkIfExists,
 							addError = addError,
-							getPics = getPics,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							loadingHasBeenEnded = false
+							loadingHasBeenEnded = false,
+							postState = postState,
+							urls = value
 						)
 					}
 				}
 				scope.launch {
 					delay(6000)
-					postState(value)
+					postState(true, value)
 				}
 			}
 			is PicturesState.ConnectionError ->
@@ -365,8 +362,7 @@ fun ShowList(
 						cornerRadius = 16.dp,
 						nameButton = stringResource(R.string.try_again),
 						roundedCornerShape = RoundedCornerShape(topStart = 30.dp, bottomEnd = 30.dp),
-						clearErrors = clearErrors,
-						getPics = getPics
+						clearErrors = clearErrors
 					)
 				}
 			}
@@ -378,6 +374,7 @@ fun ShowList(
 					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
 					postSavedUrls((state.value.loadingState as PicturesState.Loaded).data)
 				}
+				val value = remember(state.value.loadingState) { (state.value.loadingState as PicturesState.Loaded).data }
 				Log.d("Now state is", "Loaded")
 				val list = remember(state.value.loadingState) { ((state.value.loadingState as PicturesState.Loaded).data).split("\n") }
 				LazyVerticalGrid(
@@ -391,10 +388,11 @@ fun ShowList(
 							navController = navController,
 							checkIfExists = checkIfExists,
 							addError = addError,
-							getPics = getPics,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							loadingHasBeenEnded = true
+							loadingHasBeenEnded = true,
+							postState = postState,
+							urls = value
 						)
 					}
 				}
@@ -421,10 +419,11 @@ fun ShowList(
 					navController = navController,
 					checkIfExists = checkIfExists,
 					addError = addError,
-					getPics = getPics,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
-					loadingHasBeenEnded = true
+					loadingHasBeenEnded = true,
+					postState = postState,
+					urls = imagesUrlsSP
 				)
 			}
 		}
@@ -438,7 +437,6 @@ fun GradientButton(
 	nameButton: String,
 	roundedCornerShape: RoundedCornerShape,
 	clearErrors: () -> Unit,
-	getPics: () -> Unit,
 )
 {
 	Button(
@@ -447,7 +445,6 @@ fun GradientButton(
 			.padding(start = 32.dp, end = 32.dp),
 		onClick = {
 			clearErrors()
-			getPics.invoke()
 		},
 		colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
 		shape = RoundedCornerShape(cornerRadius)
@@ -539,7 +536,6 @@ private fun saveToSharedPrefs(context: Context, picturesUrl: String)
 	val sharedPreferencesPictures = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 	val editorPictures = sharedPreferencesPictures.edit()
 	editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
-	editorPictures.putBoolean(CACHE_IS_SAVED, false)
 	editorPictures.apply()
 }
 
