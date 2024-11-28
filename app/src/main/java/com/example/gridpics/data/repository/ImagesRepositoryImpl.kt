@@ -32,6 +32,7 @@ class ImagesRepositoryImpl(
 				is Resource.ConnectionError ->
 				{
 					emit(Resource.ConnectionError(response.message))
+					kotlinx.coroutines.delay(1000)
 				}
 			}
 		}
