@@ -36,7 +36,6 @@ import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -104,10 +103,6 @@ class MainActivity: AppCompatActivity()
 				{
 					if(mainNotificationService != null)
 					{
-						if(it.first == DEFAULT_STRING_VALUE){
-							mainNotificationService!!.putValues(it)
-							delay(150)
-						}
 						mainNotificationService!!.putValues(it)
 					}
 				}
@@ -167,7 +162,6 @@ class MainActivity: AppCompatActivity()
 						state = picVM.picturesUiState,
 						clearErrors = { picVM.clearErrors() },
 						postPositiveState = { detVM.postPositiveVisabilityState() },
-						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) },
 						currentPicture = { url -> picVM.clickOnPicture(url) },
 						isValidUrl = { url -> picVM.isValidUrl(url) },
 						postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
@@ -197,7 +191,7 @@ class MainActivity: AppCompatActivity()
 						postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
 						postPositiveState = { detVM.postPositiveVisabilityState() },
 						picturesScreenState = picVM.picturesUiState,
-						currentPicture = picVM.currentPicture,
+						updatedCurrentPicture = picVM.currentPicture,
 						isValidUrl = { url -> picVM.isValidUrl(url) },
 						window = window
 					)
@@ -252,7 +246,6 @@ class MainActivity: AppCompatActivity()
 	override fun onRestart()
 	{
 		Log.d("lifecycle", "onRestart()")
-		mainNotificationService = null
 		super.onRestart()
 	}
 
@@ -308,8 +301,8 @@ class MainActivity: AppCompatActivity()
 		Log.d("lifecycle", "onPause()")
 		if(mainNotificationService != null)
 		{
-			Log.d("Hello", "This method wont work .-.")
 			unbindService(connection)
+			mainNotificationService = null
 		}
 		countExitNavigation++
 		super.onPause()

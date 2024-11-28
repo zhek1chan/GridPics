@@ -95,7 +95,6 @@ fun PicturesScreen(
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	postPositiveState: () -> Unit,
-	postDefaultUrl: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
@@ -103,7 +102,6 @@ fun PicturesScreen(
 {
 	val context = LocalContext.current
 	postPositiveState.invoke()
-	postDefaultUrl.invoke()
 	BackHandler {
 		postPressOnBackButton.invoke()
 	}

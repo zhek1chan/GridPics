@@ -1,5 +1,6 @@
 package com.example.gridpics.ui.pictures
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,7 +17,7 @@ class PicturesViewModel(
 ): ViewModel()
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
-	val currentPicture = mutableStateOf("")
+	var currentPicture = ""
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
 	fun observeBackNav(): Flow<Boolean> = backNav
@@ -88,7 +89,8 @@ class PicturesViewModel(
 
 	fun clickOnPicture(url: String)
 	{
-		currentPicture.value = url
+		Log.d("recompose", "I call recompose :)")
+		currentPicture = url
 	}
 
 	fun isValidUrl(url: String): Boolean

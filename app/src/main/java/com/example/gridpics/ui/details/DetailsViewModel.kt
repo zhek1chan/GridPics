@@ -17,11 +17,7 @@ class DetailsViewModel: ViewModel()
 	fun postNewPic(url: String, bitmap: Bitmap?)
 	{
 		viewModelScope.launch {
-			val pair = Pair(url, bitmap)
-			if(imageFlow.value != pair)
-			{
-				imageFlow.emit(pair)
-			}
+			imageFlow.emit(Pair(url, bitmap))
 		}
 	}
 

@@ -83,6 +83,7 @@ import coil3.toBitmap
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity
+import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
@@ -93,6 +94,7 @@ import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
+@SuppressLint("CoroutineCreationDuringComposition", "RememberReturnType")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailsScreen(
@@ -105,23 +107,24 @@ fun DetailsScreen(
 	postUrl: (String, Bitmap?) -> Unit,
 	postPositiveState: () -> Unit,
 	picturesScreenState: MutableState<PicturesScreenUiState>,
-	currentPicture: MutableState<String>,
+	updatedCurrentPicture: String,
 	isValidUrl: (String) -> Boolean,
 	window: Window,
 )
 {
 	val context = LocalContext.current
-	val pictureErrorBitmap = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 	BackHandler {
 		if(!state.value.barsAreVisible)
 		{
 			Log.d("we are out", "We are out")
 			changeVisabilityState.invoke()
+			postUrl(DEFAULT_STRING_VALUE, null)
 			navController.navigateUp()
 		}
 		else
 		{
 			Log.d("we are out", "We are without changing state")
+			postUrl(DEFAULT_STRING_VALUE, null)
 			navController.navigateUp()
 		}
 	}
@@ -129,43 +132,47 @@ fun DetailsScreen(
 	val pictures = remember { picturesScreenState.value.picturesUrl }
 	if(pictures != null)
 	{
-		Log.d("pic", "$currentPicture")
-		val list = remember(currentPicture) { pictures.split("\n").toMutableList() }
-		val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture.value), pageCount = { list.size })
-		val bitmapString = remember(pagerState) { mutableStateOf(Bitmap.createBitmap(ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap()!!)) }
-		if(checkIfExists(list[pagerState.currentPage]))
-		{
-			Log.d("checkMa", "gruzim oshibku")
-			bitmapString.value = pictureErrorBitmap!!
-		}
-		else
-		{
-			val imgRequest = remember(list[pagerState.currentPage]) {
-				ImageRequest.Builder(context)
-					.data(list[pagerState.currentPage])
-					.placeholder(R.drawable.loading)
-					.error(R.drawable.error)
-					.allowHardware(false)
-					.target {
-						val loadedPic = it.toBitmap()
-						Log.d("checkMa", "gruzim pic")
-						bitmapString.value = loadedPic
-					}
-					.networkCachePolicy(CachePolicy.ENABLED)
-					.diskCachePolicy(CachePolicy.ENABLED)
-					.diskCacheKey(list[pagerState.currentPage])
-					.memoryCachePolicy(CachePolicy.ENABLED)
-					.build()
+		val scope = rememberCoroutineScope()
+		Log.d("pic", updatedCurrentPicture)
+		val list = remember { pictures.split("\n").toMutableList() }
+		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture), pageCount = { list.size })
+		remember(pagerState.currentPage) {
+			var bitmapString: Bitmap?
+			if(checkIfExists(list[pagerState.currentPage]))
+			{
+				Log.d("checkMa", "gruzim oshibku")
+				bitmapString = (ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap()!!)
+				postUrl(list[pagerState.currentPage], bitmapString)
 			}
-			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
+			else
+			{
+				scope.launch {
+					val imgRequest =
+						ImageRequest.Builder(context)
+							.data(list[pagerState.currentPage])
+							.placeholder(R.drawable.loading)
+							.error(R.drawable.error)
+							.allowHardware(false)
+							.target {
+								Log.d("checkMa", "gruzim pic")
+								bitmapString = it.toBitmap()
+								postUrl(list[pagerState.currentPage], bitmapString)
+							}
+							.networkCachePolicy(CachePolicy.ENABLED)
+							.diskCachePolicy(CachePolicy.ENABLED)
+							.diskCacheKey(list[pagerState.currentPage])
+							.memoryCachePolicy(CachePolicy.ENABLED)
+							.build()
+					ImageLoader(context).newBuilder().build().enqueue(imgRequest)
+				}
+			}
 		}
-		postUrl(list[pagerState.currentPage], bitmapString.value)
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
-			topBar = { AppBar(isVisible, context, navController, list, pagerState) },
+			topBar = { AppBar(isVisible, context, navController, list, pagerState, postUrl) },
 			content = { padding ->
 				ShowDetails(
-					img = currentPicture,
+					img = updatedCurrentPicture,
 					navController = navController,
 					isVisible = isVisible,
 					list = list,
@@ -190,7 +197,7 @@ fun DetailsScreen(
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowDetails(
-	img: MutableState<String>,
+	img: String,
 	navController: NavController,
 	isVisible: MutableState<Boolean>,
 	list: MutableList<String>,
@@ -208,8 +215,8 @@ fun ShowDetails(
 )
 {
 	padding.calculateBottomPadding()
-	val firstPage = remember(img.value) { mutableStateOf(true) }
-	val startPage = remember(img.value) { list.indexOf(img.value) }
+	val firstPage = remember(img) { mutableStateOf(true) }
+	val startPage = remember(img) { list.indexOf(img) }
 	val exit = remember { mutableStateOf(false) }
 	val topBarHeight = 64.dp
 	val scope = rememberCoroutineScope()
@@ -425,6 +432,7 @@ fun AppBar(
 	context: Context, nc: NavController,
 	list: MutableList<String>,
 	pagerState: PagerState,
+	postUrl: (String, Bitmap?) -> Unit,
 )
 {
 	var navBack by remember { mutableStateOf(false) }
@@ -487,6 +495,7 @@ fun AppBar(
 		)
 		if(navBack)
 		{
+			postUrl(DEFAULT_STRING_VALUE, null)
 			navBack = false
 			nc.navigate(BottomNavItem.Home.route)
 		}
