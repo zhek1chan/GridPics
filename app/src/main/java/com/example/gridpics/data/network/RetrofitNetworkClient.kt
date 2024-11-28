@@ -16,10 +16,10 @@ class RetrofitNetworkClient(
 {
 	override suspend fun getPics(): Resource<String>
 	{
-		var news: Resource<String>
+		var imagesUrls: Resource<String>
 		if(!isConnected()) return Resource.ConnectionError(DEVICE_IS_OFFLINE)
 		withContext(Dispatchers.IO) {
-			news = try
+			imagesUrls = try
 			{
 				api.getNews().byteStream().use {
 					val s = it.readBytes().toString(charset = Charset.defaultCharset())
@@ -33,7 +33,7 @@ class RetrofitNetworkClient(
 				Resource.ConnectionError(REQUEST_ERROR)
 			}
 		}
-		return news
+		return imagesUrls
 	}
 
 	private fun isConnected(): Boolean
