@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.details
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -91,7 +90,6 @@ import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
-@SuppressLint("CoroutineCreationDuringComposition", "RememberReturnType")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailsScreen(
@@ -106,7 +104,7 @@ fun DetailsScreen(
 	picturesScreenState: MutableState<PicturesScreenUiState>,
 	updatedCurrentPicture: String,
 	isValidUrl: (String) -> Boolean,
-	window: () -> Window
+	window: () -> Window,
 )
 {
 	val context = LocalContext.current
@@ -188,7 +186,6 @@ fun DetailsScreen(
 	}
 }
 
-@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowDetails(
 	img: String,
@@ -275,7 +272,7 @@ fun ShowAsynchImage(
 	exit: MutableState<Boolean>,
 	multiWindow: MutableState<DetailsScreenUiState>,
 	context: Context,
-	window: () -> Window
+	window: () -> Window,
 )
 {
 	val orientation = context.resources.configuration.orientation
@@ -416,6 +413,7 @@ fun ShowError(
 		}
 	}
 }
+
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
