@@ -162,8 +162,8 @@ class MainActivity: AppCompatActivity()
 			composable(BottomNavItem.Settings.route) {
 				ComposeTheme {
 					SettingsScreen(
-						navController,
-						themePick,
+						navController = navController,
+						option = themePick,
 						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) },
 						changeTheme = { int -> settingsViewModel.changeTheme(int) },
 						justChangedTheme = { settingsViewModel.justChangedTheme },
