@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +30,7 @@ class DetailsViewModel(
 	fun postImageBitmap(url: String)
 	{
 		job.cancelChildren()
-		viewModelScope.launch(Dispatchers.IO + job) {
+		viewModelScope.launch {
 			val bitmap = interactor.getPictureBitmap(url, job)
 			imageFlow.emit(Pair(url, bitmap))
 		}

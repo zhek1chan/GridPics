@@ -20,6 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.withContext
 
 class ImagesRepositoryImpl(
 	private val networkClient: NetworkClient,
@@ -51,27 +52,31 @@ class ImagesRepositoryImpl(
 		}
 	}.flowOn(Dispatchers.IO)
 
-	override suspend fun getPictureBitmap(url: String, context: Context, job: Job): Bitmap? {
-		var bitmap: Bitmap? = null
-		val imgRequest =
-			ImageRequest.Builder(context)
-				.data(url)
-				.placeholder(R.drawable.loading)
-				.error(R.drawable.error)
-				.coroutineContext(Dispatchers.IO + job)
-				.allowHardware(false)
-				.target {
-					Log.d("checkMa", "gruzim pic")
-					bitmap = it.toBitmap()
-				}
-				.diskCachePolicy(CachePolicy.ENABLED)
-				.diskCacheKey(url)
-				.memoryCachePolicy(CachePolicy.ENABLED)
-				.build()
-		ImageLoader(context).newBuilder().build().enqueue(imgRequest)
-		while(bitmap == null){
-			delay(300)
+	override suspend fun getPictureBitmap(url: String, context: Context, job: Job): Bitmap?
+	{
+		return withContext(Dispatchers.IO + job) {
+			var bitmap: Bitmap? = null
+			val imgRequest =
+				ImageRequest.Builder(context)
+					.data(url)
+					.placeholder(R.drawable.loading)
+					.error(R.drawable.error)
+					.coroutineContext(coroutineContext + job)
+					.allowHardware(false)
+					.target {
+						Log.d("checkMa", "gruzim pic")
+						bitmap = it.toBitmap()
+					}
+					.diskCachePolicy(CachePolicy.ENABLED)
+					.diskCacheKey(url)
+					.memoryCachePolicy(CachePolicy.ENABLED)
+					.build()
+			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
+			while(bitmap == null)
+			{
+				delay(200)
+			}
+			return@withContext bitmap
 		}
-		return bitmap
 	}
 }
