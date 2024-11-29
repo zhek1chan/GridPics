@@ -56,6 +56,10 @@ class MainActivity: AppCompatActivity()
 		{
 			val binder = service as MainNotificationService.NetworkServiceBinder
 			mainNotificationService = binder.get()
+			val flowValue = detailsViewModel.observeUrlFlow().value
+			if (flowValue != Pair(DEFAULT_STRING_VALUE, null)) {
+				mainNotificationService!!.putValues(flowValue)
+			}
 		}
 
 		override fun onServiceDisconnected(arg0: ComponentName)
@@ -143,52 +147,45 @@ class MainActivity: AppCompatActivity()
 			val picVM = picturesViewModel
 			val detVM = detailsViewModel
 			composable(BottomNavItem.Home.route) {
-				ComposeTheme {
-					PicturesScreen(
-						navController = navController,
-						postPressOnBackButton = { picVM.backNavButtonPress(true) },
-						checkIfExists = { str -> picVM.checkOnErrorExists(str) },
-						addError = { str -> picVM.addError(str) },
-						postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
-						state = picVM.picturesUiState,
-						clearErrors = { picVM.clearErrors() },
-						postPositiveState = { detVM.postPositiveVisabilityState() },
-						currentPicture = { url -> picVM.clickOnPicture(url) },
-						isValidUrl = { url -> picVM.isValidUrl(url) },
-						postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
-					)
-				}
+				PicturesScreen(
+					navController = navController,
+					postPressOnBackButton = { picVM.backNavButtonPress(true) },
+					checkIfExists = { str -> picVM.checkOnErrorExists(str) },
+					addError = { str -> picVM.addError(str) },
+					postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
+					state = picVM.picturesUiState,
+					clearErrors = { picVM.clearErrors() },
+					postPositiveState = { detVM.postPositiveVisabilityState() },
+					currentPicture = { url -> picVM.clickOnPicture(url) },
+					isValidUrl = { url -> picVM.isValidUrl(url) },
+					postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
+				)
 			}
 			composable(BottomNavItem.Settings.route) {
-				ComposeTheme {
-					SettingsScreen(
-						navController = navController,
-						option = themePick,
-						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) },
-						changeTheme = { int -> settingsViewModel.changeTheme(int) },
-						justChangedTheme = { settingsViewModel.justChangedTheme },
-						postCacheWasCleared = { cleared -> picVM.postCacheWasCleared(cleared)}
-					)
-				}
+				SettingsScreen(
+					navController = navController,
+					option = themePick,
+					postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) },
+					changeTheme = { int -> settingsViewModel.changeTheme(int) },
+					justChangedTheme = { settingsViewModel.justChangedTheme },
+					postCacheWasCleared = { cleared -> picVM.postCacheWasCleared(cleared) }
+				)
 			}
 			composable(Screen.Details.route) {
-				ComposeTheme {
-					//WINDOW NADO UBRAT
-					DetailsScreen(
-						navController = navController,
-						checkIfExists = { str -> picVM.checkOnErrorExists(str) },
-						addError = { str -> picVM.addError(str) },
-						state = detVM.uiStateFlow,
-						removeSpecialError = { str -> picVM.removeSpecialError(str) },
-						changeVisabilityState = { detVM.changeVisabilityState() },
-						postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
-						postPositiveState = { detVM.postPositiveVisabilityState() },
-						picturesScreenState = picVM.picturesUiState,
-						updatedCurrentPicture = picVM.currentPicture,
-						isValidUrl = { url -> picVM.isValidUrl(url) },
-						changeBarsVisability = { visability -> changeBarsVisability(visability) }
-					)
-				}
+				DetailsScreen(
+					navController = navController,
+					checkIfExists = { str -> picVM.checkOnErrorExists(str) },
+					addError = { str -> picVM.addError(str) },
+					state = detVM.uiStateFlow,
+					removeSpecialError = { str -> picVM.removeSpecialError(str) },
+					changeVisabilityState = { detVM.changeVisabilityState() },
+					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
+					postPositiveState = { detVM.postPositiveVisabilityState() },
+					picturesScreenState = picVM.picturesUiState,
+					updatedCurrentPicture = picVM.currentPicture,
+					isValidUrl = { url -> picVM.isValidUrl(url) },
+					changeBarsVisability = { visability -> changeBarsVisability(visability) }
+				)
 			}
 		}
 	}
@@ -305,7 +302,8 @@ class MainActivity: AppCompatActivity()
 		super.onDestroy()
 	}
 
-	private fun changeBarsVisability(visible: Boolean) {
+	private fun changeBarsVisability(visible: Boolean)
+	{
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		if(!visible)
 		{
