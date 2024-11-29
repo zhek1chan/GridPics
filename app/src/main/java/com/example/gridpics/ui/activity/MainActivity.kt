@@ -58,7 +58,7 @@ class MainActivity: AppCompatActivity()
 			mainNotificationService = binder.get()
 			val flowValue = detailsViewModel.observeUrlFlow().value
 			if (flowValue.first != DEFAULT_STRING_VALUE) {
-				mainNotificationService!!.putValues(flowValue)
+				mainNotificationService?.putValues(flowValue)
 			}
 		}
 
