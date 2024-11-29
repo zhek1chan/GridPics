@@ -13,6 +13,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -219,7 +220,8 @@ fun ShowDetails(
 		state = pagerState,
 		pageSize = PageSize.Fill,
 		contentPadding = PaddingValues(0.dp, topBarHeight + statusBarHeightFixed, 0.dp, bottomBarHeightFixed),
-		userScrollEnabled = true
+		userScrollEnabled = true,
+		snapPosition = SnapPosition.Center
 	) { page ->
 		LaunchedEffect(page) {
 			if(firstPage.value)
