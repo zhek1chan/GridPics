@@ -185,7 +185,8 @@ class MainActivity: AppCompatActivity()
 					picturesScreenState = picVM.picturesUiState,
 					updatedCurrentPicture = picVM.currentPicture,
 					isValidUrl = { url -> picVM.isValidUrl(url) },
-					changeBarsVisability = { visability -> changeBarsVisability(visability) }
+					changeBarsVisability = { visability -> changeBarsVisability(visability) },
+					postNewBitmap = { url -> detVM.postImageBitmap(url)}
 				)
 			}
 		}

@@ -70,14 +70,12 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
-import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.request.error
 import coil3.request.placeholder
-import coil3.toBitmap
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
@@ -85,9 +83,6 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -107,6 +102,7 @@ fun DetailsScreen(
 	updatedCurrentPicture: String,
 	isValidUrl: (String) -> Boolean,
 	changeBarsVisability: (Boolean) -> Unit,
+	postNewBitmap: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -135,36 +131,16 @@ fun DetailsScreen(
 		val list = remember { pictures.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture), pageCount = { list.size })
 		val currentPage = pagerState.currentPage
-		val job = remember (list) { Job() }
-		job.cancelChildren()
-		remember(currentPage) {
-			var bitmapString: Bitmap?
-			if(checkIfExists(list[currentPage]))
-			{
-				Log.d("checkMa", "gruzim oshibku")
-				bitmapString = (ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap())
-				postUrl(list[currentPage], bitmapString)
-			}
-			else
-			{
-				val imgRequest =
-					ImageRequest.Builder(context)
-						.data(list[currentPage])
-						.placeholder(R.drawable.loading)
-						.error(R.drawable.error)
-						.coroutineContext(Dispatchers.IO + job)
-						.allowHardware(false)
-						.target {
-							Log.d("checkMa", "gruzim pic")
-							bitmapString = it.toBitmap()
-							postUrl(list[currentPage], bitmapString)
-						}
-						.diskCachePolicy(CachePolicy.ENABLED)
-						.diskCacheKey(list[currentPage])
-						.memoryCachePolicy(CachePolicy.ENABLED)
-						.build()
-				ImageLoader(context).newBuilder().build().enqueue(imgRequest)
-			}
+		val bitmapString: Bitmap?
+		if(checkIfExists(list[currentPage]))
+		{
+			Log.d("checkMa", "gruzim oshibku")
+			bitmapString = (ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap())
+			postUrl(list[currentPage], bitmapString)
+		}
+		else
+		{
+			postNewBitmap(list[currentPage])
 		}
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
