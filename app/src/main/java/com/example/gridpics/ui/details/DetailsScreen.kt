@@ -131,26 +131,27 @@ fun DetailsScreen(
 		Log.d("pic", updatedCurrentPicture)
 		val list = remember { pictures.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture), pageCount = { list.size })
-		remember(pagerState.currentPage) {
+		val currentPage = pagerState.currentPage
+		remember(currentPage) {
 			var bitmapString: Bitmap?
-			if(checkIfExists(list[pagerState.currentPage]))
+			if(checkIfExists(list[currentPage]))
 			{
 				Log.d("checkMa", "gruzim oshibku")
 				bitmapString = (ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap())
-				postUrl(list[pagerState.currentPage], bitmapString)
+				postUrl(list[currentPage], bitmapString)
 			}
 			else
 			{
 				val imgRequest =
 					ImageRequest.Builder(context)
-						.data(list[pagerState.currentPage])
+						.data(list[currentPage])
 						.placeholder(R.drawable.loading)
 						.error(R.drawable.error)
 						.allowHardware(false)
 						.target {
 							Log.d("checkMa", "gruzim pic")
 							bitmapString = it.toBitmap()
-							postUrl(list[pagerState.currentPage], bitmapString)
+							postUrl(list[currentPage], bitmapString)
 						}
 						.networkCachePolicy(CachePolicy.ENABLED)
 						.diskCachePolicy(CachePolicy.ENABLED)
