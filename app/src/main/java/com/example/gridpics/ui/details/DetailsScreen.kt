@@ -155,10 +155,6 @@ fun DetailsScreen(
 						.coroutineContext(Dispatchers.IO + job)
 						.allowHardware(false)
 						.target {
-							if(it.size > 3500000)
-							{
-								Log.d("description", "too big img")
-							}
 							Log.d("checkMa", "gruzim pic")
 							bitmapString = it.toBitmap()
 							postUrl(list[currentPage], bitmapString)
