@@ -85,6 +85,9 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -132,6 +135,8 @@ fun DetailsScreen(
 		val list = remember { pictures.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture), pageCount = { list.size })
 		val currentPage = pagerState.currentPage
+		val job = remember (list) { Job() }
+		job.cancelChildren()
 		remember(currentPage) {
 			var bitmapString: Bitmap?
 			if(checkIfExists(list[currentPage]))
@@ -147,15 +152,19 @@ fun DetailsScreen(
 						.data(list[currentPage])
 						.placeholder(R.drawable.loading)
 						.error(R.drawable.error)
+						.coroutineContext(Dispatchers.IO + job)
 						.allowHardware(false)
 						.target {
+							if(it.size > 3500000)
+							{
+								Log.d("description", "too big img")
+							}
 							Log.d("checkMa", "gruzim pic")
 							bitmapString = it.toBitmap()
 							postUrl(list[currentPage], bitmapString)
 						}
-						.networkCachePolicy(CachePolicy.ENABLED)
 						.diskCachePolicy(CachePolicy.ENABLED)
-						.diskCacheKey(list[pagerState.currentPage])
+						.diskCacheKey(list[currentPage])
 						.memoryCachePolicy(CachePolicy.ENABLED)
 						.build()
 				ImageLoader(context).newBuilder().build().enqueue(imgRequest)
