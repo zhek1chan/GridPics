@@ -55,11 +55,12 @@ class MainActivity: AppCompatActivity()
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
 		{
 			val binder = service as MainNotificationService.NetworkServiceBinder
-			mainNotificationService = binder.get()
+			val mainService = binder.get()
 			val flowValue = detailsViewModel.observeUrlFlow().value
 			if (flowValue.first != DEFAULT_STRING_VALUE) {
-				mainNotificationService?.putValues(flowValue)
+				mainService.putValues(flowValue)
 			}
+			mainNotificationService = mainService
 		}
 
 		override fun onServiceDisconnected(arg0: ComponentName)
