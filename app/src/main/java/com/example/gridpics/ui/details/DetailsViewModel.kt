@@ -24,13 +24,13 @@ class DetailsViewModel(
 	fun postNewPic(url: String, bitmap: Bitmap?)
 	{
 		viewModelScope.launch {
-			job.cancelChildren()
 			imageFlow.emit(Pair(url, bitmap))
 		}
 	}
 
 	fun postImageBitmap(url: String)
 	{
+		job.cancelChildren()
 		viewModelScope.launch(Dispatchers.IO + job) {
 			val bitmap = interactor.getPictureBitmap(url, job)
 			imageFlow.emit(Pair(url, bitmap))
