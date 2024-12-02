@@ -121,7 +121,7 @@ class MainActivity: AppCompatActivity()
 			picVM.observeBackNav().collectLatest {
 				if(it)
 				{
-					stopService(serviceIntent)
+					stopService(serviceIntentLocal)
 					this@MainActivity.finishAffinity()
 				}
 			}

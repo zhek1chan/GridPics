@@ -108,7 +108,7 @@ fun SettingsScreen(
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
-				SettingsCompose(option, changeTheme, postCacheWasCleared)
+				SettingsCompose(option = option, changeTheme = changeTheme, postCacheWasCleared = postCacheWasCleared)
 			}
 		}
 	)
