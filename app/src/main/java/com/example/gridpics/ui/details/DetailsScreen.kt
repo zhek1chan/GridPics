@@ -50,11 +50,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -107,21 +105,8 @@ fun DetailsScreen(
 {
 	val context = LocalContext.current
 	BackHandler {
-		if(!state.value.barsAreVisible)
-		{
-			Log.d("we are out", "We are out")
-			changeVisabilityState.invoke()
-			changeBarsVisability(true)
-			postUrl(DEFAULT_STRING_VALUE, null)
-			navController.navigateUp()
-		}
-		else
-		{
-			Log.d("we are out", "We are without changing state")
-			postUrl(DEFAULT_STRING_VALUE, null)
-			changeBarsVisability(true)
-			navController.navigateUp()
-		}
+		changeBarsVisability(true)
+		navController.navigateUp()
 	}
 	val isVisible = remember { mutableStateOf(true) }
 	val pictures = remember { picturesScreenState.value.picturesUrl }
@@ -131,12 +116,10 @@ fun DetailsScreen(
 		val list = remember { pictures.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture), pageCount = { list.size })
 		val currentPage = pagerState.currentPage
-		val bitmapString: Bitmap?
 		if(checkIfExists(list[currentPage]))
 		{
 			Log.d("checkMa", "gruzim oshibku")
-			bitmapString = (ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap())
-			postUrl(list[currentPage], bitmapString)
+			postUrl(list[currentPage], (ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap()))
 		}
 		else
 		{
@@ -403,7 +386,7 @@ fun AppBar(
 	postUrl: (String, Bitmap?) -> Unit,
 )
 {
-	var navBack by remember { mutableStateOf(false) }
+	val navBack = remember { mutableStateOf(false) }
 	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(
 			modifier = Modifier
@@ -417,7 +400,7 @@ fun AppBar(
 				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
 				.wrapContentSize()
 				.clickable {
-					navBack = true
+					navBack.value = true
 				},
 			title = {
 				Text(
@@ -425,13 +408,13 @@ fun AppBar(
 					fontSize = 18.sp,
 					maxLines = 2,
 					modifier = Modifier
-						.clickable { navBack = true }
+						.clickable { navBack.value = true }
 						.padding(0.dp, 3.dp, 0.dp, 0.dp),
 					overflow = TextOverflow.Ellipsis,
 				)
 			},
 			navigationIcon = {
-				IconButton({ navBack = true }) {
+				IconButton({ navBack.value = true }) {
 					Icon(
 						Icons.AutoMirrored.Filled.ArrowBack,
 						contentDescription = "back",
@@ -461,10 +444,10 @@ fun AppBar(
 				}
 			}
 		)
-		if(navBack)
+		if(navBack.value)
 		{
 			postUrl(DEFAULT_STRING_VALUE, null)
-			navBack = false
+			navBack.value = false
 			nc.navigate(BottomNavItem.Home.route)
 		}
 	}

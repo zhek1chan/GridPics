@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.details
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,6 +23,7 @@ class DetailsViewModel(
 	fun observeUrlFlow() = imageFlow
 	fun postNewPic(url: String, bitmap: Bitmap?)
 	{
+		job.cancelChildren()
 		viewModelScope.launch {
 			imageFlow.emit(Pair(url, bitmap))
 		}
@@ -29,6 +31,7 @@ class DetailsViewModel(
 
 	fun postImageBitmap(url: String)
 	{
+		Log.d("Description posted", "desc was posted")
 		job.cancelChildren()
 		viewModelScope.launch {
 			val bitmap = interactor.getPictureBitmap(url, job)

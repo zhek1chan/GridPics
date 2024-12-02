@@ -39,7 +39,8 @@ class ImagesRepositoryImpl(
 					}
 					break
 				}
-				is Resource.NotFound -> {
+				is Resource.NotFound ->
+				{
 					emit(Resource.NotFound(response.message))
 					break
 				}
@@ -76,6 +77,7 @@ class ImagesRepositoryImpl(
 			{
 				delay(200)
 			}
+
 			return@withContext bitmap
 		}
 	}

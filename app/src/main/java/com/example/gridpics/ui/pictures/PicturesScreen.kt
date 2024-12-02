@@ -73,6 +73,7 @@ import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
+import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.Screen
@@ -96,10 +97,13 @@ fun PicturesScreen(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
+	postDefaultDescription: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
 	postPositiveState.invoke()
+	Log.d("description", "posted default")
+	postDefaultDescription(DEFAULT_STRING_VALUE)
 	BackHandler {
 		postPressOnBackButton.invoke()
 	}

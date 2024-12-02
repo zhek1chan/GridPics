@@ -57,7 +57,8 @@ class MainActivity: AppCompatActivity()
 			val binder = service as MainNotificationService.NetworkServiceBinder
 			val mainService = binder.get()
 			val flowValue = detailsViewModel.observeUrlFlow().value
-			if (flowValue.first != DEFAULT_STRING_VALUE) {
+			if(flowValue.first != DEFAULT_STRING_VALUE)
+			{
 				mainService.putValues(flowValue)
 			}
 			mainNotificationService = mainService
@@ -159,7 +160,8 @@ class MainActivity: AppCompatActivity()
 					postPositiveState = { detVM.postPositiveVisabilityState() },
 					currentPicture = { url -> picVM.clickOnPicture(url) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
-					postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
+					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
+					postDefaultDescription = { url -> detVM.postNewPic(url, null) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
@@ -186,7 +188,7 @@ class MainActivity: AppCompatActivity()
 					updatedCurrentPicture = picVM.currentPicture,
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					changeBarsVisability = { visability -> changeBarsVisability(visability) },
-					postNewBitmap = { url -> detVM.postImageBitmap(url)}
+					postNewBitmap = { url -> detVM.postImageBitmap(url) }
 				)
 			}
 		}
@@ -306,6 +308,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun changeBarsVisability(visible: Boolean)
 	{
+		val detVM = detailsViewModel
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
 		if(!visible)
 		{
@@ -316,6 +319,10 @@ class MainActivity: AppCompatActivity()
 		{
 			controller.show(WindowInsetsCompat.Type.statusBars())
 			controller.show(WindowInsetsCompat.Type.navigationBars())
+			if(detVM.uiStateFlow.value == detVM.uiStateFlow.value.copy(barsAreVisible = false))
+			{
+				detVM.changeVisabilityState()
+			}
 		}
 	}
 
