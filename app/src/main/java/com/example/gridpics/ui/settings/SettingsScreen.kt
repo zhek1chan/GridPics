@@ -70,7 +70,7 @@ fun SettingsScreen(
 	postCacheWasCleared: (Boolean) -> Unit,
 )
 {
-	postDefaultUrl.invoke()
+	postDefaultUrl()
 	val orientation = LocalContext.current.resources.configuration.orientation
 	val windowInsets = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
 	{
@@ -254,8 +254,8 @@ fun SettingsCompose(
 					},
 					onDismissRequest = { showDialog = false },
 					icon = Icons.Default.Delete,
-					textButtonCancel = "Отменить",
-					textButtonConfirm = "Удалить")
+					textButtonCancel = stringResource(R.string.cancel),
+					textButtonConfirm = stringResource(R.string.confirm))
 			}
 		}
 	}
