@@ -108,7 +108,7 @@ fun SettingsScreen(
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
-				SettingsCompose(option, changeTheme, postCacheWasCleared, navController)
+				SettingsCompose(option, changeTheme, postCacheWasCleared)
 			}
 		}
 	)
@@ -118,8 +118,7 @@ fun SettingsScreen(
 fun SettingsCompose(
 	option: Int,
 	changeTheme: (Int) -> Unit,
-	postCacheWasCleared: (Boolean) -> Unit,
-	navController: NavController
+	postCacheWasCleared: (Boolean) -> Unit
 )
 {
 	var showDialog by remember { mutableStateOf(false) }
@@ -131,7 +130,7 @@ fun SettingsCompose(
 			start.linkTo(parent.start)
 			end.linkTo(parent.end)
 		}) {
-			val listOfThemeOptions = remember (LocalConfiguration) { mutableListOf<String>() }
+			val listOfThemeOptions = remember(LocalConfiguration) { mutableListOf<String>() }
 			if(listOfThemeOptions.isEmpty())
 			{
 				listOfThemeOptions.add(stringResource(R.string.light_theme))
@@ -225,7 +224,7 @@ fun SettingsCompose(
 					tint = MaterialTheme.colorScheme.onPrimary
 				)
 				Text(
-					stringResource(R.string.clear_cache),
+					text = stringResource(id = R.string.clear_cache),
 					fontSize = 18.sp,
 					color = MaterialTheme.colorScheme.onPrimary,
 					modifier = Modifier.padding(16.dp, 0.dp)
@@ -239,7 +238,7 @@ fun SettingsCompose(
 			{
 				val textClear = stringResource(R.string.you_have_cleared_cache)
 				AlertDialogMain(
-					dialogText = "",
+					dialogText = null,
 					dialogTitle = stringResource(R.string.delete_all_question),
 					onConfirmation = {
 						postCacheWasCleared(true)

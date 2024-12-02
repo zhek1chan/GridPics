@@ -373,8 +373,9 @@ fun ShowError(
 						pagerState.animateScrollToPage(currentPage)
 					}
 				},
-				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White)) {
-				Text(stringResource(R.string.update_loading))
+				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
+			{
+				Text(text = stringResource(R.string.update_loading))
 			}
 		}
 	}
@@ -420,7 +421,7 @@ fun AppBar(
 			navigationIcon = {
 				IconButton({ navBack.value = true }) {
 					Icon(
-						Icons.AutoMirrored.Filled.ArrowBack,
+						imageVector = Icons.AutoMirrored.Filled.ArrowBack,
 						contentDescription = "back",
 						modifier = Modifier.wrapContentSize()
 					)
@@ -440,7 +441,7 @@ fun AppBar(
 					}
 				) {
 					Icon(
-						Icons.Default.Share,
+						imageVector = Icons.Default.Share,
 						contentDescription = "share",
 						tint = MaterialTheme.colorScheme.onPrimary,
 					)

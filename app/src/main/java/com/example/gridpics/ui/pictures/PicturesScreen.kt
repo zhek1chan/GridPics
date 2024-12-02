@@ -316,7 +316,7 @@ fun ShowList(
 			{
 				val loadingString = stringResource(R.string.loading_has_been_started)
 				Log.d("Now state is", "Loading")
-				val status =  state.value.loadingState as PicturesState.SearchIsOk
+				val status = state.value.loadingState as PicturesState.SearchIsOk
 				LaunchedEffect(Unit) {
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 					saveToSharedPrefs(context, status.data)
@@ -458,7 +458,11 @@ fun GradientButton(
 			)
 			.padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center)
 		{
-			Text(text = nameButton, fontSize = 20.sp, color = Color.White)
+			Text(
+				text = nameButton,
+				fontSize = 20.sp,
+				color = Color.White
+			)
 		}
 	}
 }
@@ -468,36 +472,37 @@ fun AlertDialogMain(
 	onDismissRequest: () -> Unit,
 	onConfirmation: () -> Unit,
 	dialogTitle: String,
-	dialogText: String,
+	dialogText: String?,
 	icon: ImageVector,
 	textButtonCancel: String,
 	textButtonConfirm: String,
 )
 {
-	AlertDialog(icon = {
-		Icon(icon, contentDescription = "Example Icon")
-	}, title = {
-		Text(text = dialogTitle)
-	}, text = {
-		Text(text = dialogText)
-	}, onDismissRequest = {
-		onDismissRequest()
-	}, confirmButton = {
-		Button(colors = ButtonColors(Color.Black, Color.White, Color.Black, Color.White), onClick = {
-			onConfirmation()
-		}) {
-			Text(textButtonConfirm)
-		}
-	}, dismissButton = {
-		Button(
-			colors = ButtonColors(MaterialTheme.colorScheme.onError, Color.White, Color.Black, Color.White),
-			onClick = {
-				onDismissRequest()
-			},
-		) {
-			Text(textButtonCancel)
-		}
-	})
+	AlertDialog(
+		icon = {
+			Icon(icon, contentDescription = "Example Icon")
+		}, title = {
+			Text(text = dialogTitle)
+		}, text = {
+			dialogText?.let { Text(text = it) }
+		}, onDismissRequest = {
+			onDismissRequest()
+		}, confirmButton = {
+			Button(colors = ButtonColors(Color.Black, Color.White, Color.Black, Color.White), onClick = {
+				onConfirmation()
+			}) {
+				Text(textButtonConfirm)
+			}
+		}, dismissButton = {
+			Button(
+				colors = ButtonColors(MaterialTheme.colorScheme.onError, Color.White, Color.Black, Color.White),
+				onClick = {
+					onDismissRequest()
+				},
+			) {
+				Text(textButtonCancel)
+			}
+		})
 }
 
 @Composable
