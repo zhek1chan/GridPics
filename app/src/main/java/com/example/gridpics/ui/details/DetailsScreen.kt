@@ -114,6 +114,7 @@ fun DetailsScreen(
 	{
 		Log.d("pic", updatedCurrentPicture)
 		val list = remember { pictures.split("\n").toMutableList() }
+		Log.d("list", "$list")
 		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture), pageCount = { list.size })
 		val currentPage = pagerState.currentPage
 		val errorPicture = remember(list) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
@@ -436,7 +437,7 @@ fun AppBar(
 				containerColor = MaterialTheme.colorScheme.background
 			),
 			actions = {
-				val plain = remember(list) { "text/plain" }
+				val plain = "text/plain"
 				IconButton(
 					onClick =
 					{

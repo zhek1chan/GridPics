@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.pictures
 
-import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,50 +20,50 @@ class PicturesViewModel(
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
 	fun observeBackNav(): Flow<Boolean> = backNav
+
 	init
 	{
+		val flow = picturesUiState
 		viewModelScope.launch {
-			var value = picturesUiState.value
 			interactor.getPics().collect { urls ->
-				value = when(urls)
+				flow.value = when(urls)
 				{
-					is Resource.Data -> value.copy(loadingState = PicturesState.SearchIsOk(urls.value))
-					is Resource.ConnectionError -> value.copy(loadingState = PicturesState.ConnectionError)
-					is Resource.NotFound -> value.copy(loadingState = PicturesState.NothingFound)
+					is Resource.Data -> flow.value.copy(loadingState = PicturesState.SearchIsOk(urls.value))
+					is Resource.ConnectionError -> flow.value.copy(loadingState = PicturesState.ConnectionError)
+					is Resource.NotFound -> flow.value.copy(loadingState = PicturesState.NothingFound)
 				}
-				picturesUiState.value = value
 			}
 		}
 	}
 
 	fun postState(useLoadedState: Boolean, urls: String)
 	{
-		var value = picturesUiState.value
+		val flow = picturesUiState
 		viewModelScope.launch {
-			value = if(useLoadedState)
+			flow.value = if(useLoadedState)
 			{
-				value.copy(loadingState = PicturesState.Loaded(urls))
-			} else
-			{
-				value.copy(loadingState = PicturesState.SearchIsOk(urls))
+				flow.value.copy(loadingState = PicturesState.Loaded(urls))
 			}
-			picturesUiState.value = value
+			else
+			{
+				flow.value.copy(loadingState = PicturesState.SearchIsOk(urls))
+			}
 		}
 	}
 
 	fun postSavedUrls(urls: String?)
 	{
-		var value = picturesUiState.value
+		val flow = picturesUiState
 		viewModelScope.launch {
-			value = value.copy(picturesUrl = urls)
+			flow.value = flow.value.copy(picturesUrl = urls)
 		}
 	}
 
 	fun postCacheWasCleared(cacheWasCleared: Boolean)
 	{
-		var value = picturesUiState.value
+		val flow = picturesUiState
 		viewModelScope.launch {
-			value = value.copy(clearedCache = cacheWasCleared)
+			flow.value = flow.value.copy(clearedCache = cacheWasCleared)
 		}
 	}
 
@@ -79,7 +78,11 @@ class PicturesViewModel(
 
 	fun checkOnErrorExists(url: String): Boolean
 	{
-		return errorsList.contains(url)
+		val list = errorsList
+		return if (list.isNotEmpty())
+		{
+			list.contains(url)
+		} else false
 	}
 
 	fun removeSpecialError(url: String)
@@ -103,7 +106,6 @@ class PicturesViewModel(
 
 	fun clickOnPicture(url: String)
 	{
-		Log.d("recompose", "I call recompose :)")
 		currentPicture = url
 	}
 

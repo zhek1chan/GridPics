@@ -18,7 +18,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -90,10 +95,11 @@ class MainActivity: AppCompatActivity()
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
+		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
 		picVM.postCacheWasCleared(false)
 		enableEdgeToEdge(
-			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
-			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
+			statusBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black)),
+			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
 		)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
@@ -125,6 +131,10 @@ class MainActivity: AppCompatActivity()
 		themePick = theme
 		setContent {
 			ComposeTheme {
+				Box(modifier = Modifier
+					.fillMaxSize()
+					.background(MaterialTheme.colorScheme.onPrimary)
+				)
 				val navController = rememberNavController()
 				NavigationSetup(navController = navController)
 			}

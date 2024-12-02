@@ -269,8 +269,8 @@ fun itemNewsCard(
 					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
 					dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
 					icon = Icons.Default.Warning,
-					"Отменить",
-					"Подтвердить")
+					textButtonCancel = stringResource(R.string.cancel),
+					textButtonConfirm = stringResource(R.string.confirm))
 			}
 			else
 			{
@@ -315,12 +315,12 @@ fun ShowList(
 			{
 				val loadingString = stringResource(R.string.loading_has_been_started)
 				Log.d("Now state is", "Loading")
+				val status =  state.value.loadingState as PicturesState.SearchIsOk
 				LaunchedEffect(Unit) {
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
-					saveToSharedPrefs(context, (state.value.loadingState as PicturesState.SearchIsOk).data)
+					saveToSharedPrefs(context, status.data)
 				}
-				val status = remember (state.value) { state.value.loadingState }
-				val value = remember(status) { (status as PicturesState.SearchIsOk).data }
+				val value = remember(status) { status.data }
 				val list = remember(status) { value.split("\n") }
 				postSavedUrls(value)
 				LazyVerticalGrid(
@@ -364,14 +364,14 @@ fun ShowList(
 			is PicturesState.Loaded ->
 			{
 				val loadingEnded = stringResource(R.string.loading_has_been_ended)
-				val status = remember (state.value) { state.value.loadingState }
+				val status = state.value.loadingState as PicturesState.Loaded
 				LaunchedEffect(Unit) {
 					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
-					postSavedUrls((status as PicturesState.Loaded).data)
+					postSavedUrls(status.data)
 				}
-				val value = remember(status) { (status as PicturesState.Loaded).data }
+				val value = remember(status) { status.data }
 				Log.d("Now state is", "Loaded")
-				val list = remember(status) { ((status as PicturesState.Loaded).data).split("\n") }
+				val list = remember(status) { (status.data).split("\n") }
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
@@ -398,6 +398,7 @@ fun ShowList(
 		Log.d("Now state is", "Loaded from sp")
 		LaunchedEffect(Unit) {
 			saveToSharedPrefs(context, imagesUrlsSP)
+			postSavedUrls(imagesUrlsSP)
 		}
 		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n") }
 		Log.d("item", items.toString())
