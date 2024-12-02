@@ -121,7 +121,10 @@ class MainActivity: AppCompatActivity()
 				if(it)
 				{
 					Log.d("callback", "callback was called")
-					stopService(serviceIntentLocal)
+					if(mainNotificationService != null)
+					{
+						stopService(serviceIntentLocal)
+					}
 					this@MainActivity.finishAffinity()
 				}
 			}
@@ -222,28 +225,27 @@ class MainActivity: AppCompatActivity()
 		grantResults: IntArray,
 	)
 	{
-		if(requestCode == 100)
-		{
-			if(ContextCompat.checkSelfPermission(
-					this,
-					Manifest.permission.POST_NOTIFICATIONS,
-				) == PackageManager.PERMISSION_GRANTED)
+		lifecycleScope.launch {
+			super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+			if(requestCode == 100)
 			{
-				val serviceIntentLocal = serviceIntent
-				val connectionLocal = connection
-				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				if((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED))
 				{
-					startForegroundService(serviceIntentLocal)
-					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-				}
-				else
-				{
-					startService(serviceIntentLocal)
-					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+					val serviceIntentLocal = serviceIntent
+					val connectionLocal = connection
+					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+					{
+						startForegroundService(serviceIntentLocal)
+						bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+					}
+					else
+					{
+						startService(serviceIntentLocal)
+						bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+					}
 				}
 			}
 		}
-		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 	}
 
 	override fun onRestart()
@@ -272,7 +274,10 @@ class MainActivity: AppCompatActivity()
 				}
 				else
 				{
-					requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
+					if (!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
+					{
+						requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
+					}
 				}
 			}
 			else
