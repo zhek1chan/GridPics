@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -121,7 +120,11 @@ class MainActivity: AppCompatActivity()
 			picVM.observeBackNav().collectLatest {
 				if(it)
 				{
-					stopService(serviceIntentLocal)
+					Log.d("callback", "callback was called")
+					if(mainNotificationService != null)
+					{
+						stopService(serviceIntentLocal)
+					}
 					this@MainActivity.finishAffinity()
 				}
 			}
@@ -222,7 +225,6 @@ class MainActivity: AppCompatActivity()
 		grantResults: IntArray,
 	)
 	{
-		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 		if(requestCode == 100)
 		{
 			if(ContextCompat.checkSelfPermission(
@@ -244,6 +246,7 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 	}
 
 	override fun onRestart()
@@ -272,11 +275,7 @@ class MainActivity: AppCompatActivity()
 				}
 				else
 				{
-					ActivityCompat.requestPermissions(
-						this,
-						arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-						100
-					)
+					requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
 				}
 			}
 			else

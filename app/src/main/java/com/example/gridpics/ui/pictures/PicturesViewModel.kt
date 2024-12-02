@@ -101,7 +101,9 @@ class PicturesViewModel(
 
 	fun backNavButtonPress(pressed: Boolean)
 	{
-		backNav.value = pressed
+		viewModelScope.launch {
+			backNav.emit(pressed)
+		}
 	}
 
 	fun clickOnPicture(url: String)
