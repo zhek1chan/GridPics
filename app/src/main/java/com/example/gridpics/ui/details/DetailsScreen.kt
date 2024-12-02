@@ -116,10 +116,11 @@ fun DetailsScreen(
 		val list = remember { pictures.split("\n").toMutableList() }
 		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture), pageCount = { list.size })
 		val currentPage = pagerState.currentPage
+		val errorPicture = remember(list) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 		if(checkIfExists(list[currentPage]))
 		{
 			Log.d("checkMa", "gruzim oshibku")
-			postUrl(list[currentPage], (ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap()))
+			postUrl(list[currentPage], errorPicture)
 		}
 		else
 		{
@@ -277,7 +278,7 @@ fun ShowAsynchImage(
 	}
 	AsyncImage(
 		model = imgRequest,
-		contentDescription = "",
+		contentDescription = null,
 		contentScale = scale,
 		onSuccess = {
 			removeSpecialError(list[page])
@@ -288,17 +289,23 @@ fun ShowAsynchImage(
 		},
 		modifier = Modifier
 			.fillMaxSize()
-			.zoomable(zoom, enableOneFingerZoom = false, onTap = {
-				changeVisabilityState()
-				isVisible.value = !isVisible.value
-				changeBarsVisability(isVisible.value)
-			})
+			.zoomable(
+				zoomState = zoom,
+				enableOneFingerZoom = false,
+				onTap =
+				{
+					changeVisabilityState()
+					isVisible.value = !isVisible.value
+					changeBarsVisability(isVisible.value)
+				}
+			)
 			.pointerInput(Unit) {
 				awaitEachGesture {
 					while(true)
 					{
 						val event = awaitPointerEvent()
-						exit.value = !event.changes.any {
+						val changes = event.changes
+						exit.value = !changes.any {
 							it.isConsumed
 						}
 						if(count.size >= 3)
@@ -307,17 +314,17 @@ fun ShowAsynchImage(
 							countLastThree.add(count[count.lastIndex - 1])
 							countLastThree.add(count[count.lastIndex - 2])
 						}
-						if(event.changes.any { !it.pressed })
+						if(changes.any { !it.pressed })
 						{
 							if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2)
 							{
-								postPositiveState.invoke()
+								postPositiveState()
 								changeBarsVisability(true)
 								navController.navigateUp()
 							}
 						}
 						countLastThree.clear()
-						count.add(event.changes.size)
+						count.add(changes.size)
 					}
 				}
 			}
@@ -429,7 +436,7 @@ fun AppBar(
 				containerColor = MaterialTheme.colorScheme.background
 			),
 			actions = {
-				val plain = stringResource(R.string.text_plain)
+				val plain = remember(list) { "text/plain" }
 				IconButton(
 					onClick =
 					{

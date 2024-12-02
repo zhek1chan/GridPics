@@ -9,25 +9,4 @@
     <color name="white">#FFFFFFFF</color>
 
     <color name="green">#00ff00</color>
-    <color name="white_80">#CCFFFFFF</color>
-    <color name="white_50">#80FFFFFF</color>
-    <color name="purple_darker">#41374D</color>
-    <color name="red_opacity_80">#CCDA0303</color>
-    <color name="orange">#FF9800</color>
-    <color name="transparent">#00FFFFFF</color>
-    <color name="grey_60_transparent">#804B4A48</color>
-    <color name="grey_80_transparent">#CC4B4A48</color>
-    <color name="grey_transparent">#272727</color>
-    <color name="orange_primary">#FFC107</color>
-    <color name="reddish_pink_transparent">#59BF2323</color>
-    <color name="reddish_green_transparent">#CC87D133</color>
-    <color name="reddish_orange_transparent">#59F4690E</color>
-    <color name="gradientBottom">#15180f</color>
-    <color name="gradientTop">#434944</color>
-    <color name="colorPrimary">#434955</color>
-    <color name="gradient_scale_black">#15181E</color>
-    <color name="gradient_scale_orange">#4DB5AA60</color>
-    <color name="gradient_scale_secondary_reddish">#4DFF9800</color>
-    <color name="light_grey">#CDCDCD</color>
-    <color name="light_grey_status_bar">#D3D3D3</color>
 </resources>

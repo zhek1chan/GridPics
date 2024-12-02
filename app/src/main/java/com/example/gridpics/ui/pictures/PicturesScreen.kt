@@ -101,11 +101,11 @@ fun PicturesScreen(
 )
 {
 	val context = LocalContext.current
-	postPositiveState.invoke()
+	postPositiveState()
 	Log.d("description", "posted default")
 	postDefaultDescription(DEFAULT_STRING_VALUE)
 	BackHandler {
-		postPressOnBackButton.invoke()
+		postPressOnBackButton()
 	}
 	val orientation = context.resources.configuration.orientation
 	val windowInsets = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
@@ -269,9 +269,8 @@ fun itemNewsCard(
 					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
 					dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
 					icon = Icons.Default.Warning,
-					stringResource(R.string.cancel),
-					stringResource(R.string.confirm)
-				)
+					"Отменить",
+					"Подтвердить")
 			}
 			else
 			{
@@ -320,8 +319,9 @@ fun ShowList(
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 					saveToSharedPrefs(context, (state.value.loadingState as PicturesState.SearchIsOk).data)
 				}
-				val value = remember(state.value.loadingState) { (state.value.loadingState as PicturesState.SearchIsOk).data }
-				val list = remember(state.value.loadingState) { value.split("\n") }
+				val status = remember (state.value) { state.value.loadingState }
+				val value = remember(status) { (status as PicturesState.SearchIsOk).data }
+				val list = remember(status) { value.split("\n") }
 				postSavedUrls(value)
 				LazyVerticalGrid(
 					state = listState,
@@ -364,13 +364,14 @@ fun ShowList(
 			is PicturesState.Loaded ->
 			{
 				val loadingEnded = stringResource(R.string.loading_has_been_ended)
+				val status = remember (state.value) { state.value.loadingState }
 				LaunchedEffect(Unit) {
 					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
-					postSavedUrls((state.value.loadingState as PicturesState.Loaded).data)
+					postSavedUrls((status as PicturesState.Loaded).data)
 				}
-				val value = remember(state.value.loadingState) { (state.value.loadingState as PicturesState.Loaded).data }
+				val value = remember(status) { (status as PicturesState.Loaded).data }
 				Log.d("Now state is", "Loaded")
-				val list = remember(state.value.loadingState) { ((state.value.loadingState as PicturesState.Loaded).data).split("\n") }
+				val list = remember(status) { ((status as PicturesState.Loaded).data).split("\n") }
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier

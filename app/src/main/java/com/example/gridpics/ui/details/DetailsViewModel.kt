@@ -32,9 +32,10 @@ class DetailsViewModel(
 	fun postImageBitmap(url: String)
 	{
 		Log.d("Description posted", "desc was posted")
-		job.cancelChildren()
+		val jobButNotSteveJobs = job
+		jobButNotSteveJobs.cancelChildren()
 		viewModelScope.launch {
-			val bitmap = interactor.getPictureBitmap(url, job)
+			val bitmap = interactor.getPictureBitmap(url, jobButNotSteveJobs)
 			imageFlow.emit(Pair(url, bitmap))
 		}
 	}
@@ -42,14 +43,16 @@ class DetailsViewModel(
 	fun changeVisabilityState()
 	{
 		viewModelScope.launch {
-			if(!uiStateFlow.value.barsAreVisible)
+			var flow = uiStateFlow.value
+			flow = if(!flow.barsAreVisible)
 			{
-				uiStateFlow.value = uiStateFlow.value.copy(barsAreVisible = true)
+				flow.copy(barsAreVisible = true)
 			}
 			else
 			{
-				uiStateFlow.value = uiStateFlow.value.copy(barsAreVisible = false)
+				flow.copy(barsAreVisible = false)
 			}
+			uiStateFlow.value = flow
 		}
 	}
 

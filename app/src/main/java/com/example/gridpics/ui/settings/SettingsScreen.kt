@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -66,8 +67,7 @@ fun SettingsScreen(
 	option: Int,
 	postDefaultUrl: () -> Unit,
 	changeTheme: (Int) -> Unit,
-	justChangedTheme: () -> Unit,
-	postCacheWasCleared: (Boolean) -> Unit
+	postCacheWasCleared: (Boolean) -> Unit,
 )
 {
 	postDefaultUrl.invoke()
@@ -108,7 +108,7 @@ fun SettingsScreen(
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
-				SettingsCompose(option, changeTheme, justChangedTheme, postCacheWasCleared)
+				SettingsCompose(option, changeTheme, postCacheWasCleared, navController)
 			}
 		}
 	)
@@ -118,8 +118,8 @@ fun SettingsScreen(
 fun SettingsCompose(
 	option: Int,
 	changeTheme: (Int) -> Unit,
-	justChangedTheme: () -> Unit,
-	postCacheWasCleared: (Boolean) -> Unit
+	postCacheWasCleared: (Boolean) -> Unit,
+	navController: NavController
 )
 {
 	var showDialog by remember { mutableStateOf(false) }
@@ -131,11 +131,13 @@ fun SettingsCompose(
 			start.linkTo(parent.start)
 			end.linkTo(parent.end)
 		}) {
-			val listOfThemeOptions = listOf(
-				stringResource(R.string.light_theme),
-				stringResource(R.string.dark_theme),
-				stringResource(R.string.synch_with_sys)
-			)
+			val listOfThemeOptions = remember (LocalConfiguration) { mutableListOf<String>() }
+			if(listOfThemeOptions.isEmpty())
+			{
+				listOfThemeOptions.add(stringResource(R.string.light_theme))
+				listOfThemeOptions.add(stringResource(R.string.dark_theme))
+				listOfThemeOptions.add(stringResource(R.string.synch_with_sys))
+			}
 			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option]) }
 			Column {
 				Column(Modifier.selectableGroup()) {
@@ -191,7 +193,6 @@ fun SettingsCompose(
 								selected = (text == selectedOption),
 								onClick =
 								{
-									justChangedTheme.invoke()
 									onOptionSelected(text)
 									saveThemeState(context, listOfThemeOptions.indexOf(text))
 									changeTheme(listOfThemeOptions.indexOf(text))
@@ -254,9 +255,8 @@ fun SettingsCompose(
 					},
 					onDismissRequest = { showDialog = false },
 					icon = Icons.Default.Delete,
-					textButtonCancel = stringResource(R.string.cancel),
-					textButtonConfirm = stringResource(R.string.delete)
-				)
+					textButtonCancel = "Отменить",
+					textButtonConfirm = "Удалить")
 			}
 		}
 	}

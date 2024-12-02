@@ -25,10 +25,12 @@ fun BottomNavigationBar(
 	navController: NavController,
 )
 {
-	val items = listOf(
-		BottomNavItem.Home,
-		BottomNavItem.Settings
-	)
+	val items = remember(navController) {
+		listOf(
+			BottomNavItem.Home,
+			BottomNavItem.Settings
+		)
+	}
 	val bottomBarState = remember { (mutableStateOf(true)) }
 	val navBackStackEntry by navController.currentBackStackEntryAsState()
 	when(navBackStackEntry?.destination?.route)

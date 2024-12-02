@@ -15,6 +15,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
@@ -35,7 +36,6 @@ import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
-import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.flow.collectLatest
@@ -45,7 +45,6 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class MainActivity: AppCompatActivity()
 {
 	private val detailsViewModel by viewModel<DetailsViewModel>()
-	private val settingsViewModel by viewModel<SettingsViewModel>()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var serviceIntent = Intent()
@@ -89,8 +88,8 @@ class MainActivity: AppCompatActivity()
 		//serviceIntentForNotification
 		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
-		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
-		settingsViewModel.changeTheme(themePick)
+		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
+		changeTheme(theme)
 		picVM.postCacheWasCleared(false)
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
@@ -123,7 +122,7 @@ class MainActivity: AppCompatActivity()
 		}
 
 		serviceIntent = serviceIntentLocal
-
+		themePick = theme
 		setContent {
 			ComposeTheme {
 				val navController = rememberNavController()
@@ -169,8 +168,7 @@ class MainActivity: AppCompatActivity()
 					navController = navController,
 					option = themePick,
 					postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) },
-					changeTheme = { int -> settingsViewModel.changeTheme(int) },
-					justChangedTheme = { settingsViewModel.justChangedTheme },
+					changeTheme = { int -> changeTheme(int) },
 					postCacheWasCleared = { cleared -> picVM.postCacheWasCleared(cleared) }
 				)
 			}
@@ -197,13 +195,14 @@ class MainActivity: AppCompatActivity()
 	override fun onConfigurationChanged(newConfig: Configuration)
 	{
 		super.onConfigurationChanged(newConfig)
+		val detVM = detailsViewModel
 		if(isInMultiWindowMode || isInPictureInPictureMode)
 		{
-			detailsViewModel.changeMultiWindowState(true)
+			detVM.changeMultiWindowState(true)
 		}
-		else if(!isInMultiWindowMode)
+		else
 		{
-			detailsViewModel.changeMultiWindowState(false)
+			detVM.changeMultiWindowState(false)
 		}
 	}
 
@@ -322,6 +321,26 @@ class MainActivity: AppCompatActivity()
 			if(detVM.uiStateFlow.value == detVM.uiStateFlow.value.copy(barsAreVisible = false))
 			{
 				detVM.changeVisabilityState()
+			}
+		}
+	}
+
+	private fun changeTheme(option: Int)
+	{
+		Log.d("theme option", "theme option: $option")
+		when(option)
+		{
+			ThemePick.LIGHT_THEME.intValue ->
+			{
+				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+			}
+			ThemePick.DARK_THEME.intValue ->
+			{
+				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+			}
+			ThemePick.FOLLOW_SYSTEM.intValue ->
+			{
+				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
 			}
 		}
 	}

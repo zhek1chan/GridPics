@@ -24,49 +24,56 @@ class PicturesViewModel(
 	init
 	{
 		viewModelScope.launch {
+			var value = picturesUiState.value
 			interactor.getPics().collect { urls ->
-				when(urls)
+				value = when(urls)
 				{
-					is Resource.Data -> picturesUiState.value = PicturesScreenUiState(PicturesState.SearchIsOk(urls.value), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
-					is Resource.ConnectionError -> picturesUiState.value = PicturesScreenUiState(PicturesState.ConnectionError, picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
-					is Resource.NotFound -> picturesUiState.value = PicturesScreenUiState(PicturesState.NothingFound, picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+					is Resource.Data -> value.copy(loadingState = PicturesState.SearchIsOk(urls.value))
+					is Resource.ConnectionError -> value.copy(loadingState = PicturesState.ConnectionError)
+					is Resource.NotFound -> value.copy(loadingState = PicturesState.NothingFound)
 				}
+				picturesUiState.value = value
 			}
 		}
 	}
 
 	fun postState(useLoadedState: Boolean, urls: String)
 	{
+		var value = picturesUiState.value
 		viewModelScope.launch {
-			if(useLoadedState)
+			value = if(useLoadedState)
 			{
-				picturesUiState.value = PicturesScreenUiState(PicturesState.Loaded(urls), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+				value.copy(loadingState = PicturesState.Loaded(urls))
 			} else
 			{
-				picturesUiState.value = PicturesScreenUiState(PicturesState.SearchIsOk(urls), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+				value.copy(loadingState = PicturesState.SearchIsOk(urls))
 			}
+			picturesUiState.value = value
 		}
 	}
 
 	fun postSavedUrls(urls: String?)
 	{
+		var value = picturesUiState.value
 		viewModelScope.launch {
-			picturesUiState.value = picturesUiState.value.copy(picturesUrl = urls)
+			value = value.copy(picturesUrl = urls)
 		}
 	}
 
 	fun postCacheWasCleared(cacheWasCleared: Boolean)
 	{
+		var value = picturesUiState.value
 		viewModelScope.launch {
-			picturesUiState.value = picturesUiState.value.copy(clearedCache = cacheWasCleared)
+			value = value.copy(clearedCache = cacheWasCleared)
 		}
 	}
 
 	fun addError(url: String)
 	{
-		if(!errorsList.contains(url))
+		val list = errorsList
+		if(!list.contains(url))
 		{
-			errorsList.add(url)
+			list.add(url)
 		}
 	}
 
@@ -77,9 +84,10 @@ class PicturesViewModel(
 
 	fun removeSpecialError(url: String)
 	{
-		if(errorsList.contains(url))
+		val list = errorsList
+		if(list.contains(url))
 		{
-			errorsList.remove(url)
+			list.remove(url)
 		}
 	}
 
