@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
@@ -78,6 +77,7 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
+import com.example.gridpics.ui.activity.MainActivity.Companion.TEXT_PLAIN
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
@@ -176,15 +176,15 @@ fun ShowDetails(
 	val firstPage = remember(img) { mutableStateOf(true) }
 	val startPage = remember(img) { list.indexOf(img) }
 	val exit = remember { mutableStateOf(false) }
-	Log.d("padding", "$padding")
 	val topBarHeight = 64.dp
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
-	Log.d("padding", "$padding")
-	val bottomBarHeightFixed = WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateBottomPadding()
+	Log.d("padding1", "sverhu ${padding.calculateTopPadding().value.dp}")
+	Log.d("padding11", "sverhu 2 $statusBarHeightFixed")
+
 	HorizontalPager(
 		state = pagerState,
 		pageSize = PageSize.Fill,
-		contentPadding = PaddingValues(0.dp, topBarHeight + statusBarHeightFixed, 0.dp, bottomBarHeightFixed),
+		contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
 		userScrollEnabled = true,
 		snapPosition = SnapPosition.Center
 	) { page ->
@@ -433,11 +433,10 @@ fun AppBar(
 				containerColor = MaterialTheme.colorScheme.background
 			),
 			actions = {
-				val plain = "text/plain"
 				IconButton(
 					onClick =
 					{
-						share(list[pagerState.currentPage], context, plain)
+						share(list[pagerState.currentPage], context, TEXT_PLAIN)
 					}
 				) {
 					Icon(

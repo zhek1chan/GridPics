@@ -59,14 +59,7 @@ class DetailsViewModel(
 	{
 		val uiState = uiStateFlow
 		viewModelScope.launch {
-			uiState.value = if(!isMultiWindowed)
-			{
-				uiState.value.copy(isMultiWindowed = true)
-			}
-			else
-			{
-				uiState.value.copy(isMultiWindowed = false)
-			}
+			uiState.value = uiState.value.copy(isMultiWindowed = !isMultiWindowed)
 		}
 	}
 

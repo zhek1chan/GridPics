@@ -357,6 +357,8 @@ class MainActivity: AppCompatActivity()
 
 	companion object
 	{
+		const val LENGTH_OF_PICTURE = 110
+		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337
 		const val SHARED_PREFS_PICTURES = "SHARED_PREFS_PICTURES"
 		const val THEME_SHARED_PREFERENCE = "THEME_SHARED_PREFERENCE"

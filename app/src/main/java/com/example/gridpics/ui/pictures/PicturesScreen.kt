@@ -74,6 +74,7 @@ import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
+import com.example.gridpics.ui.activity.MainActivity.Companion.LENGTH_OF_PICTURE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.Screen
@@ -536,17 +537,17 @@ private fun saveToSharedPrefs(context: Context, picturesUrl: String)
 @Composable
 private fun calculateGridSpan(): Int
 {
-	val context = LocalContext.current
+	val resources = LocalContext.current.resources.displayMetrics
 	Log.d("HomeFragment", "Calculate span started")
-	val width = context.resources.displayMetrics.widthPixels
+	val width = resources.widthPixels
 	val orientation = LocalConfiguration.current.orientation
-	val density = context.resources.displayMetrics.density
+	val density = resources.density
 	return if(orientation == Configuration.ORIENTATION_PORTRAIT)
 	{
-		((width / density).toInt() / 110)
+		(width / density).toInt() / LENGTH_OF_PICTURE
 	}
 	else
 	{
-		((width / density).toInt() / 110)
+		(width / density).toInt() / LENGTH_OF_PICTURE
 	}
 }
