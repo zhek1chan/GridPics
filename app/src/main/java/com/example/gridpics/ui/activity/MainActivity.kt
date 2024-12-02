@@ -121,10 +121,7 @@ class MainActivity: AppCompatActivity()
 				if(it)
 				{
 					Log.d("callback", "callback was called")
-					if(mainNotificationService != null)
-					{
-						stopService(serviceIntentLocal)
-					}
+					stopService(serviceIntentLocal)
 					this@MainActivity.finishAffinity()
 				}
 			}
