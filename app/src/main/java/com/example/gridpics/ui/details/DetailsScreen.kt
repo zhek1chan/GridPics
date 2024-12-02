@@ -173,13 +173,11 @@ fun ShowDetails(
 	changeBarsVisability: (Boolean) -> Unit,
 )
 {
-	padding.calculateBottomPadding()
 	val firstPage = remember(img) { mutableStateOf(true) }
 	val startPage = remember(img) { list.indexOf(img) }
 	val exit = remember { mutableStateOf(false) }
 	Log.d("padding", "$padding")
 	val topBarHeight = 64.dp
-	val scope = rememberCoroutineScope()
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
 	Log.d("padding", "$padding")
 	val bottomBarHeightFixed = WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateBottomPadding()
@@ -193,12 +191,10 @@ fun ShowDetails(
 		LaunchedEffect(page) {
 			if(firstPage.value)
 			{
-				scope.launch {
-					pagerState.animateScrollToPage(startPage)
-				}
+				pagerState.animateScrollToPage(startPage)
+				firstPage.value = false
 			}
 		}
-		firstPage.value = false
 		when
 		{
 			checkIfExists(list[page]) ->
