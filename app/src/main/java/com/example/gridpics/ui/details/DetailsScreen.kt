@@ -1,5 +1,6 @@
 package com.example.gridpics.ui.details
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -51,12 +52,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -226,14 +228,14 @@ fun ShowDetails(
 					exit = exit,
 					multiWindow = multiWindowed,
 					context = context,
-					changeBarsVisability = changeBarsVisability,
-					pagerState = pagerState
+					changeBarsVisability = changeBarsVisability
 				)
 			}
 		}
 	}
 }
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowAsynchImage(
 	list: MutableList<String>,
@@ -248,7 +250,6 @@ fun ShowAsynchImage(
 	multiWindow: MutableState<DetailsScreenUiState>,
 	context: Context,
 	changeBarsVisability: (Boolean) -> Unit,
-	pagerState: PagerState,
 )
 {
 	val orientation = context.resources.configuration.orientation
@@ -267,9 +268,10 @@ fun ShowAsynchImage(
 	{
 		ContentScale.Fit
 	}
-	val zoom = rememberZoomState(2.8f, Size.Zero)
+	val zoom = rememberZoomState(15f, Size.Zero)
 	val count = remember { mutableListOf(0) }
 	val countLastThree = remember { mutableListOf(0) }
+	var imageSize by remember { mutableStateOf(Size(0f, 0f)) }
 	val imgRequest = remember(list[page]) {
 		ImageRequest.Builder(context)
 			.data(list[page])
@@ -286,6 +288,7 @@ fun ShowAsynchImage(
 		contentDescription = null,
 		contentScale = scale,
 		onSuccess = {
+			imageSize = Size(it.result.image.width.toFloat(), it.result.image.height.toFloat())
 			removeSpecialError(list[page])
 		},
 		onError = {
@@ -308,50 +311,6 @@ fun ShowAsynchImage(
 				awaitEachGesture {
 					while(true)
 					{
-						Log.d("zoom", "x ${zoom.offsetX} y ${zoom.offsetY}")
-						if(zoom.offsetX > 1000)
-						{
-							if(list.size == page)
-							{
-								scope.launch {
-									pagerState.animateScrollToPage(page - 1)
-								}
-							}
-							else if(page == 0)
-							{
-								scope.launch {
-									zoom.changeScale(2f, Offset(x = 1000f, y = zoom.offsetY))
-								}
-							}
-							else
-							{
-								scope.launch {
-									pagerState.animateScrollToPage(page - 1)
-								}
-							}
-						}
-						if(zoom.offsetX < -1000)
-						{
-							if(list.size == page)
-							{
-								scope.launch {
-									pagerState.scrollToPage(1)
-									pagerState.scrollToPage(page)
-								}
-							}
-							else if(page == 0)
-							{
-								scope.launch {
-									pagerState.animateScrollToPage(1)
-								}
-							}
-							else
-							{
-								scope.launch {
-									pagerState.animateScrollToPage(page + 1)
-								}
-							}
-						}
 						val event = awaitPointerEvent()
 						val changes = event.changes
 						exit.value = !changes.any {
@@ -378,6 +337,10 @@ fun ShowAsynchImage(
 				}
 			}
 	)
+
+	scope.launch {
+		zoom.setContentSize(imageSize)
+	}
 }
 
 @Composable
