@@ -249,7 +249,11 @@ fun itemNewsCard(
 	{
 		isClicked = false
 		currentPicture(item)
-		navController.navigate(Screen.Details.route)
+		navController.navigate(Screen.Details.route) {
+			popUpTo(Screen.Home.route) {
+				inclusive = true
+			}
+		}
 	}
 	when
 	{
