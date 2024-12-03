@@ -324,7 +324,7 @@ fun ShowAsynchImage(
 							else
 							{
 								scope.launch {
-									pagerState.scrollToPage(page + 1)
+									pagerState.scrollToPage(page - 1)
 								}
 							}
 						}
@@ -346,7 +346,7 @@ fun ShowAsynchImage(
 							else
 							{
 								scope.launch {
-									pagerState.scrollToPage(page - 1)
+									pagerState.scrollToPage(page + 1)
 								}
 							}
 						}
