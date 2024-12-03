@@ -21,12 +21,14 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
@@ -398,11 +400,11 @@ fun AppBar(
 				.background(MaterialTheme.colorScheme.background)
 				.height(WindowInsets.systemBarsIgnoringVisibility
 					.asPaddingValues()
-					.calculateTopPadding())
+					.calculateTopPadding()+64.dp)
 				.fillMaxWidth())
 		TopAppBar(
 			modifier = Modifier
-				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
+				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 				.wrapContentSize()
 				.clickable {
 					navBack.value = true

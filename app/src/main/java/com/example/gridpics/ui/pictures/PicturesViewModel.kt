@@ -18,8 +18,8 @@ class PicturesViewModel(
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
 	var currentPicture = ""
 	private val errorsList: MutableList<String> = mutableListOf()
-	private val backNav = MutableStateFlow<Boolean?>(null)
-	fun observeBackNav(): Flow<Boolean?> = backNav
+	private val backNav = MutableStateFlow(false)
+	fun observeBackNav(): Flow<Boolean> = backNav
 
 	init
 	{
@@ -79,10 +79,11 @@ class PicturesViewModel(
 	fun checkOnErrorExists(url: String): Boolean
 	{
 		val list = errorsList
-		return if (list.isNotEmpty())
+		return if(list.isNotEmpty())
 		{
 			list.contains(url)
-		} else false
+		}
+		else false
 	}
 
 	fun removeSpecialError(url: String)
