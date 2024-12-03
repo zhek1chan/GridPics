@@ -56,6 +56,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -308,7 +309,7 @@ fun ShowAsynchImage(
 					while(true)
 					{
 						Log.d("zoom", "x ${zoom.offsetX} y ${zoom.offsetY}")
-						if(zoom.offsetX > 1100)
+						if(zoom.offsetX > 1000)
 						{
 							if(list.size == page)
 							{
@@ -319,8 +320,7 @@ fun ShowAsynchImage(
 							else if(page == 0)
 							{
 								scope.launch {
-									pagerState.scrollToPage(1)
-									pagerState.scrollToPage(page)
+									zoom.changeScale(2f, Offset(x = 1000f, y = zoom.offsetY))
 								}
 							}
 							else
@@ -330,7 +330,7 @@ fun ShowAsynchImage(
 								}
 							}
 						}
-						if(zoom.offsetX < -1100)
+						if(zoom.offsetX < -1000)
 						{
 							if(list.size == page)
 							{
