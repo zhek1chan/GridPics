@@ -109,6 +109,7 @@ class MainNotificationService: Service()
 			resultIntent.putExtra(WAS_OPENED_SCREEN, DETAILS)
 			resultIntent.setAction(values.first)
 		}
+		resultIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
 		Log.d("intent URI", resultIntent.toUri(0))
 		val resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE)
