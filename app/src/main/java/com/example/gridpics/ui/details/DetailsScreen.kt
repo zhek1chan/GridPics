@@ -223,7 +223,8 @@ fun ShowDetails(
 					exit = exit,
 					multiWindow = multiWindowed,
 					context = context,
-					changeBarsVisability = changeBarsVisability
+					changeBarsVisability = changeBarsVisability,
+					pagerState = pagerState
 				)
 			}
 		}
@@ -244,6 +245,7 @@ fun ShowAsynchImage(
 	multiWindow: MutableState<DetailsScreenUiState>,
 	context: Context,
 	changeBarsVisability: (Boolean) -> Unit,
+	pagerState: PagerState,
 )
 {
 	val orientation = context.resources.configuration.orientation
@@ -275,6 +277,7 @@ fun ShowAsynchImage(
 			.networkCachePolicy(CachePolicy.ENABLED)
 			.build()
 	}
+	val scope = rememberCoroutineScope()
 	AsyncImage(
 		model = imgRequest,
 		contentDescription = null,
@@ -302,6 +305,51 @@ fun ShowAsynchImage(
 				awaitEachGesture {
 					while(true)
 					{
+						Log.d("zoom", "x ${zoom.offsetX} y ${zoom.offsetY}")
+						if(zoom.offsetX > 1100)
+						{
+							if(list.size == page)
+							{
+								scope.launch {
+									pagerState.scrollToPage(page + 1)
+								}
+							}
+							else if(page == 0)
+							{
+								scope.launch {
+									pagerState.scrollToPage(1)
+									pagerState.scrollToPage(page)
+								}
+							}
+							else
+							{
+								scope.launch {
+									pagerState.scrollToPage(page + 1)
+								}
+							}
+						}
+						if(zoom.offsetX < -1100)
+						{
+							if(list.size == page)
+							{
+								scope.launch {
+									pagerState.scrollToPage(1)
+									pagerState.scrollToPage(page)
+								}
+							}
+							else if(page == 0)
+							{
+								scope.launch {
+									pagerState.scrollToPage(1)
+								}
+							}
+							else
+							{
+								scope.launch {
+									pagerState.scrollToPage(page - 1)
+								}
+							}
+						}
 						val event = awaitPointerEvent()
 						val changes = event.changes
 						exit.value = !changes.any {
@@ -400,7 +448,7 @@ fun AppBar(
 				.background(MaterialTheme.colorScheme.background)
 				.height(WindowInsets.systemBarsIgnoringVisibility
 					.asPaddingValues()
-					.calculateTopPadding()+64.dp)
+					.calculateTopPadding() + 64.dp)
 				.fillMaxWidth())
 		TopAppBar(
 			modifier = Modifier
