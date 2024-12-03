@@ -113,10 +113,13 @@ class MainActivity: AppCompatActivity()
 
 		lifeCycScope.launch {
 			picVM.observeBackNav().collectLatest {
-				if(it)
+				if(it != null && it)
 				{
 					Log.d("callback", "callback was called")
-					stopService(serviceIntentLocal)
+					if(mainNotificationService != null)
+					{
+						stopService(serviceIntentLocal)
+					}
 					this@MainActivity.finishAffinity()
 				}
 			}

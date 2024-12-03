@@ -18,8 +18,8 @@ class PicturesViewModel(
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
 	var currentPicture = ""
 	private val errorsList: MutableList<String> = mutableListOf()
-	private val backNav = MutableStateFlow(false)
-	fun observeBackNav(): Flow<Boolean> = backNav
+	private val backNav = MutableStateFlow<Boolean?>(null)
+	fun observeBackNav(): Flow<Boolean?> = backNav
 
 	init
 	{

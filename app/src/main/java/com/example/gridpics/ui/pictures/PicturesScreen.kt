@@ -106,6 +106,7 @@ fun PicturesScreen(
 	Log.d("description", "posted default")
 	postDefaultDescription(DEFAULT_STRING_VALUE)
 	BackHandler {
+		Log.d("gobacl","ffafafa")
 		postPressOnBackButton()
 	}
 	val orientation = context.resources.configuration.orientation
