@@ -367,7 +367,7 @@ fun ShowAsynchImage(
 							{
 								postPositiveState()
 								changeBarsVisability(true)
-								navController.navigateUp()
+								navController.navigate(Screen.Home.route)
 							}
 						}
 						countLastThree.clear()
