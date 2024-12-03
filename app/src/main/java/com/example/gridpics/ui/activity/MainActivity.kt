@@ -18,12 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -131,10 +126,6 @@ class MainActivity: AppCompatActivity()
 		themePick = theme
 		setContent {
 			ComposeTheme {
-				Box(modifier = Modifier
-					.fillMaxSize()
-					.background(MaterialTheme.colorScheme.onPrimary)
-				)
 				val navController = rememberNavController()
 				NavigationSetup(navController = navController)
 			}
@@ -271,7 +262,7 @@ class MainActivity: AppCompatActivity()
 				}
 				else
 				{
-					if (!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
+					if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
 					{
 						requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
 					}

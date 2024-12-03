@@ -118,7 +118,7 @@ fun SettingsScreen(
 fun SettingsCompose(
 	option: Int,
 	changeTheme: (Int) -> Unit,
-	postCacheWasCleared: (Boolean) -> Unit
+	postCacheWasCleared: (Boolean) -> Unit,
 )
 {
 	var showDialog by remember { mutableStateOf(false) }
