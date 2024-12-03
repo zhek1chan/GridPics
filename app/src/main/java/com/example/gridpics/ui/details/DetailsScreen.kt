@@ -289,7 +289,7 @@ fun ShowAsynchImage(
 		contentDescription = null,
 		contentScale = scale,
 		onSuccess = {
-			val resultImage =it.result.image
+			val resultImage = it.result.image
 			imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
 			removeSpecialError(list[page])
 		},
