@@ -136,7 +136,7 @@ fun DetailsScreen(
 			topBar = { AppBar(isVisible, context, navController, list, pagerState, postUrl) },
 			content = { padding ->
 				ShowDetails(
-					img = updatedCurrentPicture.value,
+					img = updatedCurrentPicture,
 					navController = navController,
 					isVisible = isVisible,
 					list = list,
@@ -160,7 +160,7 @@ fun DetailsScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ShowDetails(
-	img: String,
+	img: MutableState<String>,
 	navController: NavController,
 	isVisible: MutableState<Boolean>,
 	list: MutableList<String>,
@@ -178,7 +178,7 @@ fun ShowDetails(
 )
 {
 	val firstPage = remember(img) { mutableStateOf(true) }
-	val startPage = remember(img) { list.indexOf(img) }
+	val startPage = remember(img) { list.indexOf(img.value) }
 	val exit = remember { mutableStateOf(false) }
 	val topBarHeight = 64.dp
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
