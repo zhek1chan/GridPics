@@ -99,10 +99,11 @@ fun DetailsScreen(
 	postUrl: (String, Bitmap?) -> Unit,
 	postPositiveState: () -> Unit,
 	picturesScreenState: MutableState<PicturesScreenUiState>,
-	updatedCurrentPicture: String,
+	updatedCurrentPicture: MutableState<String>,
 	isValidUrl: (String) -> Boolean,
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
+	postNewCurrentPic: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -114,10 +115,10 @@ fun DetailsScreen(
 	val pictures = remember { picturesScreenState.value.picturesUrl }
 	if(pictures != null)
 	{
-		Log.d("pic", updatedCurrentPicture)
+		Log.d("pic", updatedCurrentPicture.value)
 		val list = remember { pictures.split("\n").toMutableList() }
 		Log.d("list", "$list")
-		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture), pageCount = { list.size })
+		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture.value), pageCount = { list.size })
 		val currentPage = pagerState.currentPage
 		val errorPicture = remember(list) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 		if(checkIfExists(list[currentPage]))
@@ -128,13 +129,14 @@ fun DetailsScreen(
 		else
 		{
 			postNewBitmap(list[currentPage])
+			postNewCurrentPic(list[currentPage])
 		}
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 			topBar = { AppBar(isVisible, context, navController, list, pagerState, postUrl) },
 			content = { padding ->
 				ShowDetails(
-					img = updatedCurrentPicture,
+					img = updatedCurrentPicture.value,
 					navController = navController,
 					isVisible = isVisible,
 					list = list,

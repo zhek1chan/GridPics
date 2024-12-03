@@ -133,8 +133,9 @@ class MainActivity: AppCompatActivity()
 			ComposeTheme {
 				NavigationSetup(navController = navController)
 			}
-			if (!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty()) {
-				picVM.currentPicture = intent.action!!
+			if(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty())
+			{
+				picVM.clickOnPicture(intent.action!!)
 				navController.navigate(Screen.Details.route)
 			}
 		}
@@ -195,7 +196,8 @@ class MainActivity: AppCompatActivity()
 					updatedCurrentPicture = picVM.currentPicture,
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					changeBarsVisability = { visability -> changeBarsVisability(visability) },
-					postNewBitmap = { url -> detVM.postImageBitmap(url) }
+					postNewBitmap = { url -> detVM.postImageBitmap(url) },
+					postNewCurrentPic = { url -> picVM.clickOnPicture(url) }
 				)
 			}
 		}

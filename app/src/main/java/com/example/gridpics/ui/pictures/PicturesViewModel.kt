@@ -16,7 +16,7 @@ class PicturesViewModel(
 ): ViewModel()
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
-	var currentPicture = ""
+	var currentPicture = mutableStateOf("")
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
 	fun observeBackNav(): Flow<Boolean> = backNav
@@ -109,7 +109,7 @@ class PicturesViewModel(
 
 	fun clickOnPicture(url: String)
 	{
-		currentPicture = url
+		currentPicture.value = url
 	}
 
 	fun isValidUrl(url: String): Boolean
