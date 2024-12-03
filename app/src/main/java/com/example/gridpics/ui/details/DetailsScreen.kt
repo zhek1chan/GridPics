@@ -283,12 +283,14 @@ fun ShowAsynchImage(
 			.build()
 	}
 	val scope = rememberCoroutineScope()
+
 	AsyncImage(
 		model = imgRequest,
 		contentDescription = null,
 		contentScale = scale,
 		onSuccess = {
-			imageSize = Size(it.result.image.width.toFloat(), it.result.image.height.toFloat())
+			val resultImage =it.result.image
+			imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
 			removeSpecialError(list[page])
 		},
 		onError = {
