@@ -85,6 +85,7 @@ class MainActivity: AppCompatActivity()
 		val lifeCycScope = lifecycleScope
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		//serviceIntentForNotification
+		Log.d("intent uri", "${intent.action}")
 		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
@@ -128,9 +129,13 @@ class MainActivity: AppCompatActivity()
 		serviceIntent = serviceIntentLocal
 		themePick = theme
 		setContent {
+			val navController = rememberNavController()
 			ComposeTheme {
-				val navController = rememberNavController()
 				NavigationSetup(navController = navController)
+			}
+			if (!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty()) {
+				picVM.currentPicture = intent.action!!
+				navController.navigate(Screen.Details.route)
 			}
 		}
 	}
@@ -358,5 +363,7 @@ class MainActivity: AppCompatActivity()
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
 		const val DEFAULT_STRING_VALUE = "default"
 		const val HTTP_ERROR = "HTTP error: 404"
+		const val WAS_OPENED_SCREEN = "wasOpenedScreen"
+		const val DETAILS = "DETAILS"
 	}
 }

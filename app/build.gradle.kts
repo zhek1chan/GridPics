@@ -60,6 +60,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.work.runtime.ktx.v2100)
     implementation(libs.material)
     //coil
     implementation(libs.coil)
@@ -100,5 +101,4 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     implementation(libs.androidx.paging.compose)
     implementation(libs.transformations)
-    implementation (libs.androidx.work.runtime.ktx)
 }

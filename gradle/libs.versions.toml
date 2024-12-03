@@ -24,6 +24,7 @@ constraintlayoutCompose = "1.0.1"
 library = "1.0.0"
 runtimeLivedata = "1.7.1"
 workRuntimeKtx = "2.9.1"
+workRuntimeKtxVersion = "2.10.0"
 zoomable = "1.6.2"
 
 
@@ -37,6 +38,7 @@ androidx-paging-compose = { module = "androidx.paging:paging-compose", version.r
 androidx-ui = { module = "androidx.compose.ui:ui", version.ref = "uiGraphicsAndroid" }
 androidx-ui-v100 = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+androidx-work-runtime-ktx-v2100 = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtxVersion" }
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilCompose" }

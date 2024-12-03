@@ -18,7 +18,9 @@ import androidx.core.app.NotificationCompat.Builder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
+import com.example.gridpics.ui.activity.MainActivity.Companion.DETAILS
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
+import com.example.gridpics.ui.activity.MainActivity.Companion.WAS_OPENED_SCREEN
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -102,6 +104,12 @@ class MainNotificationService: Service()
 	{
 		val dontUseSound = count > 1
 		val resultIntent = Intent(this, MainActivity::class.java)
+		if(values.second != null)
+		{
+			resultIntent.putExtra(WAS_OPENED_SCREEN, DETAILS)
+			resultIntent.setAction(values.first)
+		}
+		Log.d("intent URI", resultIntent.toUri(0))
 		val resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE)
 		val contentText: String
