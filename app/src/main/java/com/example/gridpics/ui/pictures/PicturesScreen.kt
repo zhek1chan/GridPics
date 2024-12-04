@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import coil3.imageLoader
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.CachePolicy
@@ -107,7 +108,6 @@ fun PicturesScreen(
 	Log.d("description", "posted default")
 	postDefaultDescription(DEFAULT_STRING_VALUE)
 	BackHandler {
-		Log.d("gobacl","ffafafa")
 		postPressOnBackButton()
 	}
 	val orientation = context.resources.configuration.orientation
@@ -207,6 +207,7 @@ fun itemNewsCard(
 	val headers = NetworkHeaders.Builder()
 		.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
 		.build()
+	val dispatcher = remember {  Dispatchers.IO.limitedParallelism(5) }
 	val imgRequest = remember(item) {
 		ImageRequest.Builder(context)
 			.data(item)
@@ -214,11 +215,16 @@ fun itemNewsCard(
 			.httpHeaders(headers)
 			.networkCachePolicy(CachePolicy.ENABLED)
 			.memoryCachePolicy(CachePolicy.ENABLED)
-			.coroutineContext(Dispatchers.IO.limitedParallelism(32))
+			.coroutineContext(Dispatchers.IO)
+			.coroutineContext(dispatcher)
 			.diskCachePolicy(CachePolicy.ENABLED)
 			.placeholder(placeholder)
 			.error(R.drawable.error)
 			.build()
+	}
+	LaunchedEffect(item)
+	{
+		context.imageLoader.enqueue(imgRequest)
 	}
 	AsyncImage(
 		model = (imgRequest),
@@ -331,11 +337,16 @@ fun ShowList(
 				val value = remember(status) { status.data }
 				val list = remember(status) { value.split("\n") }
 				postSavedUrls(value)
+				var count = 0
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
 						.fillMaxSize(), columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
+						if(list.indexOf(it) > 5 * count) {
+							Thread.sleep(50)
+							count++
+						}
 						itemNewsCard(
 							item = it,
 							navController = navController,
