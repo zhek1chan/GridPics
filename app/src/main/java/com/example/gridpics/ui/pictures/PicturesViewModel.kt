@@ -23,8 +23,10 @@ import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @SuppressLint("StaticFieldLeak")
@@ -35,11 +37,13 @@ class PicturesViewModel(
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
 	var currentPicture = mutableStateOf("")
+	var cacheIsEmpty = true
 
-	@SuppressLint("MutableCollectionMutableState")
-	val loadedPictures = mutableStateOf<MutableList<Image>>(mutableListOf())
+	var loadedPictures: MutableList<Image> = mutableListOf()
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
+	private var dataWasDelivered = MutableStateFlow(false)
+	private fun observeDelivery(): Flow<Boolean> = dataWasDelivered
 	fun observeBackNav(): Flow<Boolean> = backNav
 
 	init
@@ -52,40 +56,53 @@ class PicturesViewModel(
 					is Resource.Data ->
 					{
 						flow.value = flow.value.copy(loadingState = PicturesState.SearchIsOk(urls.value))
-						val list = (urls.value).split("\n")
-						val loadedList = mutableListOf<Image>()
-						val headers = NetworkHeaders.Builder()
-							.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
-							.build()
-						var count = 1
-						for(item in list)
+						if(cacheIsEmpty)
 						{
-							val imgRequest =
-								ImageRequest.Builder(context)
-									.data(item)
-									.allowHardware(false)
-									.httpHeaders(headers)
-									.networkCachePolicy(CachePolicy.ENABLED)
-									.memoryCachePolicy(CachePolicy.ENABLED)
-									.coroutineContext(Dispatchers.IO)
-									.diskCachePolicy(CachePolicy.ENABLED)
-									.placeholder(R.drawable.loading)
-									.error(R.drawable.error)
-									.target {
-										loadedList.add(it)
-										if(it.asDrawable(context.resources) == getDrawable(context, R.drawable.error))
-										{
-											errorsList.add(item)
-										}
-									}
-									.build()
-							context.imageLoader
-								.enqueue(imgRequest)
-							if(loadedList.size > 5 * count)
+							val list = (urls.value).split("\n")
+							val loadedList = mutableListOf<Image>()
+							var count = 1
+							for(item in list)
 							{
-								Log.d("new 5", "$loadedList")
-								loadedPictures.value = loadedList
-								count++
+								val imgRequest =
+									ImageRequest.Builder(context)
+										.data(item)
+										.allowHardware(false)
+										.httpHeaders(
+											NetworkHeaders.Builder()
+												.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
+												.build()
+										)
+										.networkCachePolicy(CachePolicy.ENABLED)
+										.memoryCachePolicy(CachePolicy.ENABLED)
+										.coroutineContext(Dispatchers.IO)
+										.diskCachePolicy(CachePolicy.ENABLED)
+										.placeholder(R.drawable.loading)
+										.error(R.drawable.error)
+										.target {
+											loadedList.add(it)
+											Log.d("loaded Size", "${loadedList.size}")
+											if(loadedList.size > 5 * count)
+											{
+												loadedPictures = loadedList
+												count++
+												this.launch {
+													observeDelivery().collectLatest { it1 ->
+														while(!it1)
+														{
+															delay(1)
+														}
+														dataWasDelivered.emit(false)
+													}
+												}
+											}
+											if(it.asDrawable(context.resources) == getDrawable(context, R.drawable.error))
+											{
+												errorsList.add(item)
+											}
+										}
+										.build()
+								context.imageLoader
+									.enqueue(imgRequest)
 							}
 						}
 					}
@@ -93,6 +110,13 @@ class PicturesViewModel(
 					is Resource.NotFound -> flow.value = flow.value.copy(loadingState = PicturesState.NothingFound)
 				}
 			}
+		}
+	}
+
+	fun postDataWasDelivered(delivered: Boolean)
+	{
+		viewModelScope.launch {
+			dataWasDelivered.emit(delivered)
 		}
 	}
 

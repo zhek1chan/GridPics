@@ -90,6 +90,7 @@ class MainActivity: AppCompatActivity()
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
+		picVM.cacheIsEmpty = sharedPreferences.getString(SHARED_PREFS_PICTURES, null) == null
 		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
 		picVM.postCacheWasCleared(false)
 		enableEdgeToEdge(
@@ -171,7 +172,8 @@ class MainActivity: AppCompatActivity()
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
 					postDefaultDescription = { url -> detVM.postNewPic(url, null) },
-					preloadedPictures = picVM.loadedPictures
+					preloadedPictures = picVM.loadedPictures,
+					postDataWasDelivered = { picVM.postDataWasDelivered(true) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
