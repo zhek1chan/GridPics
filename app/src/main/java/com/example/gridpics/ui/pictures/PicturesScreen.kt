@@ -81,6 +81,7 @@ import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -213,6 +214,7 @@ fun itemNewsCard(
 			.httpHeaders(headers)
 			.networkCachePolicy(CachePolicy.ENABLED)
 			.memoryCachePolicy(CachePolicy.ENABLED)
+			.coroutineContext(Dispatchers.IO.limitedParallelism(32))
 			.diskCachePolicy(CachePolicy.ENABLED)
 			.placeholder(placeholder)
 			.error(R.drawable.error)
