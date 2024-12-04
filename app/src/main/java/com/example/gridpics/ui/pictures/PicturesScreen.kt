@@ -63,8 +63,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil3.Image
 import coil3.compose.AsyncImage
-import coil3.imageLoader
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.CachePolicy
@@ -101,6 +101,7 @@ fun PicturesScreen(
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
 	postDefaultDescription: (String) -> Unit,
+	preloadedPictures: MutableState<MutableList<Image>>,
 )
 {
 	val context = LocalContext.current
@@ -158,7 +159,8 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls
+						postSavedUrls = postSavedUrls,
+						preloadedPictures = preloadedPictures
 					)
 				}
 				else
@@ -173,7 +175,8 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls
+						postSavedUrls = postSavedUrls,
+						preloadedPictures = preloadedPictures
 					)
 				}
 			}
@@ -191,6 +194,7 @@ fun itemNewsCard(
 	isValidUrl: (String) -> Boolean,
 	postState: (Boolean, String) -> Unit,
 	urls: String,
+	preloadedPictures: MutableState<MutableList<Image>>,
 ): Boolean
 {
 	var isError by remember { mutableStateOf(false) }
@@ -207,8 +211,9 @@ fun itemNewsCard(
 	val headers = NetworkHeaders.Builder()
 		.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
 		.build()
-	val dispatcher = remember {  Dispatchers.IO.limitedParallelism(5) }
-	val imgRequest = remember(item) {
+	val dispatcher = remember { Dispatchers.IO.limitedParallelism(5) }
+	val imgRequest = if(preloadedPictures.value.size == 0)
+	{
 		ImageRequest.Builder(context)
 			.data(item)
 			.allowHardware(false)
@@ -222,9 +227,26 @@ fun itemNewsCard(
 			.error(R.drawable.error)
 			.build()
 	}
-	LaunchedEffect(item)
+	else if(preloadedPictures.value.size != 0)
 	{
-		context.imageLoader.enqueue(imgRequest)
+		val list = urls.split("\n")
+		val loadedItem = preloadedPictures.value[list.indexOf(item)]
+		ImageRequest.Builder(context)
+			.data(loadedItem)
+			.allowHardware(false)
+			.httpHeaders(headers)
+			.networkCachePolicy(CachePolicy.ENABLED)
+			.memoryCachePolicy(CachePolicy.ENABLED)
+			.coroutineContext(Dispatchers.IO)
+			.coroutineContext(dispatcher)
+			.diskCachePolicy(CachePolicy.ENABLED)
+			.placeholder(R.drawable.loading)
+			.error(R.drawable.error)
+			.build()
+	}
+	else
+	{
+		null
 	}
 	AsyncImage(
 		model = (imgRequest),
@@ -314,6 +336,7 @@ fun ShowList(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
+	preloadedPictures: MutableState<MutableList<Image>>,
 )
 {
 	val context = LocalContext.current
@@ -337,16 +360,11 @@ fun ShowList(
 				val value = remember(status) { status.data }
 				val list = remember(status) { value.split("\n") }
 				postSavedUrls(value)
-				var count = 0
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
 						.fillMaxSize(), columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
-						if(list.indexOf(it) > 5 * count) {
-							Thread.sleep(50)
-							count++
-						}
 						itemNewsCard(
 							item = it,
 							navController = navController,
@@ -355,7 +373,8 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postState = postState,
-							urls = value
+							urls = value,
+							preloadedPictures = preloadedPictures
 						)
 					}
 				}
@@ -405,7 +424,8 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postState = postState,
-							urls = value
+							urls = value,
+							preloadedPictures = preloadedPictures
 						)
 					}
 				}
@@ -436,7 +456,8 @@ fun ShowList(
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					postState = postState,
-					urls = imagesUrlsSP
+					urls = imagesUrlsSP,
+					preloadedPictures = preloadedPictures
 				)
 			}
 		}

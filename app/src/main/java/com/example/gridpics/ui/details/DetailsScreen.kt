@@ -473,15 +473,13 @@ fun AppBar(
 			.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 			.height(64.dp)
 			.width(360.dp)
-			.clickable() {
-				navBack.value = true
-			})
+			.clickable { navBack.value = true })
 		Box(modifier = Modifier
 			.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 			.height(64.dp)
 			.fillMaxWidth()
 			.padding(360.dp, 0.dp, 0.dp, 0.dp)
-			.clickable() {
+			.clickable {
 				share(list[pagerState.currentPage], context, TEXT_PLAIN)
 			})
 		if(navBack.value)

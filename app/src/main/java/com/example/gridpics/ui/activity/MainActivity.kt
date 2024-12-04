@@ -170,7 +170,8 @@ class MainActivity: AppCompatActivity()
 					currentPicture = { url -> picVM.clickOnPicture(url) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
-					postDefaultDescription = { url -> detVM.postNewPic(url, null) }
+					postDefaultDescription = { url -> detVM.postNewPic(url, null) },
+					preloadedPictures = picVM.loadedPictures
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
