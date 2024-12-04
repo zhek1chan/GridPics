@@ -15,6 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,17 +42,22 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -469,19 +475,29 @@ fun AppBar(
 				}
 			}
 		)
-		Box(modifier = Modifier
-			.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-			.height(64.dp)
-			.width(360.dp)
-			.clickable { navBack.value = true })
-		Box(modifier = Modifier
-			.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-			.height(64.dp)
-			.fillMaxWidth()
-			.padding(360.dp, 0.dp, 0.dp, 0.dp)
-			.clickable {
-				share(list[pagerState.currentPage], context, TEXT_PLAIN)
-			})
+		val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(1f, 1f, 1f, 1f)) }
+		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+			Box(modifier = Modifier
+				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+				.height(64.dp)
+				.width(360.dp)
+				.clickable(
+					interactionSource = remember { MutableInteractionSource() },
+					indication = ripple()
+				) {
+					navBack.value = true
+				})
+			Box(modifier = Modifier
+				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+				.height(64.dp)
+				.fillMaxWidth()
+				.padding(360.dp, 0.dp, 0.dp, 0.dp)
+				.clickable(interactionSource = remember { MutableInteractionSource() },
+					indication = ripple()
+				) {
+					share(list[pagerState.currentPage], context, TEXT_PLAIN)
+				})
+		}
 		if(navBack.value)
 		{
 			postUrl(DEFAULT_STRING_VALUE, null)

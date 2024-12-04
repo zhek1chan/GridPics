@@ -63,7 +63,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil3.Image
 import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
@@ -101,19 +100,14 @@ fun PicturesScreen(
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
 	postDefaultDescription: (String) -> Unit,
-	preloadedPictures: MutableList<Image>,
-	postDataWasDelivered: () -> Unit,
 )
 {
-	if(preloadedPictures.size % 5 == 0)
-	{
-		postDataWasDelivered()
-	}
 	val context = LocalContext.current
 	postPositiveState()
 	Log.d("description", "posted default")
 	postDefaultDescription(DEFAULT_STRING_VALUE)
 	BackHandler {
+		Log.d("gobacl","ffafafa")
 		postPressOnBackButton()
 	}
 	val orientation = context.resources.configuration.orientation
@@ -164,8 +158,7 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls,
-						preloadedPictures = preloadedPictures
+						postSavedUrls = postSavedUrls
 					)
 				}
 				else
@@ -180,8 +173,7 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls,
-						preloadedPictures = preloadedPictures
+						postSavedUrls = postSavedUrls
 					)
 				}
 			}
@@ -199,8 +191,6 @@ fun itemNewsCard(
 	isValidUrl: (String) -> Boolean,
 	postState: (Boolean, String) -> Unit,
 	urls: String,
-	preloadedPictures: MutableList<Image>,
-	alreadyCached: Boolean,
 ): Boolean
 {
 	var isError by remember { mutableStateOf(false) }
@@ -217,33 +207,18 @@ fun itemNewsCard(
 	val headers = NetworkHeaders.Builder()
 		.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
 		.build()
-	val imgRequest = if(alreadyCached || preloadedPictures.size == 0)
-	{
+	val imgRequest = remember(item) {
 		ImageRequest.Builder(context)
 			.data(item)
 			.allowHardware(false)
 			.httpHeaders(headers)
 			.networkCachePolicy(CachePolicy.ENABLED)
 			.memoryCachePolicy(CachePolicy.ENABLED)
-			.coroutineContext(Dispatchers.IO)
+			.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(8))
+			.interceptorCoroutineContext(Dispatchers.IO.limitedParallelism(8))
+			.coroutineContext(Dispatchers.IO.limitedParallelism(8))
 			.diskCachePolicy(CachePolicy.ENABLED)
 			.placeholder(placeholder)
-			.error(R.drawable.error)
-			.build()
-	}
-	else
-	{
-		val list = urls.split("\n")
-		val loadedItem = preloadedPictures[list.indexOf(item)]
-		ImageRequest.Builder(context)
-			.data(loadedItem)
-			.allowHardware(false)
-			.httpHeaders(headers)
-			.networkCachePolicy(CachePolicy.ENABLED)
-			.memoryCachePolicy(CachePolicy.ENABLED)
-			.coroutineContext(Dispatchers.IO)
-			.diskCachePolicy(CachePolicy.ENABLED)
-			.placeholder(R.drawable.loading)
 			.error(R.drawable.error)
 			.build()
 	}
@@ -335,7 +310,6 @@ fun ShowList(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
-	preloadedPictures: MutableList<Image>,
 )
 {
 	val context = LocalContext.current
@@ -372,9 +346,7 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postState = postState,
-							urls = value,
-							preloadedPictures = preloadedPictures,
-							alreadyCached = false
+							urls = value
 						)
 					}
 				}
@@ -424,9 +396,7 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postState = postState,
-							urls = value,
-							preloadedPictures = preloadedPictures,
-							alreadyCached = true
+							urls = value
 						)
 					}
 				}
@@ -457,9 +427,7 @@ fun ShowList(
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					postState = postState,
-					urls = imagesUrlsSP,
-					preloadedPictures = preloadedPictures,
-					alreadyCached = true
+					urls = imagesUrlsSP
 				)
 			}
 		}
