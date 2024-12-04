@@ -15,7 +15,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.snapping.SnapPosition
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,7 +54,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -481,10 +479,7 @@ fun AppBar(
 				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 				.height(64.dp)
 				.width(360.dp)
-				.clickable(
-					interactionSource = remember { MutableInteractionSource() },
-					indication = ripple()
-				) {
+				.clickable {
 					navBack.value = true
 				})
 			Box(modifier = Modifier
@@ -492,9 +487,7 @@ fun AppBar(
 				.height(64.dp)
 				.fillMaxWidth()
 				.padding(360.dp, 0.dp, 0.dp, 0.dp)
-				.clickable(interactionSource = remember { MutableInteractionSource() },
-					indication = ripple()
-				) {
+				.clickable {
 					share(list[pagerState.currentPage], context, TEXT_PLAIN)
 				})
 		}
