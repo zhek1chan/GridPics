@@ -27,9 +27,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
@@ -420,10 +422,7 @@ fun AppBar(
 		TopAppBar(
 			modifier = Modifier
 				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-				.wrapContentSize()
-				.clickable {
-					navBack.value = true
-				},
+				.wrapContentSize(),
 			title = {
 				Text(
 					text = list[pagerState.currentPage],
@@ -436,11 +435,16 @@ fun AppBar(
 				)
 			},
 			navigationIcon = {
-				IconButton({ navBack.value = true }) {
+				IconButton(
+					modifier = Modifier.size(30.dp, 30.dp),
+					onClick = { navBack.value = true }
+				)
+				{
 					Icon(
 						imageVector = Icons.AutoMirrored.Filled.ArrowBack,
 						contentDescription = "back",
-						modifier = Modifier.wrapContentSize()
+						modifier = Modifier
+							.size(50.dp, 24.dp)
 					)
 				}
 			},
@@ -465,6 +469,21 @@ fun AppBar(
 				}
 			}
 		)
+		Box(modifier = Modifier
+			.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+			.height(64.dp)
+			.width(360.dp)
+			.clickable {
+				navBack.value = true
+			})
+		Box(modifier = Modifier
+			.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+			.height(64.dp)
+			.fillMaxWidth()
+			.padding(360.dp, 0.dp, 0.dp, 0.dp)
+			.clickable {
+				share(list[pagerState.currentPage], context, TEXT_PLAIN)
+			})
 		if(navBack.value)
 		{
 			postUrl(DEFAULT_STRING_VALUE, null)
