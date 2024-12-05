@@ -25,13 +25,16 @@ fun BottomNavigationBar(
 	navController: NavController,
 )
 {
-	val items = listOf(
-		BottomNavItem.Home,
-		BottomNavItem.Settings
-	)
+	val items = remember(navController) {
+		listOf(
+			BottomNavItem.Home,
+			BottomNavItem.Settings
+		)
+	}
 	val bottomBarState = remember { (mutableStateOf(true)) }
 	val navBackStackEntry by navController.currentBackStackEntryAsState()
-	when(navBackStackEntry?.destination?.route)
+	val route = navBackStackEntry?.destination?.route
+	when(route)
 	{
 		BottomNavItem.Home.route ->
 		{
@@ -53,7 +56,7 @@ fun BottomNavigationBar(
 		visible = bottomBarState.value, enter = slideInVertically(initialOffsetY = { it }), exit = ExitTransition.None
 	) {
 		NavigationBar(windowInsets = WindowInsets.navigationBars, containerColor = MaterialTheme.colorScheme.background) {
-			val currentRoute = navBackStackEntry?.destination?.route
+			val currentRoute = route
 			items.forEach { item ->
 				NavigationBarItem(
 					colors = NavigationBarItemColors(MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary, Color.Gray, MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary,

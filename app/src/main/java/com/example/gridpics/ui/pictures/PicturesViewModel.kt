@@ -1,5 +1,6 @@
 package com.example.gridpics.ui.pictures
 
+import android.annotation.SuppressLint
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,69 +12,89 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
+@SuppressLint("StaticFieldLeak")
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
+	var currentPicture = mutableStateOf("")
+	var cacheIsEmpty = true
 	private val errorsList: MutableList<String> = mutableListOf()
 	private val backNav = MutableStateFlow(false)
-	private val currentImg = MutableStateFlow("")
-	fun observeCurrentImg(): Flow<String> = currentImg
 	fun observeBackNav(): Flow<Boolean> = backNav
-	fun getPics()
+
+	init
 	{
+		val flow = picturesUiState
 		viewModelScope.launch {
-			interactor.getPics().collect { news ->
-				when(news)
+			interactor.getPics().collect { urls ->
+				when(urls)
 				{
-					is Resource.Data -> picturesUiState.value = PicturesScreenUiState(PicturesState.SearchIsOk(news.value), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
-					is Resource.ConnectionError -> picturesUiState.value = PicturesScreenUiState(PicturesState.ConnectionError, picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
-					is Resource.NotFound -> picturesUiState.value = PicturesScreenUiState(PicturesState.NothingFound, picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+					is Resource.Data -> flow.value = flow.value.copy(loadingState = PicturesState.SearchIsOk(urls.value))
+					is Resource.ConnectionError -> flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
+					is Resource.NotFound -> flow.value = flow.value.copy(loadingState = PicturesState.NothingFound)
 				}
 			}
 		}
 	}
 
-	fun postState(urls: String)
+	fun postState(useLoadedState: Boolean, urls: String)
 	{
+		val flow = picturesUiState
 		viewModelScope.launch {
-			picturesUiState.value = PicturesScreenUiState(PicturesState.Loaded(urls), picturesUiState.value.clearedCache, picturesUiState.value.picturesUrl)
+			flow.value = if(useLoadedState)
+			{
+				flow.value.copy(loadingState = PicturesState.Loaded(urls))
+			}
+			else
+			{
+				flow.value.copy(loadingState = PicturesState.SearchIsOk(urls))
+			}
 		}
 	}
 
 	fun postSavedUrls(urls: String?)
 	{
+		val flow = picturesUiState
 		viewModelScope.launch {
-			picturesUiState.value = PicturesScreenUiState(picturesUiState.value.loadingState, picturesUiState.value.clearedCache, urls)
+			flow.value = flow.value.copy(picturesUrl = urls)
 		}
 	}
 
 	fun postCacheWasCleared(cacheWasCleared: Boolean)
 	{
+		val flow = picturesUiState
 		viewModelScope.launch {
-			picturesUiState.value = PicturesScreenUiState(picturesUiState.value.loadingState, cacheWasCleared, picturesUiState.value.picturesUrl)
+			flow.value = flow.value.copy(clearedCache = cacheWasCleared)
 		}
 	}
 
 	fun addError(url: String)
 	{
-		if(!errorsList.contains(url))
+		val list = errorsList
+		if(!list.contains(url))
 		{
-			errorsList.add(url)
+			list.add(url)
 		}
 	}
 
 	fun checkOnErrorExists(url: String): Boolean
 	{
-		return errorsList.contains(url)
+		val list = errorsList
+		return if(list.isNotEmpty())
+		{
+			list.contains(url)
+		}
+		else false
 	}
 
 	fun removeSpecialError(url: String)
 	{
-		if(errorsList.contains(url))
+		val list = errorsList
+		if(list.contains(url))
 		{
-			errorsList.remove(url)
+			list.remove(url)
 		}
 	}
 
@@ -84,12 +105,14 @@ class PicturesViewModel(
 
 	fun backNavButtonPress(pressed: Boolean)
 	{
-		backNav.value = pressed
+		viewModelScope.launch {
+			backNav.emit(pressed)
+		}
 	}
 
 	fun clickOnPicture(url: String)
 	{
-		currentImg.value = url
+		currentPicture.value = url
 	}
 
 	fun isValidUrl(url: String): Boolean

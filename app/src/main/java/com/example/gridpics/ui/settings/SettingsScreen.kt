@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.settings
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
@@ -43,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -55,8 +55,6 @@ import androidx.navigation.NavController
 import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
-import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
-import com.example.gridpics.ui.activity.MainActivity.Companion.JUST_CHANGED_THEME
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
@@ -69,9 +67,10 @@ fun SettingsScreen(
 	option: Int,
 	postDefaultUrl: () -> Unit,
 	changeTheme: (Int) -> Unit,
+	postCacheWasCleared: (Boolean) -> Unit,
 )
 {
-	postDefaultUrl.invoke()
+	postDefaultUrl()
 	val orientation = LocalContext.current.resources.configuration.orientation
 	val windowInsets = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
 	{
@@ -109,17 +108,17 @@ fun SettingsScreen(
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
-				SettingsCompose(option, changeTheme)
+				SettingsCompose(option = option, changeTheme = changeTheme, postCacheWasCleared = postCacheWasCleared)
 			}
 		}
 	)
 }
 
-@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun SettingsCompose(
 	option: Int,
 	changeTheme: (Int) -> Unit,
+	postCacheWasCleared: (Boolean) -> Unit,
 )
 {
 	var showDialog by remember { mutableStateOf(false) }
@@ -131,11 +130,13 @@ fun SettingsCompose(
 			start.linkTo(parent.start)
 			end.linkTo(parent.end)
 		}) {
-			val listOfThemeOptions = listOf(
-				stringResource(R.string.light_theme),
-				stringResource(R.string.dark_theme),
-				stringResource(R.string.synch_with_sys)
-			)
+			val listOfThemeOptions = remember(LocalConfiguration) { mutableListOf<String>() }
+			if(listOfThemeOptions.isEmpty())
+			{
+				listOfThemeOptions.add(stringResource(R.string.light_theme))
+				listOfThemeOptions.add(stringResource(R.string.dark_theme))
+				listOfThemeOptions.add(stringResource(R.string.synch_with_sys))
+			}
 			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option]) }
 			Column {
 				Column(Modifier.selectableGroup()) {
@@ -147,7 +148,6 @@ fun SettingsCompose(
 								.padding(18.dp, 10.dp, 18.dp, 0.dp)
 								.clickable {
 									onOptionSelected(text)
-									changeFromSettings(context)
 									saveThemeState(context, listOfThemeOptions.indexOf(text))
 									changeTheme(listOfThemeOptions.indexOf(text))
 								}
@@ -193,7 +193,6 @@ fun SettingsCompose(
 								onClick =
 								{
 									onOptionSelected(text)
-									changeFromSettings(context)
 									saveThemeState(context, listOfThemeOptions.indexOf(text))
 									changeTheme(listOfThemeOptions.indexOf(text))
 								},
@@ -225,7 +224,7 @@ fun SettingsCompose(
 					tint = MaterialTheme.colorScheme.onPrimary
 				)
 				Text(
-					stringResource(R.string.clear_cache),
+					text = stringResource(id = R.string.clear_cache),
 					fontSize = 18.sp,
 					color = MaterialTheme.colorScheme.onPrimary,
 					modifier = Modifier.padding(16.dp, 0.dp)
@@ -239,15 +238,15 @@ fun SettingsCompose(
 			{
 				val textClear = stringResource(R.string.you_have_cleared_cache)
 				AlertDialogMain(
-					dialogText = "",
+					dialogText = null,
 					dialogTitle = stringResource(R.string.delete_all_question),
 					onConfirmation = {
+						postCacheWasCleared(true)
 						val imageLoader = context.imageLoader
 						imageLoader.diskCache?.clear()
 						imageLoader.memoryCache?.clear()
 						val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 						val editor = sharedPreferences.edit()
-						editor.putBoolean(CACHE, true)
 						editor.putString(SHARED_PREFS_PICTURES, null)
 						editor.apply()
 						showDialog = false
@@ -256,23 +255,15 @@ fun SettingsCompose(
 					onDismissRequest = { showDialog = false },
 					icon = Icons.Default.Delete,
 					textButtonCancel = stringResource(R.string.cancel),
-					textButtonConfirm = stringResource(R.string.delete)
-				)
+					textButtonConfirm = stringResource(R.string.confirm))
 			}
 		}
 	}
 }
 
-private fun saveThemeState(context: Context, barsVisabilityInt: Int)
+private fun saveThemeState(context: Context, chosenOption: Int)
 {
 	val editor = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
-	editor.putInt(THEME_SHARED_PREFERENCE, barsVisabilityInt)
+	editor.putInt(THEME_SHARED_PREFERENCE, chosenOption)
 	editor.apply()
-}
-
-fun changeFromSettings(context: Context)
-{
-	val editorForDialog = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
-	editorForDialog.putBoolean(JUST_CHANGED_THEME, true)
-	editorForDialog.apply()
 }

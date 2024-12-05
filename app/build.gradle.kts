@@ -60,36 +60,10 @@ android {
 }
 
 dependencies {
-
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.work.runtime.ktx.v2100)
     implementation(libs.material)
-    implementation(libs.androidx.constraintlayout)
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation(libs.androidx.navigation.fragment.ktx)
-    implementation(libs.androidx.navigation.ui.ktx)
-    implementation(libs.androidx.swiperefreshlayout)
-    implementation(libs.androidx.ui.graphics.android)
-    implementation(libs.androidx.databinding.compiler)
-	implementation(libs.androidx.foundation.layout.android)
-    implementation(libs.androidx.foundation.layout.android)
-    implementation(libs.androidx.foundation.layout.android)
-	implementation(libs.androidx.fragment.compose)
-	implementation(libs.androidx.tools.core)
-	implementation(libs.androidx.espresso.core)
-	implementation(libs.volley)
-	implementation(libs.core)
-	testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
     //coil
     implementation(libs.coil)
-    //glide
-    implementation(libs.glide)
-    annotationProcessor(libs.compiler)
-    kapt(libs.compiler)
-    //koin
-    implementation(libs.koin.android)
     //retrofit
     implementation(libs.retrofit)
     implementation(libs.retrofit.v230)
@@ -101,8 +75,6 @@ dependencies {
     implementation(libs.photoview.v230)
     //splash
     implementation(libs.androidx.core.splashscreen)
-    //touchImageView
-    implementation(libs.touchimageview)
     //compose
     val composeBom = platform("androidx.compose:compose-bom:2024.09.00")
     implementation(composeBom)
@@ -119,8 +91,8 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.ui.tooling)
     implementation(libs.coil.network.okhttp)
+    //zoomable
     implementation(libs.zoomable)
-    implementation(libs.zoomimage.view.coil)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.ui.v100)
     implementation(libs.androidx.material)
@@ -129,13 +101,4 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     implementation(libs.androidx.paging.compose)
     implementation(libs.transformations)
-    //control sysUi
-    implementation(libs.accompanist.systemuicontroller)
-    implementation(libs.androidx.activity.ktx)
-    //notifications
-    implementation (libs.androidx.work.runtime.ktx)
-    //GLide compose
-    implementation (libs.compose)
-    //accompanist
-    implementation(libs.accompanist.drawablepainter)
 }

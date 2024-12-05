@@ -1,14 +1,12 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -17,12 +15,14 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -33,9 +33,8 @@ import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.pictures.PicturesViewModel
-import com.example.gridpics.ui.services.MainNotificationService
+import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
-import com.example.gridpics.ui.settings.SettingsViewModel
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.flow.collectLatest
@@ -45,55 +44,36 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class MainActivity: AppCompatActivity()
 {
 	private val detailsViewModel by viewModel<DetailsViewModel>()
-	private val settingsViewModel by viewModel<SettingsViewModel>()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var serviceIntent = Intent()
-	private var mainNotificationService = MainNotificationService()
-	private var mBound: Boolean = false
-	private var currentPictureSP = ""
+	private var mainNotificationService: MainNotificationService? = null
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
 		{
 			val binder = service as MainNotificationService.NetworkServiceBinder
-			mainNotificationService = binder.get()
-			lifecycleScope.launch {
-				detailsViewModel.observeUrlFlow().collectLatest {
-					if(ContextCompat.checkSelfPermission(
-							this@MainActivity,
-							Manifest.permission.POST_NOTIFICATIONS,
-						) == PackageManager.PERMISSION_GRANTED)
-					{
-						Log.d("checkma keys", "${it.keys}")
-						if(it.keys.isNotEmpty())
-						{
-							val e = it.keys.toList().last()
-							val newValues = Pair(e, it[e])
-							if(mBound)
-							{
-								mainNotificationService.putValues(newValues)
-							}
-						}
-					}
-				}
+			val mainService = binder.get()
+			val flowValue = detailsViewModel.observeUrlFlow().value
+			if(flowValue.first != DEFAULT_STRING_VALUE)
+			{
+				mainService.putValues(flowValue)
 			}
-			mBound = true
+			mainNotificationService = mainService
 		}
 
 		override fun onServiceDisconnected(arg0: ComponentName)
 		{
-			mBound = false
+			mainNotificationService = null
 		}
 
 		override fun onBindingDied(name: ComponentName?)
 		{
-			mBound = false
+			mainNotificationService = null
 			super.onBindingDied(name)
 		}
 	}
 
-	@SuppressLint("UseCompatLoadingForDrawables")
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
@@ -101,68 +81,35 @@ class MainActivity: AppCompatActivity()
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		val picVM = picturesViewModel
+		val detVM = detailsViewModel
 		val lifeCycScope = lifecycleScope
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-		// currentPictureSP - Здесь мы получаем картинку, которая была выбранна пользователем при переходе на экран деталей,
-		// чтобы при смене темы и пересоздании MainActivity не было ошибки/потери значений.
-		currentPictureSP = sharedPreferences.getString(PICTURE, NULL_STRING)!! //100% won't be null as valu
-		val connectionLocal = connection
 		//serviceIntentForNotification
+		Log.d("intent uri", "${intent.action}")
 		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
-		themePick = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
-		settingsViewModel.changeTheme(themePick)
+		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
+		changeTheme(theme)
+		picVM.cacheIsEmpty = sharedPreferences.getString(SHARED_PREFS_PICTURES, null) == null
+		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
+		picVM.postCacheWasCleared(false)
+		enableEdgeToEdge(
+			statusBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black)),
+			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
+		)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
 		// Здесь мы проверяем менялась ли тема при прошлой жизни Activity, если да, то не создавать новое уведомление
-		picVM.postCacheWasCleared(getSharedPreferences(JUST_CHANGED_THEME, MODE_PRIVATE).getBoolean(JUST_CHANGED_THEME, false))
-		Log.d("theme", "just changed theme? ")
-		//Start showing notification
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-		{
-			if(
-				ContextCompat.checkSelfPermission(
-					this,
-					Manifest.permission.POST_NOTIFICATIONS,
-				) == PackageManager.PERMISSION_GRANTED
-			)
-			{
-				startForegroundService(serviceIntentLocal)
-				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-			}
-			else
-			{
-				ActivityCompat.requestPermissions(
-					this,
-					arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-					100
-				)
-			}
-		}
-		else
-		{
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-			{
-				startForegroundService(serviceIntentLocal)
-				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-			}
-			else
-			{
-				startService(serviceIntentLocal)
-				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-			}
-		}
-
-		enableEdgeToEdge(
-			statusBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white)),
-			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.black), getColor(R.color.white))
-		)
-
-		picVM.getPics()
 		lifeCycScope.launch {
-			picVM.observeCurrentImg().collectLatest {
-				currentPictureSP = it
+			detVM.observeUrlFlow().collectLatest {
+				if(ContextCompat.checkSelfPermission(
+						this@MainActivity,
+						Manifest.permission.POST_NOTIFICATIONS,
+					) == PackageManager.PERMISSION_GRANTED)
+				{
+					mainNotificationService?.putValues(it)
+				}
 			}
 		}
 
@@ -170,22 +117,27 @@ class MainActivity: AppCompatActivity()
 			picVM.observeBackNav().collectLatest {
 				if(it)
 				{
-					stopService(serviceIntent)
+					Log.d("callback", "callback was called")
+					if(mainNotificationService != null)
+					{
+						mainNotificationService!!.stopSelf()
+					}
 					this@MainActivity.finishAffinity()
 				}
 			}
 		}
-		val editorSharedPrefs = sharedPreferences.edit()
-		editorSharedPrefs.putBoolean(JUST_CHANGED_THEME, false)
-		editorSharedPrefs.putInt(THEME_SHARED_PREFERENCE, themePick)
-		editorSharedPrefs.apply()
 
 		serviceIntent = serviceIntentLocal
-
+		themePick = theme
 		setContent {
+			val navController = rememberNavController()
 			ComposeTheme {
-				val navController = rememberNavController()
 				NavigationSetup(navController = navController)
+			}
+			if(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty())
+			{
+				picVM.clickOnPicture(intent.action!!)
+				navController.navigate(Screen.Details.route)
 			}
 		}
 	}
@@ -207,53 +159,47 @@ class MainActivity: AppCompatActivity()
 			val picVM = picturesViewModel
 			val detVM = detailsViewModel
 			composable(BottomNavItem.Home.route) {
-				ComposeTheme {
-					PicturesScreen(
-						navController = navController,
-						postPressOnBackButton = { picVM.backNavButtonPress(true) },
-						checkIfExists = { str -> picVM.checkOnErrorExists(str) },
-						addError = { str -> picVM.addError(str) },
-						getPics = { picVM.getPics() },
-						postState = { urls -> picVM.postState(urls) },
-						state = picVM.picturesUiState,
-						clearErrors = { picVM.clearErrors() },
-						postPositiveState = { detVM.postPositiveVisabilityState() },
-						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
-						currentPicture = { url -> picVM.clickOnPicture(url) },
-						isValidUrl = { url -> picVM.isValidUrl(url) },
-						postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
-					)
-				}
+				PicturesScreen(
+					navController = navController,
+					postPressOnBackButton = { picVM.backNavButtonPress(true) },
+					checkIfExists = { str -> picVM.checkOnErrorExists(str) },
+					addError = { str -> picVM.addError(str) },
+					postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
+					state = picVM.picturesUiState,
+					clearErrors = { picVM.clearErrors() },
+					postPositiveState = { detVM.postPositiveVisabilityState() },
+					currentPicture = { url -> picVM.clickOnPicture(url) },
+					isValidUrl = { url -> picVM.isValidUrl(url) },
+					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
+					postDefaultDescription = { url -> detVM.postNewPic(url, null) }
+				)
 			}
 			composable(BottomNavItem.Settings.route) {
-				ComposeTheme {
-					SettingsScreen(
-						navController,
-						themePick,
-						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
-						changeTheme = { int -> settingsViewModel.changeTheme(int) },
-					)
-				}
+				SettingsScreen(
+					navController = navController,
+					option = themePick,
+					postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) },
+					changeTheme = { int -> changeTheme(int) },
+					postCacheWasCleared = { cleared -> picVM.postCacheWasCleared(cleared) }
+				)
 			}
 			composable(Screen.Details.route) {
-				ComposeTheme {
-					DetailsScreen(
-						navController = navController,
-						checkIfExists = { str -> picVM.checkOnErrorExists(str) },
-						addError = { str -> picVM.addError(str) },
-						state = detVM.uiStateFlow,
-						removeSpecialError = { str -> picVM.removeSpecialError(str) },
-						postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, DEFAULT_STRING_VALUE) },
-						changeVisabilityState = { detVM.changeVisabilityState() },
-						postUrl = { str, p -> detVM.postNewPic(str, p) },
-						postPositiveState = { detVM.postPositiveVisabilityState() },
-						picturesScreenState = picVM.picturesUiState,
-						pic = currentPictureSP,
-						isValidUrl = { url -> picVM.isValidUrl(url) },
-						convertPicture = { bitmap: Bitmap -> detVM.convertPictureToString(bitmap) },
-						window = window
-					)
-				}
+				DetailsScreen(
+					navController = navController,
+					checkIfExists = { str -> picVM.checkOnErrorExists(str) },
+					addError = { str -> picVM.addError(str) },
+					state = detVM.uiStateFlow,
+					removeSpecialError = { str -> picVM.removeSpecialError(str) },
+					changeVisabilityState = { detVM.changeVisabilityState() },
+					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
+					postPositiveState = { detVM.postPositiveVisabilityState() },
+					picturesScreenState = picVM.picturesUiState,
+					updatedCurrentPicture = picVM.currentPicture,
+					isValidUrl = { url -> picVM.isValidUrl(url) },
+					changeBarsVisability = { visability -> changeBarsVisability(visability) },
+					postNewBitmap = { url -> detVM.postImageBitmap(url) },
+					postNewCurrentPic = { url -> picVM.clickOnPicture(url) }
+				)
 			}
 		}
 	}
@@ -261,13 +207,14 @@ class MainActivity: AppCompatActivity()
 	override fun onConfigurationChanged(newConfig: Configuration)
 	{
 		super.onConfigurationChanged(newConfig)
+		val detVM = detailsViewModel
 		if(isInMultiWindowMode || isInPictureInPictureMode)
 		{
-			detailsViewModel.changeMultiWindowState(true)
+			detVM.changeMultiWindowState(true)
 		}
-		else if(!isInMultiWindowMode)
+		else
 		{
-			detailsViewModel.changeMultiWindowState(false)
+			detVM.changeMultiWindowState(false)
 		}
 	}
 
@@ -277,25 +224,24 @@ class MainActivity: AppCompatActivity()
 		grantResults: IntArray,
 	)
 	{
-		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-		if(requestCode == 100)
-		{
-			if(ContextCompat.checkSelfPermission(
-					this,
-					Manifest.permission.POST_NOTIFICATIONS,
-				) == PackageManager.PERMISSION_GRANTED)
+		lifecycleScope.launch {
+			super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+			if(requestCode == 100)
 			{
-				val serviceIntentLocal = serviceIntent
-				val connectionLocal = connection
-				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				if((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED))
 				{
-					startForegroundService(serviceIntentLocal)
-					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-				}
-				else
-				{
-					startService(serviceIntentLocal)
-					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+					val serviceIntentLocal = serviceIntent
+					val connectionLocal = connection
+					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+					{
+						startForegroundService(serviceIntentLocal)
+						bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+					}
+					else
+					{
+						startService(serviceIntentLocal)
+						bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+					}
 				}
 			}
 		}
@@ -309,15 +255,45 @@ class MainActivity: AppCompatActivity()
 
 	override fun onResume()
 	{
-		Log.d("service", "is connected to Activity?: $mBound")
-		if(ContextCompat.checkSelfPermission(
-				this,
-				Manifest.permission.POST_NOTIFICATIONS,
-			) == PackageManager.PERMISSION_GRANTED)
+		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
+		val connectionLocal = connection
+		if(mainNotificationService == null)
 		{
-			bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
-			countExitNavigation++
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+			{
+				if(
+					ContextCompat.checkSelfPermission(
+						this,
+						Manifest.permission.POST_NOTIFICATIONS,
+					) == PackageManager.PERMISSION_GRANTED
+				)
+				{
+					startForegroundService(serviceIntentLocal)
+					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+				}
+				else
+				{
+					if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
+					{
+						requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
+					}
+				}
+			}
+			else
+			{
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				{
+					startForegroundService(serviceIntentLocal)
+					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+				}
+				else
+				{
+					startService(serviceIntentLocal)
+					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+				}
+			}
 		}
+		Log.d("service", "is connected to Activity?: ${mainNotificationService != null}")
 		Log.d("lifecycle", "onResume()")
 		super.onResume()
 	}
@@ -325,11 +301,11 @@ class MainActivity: AppCompatActivity()
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
-		if(mBound)
+		if(mainNotificationService != null)
 		{
 			unbindService(connection)
+			mainNotificationService = null
 		}
-		countExitNavigation++
 		super.onPause()
 	}
 
@@ -339,19 +315,58 @@ class MainActivity: AppCompatActivity()
 		super.onDestroy()
 	}
 
+	private fun changeBarsVisability(visible: Boolean)
+	{
+		val detVM = detailsViewModel
+		val controller = WindowCompat.getInsetsController(window, window.decorView)
+		if(!visible)
+		{
+			controller.hide(WindowInsetsCompat.Type.statusBars())
+			controller.hide(WindowInsetsCompat.Type.navigationBars())
+		}
+		else
+		{
+			controller.show(WindowInsetsCompat.Type.statusBars())
+			controller.show(WindowInsetsCompat.Type.navigationBars())
+			if(detVM.uiStateFlow.value == detVM.uiStateFlow.value.copy(barsAreVisible = false))
+			{
+				detVM.changeVisabilityState()
+			}
+		}
+	}
+
+	private fun changeTheme(option: Int)
+	{
+		Log.d("theme option", "theme option: $option")
+		when(option)
+		{
+			ThemePick.LIGHT_THEME.intValue ->
+			{
+				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+			}
+			ThemePick.DARK_THEME.intValue ->
+			{
+				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+			}
+			ThemePick.FOLLOW_SYSTEM.intValue ->
+			{
+				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+			}
+		}
+	}
+
 	companion object
 	{
-		var countExitNavigation = 0
+		const val LENGTH_OF_PICTURE = 110
+		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337
-		const val CACHE = "CACHE_CACHE"
 		const val SHARED_PREFS_PICTURES = "SHARED_PREFS_PICTURES"
-		const val PICTURE = "PICTURE"
 		const val THEME_SHARED_PREFERENCE = "THEME_SHARED_PREFERENCE"
 		const val CHANNEL_NOTIFICATIONS_ID = "GRID_PICS_CHANEL_NOTIFICATIONS_ID"
-		const val NULL_STRING = "NULL_STRING"
-		const val JUST_CHANGED_THEME = "JUST_CHANGED_THEME"
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
 		const val DEFAULT_STRING_VALUE = "default"
 		const val HTTP_ERROR = "HTTP error: 404"
+		const val WAS_OPENED_SCREEN = "wasOpenedScreen"
+		const val DETAILS = "DETAILS"
 	}
 }

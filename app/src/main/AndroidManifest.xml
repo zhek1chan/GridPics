@@ -21,7 +21,7 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="35">
         <service
-			android:name=".ui.services.MainNotificationService"
+			android:name=".ui.service.MainNotificationService"
 			android:foregroundServiceType="specialUse"
 			android:exported="false">
         </service>

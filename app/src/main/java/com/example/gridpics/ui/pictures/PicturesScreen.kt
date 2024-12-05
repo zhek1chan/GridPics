@@ -73,14 +73,15 @@ import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
-import com.example.gridpics.ui.activity.MainActivity.Companion.CACHE
-import com.example.gridpics.ui.activity.MainActivity.Companion.PICTURE
+import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
+import com.example.gridpics.ui.activity.MainActivity.Companion.LENGTH_OF_PICTURE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -91,23 +92,23 @@ fun PicturesScreen(
 	postPressOnBackButton: () -> Unit,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	getPics: () -> Unit,
-	postState: (String) -> Unit,
+	postState: (Boolean, String) -> Unit,
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	postPositiveState: () -> Unit,
-	postDefaultUrl: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (String) -> Unit
+	postSavedUrls: (String) -> Unit,
+	postDefaultDescription: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
-	postPositiveState.invoke()
-	postDefaultUrl.invoke()
-
+	postPositiveState()
+	Log.d("description", "posted default")
+	postDefaultDescription(DEFAULT_STRING_VALUE)
 	BackHandler {
-		postPressOnBackButton.invoke()
+		Log.d("gobacl","ffafafa")
+		postPressOnBackButton()
 	}
 	val orientation = context.resources.configuration.orientation
 	val windowInsets = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
@@ -151,14 +152,12 @@ fun PicturesScreen(
 						imagesUrlsSP = state.value.picturesUrl,
 						checkIfExists = checkIfExists,
 						addError = addError,
-						getPics = getPics,
 						postState = postState,
 						state = state,
 						clearErrors = clearErrors,
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postDefaultUrl = postDefaultUrl,
 						postSavedUrls = postSavedUrls
 					)
 				}
@@ -168,14 +167,12 @@ fun PicturesScreen(
 						imagesUrlsSP = null,
 						checkIfExists = checkIfExists,
 						addError = addError,
-						getPics = getPics,
 						postState = postState,
 						state = state,
 						clearErrors = clearErrors,
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postDefaultUrl = postDefaultUrl,
 						postSavedUrls = postSavedUrls
 					)
 				}
@@ -184,21 +181,18 @@ fun PicturesScreen(
 	)
 }
 
-@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun itemNewsCard(
 	item: String,
 	navController: NavController,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	getPics: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postDefaultUrl: () -> Unit,
-	loadingHasBeenEnded: Boolean,
+	postState: (Boolean, String) -> Unit,
+	urls: String,
 ): Boolean
 {
-	postDefaultUrl.invoke()
 	var isError by remember { mutableStateOf(false) }
 	val context = LocalContext.current
 	var isClicked by remember { mutableStateOf(false) }
@@ -220,6 +214,9 @@ fun itemNewsCard(
 			.httpHeaders(headers)
 			.networkCachePolicy(CachePolicy.ENABLED)
 			.memoryCachePolicy(CachePolicy.ENABLED)
+			.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(8))
+			.interceptorCoroutineContext(Dispatchers.IO.limitedParallelism(8))
+			.coroutineContext(Dispatchers.IO.limitedParallelism(8))
 			.diskCachePolicy(CachePolicy.ENABLED)
 			.placeholder(placeholder)
 			.error(R.drawable.error)
@@ -255,20 +252,12 @@ fun itemNewsCard(
 	)
 	if(isClicked)
 	{
-		if(loadingHasBeenEnded)
-		{
-			isClicked = false
-			currentPicture(item)
-			val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-			val editor = sharedPreferences.edit()
-			editor.putString(PICTURE, item)
-			editor.apply()
-			navController.navigate(Screen.Details.route)
-		}
-		else
-		{
-			val txt = stringResource(R.string.wait_for_loading_to_end)
-			LaunchedEffect(item) { Toast.makeText(context, txt, Toast.LENGTH_SHORT).show() }
+		isClicked = false
+		currentPicture(item)
+		navController.navigate(Screen.Details.route) {
+			popUpTo(Screen.Home.route) {
+				inclusive = true
+			}
 		}
 	}
 	when
@@ -284,15 +273,14 @@ fun itemNewsCard(
 					{
 						openAlertDialog.value = false
 						println("Confirmation registered")
-						getPics()
+						postState(false, urls)
 						Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
 					},
 					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
 					dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
 					icon = Icons.Default.Warning,
-					stringResource(R.string.cancel),
-					stringResource(R.string.confirm)
-				)
+					textButtonCancel = stringResource(R.string.cancel),
+					textButtonConfirm = stringResource(R.string.confirm))
 			}
 			else
 			{
@@ -315,15 +303,13 @@ fun ShowList(
 	imagesUrlsSP: String?,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	getPics: () -> Unit,
-	postState: (String) -> Unit,
+	postState: (Boolean, String) -> Unit,
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	navController: NavController,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postDefaultUrl: () -> Unit,
-	postSavedUrls: (String) -> Unit
+	postSavedUrls: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -339,13 +325,14 @@ fun ShowList(
 			{
 				val loadingString = stringResource(R.string.loading_has_been_started)
 				Log.d("Now state is", "Loading")
+				val status = state.value.loadingState as PicturesState.SearchIsOk
 				LaunchedEffect(Unit) {
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
-					saveToSharedPrefs(context, (state.value.loadingState as PicturesState.SearchIsOk).data)
+					saveToSharedPrefs(context, status.data)
 				}
-				val value = remember(state.value.loadingState) { (state.value.loadingState as PicturesState.SearchIsOk).data }
-				val list = remember(state.value.loadingState) { value.split("\n") }
-
+				val value = remember(status) { status.data }
+				val list = remember(status) { value.split("\n") }
+				postSavedUrls(value)
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
@@ -356,17 +343,16 @@ fun ShowList(
 							navController = navController,
 							checkIfExists = checkIfExists,
 							addError = addError,
-							getPics = getPics,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							postDefaultUrl = postDefaultUrl,
-							loadingHasBeenEnded = false
+							postState = postState,
+							urls = value
 						)
 					}
 				}
 				scope.launch {
 					delay(6000)
-					postState(value)
+					postState(true, value)
 				}
 			}
 			is PicturesState.ConnectionError ->
@@ -380,8 +366,7 @@ fun ShowList(
 						cornerRadius = 16.dp,
 						nameButton = stringResource(R.string.try_again),
 						roundedCornerShape = RoundedCornerShape(topStart = 30.dp, bottomEnd = 30.dp),
-						clearErrors = clearErrors,
-						getPics = getPics
+						clearErrors = clearErrors
 					)
 				}
 			}
@@ -389,12 +374,14 @@ fun ShowList(
 			is PicturesState.Loaded ->
 			{
 				val loadingEnded = stringResource(R.string.loading_has_been_ended)
+				val status = state.value.loadingState as PicturesState.Loaded
 				LaunchedEffect(Unit) {
 					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
-					postSavedUrls((state.value.loadingState as PicturesState.Loaded).data)
+					postSavedUrls(status.data)
 				}
+				val value = remember(status) { status.data }
 				Log.d("Now state is", "Loaded")
-				val list = remember(state.value.loadingState) { ((state.value.loadingState as PicturesState.Loaded).data).split("\n") }
+				val list = remember(status) { (status.data).split("\n") }
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
@@ -406,11 +393,10 @@ fun ShowList(
 							navController = navController,
 							checkIfExists = checkIfExists,
 							addError = addError,
-							getPics = getPics,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							postDefaultUrl = postDefaultUrl,
-							loadingHasBeenEnded = true
+							postState = postState,
+							urls = value
 						)
 					}
 				}
@@ -422,6 +408,7 @@ fun ShowList(
 		Log.d("Now state is", "Loaded from sp")
 		LaunchedEffect(Unit) {
 			saveToSharedPrefs(context, imagesUrlsSP)
+			postSavedUrls(imagesUrlsSP)
 		}
 		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n") }
 		Log.d("item", items.toString())
@@ -437,11 +424,10 @@ fun ShowList(
 					navController = navController,
 					checkIfExists = checkIfExists,
 					addError = addError,
-					getPics = getPics,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
-					postDefaultUrl = postDefaultUrl,
-					loadingHasBeenEnded = true
+					postState = postState,
+					urls = imagesUrlsSP
 				)
 			}
 		}
@@ -455,7 +441,6 @@ fun GradientButton(
 	nameButton: String,
 	roundedCornerShape: RoundedCornerShape,
 	clearErrors: () -> Unit,
-	getPics: () -> Unit,
 )
 {
 	Button(
@@ -464,7 +449,6 @@ fun GradientButton(
 			.padding(start = 32.dp, end = 32.dp),
 		onClick = {
 			clearErrors()
-			getPics.invoke()
 		},
 		colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
 		shape = RoundedCornerShape(cornerRadius)
@@ -483,7 +467,11 @@ fun GradientButton(
 			)
 			.padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center)
 		{
-			Text(text = nameButton, fontSize = 20.sp, color = Color.White)
+			Text(
+				text = nameButton,
+				fontSize = 20.sp,
+				color = Color.White
+			)
 		}
 	}
 }
@@ -493,36 +481,37 @@ fun AlertDialogMain(
 	onDismissRequest: () -> Unit,
 	onConfirmation: () -> Unit,
 	dialogTitle: String,
-	dialogText: String,
+	dialogText: String?,
 	icon: ImageVector,
 	textButtonCancel: String,
 	textButtonConfirm: String,
 )
 {
-	AlertDialog(icon = {
-		Icon(icon, contentDescription = "Example Icon")
-	}, title = {
-		Text(text = dialogTitle)
-	}, text = {
-		Text(text = dialogText)
-	}, onDismissRequest = {
-		onDismissRequest()
-	}, confirmButton = {
-		Button(colors = ButtonColors(Color.Black, Color.White, Color.Black, Color.White), onClick = {
-			onConfirmation()
-		}) {
-			Text(textButtonConfirm)
-		}
-	}, dismissButton = {
-		Button(
-			colors = ButtonColors(MaterialTheme.colorScheme.onError, Color.White, Color.Black, Color.White),
-			onClick = {
-				onDismissRequest()
-			},
-		) {
-			Text(textButtonCancel)
-		}
-	})
+	AlertDialog(
+		icon = {
+			Icon(icon, contentDescription = "Example Icon")
+		}, title = {
+			Text(text = dialogTitle)
+		}, text = {
+			dialogText?.let { Text(text = it) }
+		}, onDismissRequest = {
+			onDismissRequest()
+		}, confirmButton = {
+			Button(colors = ButtonColors(Color.Black, Color.White, Color.Black, Color.White), onClick = {
+				onConfirmation()
+			}) {
+				Text(textButtonConfirm)
+			}
+		}, dismissButton = {
+			Button(
+				colors = ButtonColors(MaterialTheme.colorScheme.onError, Color.White, Color.Black, Color.White),
+				onClick = {
+					onDismissRequest()
+				},
+			) {
+				Text(textButtonCancel)
+			}
+		})
 }
 
 @Composable
@@ -556,24 +545,23 @@ private fun saveToSharedPrefs(context: Context, picturesUrl: String)
 	val sharedPreferencesPictures = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 	val editorPictures = sharedPreferencesPictures.edit()
 	editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
-	editorPictures.putBoolean(CACHE, false)
 	editorPictures.apply()
 }
 
 @Composable
 private fun calculateGridSpan(): Int
 {
-	val context = LocalContext.current
+	val resources = LocalContext.current.resources.displayMetrics
 	Log.d("HomeFragment", "Calculate span started")
-	val width = context.resources.displayMetrics.widthPixels
+	val width = resources.widthPixels
 	val orientation = LocalConfiguration.current.orientation
-	val density = context.resources.displayMetrics.density
+	val density = resources.density
 	return if(orientation == Configuration.ORIENTATION_PORTRAIT)
 	{
-		((width / density).toInt() / 110)
+		(width / density).toInt() / LENGTH_OF_PICTURE
 	}
 	else
 	{
-		((width / density).toInt() / 110)
+		(width / density).toInt() / LENGTH_OF_PICTURE
 	}
 }

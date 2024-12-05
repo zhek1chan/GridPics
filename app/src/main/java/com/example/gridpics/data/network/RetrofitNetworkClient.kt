@@ -16,10 +16,10 @@ class RetrofitNetworkClient(
 {
 	override suspend fun getPics(): Resource<String>
 	{
-		var news: Resource<String>
+		var imagesUrls: Resource<String>
 		if(!isConnected()) return Resource.ConnectionError(DEVICE_IS_OFFLINE)
 		withContext(Dispatchers.IO) {
-			news = try
+			imagesUrls = try
 			{
 				api.getNews().byteStream().use {
 					val s = it.readBytes().toString(charset = Charset.defaultCharset())
@@ -33,26 +33,14 @@ class RetrofitNetworkClient(
 				Resource.ConnectionError(REQUEST_ERROR)
 			}
 		}
-		return news
+		return imagesUrls
 	}
 
 	private fun isConnected(): Boolean
 	{
-		val connectivityManager = context.getSystemService(
-			Context.CONNECTIVITY_SERVICE
-		) as ConnectivityManager
-		val capabilities =
-			connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-		if(capabilities != null)
-		{
-			when
-			{
-				capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || capabilities.hasTransport(
-					NetworkCapabilities.TRANSPORT_WIFI
-				) || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> return true
-			}
-		}
-		return false
+		val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+		val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+		return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))
 	}
 
 	companion object
