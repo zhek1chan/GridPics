@@ -126,11 +126,12 @@ fun DetailsScreen(
 	if(pictures != null)
 	{
 		Log.d("pic", updatedCurrentPicture.value)
-		val list = remember { pictures.split("\n").toMutableList() }
+		val list = pictures.split("\n").toMutableList()
 		Log.d("list", "$list")
-		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture.value), pageCount = { list.size })
+		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture.value), initialPageOffsetFraction = 0f, pageCount = { list.size })
 		val currentPage = pagerState.currentPage
 		val errorPicture = remember(list) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
+
 		if(checkIfExists(list[currentPage]))
 		{
 			Log.d("checkMa", "gruzim oshibku")
@@ -141,6 +142,7 @@ fun DetailsScreen(
 			postNewBitmap(list[currentPage])
 			postNewCurrentPic(list[currentPage])
 		}
+
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 			topBar = { AppBar(isVisible, context, navController, list, pagerState, postUrl) },
@@ -200,7 +202,8 @@ fun ShowDetails(
 		pageSize = PageSize.Fill,
 		contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
 		userScrollEnabled = true,
-		snapPosition = SnapPosition.Center
+		snapPosition = SnapPosition.Center,
+		pageSpacing = 10.dp
 	) { page ->
 		LaunchedEffect(page) {
 			if(firstPage.value)
