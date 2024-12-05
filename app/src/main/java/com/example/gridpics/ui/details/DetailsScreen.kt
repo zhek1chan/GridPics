@@ -69,6 +69,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -415,6 +416,8 @@ fun AppBar(
 )
 {
 	val navBack = remember { mutableStateOf(false) }
+	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+	Log.d("wahwah", "$screenWidth")
 	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(
 			modifier = Modifier
@@ -434,13 +437,15 @@ fun AppBar(
 					maxLines = 2,
 					modifier = Modifier
 						.clickable { navBack.value = true }
-						.padding(0.dp, 3.dp, 0.dp, 0.dp),
+						.padding(10.dp, 0.dp, 0.dp, 5.dp),
 					overflow = TextOverflow.Ellipsis,
 				)
 			},
 			navigationIcon = {
 				IconButton(
-					modifier = Modifier.size(30.dp, 30.dp),
+					modifier = Modifier
+						.size(30.dp, 30.dp)
+						.padding(5.dp, 0.dp, 0.dp, 5.dp),
 					onClick = { navBack.value = true }
 				)
 				{
@@ -460,6 +465,7 @@ fun AppBar(
 			),
 			actions = {
 				IconButton(
+					modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 5.dp),
 					onClick =
 					{
 						share(list[pagerState.currentPage], context, TEXT_PLAIN)
@@ -473,12 +479,12 @@ fun AppBar(
 				}
 			}
 		)
-		val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(1f, 1f, 1f, 1f)) }
+		val rippleConfig = remember { RippleConfiguration(color = Color.Green, rippleAlpha = RippleAlpha(1f, 1f, 1f, 1f)) }
 		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 			Box(modifier = Modifier
 				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 				.height(64.dp)
-				.width(360.dp)
+				.width(screenWidth - 50.dp)
 				.clickable {
 					navBack.value = true
 				})
@@ -486,7 +492,7 @@ fun AppBar(
 				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 				.height(64.dp)
 				.fillMaxWidth()
-				.padding(360.dp, 0.dp, 0.dp, 0.dp)
+				.padding(screenWidth - 50.dp, 0.dp, 0.dp, 0.dp)
 				.clickable {
 					share(list[pagerState.currentPage], context, TEXT_PLAIN)
 				})
