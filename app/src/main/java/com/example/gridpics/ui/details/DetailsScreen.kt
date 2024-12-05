@@ -479,7 +479,7 @@ fun AppBar(
 				}
 			}
 		)
-		val rippleConfig = remember { RippleConfiguration(color = Color.Green, rippleAlpha = RippleAlpha(1f, 1f, 1f, 1f)) }
+		val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(1f, 1f, 1f, 1f)) }
 		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 			Box(modifier = Modifier
 				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
