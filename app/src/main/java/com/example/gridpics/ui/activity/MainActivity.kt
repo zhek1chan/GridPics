@@ -90,8 +90,6 @@ class MainActivity: AppCompatActivity()
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
-		picVM.cacheIsEmpty = sharedPreferences.getString(SHARED_PREFS_PICTURES, null) == null
-		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
 		picVM.postCacheWasCleared(false)
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black)),
@@ -112,21 +110,9 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-
-		lifeCycScope.launch {
-			picVM.observeBackNav().collectLatest {
-				if(it)
-				{
-					Log.d("callback", "callback was called")
-					if(mainNotificationService != null)
-					{
-						mainNotificationService!!.stopSelf()
-					}
-					this@MainActivity.finishAffinity()
-				}
-			}
-		}
-
+		val intent = intent
+		val intentActionIsNotNull = intent.action != null
+		val intentHasStringCase = !intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty()
 		serviceIntent = serviceIntentLocal
 		themePick = theme
 		setContent {
@@ -134,7 +120,7 @@ class MainActivity: AppCompatActivity()
 			ComposeTheme {
 				NavigationSetup(navController = navController)
 			}
-			if(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty())
+			if (intentHasStringCase && intentActionIsNotNull)
 			{
 				picVM.clickOnPicture(intent.action!!)
 				navController.navigate(Screen.Details.route)
@@ -161,7 +147,7 @@ class MainActivity: AppCompatActivity()
 			composable(BottomNavItem.Home.route) {
 				PicturesScreen(
 					navController = navController,
-					postPressOnBackButton = { picVM.backNavButtonPress(true) },
+					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
 					checkIfExists = { str -> picVM.checkOnErrorExists(str) },
 					addError = { str -> picVM.addError(str) },
 					postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
@@ -298,6 +284,13 @@ class MainActivity: AppCompatActivity()
 		super.onResume()
 	}
 
+	private fun handleBackButtonPressFromPicturesScreen() {
+		Log.d("callback", "callback was called")
+		mainNotificationService?.stopSelf()
+		this@MainActivity.finishAffinity()
+
+	}
+
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
@@ -318,20 +311,21 @@ class MainActivity: AppCompatActivity()
 	private fun changeBarsVisability(visible: Boolean)
 	{
 		val detVM = detailsViewModel
+		val window = window
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
-		if(!visible)
-		{
-			controller.hide(WindowInsetsCompat.Type.statusBars())
-			controller.hide(WindowInsetsCompat.Type.navigationBars())
-		}
-		else
+		if (visible)
 		{
 			controller.show(WindowInsetsCompat.Type.statusBars())
 			controller.show(WindowInsetsCompat.Type.navigationBars())
-			if(detVM.uiStateFlow.value == detVM.uiStateFlow.value.copy(barsAreVisible = false))
-			{
+			val value = detVM.uiStateFlow.value
+			if (value == value.copy(barsAreVisible = false)) {
 				detVM.changeVisabilityState()
 			}
+		}
+		else
+		{
+			controller.hide(WindowInsetsCompat.Type.statusBars())
+			controller.hide(WindowInsetsCompat.Type.navigationBars())
 		}
 	}
 

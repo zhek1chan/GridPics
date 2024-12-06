@@ -51,17 +51,19 @@ class DetailsViewModel(
         }
     }
 
-    fun changeMultiWindowState(isMultiWindowed: Boolean) {
-        val uiState = uiStateFlow
-        viewModelScope.launch {
-            uiState.value = uiState.value.copy(isMultiWindowed = !isMultiWindowed)
-        }
-    }
+	fun changeMultiWindowState(isMultiWindowed: Boolean)
+	{
+		val uiState = uiStateFlow
+		viewModelScope.launch {
+			uiState.value = uiState.value.copy(isMultiWindowed = !isMultiWindowed)
+		}
+	}
 
-    fun postPositiveVisabilityState() {
-        val uiState = uiStateFlow
-        viewModelScope.launch {
-            uiState.value = uiState.value.copy(barsAreVisible = true)
-        }
-    }
+	fun postPositiveVisabilityState()
+	{
+		val uiState = uiStateFlow
+		viewModelScope.launch {
+			uiState.value = uiState.value.copy(barsAreVisible = true)
+		}
+	}
 }

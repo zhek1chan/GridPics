@@ -132,17 +132,15 @@ fun DetailsScreen(
 		val currentPage = pagerState.currentPage
 		val errorPicture = remember(list) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 
-		if(checkIfExists(list[currentPage]))
-		{
-			Log.d("checkMa", "gruzim oshibku")
-			postUrl(list[currentPage], errorPicture)
+		LaunchedEffect(currentPage) {
+			if (checkIfExists(list[currentPage])) {
+				Log.d("checkMa", "gruzim oshibku")
+				postUrl(list[currentPage], errorPicture)
+			} else {
+				postNewBitmap(list[currentPage])
+				postNewCurrentPic(list[currentPage])
+			}
 		}
-		else
-		{
-			postNewBitmap(list[currentPage])
-			postNewCurrentPic(list[currentPage])
-		}
-
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 			topBar = { AppBar(isVisible, context, navController, list, pagerState, postUrl) },
@@ -321,23 +319,19 @@ fun ShowAsynchImage(
 			)
 			.pointerInput(Unit) {
 				awaitEachGesture {
-					while(true)
-					{
+					while (true) {
 						val event = awaitPointerEvent()
 						val changes = event.changes
 						exit.value = !changes.any {
 							it.isConsumed
 						}
-						if(count.size >= 3)
-						{
+						if (count.size >= 3) {
 							countLastThree.add(count[count.lastIndex])
 							countLastThree.add(count[count.lastIndex - 1])
 							countLastThree.add(count[count.lastIndex - 2])
 						}
-						if(changes.any { !it.pressed })
-						{
-							if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2)
-							{
+						if (changes.any { !it.pressed }) {
+							if (zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2) {
 								postPositiveState()
 								changeBarsVisability(true)
 								navController.navigate(Screen.Home.route)
@@ -425,9 +419,11 @@ fun AppBar(
 		Box(
 			modifier = Modifier
 				.background(MaterialTheme.colorScheme.background)
-				.height(WindowInsets.systemBarsIgnoringVisibility
-					.asPaddingValues()
-					.calculateTopPadding() + 64.dp)
+				.height(
+					WindowInsets.systemBarsIgnoringVisibility
+						.asPaddingValues()
+						.calculateTopPadding() + 64.dp
+				)
 				.fillMaxWidth())
 		TopAppBar(
 			modifier = Modifier
@@ -440,7 +436,7 @@ fun AppBar(
 					maxLines = 2,
 					modifier = Modifier
 						.clickable { navBack.value = true }
-						.padding(10.dp, 0.dp, 0.dp, 5.dp),
+						.padding(10.dp, 0.dp, 0.dp, 0.dp),
 					overflow = TextOverflow.Ellipsis,
 				)
 			},
@@ -448,7 +444,7 @@ fun AppBar(
 				IconButton(
 					modifier = Modifier
 						.size(30.dp, 30.dp)
-						.padding(5.dp, 0.dp, 0.dp, 5.dp),
+						.padding(5.dp, 0.dp, 0.dp, 0.dp),
 					onClick = { navBack.value = true }
 				)
 				{
@@ -468,7 +464,7 @@ fun AppBar(
 			),
 			actions = {
 				IconButton(
-					modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 5.dp),
+					modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp),
 					onClick =
 					{
 						share(list[pagerState.currentPage], context, TEXT_PLAIN)
