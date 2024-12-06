@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -120,10 +121,11 @@ class MainActivity: AppCompatActivity()
 			ComposeTheme {
 				NavigationSetup(navController = navController)
 			}
-			if (intentHasStringCase && intentActionIsNotNull)
-			{
-				picVM.clickOnPicture(intent.action!!)
-				navController.navigate(Screen.Details.route)
+			LaunchedEffect(Unit) {
+				if (intentHasStringCase && intentActionIsNotNull) {
+					picVM.clickOnPicture(intent.action!!)
+					navController.navigate(Screen.Details.route)
+				}
 			}
 		}
 	}
