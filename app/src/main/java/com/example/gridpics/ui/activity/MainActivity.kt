@@ -38,7 +38,6 @@ import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -101,7 +100,7 @@ class MainActivity: AppCompatActivity()
 		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
 		// Здесь мы проверяем менялась ли тема при прошлой жизни Activity, если да, то не создавать новое уведомление
 		lifeCycScope.launch {
-			detVM.observeUrlFlow().collectLatest {
+			detVM.observeUrlFlow().collect {
 				if(ContextCompat.checkSelfPermission(
 						this@MainActivity,
 						Manifest.permission.POST_NOTIFICATIONS,
