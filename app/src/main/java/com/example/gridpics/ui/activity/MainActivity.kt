@@ -90,7 +90,6 @@ class MainActivity: AppCompatActivity()
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
-		picVM.postCacheWasCleared(false)
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
@@ -166,8 +165,7 @@ class MainActivity: AppCompatActivity()
 					navController = navController,
 					option = themePick,
 					postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) },
-					changeTheme = { int -> changeTheme(int) },
-					postCacheWasCleared = { cleared -> picVM.postCacheWasCleared(cleared) }
+					changeTheme = { int -> changeTheme(int) }
 				)
 			}
 			composable(Screen.Details.route) {

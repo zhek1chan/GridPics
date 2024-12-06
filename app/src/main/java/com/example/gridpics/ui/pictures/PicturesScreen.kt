@@ -99,7 +99,7 @@ fun PicturesScreen(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
-	postDefaultDescription: (String) -> Unit,
+	postDefaultDescription: (String) -> Unit
 )
 {
 	val context = LocalContext.current
@@ -146,7 +146,7 @@ fun PicturesScreen(
 					.consumeWindowInsets(padding)
 					.fillMaxSize()
 			) {
-				if(!state.value.picturesUrl.isNullOrEmpty() && !state.value.clearedCache)
+				if(!state.value.picturesUrl.isNullOrEmpty())
 				{
 					ShowList(
 						imagesUrlsSP = state.value.picturesUrl,
@@ -160,9 +160,7 @@ fun PicturesScreen(
 						isValidUrl = isValidUrl,
 						postSavedUrls = postSavedUrls
 					)
-				}
-				else
-				{
+				} else {
 					ShowList(
 						imagesUrlsSP = null,
 						checkIfExists = checkIfExists,
@@ -227,13 +225,10 @@ fun itemNewsCard(
 		contentDescription = item,
 		modifier = Modifier
 			.clickable {
-				if(!isError)
-				{
+				if (!isError) {
 					isClicked = true
 					openAlertDialog.value = false
-				}
-				else
-				{
+				} else {
 					openAlertDialog.value = true
 				}
 			}
@@ -327,8 +322,8 @@ fun ShowList(
 				Log.d("Now state is", "Loading")
 				val status = state.value.loadingState as PicturesState.SearchIsOk
 				LaunchedEffect(Unit) {
-					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 					saveToSharedPrefs(context, status.data)
+					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 				}
 				val value = remember(status) { status.data }
 				val list = remember(status) { value.split("\n") }

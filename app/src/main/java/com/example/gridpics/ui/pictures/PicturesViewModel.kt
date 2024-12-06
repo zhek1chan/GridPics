@@ -15,7 +15,7 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, ""))
 	var currentPicture = mutableStateOf("")
 	private val errorsList: MutableList<String> = mutableListOf()
 
@@ -54,14 +54,6 @@ class PicturesViewModel(
 		val flow = picturesUiState
 		viewModelScope.launch {
 			flow.value = flow.value.copy(picturesUrl = urls)
-		}
-	}
-
-	fun postCacheWasCleared(cacheWasCleared: Boolean)
-	{
-		val flow = picturesUiState
-		viewModelScope.launch {
-			flow.value = flow.value.copy(clearedCache = cacheWasCleared)
 		}
 	}
 
