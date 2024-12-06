@@ -464,7 +464,6 @@ fun AppBar(
 			),
 			actions = {
 				IconButton(
-					modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 0.dp),
 					onClick =
 					{
 						share(list[pagerState.currentPage], context, TEXT_PLAIN)
