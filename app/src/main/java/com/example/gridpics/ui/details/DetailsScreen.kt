@@ -123,26 +123,27 @@ fun DetailsScreen(
 		navController.navigate(Screen.Home.route)
 	}
 	val isVisible = remember { mutableStateOf(true) }
-	val pictures = remember { picturesScreenState.value.picturesUrl }
+	val pictures = remember(picturesScreenState.value.picturesUrl) { picturesScreenState.value.picturesUrl }
 	if(pictures != null)
 	{
 		Log.d("pic", updatedCurrentPicture.value)
-		val list = remember { pictures.split("\n").toMutableList() }
+		val list = remember { pictures.split("\n") }
 		Log.d("list", "$list")
 		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture.value), initialPageOffsetFraction = 0f, pageCount = { list.size })
 		val currentPage = pagerState.currentPage
-		val errorPicture = remember(list) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
+		val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 
 		LaunchedEffect(currentPage) {
-			if(checkIfExists(list[currentPage]))
+			val pic = list[currentPage]
+			if(checkIfExists(pic))
 			{
 				Log.d("checkMa", "gruzim oshibku")
-				postUrl(list[currentPage], errorPicture)
+				postUrl(pic, errorPicture)
 			}
 			else
 			{
-				postNewBitmap(list[currentPage])
-				postNewCurrentPic(list[currentPage])
+				postNewBitmap(pic)
+				postNewCurrentPic(pic)
 			}
 		}
 		Scaffold(
@@ -177,7 +178,7 @@ fun ShowDetails(
 	img: MutableState<String>,
 	navController: NavController,
 	isVisible: MutableState<Boolean>,
-	list: MutableList<String>,
+	list: List<String>,
 	pagerState: PagerState,
 	context: Context,
 	checkIfExists: (String) -> Boolean,
@@ -214,9 +215,10 @@ fun ShowDetails(
 				firstPage.value = false
 			}
 		}
+		val currentUrlCheck = checkIfExists(list[page])
 		when
 		{
-			checkIfExists(list[page]) ->
+			currentUrlCheck ->
 			{
 				ShowError(
 					context = context,
@@ -226,7 +228,7 @@ fun ShowDetails(
 					isValidUrl = isValidUrl
 				)
 			}
-			!checkIfExists(list[page]) ->
+			!currentUrlCheck ->
 			{
 				ShowAsynchImage(
 					list = list,
@@ -250,7 +252,7 @@ fun ShowDetails(
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowAsynchImage(
-	list: MutableList<String>,
+	list: List<String>,
 	page: Int,
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
@@ -281,9 +283,7 @@ fun ShowAsynchImage(
 		ContentScale.Fit
 	}
 	val zoom = rememberZoomState(15f, Size.Zero)
-	val count = remember { mutableListOf(0) }
-	val countLastThree = remember { mutableListOf(0) }
-	var imageSize by remember { mutableStateOf(Size(0f, 0f)) }
+	var imageSize by remember { mutableStateOf(Size.Zero) }
 	val imgRequest = remember(list[page]) {
 		ImageRequest.Builder(context)
 			.data(list[page])
@@ -323,6 +323,8 @@ fun ShowAsynchImage(
 			)
 			.pointerInput(Unit) {
 				awaitEachGesture {
+					val count = mutableListOf(0)
+					val countLastThree = mutableListOf(0)
 					while(true)
 					{
 						val event = awaitPointerEvent()
@@ -360,7 +362,7 @@ fun ShowAsynchImage(
 @Composable
 fun ShowError(
 	context: Context,
-	list: MutableList<String>,
+	list: List<String>,
 	currentPage: Int,
 	pagerState: PagerState,
 	isValidUrl: (String) -> Boolean,
@@ -415,7 +417,7 @@ fun ShowError(
 fun AppBar(
 	isVisible: MutableState<Boolean>,
 	context: Context, nc: NavController,
-	list: MutableList<String>,
+	list: List<String>,
 	pagerState: PagerState,
 	postUrl: (String, Bitmap?) -> Unit,
 )

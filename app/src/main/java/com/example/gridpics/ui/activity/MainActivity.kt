@@ -70,7 +70,6 @@ class MainActivity: AppCompatActivity()
 		override fun onBindingDied(name: ComponentName?)
 		{
 			mainNotificationService = null
-			super.onBindingDied(name)
 		}
 	}
 
@@ -109,9 +108,6 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-		val intent = intent
-		val intentActionIsNotNull = intent.action != null
-		val intentHasStringCase = !intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty()
 		serviceIntent = serviceIntentLocal
 		themePick = theme
 		setContent {
@@ -120,8 +116,10 @@ class MainActivity: AppCompatActivity()
 				NavigationSetup(navController = navController)
 			}
 			LaunchedEffect(Unit) {
-				if (intentHasStringCase && intentActionIsNotNull) {
-					picVM.clickOnPicture(intent.action!!)
+				val intent = intent
+				if(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty() && intent.action != null)
+				{
+					intent.action?.let { picVM.clickOnPicture(it) }
 					navController.navigate(Screen.Details.route)
 				}
 			}
@@ -132,7 +130,7 @@ class MainActivity: AppCompatActivity()
 	fun NavigationSetup(navController: NavHostController)
 	{
 		NavHost(
-			navController,
+			navController = navController,
 			startDestination = BottomNavItem.Home.route,
 			enterTransition = {
 				EnterTransition.None
@@ -161,7 +159,6 @@ class MainActivity: AppCompatActivity()
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
-				detVM.postNewPic(DEFAULT_STRING_VALUE, null)
 				SettingsScreen(
 					navController = navController,
 					option = themePick,
@@ -209,25 +206,22 @@ class MainActivity: AppCompatActivity()
 		grantResults: IntArray,
 	)
 	{
-		lifecycleScope.launch {
-			super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-			if(requestCode == 100)
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+		if(requestCode == 100)
+		{
+			if((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED))
 			{
-				if((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED))
+				val serviceIntentLocal = serviceIntent
+				val connectionLocal = connection
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 				{
-					val serviceIntentLocal = serviceIntent
-					val connectionLocal = connection
-					if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-					{
-						startForegroundService(serviceIntentLocal)
-						bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-					}
-					else
-					{
-						startService(serviceIntentLocal)
-						bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-					}
+					startForegroundService(serviceIntentLocal)
 				}
+				else
+				{
+					startService(serviceIntentLocal)
+				}
+				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
 		}
 	}
@@ -256,12 +250,9 @@ class MainActivity: AppCompatActivity()
 					startForegroundService(serviceIntentLocal)
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 				}
-				else
+				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
 				{
-					if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
-					{
-						requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
-					}
+					requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
 				}
 			}
 			else
@@ -269,13 +260,12 @@ class MainActivity: AppCompatActivity()
 				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 				{
 					startForegroundService(serviceIntentLocal)
-					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 				}
 				else
 				{
 					startService(serviceIntentLocal)
-					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 				}
+				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
 		}
 		Log.d("service", "is connected to Activity?: ${mainNotificationService != null}")
@@ -283,11 +273,11 @@ class MainActivity: AppCompatActivity()
 		super.onResume()
 	}
 
-	private fun handleBackButtonPressFromPicturesScreen() {
+	private fun handleBackButtonPressFromPicturesScreen()
+	{
 		Log.d("callback", "callback was called")
 		mainNotificationService?.stopSelf()
 		this@MainActivity.finishAffinity()
-
 	}
 
 	override fun onPause()
@@ -312,19 +302,14 @@ class MainActivity: AppCompatActivity()
 		val detVM = detailsViewModel
 		val window = window
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
-		if (visible)
+		if(visible)
 		{
-			controller.show(WindowInsetsCompat.Type.statusBars())
-			controller.show(WindowInsetsCompat.Type.navigationBars())
-			val value = detVM.uiStateFlow.value
-			if (value == value.copy(barsAreVisible = false)) {
-				detVM.changeVisabilityState()
-			}
+			controller.show(WindowInsetsCompat.Type.systemBars())
+			detVM.changeVisabilityState()
 		}
 		else
 		{
-			controller.hide(WindowInsetsCompat.Type.statusBars())
-			controller.hide(WindowInsetsCompat.Type.navigationBars())
+			controller.hide(WindowInsetsCompat.Type.systemBars())
 		}
 	}
 
