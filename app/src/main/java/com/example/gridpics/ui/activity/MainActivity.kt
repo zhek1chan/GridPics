@@ -117,9 +117,10 @@ class MainActivity: AppCompatActivity()
 			}
 			LaunchedEffect(Unit) {
 				val intent = intent
-				if(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty() && intent.action != null)
+				val action = intent.action
+				if(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty() && action != null)
 				{
-					intent.action?.let { picVM.clickOnPicture(it) }
+					picVM.clickOnPicture(action)
 					navController.navigate(Screen.Details.route)
 				}
 			}
