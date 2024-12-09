@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -37,7 +38,6 @@ import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -90,9 +90,6 @@ class MainActivity: AppCompatActivity()
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
-		picVM.cacheIsEmpty = sharedPreferences.getString(SHARED_PREFS_PICTURES, null) == null
-		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
-		picVM.postCacheWasCleared(false)
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
@@ -102,7 +99,7 @@ class MainActivity: AppCompatActivity()
 		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
 		// Здесь мы проверяем менялась ли тема при прошлой жизни Activity, если да, то не создавать новое уведомление
 		lifeCycScope.launch {
-			detVM.observeUrlFlow().collectLatest {
+			detVM.observeUrlFlow().collect {
 				if(ContextCompat.checkSelfPermission(
 						this@MainActivity,
 						Manifest.permission.POST_NOTIFICATIONS,
@@ -112,21 +109,9 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-
-		lifeCycScope.launch {
-			picVM.observeBackNav().collectLatest {
-				if(it)
-				{
-					Log.d("callback", "callback was called")
-					if(mainNotificationService != null)
-					{
-						mainNotificationService!!.stopSelf()
-					}
-					this@MainActivity.finishAffinity()
-				}
-			}
-		}
-
+		val intent = intent
+		val intentActionIsNotNull = intent.action != null
+		val intentHasStringCase = !intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty()
 		serviceIntent = serviceIntentLocal
 		themePick = theme
 		setContent {
@@ -134,10 +119,11 @@ class MainActivity: AppCompatActivity()
 			ComposeTheme {
 				NavigationSetup(navController = navController)
 			}
-			if(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty())
-			{
-				picVM.clickOnPicture(intent.action!!)
-				navController.navigate(Screen.Details.route)
+			LaunchedEffect(Unit) {
+				if (intentHasStringCase && intentActionIsNotNull) {
+					picVM.clickOnPicture(intent.action!!)
+					navController.navigate(Screen.Details.route)
+				}
 			}
 		}
 	}
@@ -159,9 +145,10 @@ class MainActivity: AppCompatActivity()
 			val picVM = picturesViewModel
 			val detVM = detailsViewModel
 			composable(BottomNavItem.Home.route) {
+				detVM.postNewPic(DEFAULT_STRING_VALUE, null)
 				PicturesScreen(
 					navController = navController,
-					postPressOnBackButton = { picVM.backNavButtonPress(true) },
+					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
 					checkIfExists = { str -> picVM.checkOnErrorExists(str) },
 					addError = { str -> picVM.addError(str) },
 					postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
@@ -171,16 +158,14 @@ class MainActivity: AppCompatActivity()
 					currentPicture = { url -> picVM.clickOnPicture(url) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
-					postDefaultDescription = { url -> detVM.postNewPic(url, null) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
+				detVM.postNewPic(DEFAULT_STRING_VALUE, null)
 				SettingsScreen(
 					navController = navController,
 					option = themePick,
-					postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) },
-					changeTheme = { int -> changeTheme(int) },
-					postCacheWasCleared = { cleared -> picVM.postCacheWasCleared(cleared) }
+					changeTheme = { int -> changeTheme(int) }
 				)
 			}
 			composable(Screen.Details.route) {
@@ -298,6 +283,13 @@ class MainActivity: AppCompatActivity()
 		super.onResume()
 	}
 
+	private fun handleBackButtonPressFromPicturesScreen() {
+		Log.d("callback", "callback was called")
+		mainNotificationService?.stopSelf()
+		this@MainActivity.finishAffinity()
+
+	}
+
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
@@ -318,20 +310,21 @@ class MainActivity: AppCompatActivity()
 	private fun changeBarsVisability(visible: Boolean)
 	{
 		val detVM = detailsViewModel
+		val window = window
 		val controller = WindowCompat.getInsetsController(window, window.decorView)
-		if(!visible)
-		{
-			controller.hide(WindowInsetsCompat.Type.statusBars())
-			controller.hide(WindowInsetsCompat.Type.navigationBars())
-		}
-		else
+		if (visible)
 		{
 			controller.show(WindowInsetsCompat.Type.statusBars())
 			controller.show(WindowInsetsCompat.Type.navigationBars())
-			if(detVM.uiStateFlow.value == detVM.uiStateFlow.value.copy(barsAreVisible = false))
-			{
+			val value = detVM.uiStateFlow.value
+			if (value == value.copy(barsAreVisible = false)) {
 				detVM.changeVisabilityState()
 			}
+		}
+		else
+		{
+			controller.hide(WindowInsetsCompat.Type.statusBars())
+			controller.hide(WindowInsetsCompat.Type.navigationBars())
 		}
 	}
 

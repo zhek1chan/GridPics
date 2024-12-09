@@ -8,8 +8,6 @@ import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 @SuppressLint("StaticFieldLeak")
@@ -17,12 +15,9 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, false, ""))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, ""))
 	var currentPicture = mutableStateOf("")
-	var cacheIsEmpty = true
 	private val errorsList: MutableList<String> = mutableListOf()
-	private val backNav = MutableStateFlow(false)
-	fun observeBackNav(): Flow<Boolean> = backNav
 
 	init
 	{
@@ -62,14 +57,6 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postCacheWasCleared(cacheWasCleared: Boolean)
-	{
-		val flow = picturesUiState
-		viewModelScope.launch {
-			flow.value = flow.value.copy(clearedCache = cacheWasCleared)
-		}
-	}
-
 	fun addError(url: String)
 	{
 		val list = errorsList
@@ -101,13 +88,6 @@ class PicturesViewModel(
 	fun clearErrors()
 	{
 		errorsList.clear()
-	}
-
-	fun backNavButtonPress(pressed: Boolean)
-	{
-		viewModelScope.launch {
-			backNav.emit(pressed)
-		}
 	}
 
 	fun clickOnPicture(url: String)

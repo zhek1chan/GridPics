@@ -119,6 +119,7 @@ fun DetailsScreen(
 	val context = LocalContext.current
 	BackHandler {
 		changeBarsVisability(true)
+		postUrl(DEFAULT_STRING_VALUE, null)
 		navController.navigate(Screen.Home.route)
 	}
 	val isVisible = remember { mutableStateOf(true) }
@@ -128,18 +129,21 @@ fun DetailsScreen(
 		Log.d("pic", updatedCurrentPicture.value)
 		val list = remember { pictures.split("\n").toMutableList() }
 		Log.d("list", "$list")
-		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture.value), pageCount = { list.size })
+		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture.value), initialPageOffsetFraction = 0f, pageCount = { list.size })
 		val currentPage = pagerState.currentPage
 		val errorPicture = remember(list) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
-		if(checkIfExists(list[currentPage]))
-		{
-			Log.d("checkMa", "gruzim oshibku")
-			postUrl(list[currentPage], errorPicture)
-		}
-		else
-		{
-			postNewBitmap(list[currentPage])
-			postNewCurrentPic(list[currentPage])
+
+		LaunchedEffect(currentPage) {
+			if(checkIfExists(list[currentPage]))
+			{
+				Log.d("checkMa", "gruzim oshibku")
+				postUrl(list[currentPage], errorPicture)
+			}
+			else
+			{
+				postNewBitmap(list[currentPage])
+				postNewCurrentPic(list[currentPage])
+			}
 		}
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
@@ -200,7 +204,8 @@ fun ShowDetails(
 		pageSize = PageSize.Fill,
 		contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
 		userScrollEnabled = true,
-		snapPosition = SnapPosition.Center
+		snapPosition = SnapPosition.Center,
+		pageSpacing = 10.dp
 	) { page ->
 		LaunchedEffect(page) {
 			if(firstPage.value)
@@ -422,9 +427,11 @@ fun AppBar(
 		Box(
 			modifier = Modifier
 				.background(MaterialTheme.colorScheme.background)
-				.height(WindowInsets.systemBarsIgnoringVisibility
-					.asPaddingValues()
-					.calculateTopPadding() + 64.dp)
+				.height(
+					WindowInsets.systemBarsIgnoringVisibility
+						.asPaddingValues()
+						.calculateTopPadding() + 64.dp
+				)
 				.fillMaxWidth())
 		TopAppBar(
 			modifier = Modifier
@@ -437,7 +444,7 @@ fun AppBar(
 					maxLines = 2,
 					modifier = Modifier
 						.clickable { navBack.value = true }
-						.padding(10.dp, 0.dp, 0.dp, 5.dp),
+						.padding(10.dp, 0.dp, 0.dp, 0.dp),
 					overflow = TextOverflow.Ellipsis,
 				)
 			},
@@ -445,7 +452,7 @@ fun AppBar(
 				IconButton(
 					modifier = Modifier
 						.size(30.dp, 30.dp)
-						.padding(5.dp, 0.dp, 0.dp, 5.dp),
+						.padding(5.dp, 0.dp, 0.dp, 0.dp),
 					onClick = { navBack.value = true }
 				)
 				{
@@ -465,7 +472,6 @@ fun AppBar(
 			),
 			actions = {
 				IconButton(
-					modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 5.dp),
 					onClick =
 					{
 						share(list[pagerState.currentPage], context, TEXT_PLAIN)
@@ -479,7 +485,7 @@ fun AppBar(
 				}
 			}
 		)
-		val rippleConfig = remember { RippleConfiguration(color = Color.Green, rippleAlpha = RippleAlpha(1f, 1f, 1f, 1f)) }
+		val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 			Box(modifier = Modifier
 				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))

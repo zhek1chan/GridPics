@@ -13,7 +13,9 @@ val viewModelModule = module {
 
 	viewModelOf(::PicturesViewModel)
 
-	single {
+	viewModel {
 		DetailsViewModel(get())
 	}
+
+	viewModelOf(::DetailsViewModel)
 }

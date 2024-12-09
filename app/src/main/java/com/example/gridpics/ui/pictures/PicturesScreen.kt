@@ -73,7 +73,6 @@ import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
-import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.LENGTH_OF_PICTURE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
@@ -99,15 +98,12 @@ fun PicturesScreen(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
-	postDefaultDescription: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
 	postPositiveState()
-	Log.d("description", "posted default")
-	postDefaultDescription(DEFAULT_STRING_VALUE)
 	BackHandler {
-		Log.d("gobacl","ffafafa")
+		Log.d("gobacl", "ffafafa")
 		postPressOnBackButton()
 	}
 	val orientation = context.resources.configuration.orientation
@@ -146,7 +142,7 @@ fun PicturesScreen(
 					.consumeWindowInsets(padding)
 					.fillMaxSize()
 			) {
-				if(!state.value.picturesUrl.isNullOrEmpty() && !state.value.clearedCache)
+				if(!state.value.picturesUrl.isNullOrEmpty())
 				{
 					ShowList(
 						imagesUrlsSP = state.value.picturesUrl,
@@ -214,9 +210,9 @@ fun itemNewsCard(
 			.httpHeaders(headers)
 			.networkCachePolicy(CachePolicy.ENABLED)
 			.memoryCachePolicy(CachePolicy.ENABLED)
-			.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(8))
-			.interceptorCoroutineContext(Dispatchers.IO.limitedParallelism(8))
-			.coroutineContext(Dispatchers.IO.limitedParallelism(8))
+			.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(4))
+			.interceptorCoroutineContext(Dispatchers.IO.limitedParallelism(4))
+			.coroutineContext(Dispatchers.IO.limitedParallelism(4))
 			.diskCachePolicy(CachePolicy.ENABLED)
 			.placeholder(placeholder)
 			.error(R.drawable.error)
@@ -327,8 +323,8 @@ fun ShowList(
 				Log.d("Now state is", "Loading")
 				val status = state.value.loadingState as PicturesState.SearchIsOk
 				LaunchedEffect(Unit) {
-					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 					saveToSharedPrefs(context, status.data)
+					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 				}
 				val value = remember(status) { status.data }
 				val list = remember(status) { value.split("\n") }

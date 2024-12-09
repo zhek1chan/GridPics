@@ -65,12 +65,11 @@ import com.example.gridpics.ui.pictures.AlertDialogMain
 fun SettingsScreen(
 	navController: NavController,
 	option: Int,
-	postDefaultUrl: () -> Unit,
-	changeTheme: (Int) -> Unit,
-	postCacheWasCleared: (Boolean) -> Unit,
+	//postDefaultUrl: () -> Unit,
+	changeTheme: (Int) -> Unit
 )
 {
-	postDefaultUrl()
+	//postDefaultUrl()
 	val orientation = LocalContext.current.resources.configuration.orientation
 	val windowInsets = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
 	{
@@ -108,7 +107,7 @@ fun SettingsScreen(
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
-				SettingsCompose(option = option, changeTheme = changeTheme, postCacheWasCleared = postCacheWasCleared)
+				SettingsCompose(option = option, changeTheme = changeTheme)
 			}
 		}
 	)
@@ -117,8 +116,7 @@ fun SettingsScreen(
 @Composable
 fun SettingsCompose(
 	option: Int,
-	changeTheme: (Int) -> Unit,
-	postCacheWasCleared: (Boolean) -> Unit,
+	changeTheme: (Int) -> Unit
 )
 {
 	var showDialog by remember { mutableStateOf(false) }
@@ -241,7 +239,6 @@ fun SettingsCompose(
 					dialogText = null,
 					dialogTitle = stringResource(R.string.delete_all_question),
 					onConfirmation = {
-						postCacheWasCleared(true)
 						val imageLoader = context.imageLoader
 						imageLoader.diskCache?.clear()
 						imageLoader.memoryCache?.clear()
