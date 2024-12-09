@@ -87,12 +87,13 @@ class MainNotificationService: Service()
 	{
 		jobToCreateNotification?.let {
 			GlobalScope.launch(it) {
+				val notificationManager = this@MainNotificationService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+				notificationManager.notify(NOTIFICATION_ID, builder.build())
+				Log.d("counterrrr", "$count")
 				if(count == 1 || count == 0)
 				{
 					startForeground(NOTIFICATION_ID, builder.build())
 				}
-				val notificationManager = this@MainNotificationService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-				notificationManager.notify(NOTIFICATION_ID, builder.build())
 			}
 		}
 	}
