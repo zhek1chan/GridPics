@@ -73,7 +73,6 @@ import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
-import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.LENGTH_OF_PICTURE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
@@ -99,15 +98,12 @@ fun PicturesScreen(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
-	postDefaultDescription: (String) -> Unit
 )
 {
 	val context = LocalContext.current
 	postPositiveState()
-	Log.d("description", "posted default")
-	postDefaultDescription(DEFAULT_STRING_VALUE)
 	BackHandler {
-		Log.d("gobacl","ffafafa")
+		Log.d("gobacl", "ffafafa")
 		postPressOnBackButton()
 	}
 	val orientation = context.resources.configuration.orientation
@@ -160,7 +156,9 @@ fun PicturesScreen(
 						isValidUrl = isValidUrl,
 						postSavedUrls = postSavedUrls
 					)
-				} else {
+				}
+				else
+				{
 					ShowList(
 						imagesUrlsSP = null,
 						checkIfExists = checkIfExists,
@@ -225,10 +223,13 @@ fun itemNewsCard(
 		contentDescription = item,
 		modifier = Modifier
 			.clickable {
-				if (!isError) {
+				if(!isError)
+				{
 					isClicked = true
 					openAlertDialog.value = false
-				} else {
+				}
+				else
+				{
 					openAlertDialog.value = true
 				}
 			}

@@ -65,11 +65,11 @@ import com.example.gridpics.ui.pictures.AlertDialogMain
 fun SettingsScreen(
 	navController: NavController,
 	option: Int,
-	postDefaultUrl: () -> Unit,
+	//postDefaultUrl: () -> Unit,
 	changeTheme: (Int) -> Unit
 )
 {
-	postDefaultUrl()
+	//postDefaultUrl()
 	val orientation = LocalContext.current.resources.configuration.orientation
 	val windowInsets = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
 	{

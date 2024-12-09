@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +24,7 @@ class DetailsViewModel(
     private val job = Job()
     fun observeUrlFlow() = imageFlow
     fun postNewPic(url: String, bitmap: Bitmap?) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             job.cancelChildren()
             imageFlow.emit(Pair(url, bitmap))
         }
@@ -31,7 +32,7 @@ class DetailsViewModel(
 
     fun postImageBitmap(url: String) {
         Log.d("Description posted", "desc was posted")
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             Log.d("description", "${job.isActive}")
             val jobButNotSteveJobs = job
             jobButNotSteveJobs.cancelChildren()
