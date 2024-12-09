@@ -33,7 +33,7 @@ class MainNotificationService: Service()
 {
 	private val binder = NetworkServiceBinder()
 	private var jobForCancelingNotification: Job? = null
-	private var jobForCreateNotification: Job? = null
+	private var jobToCreateNotification: Job? = null
 	private var count = 0
 	private lateinit var gridPics: String
 	private lateinit var defaultText: String
@@ -85,7 +85,7 @@ class MainNotificationService: Service()
 
 	private fun showNotification(builder: Builder)
 	{
-		jobForCreateNotification?.let {
+		jobToCreateNotification?.let {
 			GlobalScope.launch(it) {
 				if(count == 1 || count == 0)
 				{
@@ -116,7 +116,7 @@ class MainNotificationService: Service()
 
 	private fun createLogic(values: Pair<String, Bitmap?>)
 	{
-		jobForCreateNotification = GlobalScope.launch {
+		jobToCreateNotification = GlobalScope.launch {
 			Log.d("description", "${this.coroutineContext}")
 			val dontUseSound = count > 1
 			val resultIntent = Intent(this@MainNotificationService, MainActivity::class.java)
@@ -174,7 +174,7 @@ class MainNotificationService: Service()
 
 	fun putValues(valuesPair: Pair<String, Bitmap?>)
 	{
-		jobForCreateNotification?.cancelChildren()
+		jobToCreateNotification?.cancelChildren()
 		createLogic(valuesPair)
 		count++
 	}
