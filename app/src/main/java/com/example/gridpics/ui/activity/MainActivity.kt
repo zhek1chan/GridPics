@@ -135,6 +135,7 @@ class MainActivity: AppCompatActivity()
 	{
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
+		val picState = picVM.picturesUiState
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
@@ -153,7 +154,7 @@ class MainActivity: AppCompatActivity()
 					checkIfExists = { str -> picVM.checkOnErrorExists(str) },
 					addError = { str -> picVM.addError(str) },
 					postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
-					state = picVM.picturesUiState,
+					state = picState,
 					clearErrors = { picVM.clearErrors() },
 					postPositiveState = { detVM.postPositiveVisabilityState() },
 					currentPicture = { url, index, offset -> picVM.clickOnPicture(url, index, offset) },
@@ -178,8 +179,7 @@ class MainActivity: AppCompatActivity()
 					changeVisabilityState = { detVM.changeVisabilityState() },
 					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
 					postPositiveState = { detVM.postPositiveVisabilityState() },
-					picturesScreenState = picVM.picturesUiState,
-					updatedCurrentPicture = picVM.currentPicture,
+					picturesScreenState = picState,
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					changeBarsVisability = { visability -> changeBarsVisability(visability) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) }

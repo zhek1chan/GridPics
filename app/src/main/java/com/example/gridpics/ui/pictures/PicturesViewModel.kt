@@ -13,8 +13,7 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, "", 0, 0))
-	var currentPicture = mutableStateOf("")
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, "", 0, 0, ""))
 	private val errorsList: MutableList<String> = mutableListOf()
 
 	init
@@ -86,9 +85,8 @@ class PicturesViewModel(
 
 	fun clickOnPicture(url: String, index: Int, offset: Int)
 	{
-		currentPicture.value = url
 		val state = picturesUiState
-		state.value = state.value.copy(index = index, offset = offset)
+		state.value = state.value.copy(index = index, offset = offset, currentPicture = url)
 	}
 
 	fun isValidUrl(url: String): Boolean

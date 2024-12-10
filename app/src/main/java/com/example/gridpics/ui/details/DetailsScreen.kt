@@ -110,7 +110,6 @@ fun DetailsScreen(
 	postUrl: (String, Bitmap?) -> Unit,
 	postPositiveState: () -> Unit,
 	picturesScreenState: MutableState<PicturesScreenUiState>,
-	updatedCurrentPicture: MutableState<String>,
 	isValidUrl: (String) -> Boolean,
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
@@ -130,10 +129,10 @@ fun DetailsScreen(
 	val pictures = remember(picturesScreenState.value.picturesUrl) { picturesScreenState.value.picturesUrl }
 	if(pictures != null)
 	{
-		Log.d("pic", updatedCurrentPicture.value)
+		Log.d("pic", picturesScreenState.value.currentPicture)
 		val list = remember { pictures.split("\n") }
 		Log.d("list", "$list")
-		val pagerState = rememberPagerState(initialPage = list.indexOf(updatedCurrentPicture.value), initialPageOffsetFraction = 0f, pageCount = { list.size })
+		val pagerState = rememberPagerState(initialPage = list.indexOf(picturesScreenState.value.currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
 		val currentPage = pagerState.currentPage
 		val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 
@@ -154,7 +153,7 @@ fun DetailsScreen(
 			topBar = { AppBar(isVisible, context, navController, list, pagerState, postUrl) },
 			content = { padding ->
 				ShowDetails(
-					img = updatedCurrentPicture,
+					img = picturesScreenState.value.currentPicture,
 					navController = navController,
 					isVisible = isVisible,
 					list = list,
@@ -178,7 +177,7 @@ fun DetailsScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ShowDetails(
-	img: MutableState<String>,
+	img: String,
 	navController: NavController,
 	isVisible: MutableState<Boolean>,
 	list: List<String>,
@@ -196,7 +195,7 @@ fun ShowDetails(
 )
 {
 	val firstPage = remember(img) { mutableStateOf(true) }
-	val startPage = remember(img) { list.indexOf(img.value) }
+	val startPage = remember(img) { list.indexOf(img) }
 	val exit = remember { mutableStateOf(false) }
 	val topBarHeight = 64.dp
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
