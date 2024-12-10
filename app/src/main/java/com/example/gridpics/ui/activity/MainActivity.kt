@@ -237,16 +237,16 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
-		if(mainNotificationService == null)
-		{
-			startService()
-		}
 		Log.d("lifecycle", "onRestart()")
 		super.onRestart()
 	}
 
 	override fun onResume()
 	{
+		if(mainNotificationService == null)
+		{
+			startService()
+		}
 		Log.d("lifecycle", "onResume()")
 		super.onResume()
 	}
