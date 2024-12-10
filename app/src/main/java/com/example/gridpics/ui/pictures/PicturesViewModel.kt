@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.pictures
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -12,7 +11,6 @@ import com.example.gridpics.ui.pictures.state.PicturesState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@SuppressLint("StaticFieldLeak")
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
