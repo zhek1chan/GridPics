@@ -46,7 +46,6 @@ class MainActivity: AppCompatActivity()
 	private val detailsViewModel by viewModel<DetailsViewModel>()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
-	private var serviceIntent: Intent? = null
 	private var mainNotificationService: MainNotificationService? = null
 	private val connection = object: ServiceConnection
 	{
@@ -85,7 +84,6 @@ class MainActivity: AppCompatActivity()
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		//serviceIntentForNotification
 		Log.d("intent uri", "${intent.action}")
-		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
@@ -109,11 +107,9 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-
-		serviceIntent = serviceIntentLocal
 		themePick = theme
 		setContent {
-			val navController =	rememberNavController()
+			val navController = rememberNavController()
 			ComposeTheme {
 				NavigationSetup(navController = navController)
 			}
