@@ -410,7 +410,6 @@ fun ShowList(
 						)
 					}
 				}
-				postSavedUrls(value)
 				canChangeState.value = true
 			}
 		}
