@@ -148,7 +148,6 @@ class MainActivity: AppCompatActivity()
 		)
 		{
 			composable(BottomNavItem.Home.route) {
-				detVM.postNewPic(DEFAULT_STRING_VALUE, null)
 				PicturesScreen(
 					navController = navController,
 					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
