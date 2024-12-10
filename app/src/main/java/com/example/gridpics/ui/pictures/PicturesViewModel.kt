@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.pictures
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -9,6 +10,7 @@ import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @SuppressLint("StaticFieldLeak")
@@ -18,6 +20,8 @@ class PicturesViewModel(
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, "", LazyGridState()))
 	var currentPicture = mutableStateOf("")
+	private var savedPosition = Pair(0, 0)
+	private var wasClicked = false
 	private val errorsList: MutableList<String> = mutableListOf()
 
 	init
@@ -96,9 +100,26 @@ class PicturesViewModel(
 		errorsList.clear()
 	}
 
+	fun restoreScrollPosition()
+	{
+		if (wasClicked)
+		{
+			Log.d("zapuskaem scroll", "log log, $savedPosition")
+			viewModelScope.launch {
+				delay(150)
+				picturesUiState.value.listState.scrollToItem(savedPosition.first, savedPosition.second)
+			}
+			wasClicked = false
+		}
+	}
+
 	fun clickOnPicture(url: String)
 	{
+		wasClicked = true
 		currentPicture.value = url
+		val state = picturesUiState.value.listState
+		Log.d("zapuskaem scroll", "pochemuto bil click")
+		savedPosition = Pair(state.firstVisibleItemIndex, state.firstVisibleItemScrollOffset)
 	}
 
 	fun isValidUrl(url: String): Boolean

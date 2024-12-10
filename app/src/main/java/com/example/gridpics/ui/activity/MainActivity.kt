@@ -167,7 +167,8 @@ class MainActivity: AppCompatActivity()
 					postPositiveState = { detVM.postPositiveVisabilityState() },
 					currentPicture = { url -> picVM.clickOnPicture(url) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
-					postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
+					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
+					restoreScroll = { picVM.restoreScrollPosition() }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
@@ -191,8 +192,7 @@ class MainActivity: AppCompatActivity()
 					updatedCurrentPicture = picVM.currentPicture,
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					changeBarsVisability = { visability -> changeBarsVisability(visability) },
-					postNewBitmap = { url -> detVM.postImageBitmap(url) },
-					postNewCurrentPic = { url -> picVM.clickOnPicture(url) }
+					postNewBitmap = { url -> detVM.postImageBitmap(url) }
 				)
 			}
 		}

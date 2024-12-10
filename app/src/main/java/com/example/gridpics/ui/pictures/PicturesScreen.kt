@@ -96,7 +96,8 @@ fun PicturesScreen(
 	postPositiveState: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (String) -> Unit
+	postSavedUrls: (String) -> Unit,
+	restoreScroll: () -> Unit
 )
 {
 	val context = LocalContext.current
@@ -148,7 +149,8 @@ fun PicturesScreen(
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					postSavedUrls = postSavedUrls,
-					padding = padding
+					padding = padding,
+					restoreScroll = restoreScroll
 				)
 			}
 			else
@@ -164,7 +166,8 @@ fun PicturesScreen(
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					postSavedUrls = postSavedUrls,
-					padding = padding
+					padding = padding,
+					restoreScroll = restoreScroll
 				)
 			}
 		}
@@ -185,7 +188,7 @@ fun itemNewsCard(
 {
 	var isError by remember { mutableStateOf(false) }
 	val context = LocalContext.current
-	var isClicked by remember { mutableStateOf(false) }
+	val isClicked = remember { mutableStateOf(false) }
 	val openAlertDialog = remember { mutableStateOf(false) }
 	val errorMessage = remember { mutableStateOf("") }
 	var placeholder = R.drawable.loading
@@ -219,11 +222,12 @@ fun itemNewsCard(
 			.clickable {
 				if(!isError)
 				{
-					isClicked = true
+					isClicked.value = true
 					openAlertDialog.value = false
 				}
 				else
 				{
+					isClicked.value = false
 					openAlertDialog.value = true
 				}
 			}
@@ -240,7 +244,7 @@ fun itemNewsCard(
 			isError = false
 		}
 	)
-	if(isClicked)
+	if(isClicked.value)
 	{
 		Log.d("current", item)
 		currentPicture(item)
@@ -301,13 +305,14 @@ fun ShowList(
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
 	padding: PaddingValues,
+	restoreScroll: () -> Unit
 )
 {
 	val context = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
 	val scope = rememberCoroutineScope()
-	Log.d("listState", "${state.value.listState.firstVisibleItemIndex}")
+	restoreScroll()
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
 		when(state.value.loadingState)

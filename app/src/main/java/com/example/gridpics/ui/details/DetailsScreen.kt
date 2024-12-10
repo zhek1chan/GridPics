@@ -79,6 +79,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -113,7 +114,6 @@ fun DetailsScreen(
 	isValidUrl: (String) -> Boolean,
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
-	postNewCurrentPic: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -121,6 +121,7 @@ fun DetailsScreen(
 		changeBarsVisability(true)
 		postUrl(DEFAULT_STRING_VALUE, null)
 		navController.navigate(Screen.Home.route){
+			popUpTo(navController.graph.findStartDestination().id)
 			restoreState = true
 			launchSingleTop = true
 		}
@@ -146,7 +147,6 @@ fun DetailsScreen(
 			else
 			{
 				postNewBitmap(pic)
-				postNewCurrentPic(pic)
 			}
 		}
 		Scaffold(
