@@ -114,7 +114,7 @@ class MainActivity: AppCompatActivity()
 		serviceIntent = serviceIntentLocal
 		themePick = theme
 		setContent {
-			val navController = rememberNavController()
+			val navController =	rememberNavController()
 			ComposeTheme {
 				NavigationSetup(navController = navController)
 			}
@@ -126,11 +126,6 @@ class MainActivity: AppCompatActivity()
 					Log.d("Descript from intent", "$action")
 					picVM.clickOnPicture(action)
 					navController.navigate(Screen.Details.route)
-				}
-				else
-				{
-					Log.d("Descript from intent", "null")
-					navController.navigate(Screen.Home.route)
 				}
 			}
 		}
