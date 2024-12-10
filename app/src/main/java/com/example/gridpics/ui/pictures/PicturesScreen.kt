@@ -103,7 +103,6 @@ fun PicturesScreen(
 	val context = LocalContext.current
 	postPositiveState()
 	BackHandler {
-		Log.d("gobacl", "ffafafa")
 		postPressOnBackButton()
 	}
 	val orientation = context.resources.configuration.orientation

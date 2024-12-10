@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.pictures
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -104,10 +103,10 @@ class PicturesViewModel(
 	{
 		if (wasClicked)
 		{
-			Log.d("zapuskaem scroll", "log log, $savedPosition")
+			val position = savedPosition
 			viewModelScope.launch {
-				delay(150)
-				picturesUiState.value.listState.scrollToItem(savedPosition.first, savedPosition.second)
+				delay(1)
+				picturesUiState.value.listState.scrollToItem(position.first, position.second)
 			}
 			wasClicked = false
 		}
@@ -118,7 +117,6 @@ class PicturesViewModel(
 		wasClicked = true
 		currentPicture.value = url
 		val state = picturesUiState.value.listState
-		Log.d("zapuskaem scroll", "pochemuto bil click")
 		savedPosition = Pair(state.firstVisibleItemIndex, state.firstVisibleItemScrollOffset)
 	}
 
