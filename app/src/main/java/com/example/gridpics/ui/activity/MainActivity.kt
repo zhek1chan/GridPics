@@ -152,6 +152,7 @@ class MainActivity: AppCompatActivity()
 			val picVM = picturesViewModel
 			val detVM = detailsViewModel
 			composable(BottomNavItem.Home.route) {
+				detVM.postNewPic(DEFAULT_STRING_VALUE, null)
 				PicturesScreen(
 					navController = navController,
 					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
@@ -164,7 +165,6 @@ class MainActivity: AppCompatActivity()
 					currentPicture = { url -> picVM.clickOnPicture(url) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
-					postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
