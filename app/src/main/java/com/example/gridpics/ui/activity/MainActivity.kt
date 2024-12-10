@@ -139,7 +139,10 @@ class MainActivity: AppCompatActivity()
 	@Composable
 	fun NavigationSetup(navController: NavHostController)
 	{
+		val picVM = picturesViewModel
+		val detVM = detailsViewModel
 		val listState = rememberLazyGridState()
+		picVM.saveListState(listState)
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
@@ -151,9 +154,6 @@ class MainActivity: AppCompatActivity()
 			}
 		)
 		{
-			val picVM = picturesViewModel
-			val detVM = detailsViewModel
-			picVM.saveListState(listState)
 			composable(BottomNavItem.Home.route) {
 				detVM.postNewPic(DEFAULT_STRING_VALUE, null)
 				PicturesScreen(
@@ -168,7 +168,8 @@ class MainActivity: AppCompatActivity()
 					currentPicture = { url -> picVM.clickOnPicture(url) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
-					restoreScroll = { picVM.restoreScrollPosition() }
+					restoreScroll = { picVM.restoreScrollPosition() },
+					lazyGridState = picVM.lazyGridState
 				)
 			}
 			composable(BottomNavItem.Settings.route) {

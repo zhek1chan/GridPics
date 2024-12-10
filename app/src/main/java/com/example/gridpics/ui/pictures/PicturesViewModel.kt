@@ -15,7 +15,8 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, "", LazyGridState()))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, ""))
+	val lazyGridState = mutableStateOf(LazyGridState())
 	var currentPicture = mutableStateOf("")
 	private var savedPosition = Pair(0, 0)
 	private var wasClicked = false
@@ -61,7 +62,10 @@ class PicturesViewModel(
 
 	fun saveListState(listState: LazyGridState)
 	{
-		picturesUiState.value = picturesUiState.value.copy(listState = listState)
+		val state = lazyGridState
+		viewModelScope.launch {
+			state.value = listState
+		}
 	}
 
 	fun addError(url: String)
@@ -99,12 +103,12 @@ class PicturesViewModel(
 
 	fun restoreScrollPosition()
 	{
-		if (wasClicked)
+		if(wasClicked)
 		{
 			val position = savedPosition
 			viewModelScope.launch {
-				delay(1)
-				picturesUiState.value.listState.scrollToItem(position.first, position.second)
+				delay(150)
+				lazyGridState.value.scrollToItem(position.first, position.second)
 			}
 			wasClicked = false
 		}
@@ -114,7 +118,7 @@ class PicturesViewModel(
 	{
 		wasClicked = true
 		currentPicture.value = url
-		val state = picturesUiState.value.listState
+		val state = lazyGridState.value
 		savedPosition = Pair(state.firstVisibleItemIndex, state.firstVisibleItemScrollOffset)
 	}
 
