@@ -35,7 +35,7 @@ class DetailsViewModel(
 	{
 		Log.d("Description posted", "desc was posted")
 		viewModelScope.launch {
-			Log.d("description", "${job.isActive}")
+			Log.d("description job is active", "${job.isActive}")
 			val jobButNotSteveJobs = job
 			jobButNotSteveJobs.cancelChildren()
 			val bitmap = interactor.getPictureBitmap(url, jobButNotSteveJobs)

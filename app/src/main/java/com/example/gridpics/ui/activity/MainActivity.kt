@@ -104,10 +104,12 @@ class MainActivity: AppCompatActivity()
 						Manifest.permission.POST_NOTIFICATIONS,
 					) == PackageManager.PERMISSION_GRANTED)
 				{
+					Log.d("service", "data $it")
 					mainNotificationService?.putValues(it)
 				}
 			}
 		}
+
 		serviceIntent = serviceIntentLocal
 		themePick = theme
 		setContent {
@@ -120,8 +122,14 @@ class MainActivity: AppCompatActivity()
 				val action = intent.action
 				if(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty() && action != null)
 				{
+					Log.d("Descript from intent", "$action")
 					picVM.clickOnPicture(action)
 					navController.navigate(Screen.Details.route)
+				}
+				else
+				{
+					Log.d("Descript from intent", "null")
+					navController.navigate(Screen.Home.route)
 				}
 			}
 		}
@@ -144,7 +152,6 @@ class MainActivity: AppCompatActivity()
 			val picVM = picturesViewModel
 			val detVM = detailsViewModel
 			composable(BottomNavItem.Home.route) {
-				detVM.postNewPic(DEFAULT_STRING_VALUE, null)
 				PicturesScreen(
 					navController = navController,
 					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
@@ -157,6 +164,7 @@ class MainActivity: AppCompatActivity()
 					currentPicture = { url -> picVM.clickOnPicture(url) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
+					postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
@@ -229,47 +237,16 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
+		if(mainNotificationService == null)
+		{
+			startService()
+		}
 		Log.d("lifecycle", "onRestart()")
 		super.onRestart()
 	}
 
 	override fun onResume()
 	{
-		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
-		val connectionLocal = connection
-		if(mainNotificationService == null)
-		{
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-			{
-				if(
-					ContextCompat.checkSelfPermission(
-						this,
-						Manifest.permission.POST_NOTIFICATIONS,
-					) == PackageManager.PERMISSION_GRANTED
-				)
-				{
-					startForegroundService(serviceIntentLocal)
-					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-				}
-				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
-				{
-					requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
-				}
-			}
-			else
-			{
-				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-				{
-					startForegroundService(serviceIntentLocal)
-				}
-				else
-				{
-					startService(serviceIntentLocal)
-				}
-				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-			}
-		}
-		Log.d("service", "is connected to Activity?: ${mainNotificationService != null}")
 		Log.d("lifecycle", "onResume()")
 		super.onResume()
 	}
@@ -330,6 +307,44 @@ class MainActivity: AppCompatActivity()
 			ThemePick.FOLLOW_SYSTEM.intValue ->
 			{
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+			}
+		}
+	}
+
+	private fun startService()
+	{
+		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
+		val connectionLocal = connection
+		if(mainNotificationService == null)
+		{
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+			{
+				if(
+					ContextCompat.checkSelfPermission(
+						this,
+						Manifest.permission.POST_NOTIFICATIONS,
+					) == PackageManager.PERMISSION_GRANTED
+				)
+				{
+					startForegroundService(serviceIntentLocal)
+					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+				}
+				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
+				{
+					requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
+				}
+			}
+			else
+			{
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				{
+					startForegroundService(serviceIntentLocal)
+				}
+				else
+				{
+					startService(serviceIntentLocal)
+				}
+				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
 		}
 	}

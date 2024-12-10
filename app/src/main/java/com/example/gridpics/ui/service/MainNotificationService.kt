@@ -37,17 +37,17 @@ class MainNotificationService: Service()
 	private lateinit var defaultText: String
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
+		gridPics = this@MainNotificationService.getString(R.string.gridpics)
+		defaultText = this@MainNotificationService.getString(R.string.notification_content_text)
 		Log.d("service", "onStartCommand()")
+		createNotificationChannel()
+		createLogic(DEFAULT_STRING_VALUE, null)
 		return START_NOT_STICKY
 	}
 
 	override fun onBind(intent: Intent?): IBinder
 	{
-		gridPics = this@MainNotificationService.getString(R.string.gridpics)
-		defaultText = this@MainNotificationService.getString(R.string.notification_content_text)
 		Log.d("service", "onBind()")
-		createNotificationChannel()
-		createLogic(DEFAULT_STRING_VALUE, null)
 		return binder
 	}
 

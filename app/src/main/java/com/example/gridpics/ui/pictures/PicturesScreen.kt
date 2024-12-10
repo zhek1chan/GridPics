@@ -98,8 +98,10 @@ fun PicturesScreen(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
+	postDefaultUrl:() -> Unit
 )
 {
+	postDefaultUrl()
 	val context = LocalContext.current
 	postPositiveState()
 	BackHandler {
