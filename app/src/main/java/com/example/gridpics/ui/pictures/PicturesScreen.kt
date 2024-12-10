@@ -192,6 +192,7 @@ fun itemNewsCard(
 	isValidUrl: (String) -> Boolean,
 	postState: (Boolean, String) -> Unit,
 	urls: String,
+	postSavedUrls: (String) -> Unit,
 ): Boolean
 {
 	var isError by remember { mutableStateOf(false) }
@@ -254,6 +255,7 @@ fun itemNewsCard(
 	if(isClicked)
 	{
 		Log.d("current", item)
+		postSavedUrls(urls)
 		currentPicture(item)
 		navController.navigate(Screen.Details.route) {
 			popUpTo(Screen.Home.route) {
@@ -319,6 +321,7 @@ fun ShowList(
 	val context = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
+	val canChangeState = remember { mutableStateOf(false) }
 	val scope = rememberCoroutineScope()
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
@@ -335,6 +338,7 @@ fun ShowList(
 				}
 				val value = remember(status) { status.data }
 				val list = remember(status) { value.split("\n") }
+				postSavedUrls(value)
 				LazyVerticalGrid(
 					state = gridState.value,
 					modifier = Modifier
@@ -349,7 +353,8 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postState = postState,
-							urls = value
+							urls = value,
+							postSavedUrls = postSavedUrls
 						)
 					}
 				}
@@ -400,11 +405,13 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postState = postState,
-							urls = value
+							urls = value,
+							postSavedUrls = postSavedUrls
 						)
 					}
 				}
 				postSavedUrls(value)
+				canChangeState.value = true
 			}
 		}
 	}
@@ -432,7 +439,8 @@ fun ShowList(
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					postState = postState,
-					urls = imagesUrlsSP
+					urls = imagesUrlsSP,
+					postSavedUrls = postSavedUrls
 				)
 			}
 		}
