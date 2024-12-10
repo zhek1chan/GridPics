@@ -46,7 +46,7 @@ class MainActivity: AppCompatActivity()
 	private val detailsViewModel by viewModel<DetailsViewModel>()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
-	private var serviceIntent = Intent()
+	private var serviceIntent: Intent? = null
 	private var mainNotificationService: MainNotificationService? = null
 	private val connection = object: ServiceConnection
 	{
