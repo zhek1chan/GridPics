@@ -18,7 +18,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
@@ -124,7 +123,7 @@ class MainActivity: AppCompatActivity()
 				if(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty() && action != null)
 				{
 					Log.d("Descript from intent", "$action")
-					picVM.clickOnPicture(action, LazyGridState(0, 0))
+					picVM.clickOnPicture(action, 0, 0)
 					navController.navigate(Screen.Details.route)
 				}
 			}
@@ -157,10 +156,9 @@ class MainActivity: AppCompatActivity()
 					state = picVM.picturesUiState,
 					clearErrors = { picVM.clearErrors() },
 					postPositiveState = { detVM.postPositiveVisabilityState() },
-					currentPicture = { url, lazyState -> picVM.clickOnPicture(url, lazyState) },
+					currentPicture = { url, index, offset -> picVM.clickOnPicture(url, index, offset) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
-					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
-					lazyGridState = picVM.savedPosition
+					postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {

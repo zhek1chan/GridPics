@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.pictures
 
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,9 +13,8 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, ""))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, "", 0, 0))
 	var currentPicture = mutableStateOf("")
-	var savedPosition = mutableStateOf(Pair(0, 0))
 	private val errorsList: MutableList<String> = mutableListOf()
 
 	init
@@ -69,11 +67,7 @@ class PicturesViewModel(
 	fun checkOnErrorExists(url: String): Boolean
 	{
 		val list = errorsList
-		return if(list.isNotEmpty())
-		{
-			list.contains(url)
-		}
-		else false
+		return (list.isNotEmpty() && list.contains(url))
 	}
 
 	fun removeSpecialError(url: String)
@@ -90,10 +84,11 @@ class PicturesViewModel(
 		errorsList.clear()
 	}
 
-	fun clickOnPicture(url: String, lazyGridState: LazyGridState)
+	fun clickOnPicture(url: String, index: Int, offset: Int)
 	{
 		currentPicture.value = url
-		savedPosition.value = Pair(first = lazyGridState.firstVisibleItemIndex, second = lazyGridState.firstVisibleItemScrollOffset)
+		val state = picturesUiState
+		state.value = state.value.copy(index = index, offset = offset)
 	}
 
 	fun isValidUrl(url: String): Boolean

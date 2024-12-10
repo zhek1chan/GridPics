@@ -96,10 +96,9 @@ fun PicturesScreen(
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	postPositiveState: () -> Unit,
-	currentPicture: (String, LazyGridState) -> Unit,
+	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
-	lazyGridState: MutableState<Pair<Int, Int>>,
 )
 {
 	val context = LocalContext.current
@@ -155,8 +154,7 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls,
-						gridState = lazyGridState
+						postSavedUrls = postSavedUrls
 					)
 				}
 				else
@@ -171,8 +169,7 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls,
-						gridState = lazyGridState
+						postSavedUrls = postSavedUrls
 					)
 				}
 			}
@@ -180,18 +177,19 @@ fun PicturesScreen(
 	)
 }
 
+@SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
 fun itemNewsCard(
 	item: String,
 	navController: NavController,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	currentPicture: (String, LazyGridState) -> Unit,
+	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postState: (Boolean, String) -> Unit,
 	urls: String,
 	postSavedUrls: (String) -> Unit,
-	lazyState: LazyGridState
+	lazyState: LazyGridState,
 ): Boolean
 {
 	var isError by remember { mutableStateOf(false) }
@@ -255,7 +253,7 @@ fun itemNewsCard(
 	{
 		Log.d("current", item)
 		postSavedUrls(urls)
-		currentPicture(item, lazyState)
+		currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
 		navController.navigate(Screen.Details.route) {
 			popUpTo(Screen.Home.route) {
 				inclusive = true
@@ -310,10 +308,9 @@ fun ShowList(
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	navController: NavController,
-	currentPicture: (String, LazyGridState) -> Unit,
+	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
-	gridState: MutableState<Pair<Int, Int>>,
 )
 {
 	val context = LocalContext.current
@@ -446,9 +443,9 @@ fun ShowList(
 			}
 		}
 	}
-	val value = gridState.value
+	val value = state.value
 	scope.launch {
-		listState.scrollToItem(value.first, value.second)
+		listState.scrollToItem(value.index, value.offset)
 	}
 }
 
