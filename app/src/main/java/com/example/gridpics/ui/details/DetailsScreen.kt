@@ -120,7 +120,10 @@ fun DetailsScreen(
 	BackHandler {
 		changeBarsVisability(true)
 		postUrl(DEFAULT_STRING_VALUE, null)
-		navController.navigate(Screen.Home.route)
+		navController.navigate(Screen.Home.route){
+			restoreState = true
+			launchSingleTop = true
+		}
 	}
 	val isVisible = remember { mutableStateOf(true) }
 	val pictures = remember(picturesScreenState.value.picturesUrl) { picturesScreenState.value.picturesUrl }

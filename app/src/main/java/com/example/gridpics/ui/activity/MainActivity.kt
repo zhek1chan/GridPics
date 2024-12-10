@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
@@ -138,6 +139,7 @@ class MainActivity: AppCompatActivity()
 	@Composable
 	fun NavigationSetup(navController: NavHostController)
 	{
+		val listState = rememberLazyGridState()
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
@@ -151,6 +153,7 @@ class MainActivity: AppCompatActivity()
 		{
 			val picVM = picturesViewModel
 			val detVM = detailsViewModel
+			picVM.saveListState(listState)
 			composable(BottomNavItem.Home.route) {
 				detVM.postNewPic(DEFAULT_STRING_VALUE, null)
 				PicturesScreen(
@@ -164,7 +167,7 @@ class MainActivity: AppCompatActivity()
 					postPositiveState = { detVM.postPositiveVisabilityState() },
 					currentPicture = { url -> picVM.clickOnPicture(url) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
-					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
+					postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {

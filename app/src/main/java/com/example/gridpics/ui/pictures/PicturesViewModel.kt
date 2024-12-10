@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.pictures
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,7 +16,7 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, ""))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, "", LazyGridState()))
 	var currentPicture = mutableStateOf("")
 	private val errorsList: MutableList<String> = mutableListOf()
 
@@ -55,6 +56,11 @@ class PicturesViewModel(
 		viewModelScope.launch {
 			flow.value = flow.value.copy(picturesUrl = urls)
 		}
+	}
+
+	fun saveListState(listState: LazyGridState)
+	{
+		picturesUiState.value = picturesUiState.value.copy(listState = listState)
 	}
 
 	fun addError(url: String)

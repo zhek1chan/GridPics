@@ -13,9 +13,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -97,7 +96,7 @@ fun PicturesScreen(
 	postPositiveState: () -> Unit,
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (String) -> Unit,
+	postSavedUrls: (String) -> Unit
 )
 {
 	val context = LocalContext.current
@@ -136,42 +135,37 @@ fun PicturesScreen(
 		},
 		bottomBar = { BottomNavigationBar(navController) },
 		content = { padding ->
-			Column(
-				modifier = Modifier
-					.padding(padding)
-					.consumeWindowInsets(padding)
-					.fillMaxSize()
-			) {
-				if(!state.value.picturesUrl.isNullOrEmpty())
-				{
-					ShowList(
-						imagesUrlsSP = state.value.picturesUrl,
-						checkIfExists = checkIfExists,
-						addError = addError,
-						postState = postState,
-						state = state,
-						clearErrors = clearErrors,
-						navController = navController,
-						currentPicture = currentPicture,
-						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls
-					)
-				}
-				else
-				{
-					ShowList(
-						imagesUrlsSP = null,
-						checkIfExists = checkIfExists,
-						addError = addError,
-						postState = postState,
-						state = state,
-						clearErrors = clearErrors,
-						navController = navController,
-						currentPicture = currentPicture,
-						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls
-					)
-				}
+			if(!state.value.picturesUrl.isNullOrEmpty())
+			{
+				ShowList(
+					imagesUrlsSP = state.value.picturesUrl,
+					checkIfExists = checkIfExists,
+					addError = addError,
+					postState = postState,
+					state = state,
+					clearErrors = clearErrors,
+					navController = navController,
+					currentPicture = currentPicture,
+					isValidUrl = isValidUrl,
+					postSavedUrls = postSavedUrls,
+					padding = padding
+				)
+			}
+			else
+			{
+				ShowList(
+					imagesUrlsSP = null,
+					checkIfExists = checkIfExists,
+					addError = addError,
+					postState = postState,
+					state = state,
+					clearErrors = clearErrors,
+					navController = navController,
+					currentPicture = currentPicture,
+					isValidUrl = isValidUrl,
+					postSavedUrls = postSavedUrls,
+					padding = padding
+				)
 			}
 		}
 	)
@@ -248,7 +242,7 @@ fun itemNewsCard(
 	)
 	if(isClicked)
 	{
-		isClicked = false
+		Log.d("current", item)
 		currentPicture(item)
 		navController.navigate(Screen.Details.route) {
 			popUpTo(Screen.Home.route) {
@@ -306,13 +300,14 @@ fun ShowList(
 	currentPicture: (String) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
+	padding: PaddingValues,
 )
 {
 	val context = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
 	val scope = rememberCoroutineScope()
-	val listState = rememberLazyGridState()
+	Log.d("listState", "${state.value.listState.firstVisibleItemIndex}")
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
 		when(state.value.loadingState)
@@ -330,9 +325,11 @@ fun ShowList(
 				val list = remember(status) { value.split("\n") }
 				postSavedUrls(value)
 				LazyVerticalGrid(
-					state = listState,
+					state = state.value.listState,
 					modifier = Modifier
-						.fillMaxSize(), columns = GridCells.Fixed(count = calculateGridSpan())) {
+						.fillMaxSize()
+						.padding(padding),
+					columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
 						itemNewsCard(
 							item = it,
@@ -379,9 +376,10 @@ fun ShowList(
 				Log.d("Now state is", "Loaded")
 				val list = remember(status) { (status.data).split("\n") }
 				LazyVerticalGrid(
-					state = listState,
+					state = state.value.listState,
 					modifier = Modifier
-						.fillMaxSize(),
+						.fillMaxSize()
+						.padding(padding),
 					columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(list) {
 						itemNewsCard(
@@ -409,9 +407,10 @@ fun ShowList(
 		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n") }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
-			state = listState,
+			state = state.value.listState,
 			modifier = Modifier
-				.fillMaxSize(),
+				.fillMaxSize()
+				.padding(padding),
 			columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$items")
 			items(items) {
