@@ -18,7 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
@@ -124,7 +124,7 @@ class MainActivity: AppCompatActivity()
 				if(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty() && action != null)
 				{
 					Log.d("Descript from intent", "$action")
-					picVM.clickOnPicture(action)
+					picVM.clickOnPicture(action, LazyGridState(0, 0))
 					navController.navigate(Screen.Details.route)
 				}
 			}
@@ -136,8 +136,6 @@ class MainActivity: AppCompatActivity()
 	{
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
-		val listState = rememberLazyGridState()
-		picVM.saveListState(listState)
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
@@ -160,11 +158,10 @@ class MainActivity: AppCompatActivity()
 					state = picVM.picturesUiState,
 					clearErrors = { picVM.clearErrors() },
 					postPositiveState = { detVM.postPositiveVisabilityState() },
-					currentPicture = { url -> picVM.clickOnPicture(url) },
+					currentPicture = { url, lazyState -> picVM.clickOnPicture(url, lazyState) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls -> picVM.postSavedUrls(urls) },
-					restoreScroll = { picVM.restoreScrollPosition() },
-					lazyGridState = picVM.lazyGridState
+					lazyGridState = picVM.savedPosition
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
@@ -215,7 +212,7 @@ class MainActivity: AppCompatActivity()
 	)
 	{
 		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-		if(requestCode == 100)
+		if(requestCode == RESULT_SUCCESS)
 		{
 			if((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED))
 			{
@@ -330,7 +327,7 @@ class MainActivity: AppCompatActivity()
 				}
 				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
 				{
-					requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
+					requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), RESULT_SUCCESS)
 				}
 			}
 			else
@@ -350,6 +347,7 @@ class MainActivity: AppCompatActivity()
 
 	companion object
 	{
+		const val RESULT_SUCCESS = 100
 		const val LENGTH_OF_PICTURE = 110
 		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337

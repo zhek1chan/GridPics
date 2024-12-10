@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
@@ -95,11 +96,10 @@ fun PicturesScreen(
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	postPositiveState: () -> Unit,
-	currentPicture: (String) -> Unit,
+	currentPicture: (String, LazyGridState) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
-	restoreScroll: () -> Unit,
-	lazyGridState: MutableState<LazyGridState>,
+	lazyGridState: MutableState<Pair<Int, Int>>,
 )
 {
 	val context = LocalContext.current
@@ -156,7 +156,6 @@ fun PicturesScreen(
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
 						postSavedUrls = postSavedUrls,
-						restoreScroll = restoreScroll,
 						gridState = lazyGridState
 					)
 				}
@@ -173,7 +172,6 @@ fun PicturesScreen(
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
 						postSavedUrls = postSavedUrls,
-						restoreScroll = restoreScroll,
 						gridState = lazyGridState
 					)
 				}
@@ -188,11 +186,12 @@ fun itemNewsCard(
 	navController: NavController,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	currentPicture: (String) -> Unit,
+	currentPicture: (String, LazyGridState) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postState: (Boolean, String) -> Unit,
 	urls: String,
 	postSavedUrls: (String) -> Unit,
+	lazyState: LazyGridState
 ): Boolean
 {
 	var isError by remember { mutableStateOf(false) }
@@ -256,7 +255,7 @@ fun itemNewsCard(
 	{
 		Log.d("current", item)
 		postSavedUrls(urls)
-		currentPicture(item)
+		currentPicture(item, lazyState)
 		navController.navigate(Screen.Details.route) {
 			popUpTo(Screen.Home.route) {
 				inclusive = true
@@ -311,11 +310,10 @@ fun ShowList(
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	navController: NavController,
-	currentPicture: (String) -> Unit,
+	currentPicture: (String, LazyGridState) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
-	restoreScroll: () -> Unit,
-	gridState: MutableState<LazyGridState>,
+	gridState: MutableState<Pair<Int, Int>>,
 )
 {
 	val context = LocalContext.current
@@ -323,6 +321,7 @@ fun ShowList(
 	Log.d("We got:", "$imagesUrlsSP")
 	val canChangeState = remember { mutableStateOf(false) }
 	val scope = rememberCoroutineScope()
+	val listState = rememberLazyGridState()
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
 		when(state.value.loadingState)
@@ -340,7 +339,7 @@ fun ShowList(
 				val list = remember(status) { value.split("\n") }
 				postSavedUrls(value)
 				LazyVerticalGrid(
-					state = gridState.value,
+					state = listState,
 					modifier = Modifier
 						.fillMaxSize(),
 					columns = GridCells.Fixed(count = calculateGridSpan())) {
@@ -354,7 +353,8 @@ fun ShowList(
 							isValidUrl = isValidUrl,
 							postState = postState,
 							urls = value,
-							postSavedUrls = postSavedUrls
+							postSavedUrls = postSavedUrls,
+							lazyState = listState
 						)
 					}
 				}
@@ -392,7 +392,7 @@ fun ShowList(
 				Log.d("Now state is", "Loaded")
 				val list = remember(status) { (status.data).split("\n") }
 				LazyVerticalGrid(
-					state = gridState.value,
+					state = listState,
 					modifier = Modifier
 						.fillMaxSize(),
 					columns = GridCells.Fixed(count = calculateGridSpan())) {
@@ -406,7 +406,8 @@ fun ShowList(
 							isValidUrl = isValidUrl,
 							postState = postState,
 							urls = value,
-							postSavedUrls = postSavedUrls
+							postSavedUrls = postSavedUrls,
+							lazyState = listState
 						)
 					}
 				}
@@ -424,7 +425,7 @@ fun ShowList(
 		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n") }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
-			state = gridState.value,
+			state = listState,
 			modifier = Modifier
 				.fillMaxSize(),
 			columns = GridCells.Fixed(count = calculateGridSpan())) {
@@ -439,12 +440,16 @@ fun ShowList(
 					isValidUrl = isValidUrl,
 					postState = postState,
 					urls = imagesUrlsSP,
-					postSavedUrls = postSavedUrls
+					postSavedUrls = postSavedUrls,
+					lazyState = listState
 				)
 			}
 		}
 	}
-	restoreScroll()
+	val value = gridState.value
+	scope.launch {
+		listState.scrollToItem(value.first, value.second)
+	}
 }
 
 @Composable

@@ -4,12 +4,10 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-
 import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class PicturesViewModel(
@@ -17,10 +15,8 @@ class PicturesViewModel(
 ): ViewModel()
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, ""))
-	val lazyGridState = mutableStateOf(LazyGridState())
 	var currentPicture = mutableStateOf("")
-	private var savedPosition = Pair(0, 0)
-	private var wasClicked = false
+	var savedPosition = mutableStateOf(Pair(0, 0))
 	private val errorsList: MutableList<String> = mutableListOf()
 
 	init
@@ -61,14 +57,6 @@ class PicturesViewModel(
 		}
 	}
 
-	fun saveListState(listState: LazyGridState)
-	{
-		val state = lazyGridState
-		viewModelScope.launch {
-			state.value = listState
-		}
-	}
-
 	fun addError(url: String)
 	{
 		val list = errorsList
@@ -102,25 +90,10 @@ class PicturesViewModel(
 		errorsList.clear()
 	}
 
-	fun restoreScrollPosition()
+	fun clickOnPicture(url: String, lazyGridState: LazyGridState)
 	{
-		if(wasClicked)
-		{
-			val position = savedPosition
-			viewModelScope.launch {
-				delay(150)
-				lazyGridState.value.scrollToItem(position.first, position.second)
-			}
-			wasClicked = false
-		}
-	}
-
-	fun clickOnPicture(url: String)
-	{
-		wasClicked = true
 		currentPicture.value = url
-		val state = lazyGridState.value
-		savedPosition = Pair(state.firstVisibleItemIndex, state.firstVisibleItemScrollOffset)
+		savedPosition.value = Pair(first = lazyGridState.firstVisibleItemIndex, second = lazyGridState.firstVisibleItemScrollOffset)
 	}
 
 	fun isValidUrl(url: String): Boolean
