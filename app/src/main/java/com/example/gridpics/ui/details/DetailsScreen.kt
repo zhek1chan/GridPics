@@ -113,6 +113,7 @@ fun DetailsScreen(
 	isValidUrl: (String) -> Boolean,
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
+	saveCurrentPictureUrl:(String) -> Unit
 )
 {
 	val context = LocalContext.current
@@ -130,14 +131,16 @@ fun DetailsScreen(
 	if(pictures != null)
 	{
 		Log.d("pic", picturesScreenState.value.currentPicture)
+		val currentPicture = picturesScreenState.value.currentPicture
 		val list = remember { pictures.split("\n") }
 		Log.d("list", "$list")
-		val pagerState = rememberPagerState(initialPage = list.indexOf(picturesScreenState.value.currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
+		val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
 		val currentPage = pagerState.currentPage
 		val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 
 		LaunchedEffect(currentPage) {
 			val pic = list[currentPage]
+			saveCurrentPictureUrl(list[currentPage])
 			if(checkIfExists(pic))
 			{
 				Log.d("checkMa", "gruzim oshibku")
@@ -153,7 +156,7 @@ fun DetailsScreen(
 			topBar = { AppBar(isVisible, context, navController, list, pagerState, postUrl) },
 			content = { padding ->
 				ShowDetails(
-					img = picturesScreenState.value.currentPicture,
+					img = currentPicture,
 					navController = navController,
 					isVisible = isVisible,
 					list = list,

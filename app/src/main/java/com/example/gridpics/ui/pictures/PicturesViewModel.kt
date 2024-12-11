@@ -89,6 +89,12 @@ class PicturesViewModel(
 		state.value = state.value.copy(index = index, offset = offset, currentPicture = url)
 	}
 
+	fun saveCurrentPictureUrl(url: String)
+	{
+		val state = picturesUiState
+		state.value = state.value.copy(currentPicture = url)
+	}
+
 	fun isValidUrl(url: String): Boolean
 	{
 		val urlPattern = Regex("^(https?|ftp)://([a-z0-9-]+\\.)+[a-z0-9]{2,6}(:[0-9]+)?(/\\S*)?$")
