@@ -19,9 +19,8 @@ class DetailsViewModel(
 {
 	private val imageFlow =
 		MutableStateFlow<Pair<String, Bitmap?>>(Pair(DEFAULT_STRING_VALUE, null))
-	val uiStateFlow =
-		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false))
-	val barsAreVisible = mutableStateOf(true)
+	val uiState =
+		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true))
 	private val job = Job()
 	fun observeUrlFlow() = imageFlow
 	fun postNewPic(url: String, bitmap: Bitmap?)
@@ -46,7 +45,7 @@ class DetailsViewModel(
 
 	fun changeMultiWindowState(isMultiWindowed: Boolean)
 	{
-		val uiState = uiStateFlow
+		val uiState = uiState
 		viewModelScope.launch {
 			uiState.value = uiState.value.copy(isMultiWindowed = !isMultiWindowed)
 		}
@@ -54,8 +53,9 @@ class DetailsViewModel(
 
 	fun changeVisabilityState(visible: Boolean)
 	{
+		val state = uiState
 		viewModelScope.launch {
-			barsAreVisible.value = visible
+			state.value = state.value.copy(barsAreVisible = visible)
 			Log.d("barsaaa", "bars are visible? = $visible")
 		}
 	}

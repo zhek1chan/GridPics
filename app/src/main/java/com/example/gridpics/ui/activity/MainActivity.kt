@@ -170,7 +170,7 @@ class MainActivity: AppCompatActivity()
 					navController = navController,
 					checkIfExists = { str -> picVM.checkOnErrorExists(str) },
 					addError = { str -> picVM.addError(str) },
-					state = detVM.uiStateFlow,
+					state = detVM.uiState,
 					removeSpecialError = { str -> picVM.removeSpecialError(str) },
 					changeVisabilityState = { visible -> detVM.changeVisabilityState(visible) },
 					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
@@ -222,7 +222,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onResume()
 	{
-		val value = detailsViewModel.barsAreVisible.value
+		val value = detailsViewModel.uiState.value.barsAreVisible
 		if(!value)
 		{
 			changeBarsVisability(visible = false, fromDetailsScreen = false)

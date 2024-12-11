@@ -125,7 +125,7 @@ fun DetailsScreen(
 			launchSingleTop = true
 		}
 	}
-	val isVisible = remember { mutableStateOf(true) }
+	val isVisible = remember { mutableStateOf(state.value.barsAreVisible) }
 	val pictures = remember(picturesScreenState.value.picturesUrl) { picturesScreenState.value.picturesUrl }
 	if(pictures != null)
 	{

@@ -29,7 +29,7 @@
         <activity
             android:name=".ui.activity.MainActivity"
             android:exported="true"
-            android:configChanges="screenSize|screenLayout|colorMode|orientation"
+            android:configChanges="screenSize|screenLayout|colorMode"
             android:theme="@style/Theme.SplashScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
