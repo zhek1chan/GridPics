@@ -14,7 +14,6 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -113,14 +112,14 @@ fun DetailsScreen(
 	isValidUrl: (String) -> Boolean,
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
-	saveCurrentPictureUrl:(String) -> Unit
+	saveCurrentPictureUrl: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
 	BackHandler {
 		changeBarsVisability(true)
 		postUrl(DEFAULT_STRING_VALUE, null)
-		navController.navigate(Screen.Home.route){
+		navController.navigate(Screen.Home.route) {
 			popUpTo(navController.graph.findStartDestination().id)
 			restoreState = true
 			launchSingleTop = true
@@ -196,7 +195,7 @@ fun ShowDetails(
 	isValidUrl: (String) -> Boolean,
 	padding: PaddingValues,
 	changeBarsVisability: (Boolean) -> Unit,
-	postUrl: (String, Bitmap?) -> Unit
+	postUrl: (String, Bitmap?) -> Unit,
 )
 {
 	val firstPage = remember(img) { mutableStateOf(true) }
@@ -212,7 +211,6 @@ fun ShowDetails(
 		pageSize = PageSize.Fill,
 		contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
 		userScrollEnabled = true,
-		snapPosition = SnapPosition.Center,
 		pageSpacing = 10.dp
 	) { page ->
 		LaunchedEffect(page) {
@@ -272,7 +270,7 @@ fun ShowAsynchImage(
 	multiWindow: MutableState<DetailsScreenUiState>,
 	context: Context,
 	changeBarsVisability: (Boolean) -> Unit,
-	postUrl: (String, Bitmap?) -> Unit
+	postUrl: (String, Bitmap?) -> Unit,
 )
 {
 	val orientation = context.resources.configuration.orientation
