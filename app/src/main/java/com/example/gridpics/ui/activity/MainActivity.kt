@@ -172,7 +172,7 @@ class MainActivity: AppCompatActivity()
 					addError = { str -> picVM.addError(str) },
 					state = detVM.uiStateFlow,
 					removeSpecialError = { str -> picVM.removeSpecialError(str) },
-					changeVisabilityState = { detVM.changeVisabilityState() },
+					changeVisabilityState = { visible -> detVM.changeVisabilityState(visible) },
 					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
 					postPositiveState = { detVM.postPositiveVisabilityState() },
 					picturesScreenState = picState,
@@ -222,6 +222,10 @@ class MainActivity: AppCompatActivity()
 
 	override fun onResume()
 	{
+		if(detailsViewModel.uiStateFlow.value.barStateWasChanged)
+		{
+			changeBarsVisability(visible = false)
+		}
 		if(mainNotificationService == null)
 		{
 			startService()
@@ -262,12 +266,12 @@ class MainActivity: AppCompatActivity()
 		if(visible)
 		{
 			controller.show(WindowInsetsCompat.Type.systemBars())
-			detVM.changeVisabilityState()
 		}
 		else
 		{
 			controller.hide(WindowInsetsCompat.Type.systemBars())
 		}
+		detVM.changeVisabilityState(visible)
 	}
 
 	private fun changeTheme(option: Int)

@@ -106,7 +106,7 @@ fun DetailsScreen(
 	addError: (String) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	removeSpecialError: (String) -> Unit,
-	changeVisabilityState: () -> Unit,
+	changeVisabilityState: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	postPositiveState: () -> Unit,
 	picturesScreenState: MutableState<PicturesScreenUiState>,
@@ -167,7 +167,8 @@ fun DetailsScreen(
 					postPositiveState = postPositiveState,
 					isValidUrl = isValidUrl,
 					padding = padding,
-					changeBarsVisability = changeBarsVisability
+					changeBarsVisability = changeBarsVisability,
+					postUrl = postUrl
 				)
 			}
 		)
@@ -187,11 +188,12 @@ fun ShowDetails(
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
 	multiWindowed: MutableState<DetailsScreenUiState>,
-	changeVisabilityState: () -> Unit,
+	changeVisabilityState: (Boolean) -> Unit,
 	postPositiveState: () -> Unit,
 	isValidUrl: (String) -> Boolean,
 	padding: PaddingValues,
 	changeBarsVisability: (Boolean) -> Unit,
+	postUrl: (String, Bitmap?) -> Unit
 )
 {
 	val firstPage = remember(img) { mutableStateOf(true) }
@@ -244,7 +246,8 @@ fun ShowDetails(
 					exit = exit,
 					multiWindow = multiWindowed,
 					context = context,
-					changeBarsVisability = changeBarsVisability
+					changeBarsVisability = changeBarsVisability,
+					postUrl = postUrl
 				)
 			}
 		}
@@ -258,7 +261,7 @@ fun ShowAsynchImage(
 	page: Int,
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
-	changeVisabilityState: () -> Unit,
+	changeVisabilityState: (Boolean) -> Unit,
 	postPositiveState: () -> Unit,
 	navController: NavController,
 	isVisible: MutableState<Boolean>,
@@ -266,6 +269,7 @@ fun ShowAsynchImage(
 	multiWindow: MutableState<DetailsScreenUiState>,
 	context: Context,
 	changeBarsVisability: (Boolean) -> Unit,
+	postUrl: (String, Bitmap?) -> Unit
 )
 {
 	val orientation = context.resources.configuration.orientation
@@ -318,7 +322,7 @@ fun ShowAsynchImage(
 				enableOneFingerZoom = false,
 				onTap =
 				{
-					changeVisabilityState()
+					changeVisabilityState(!isVisible.value)
 					isVisible.value = !isVisible.value
 					changeBarsVisability(isVisible.value)
 				}
@@ -344,6 +348,7 @@ fun ShowAsynchImage(
 						{
 							if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2)
 							{
+								postUrl(DEFAULT_STRING_VALUE, null)
 								postPositiveState()
 								changeBarsVisability(true)
 								navController.navigate(Screen.Home.route)
