@@ -152,7 +152,7 @@ class MainActivity: AppCompatActivity()
 					postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
 					state = picState,
 					clearErrors = { picVM.clearErrors() },
-					postPositiveState = { detVM.postPositiveVisabilityState() },
+					postPositiveState = { detVM.changeVisabilityState(true) },
 					currentPicture = { url, index, offset -> picVM.clickOnPicture(url, index, offset) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
@@ -174,7 +174,7 @@ class MainActivity: AppCompatActivity()
 					removeSpecialError = { str -> picVM.removeSpecialError(str) },
 					changeVisabilityState = { visible -> detVM.changeVisabilityState(visible) },
 					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
-					postPositiveState = { detVM.postPositiveVisabilityState() },
+					postPositiveState = { detVM.changeVisabilityState(true) },
 					picturesScreenState = picState,
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
@@ -222,10 +222,11 @@ class MainActivity: AppCompatActivity()
 
 	override fun onResume()
 	{
-		if(detailsViewModel.uiStateFlow.value.barStateWasChanged)
+		val value = detailsViewModel.barsAreVisible.value
+		if(!value)
 		{
-			Log.d("barsaaa", "change visability to false")
 			changeBarsVisability(visible = false, fromDetailsScreen = false)
+			Log.d("barsaaa", "change visability to false")
 		}
 		if(mainNotificationService == null)
 		{
@@ -272,7 +273,7 @@ class MainActivity: AppCompatActivity()
 		{
 			controller.hide(WindowInsetsCompat.Type.systemBars())
 		}
-		if (fromDetailsScreen)
+		if(fromDetailsScreen)
 		{
 			detVM.changeVisabilityState(visible)
 		}
