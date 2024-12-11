@@ -47,7 +47,14 @@ class DetailsViewModel(
 	{
 		var uiFlow = uiStateFlow.value
 		viewModelScope.launch {
-			uiFlow = uiFlow.copy(barsAreVisible = visible, barStateWasChanged = !visible)
+			uiFlow = if (visible)
+			{
+				uiFlow.copy(barsAreVisible = true, barStateWasChanged = true)
+			} else {
+				uiFlow.copy(barsAreVisible = false, barStateWasChanged = false)
+			}
+			Log.d("barsaaa", "bars were changed ${uiFlow.barStateWasChanged}")
+			Log.d("barsaaa", "in vm ${uiFlow.barsAreVisible}")
 		}
 	}
 

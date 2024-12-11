@@ -177,7 +177,7 @@ class MainActivity: AppCompatActivity()
 					postPositiveState = { detVM.postPositiveVisabilityState() },
 					picturesScreenState = picState,
 					isValidUrl = { url -> picVM.isValidUrl(url) },
-					changeBarsVisability = { visability -> changeBarsVisability(visability) },
+					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) }
 				)
 			}
@@ -224,7 +224,8 @@ class MainActivity: AppCompatActivity()
 	{
 		if(detailsViewModel.uiStateFlow.value.barStateWasChanged)
 		{
-			changeBarsVisability(visible = false)
+			Log.d("barsaaa", "change visability to false")
+			changeBarsVisability(visible = false, fromDetailsScreen = false)
 		}
 		if(mainNotificationService == null)
 		{
@@ -258,7 +259,7 @@ class MainActivity: AppCompatActivity()
 		super.onDestroy()
 	}
 
-	private fun changeBarsVisability(visible: Boolean)
+	private fun changeBarsVisability(visible: Boolean, fromDetailsScreen: Boolean)
 	{
 		val detVM = detailsViewModel
 		val window = window
@@ -271,7 +272,10 @@ class MainActivity: AppCompatActivity()
 		{
 			controller.hide(WindowInsetsCompat.Type.systemBars())
 		}
-		detVM.changeVisabilityState(visible)
+		if (fromDetailsScreen)
+		{
+			detVM.changeVisabilityState(visible)
+		}
 	}
 
 	private fun changeTheme(option: Int)
