@@ -188,15 +188,7 @@ class MainActivity: AppCompatActivity()
 	override fun onConfigurationChanged(newConfig: Configuration)
 	{
 		super.onConfigurationChanged(newConfig)
-		val detVM = detailsViewModel
-		if(isInMultiWindowMode || isInPictureInPictureMode)
-		{
-			detVM.changeMultiWindowState(false)
-		}
-		else
-		{
-			detVM.changeMultiWindowState(true)
-		}
+		detailsViewModel.changeMultiWindowState(isInMultiWindowMode || isInPictureInPictureMode)
 	}
 
 	override fun onRequestPermissionsResult(

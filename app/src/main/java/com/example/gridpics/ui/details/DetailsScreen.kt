@@ -283,7 +283,11 @@ fun ShowAsynchImage(
 )
 {
 	val orientation = context.resources.configuration.orientation
-	val scale = if(!multiWindow.value.isMultiWindowed)
+	val scale = if(multiWindow.value.isMultiWindowed)
+	{
+		ContentScale.Fit
+	}
+	else
 	{
 		if(orientation == Configuration.ORIENTATION_PORTRAIT)
 		{
@@ -293,10 +297,6 @@ fun ShowAsynchImage(
 		{
 			ContentScale.FillHeight
 		}
-	}
-	else
-	{
-		ContentScale.Fit
 	}
 	val zoom = rememberZoomState(15f, Size.Zero)
 	var imageSize by remember { mutableStateOf(Size.Zero) }
