@@ -125,7 +125,6 @@ fun DetailsScreen(
 			launchSingleTop = true
 		}
 	}
-	val isVisible = remember { mutableStateOf(state.value.barsAreVisible) }
 	val pictures = remember(picturesScreenState.value.picturesUrl) { picturesScreenState.value.picturesUrl }
 	if(pictures != null)
 	{
@@ -136,6 +135,7 @@ fun DetailsScreen(
 		val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
 		val currentPage = pagerState.currentPage
 		val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
+		val value = state.value
 
 		LaunchedEffect(currentPage) {
 			val pic = list[currentPage]
@@ -154,7 +154,7 @@ fun DetailsScreen(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 			topBar = {
 				AppBar(
-					isVisible = isVisible,
+					isVisible = value.barsAreVisible,
 					context = context,
 					nc = navController,
 					list = list,
@@ -166,14 +166,13 @@ fun DetailsScreen(
 				ShowDetails(
 					img = currentPicture,
 					navController = navController,
-					isVisible = isVisible,
 					list = list,
 					pagerState = pagerState,
 					context = context,
 					checkIfExists = checkIfExists,
 					addError = addError,
 					removeSpecialError = removeSpecialError,
-					multiWindowed = state,
+					state = state,
 					changeVisabilityState = changeVisabilityState,
 					postPositiveState = postPositiveState,
 					isValidUrl = isValidUrl,
@@ -191,14 +190,13 @@ fun DetailsScreen(
 fun ShowDetails(
 	img: String,
 	navController: NavController,
-	isVisible: MutableState<Boolean>,
 	list: List<String>,
 	pagerState: PagerState,
 	context: Context,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
-	multiWindowed: MutableState<DetailsScreenUiState>,
+	state: MutableState<DetailsScreenUiState>,
 	changeVisabilityState: (Boolean) -> Unit,
 	postPositiveState: () -> Unit,
 	isValidUrl: (String) -> Boolean,
@@ -252,9 +250,8 @@ fun ShowDetails(
 					changeVisabilityState = changeVisabilityState,
 					postPositiveState = postPositiveState,
 					navController = navController,
-					isVisible = isVisible,
 					exit = exit,
-					multiWindow = multiWindowed,
+					state = state,
 					context = context,
 					changeBarsVisability = changeBarsVisability,
 					postUrl = postUrl
@@ -274,16 +271,15 @@ fun ShowAsynchImage(
 	changeVisabilityState: (Boolean) -> Unit,
 	postPositiveState: () -> Unit,
 	navController: NavController,
-	isVisible: MutableState<Boolean>,
 	exit: MutableState<Boolean>,
-	multiWindow: MutableState<DetailsScreenUiState>,
+	state: MutableState<DetailsScreenUiState>,
 	context: Context,
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 )
 {
 	val orientation = context.resources.configuration.orientation
-	val scale = if(multiWindow.value.isMultiWindowed)
+	val scale = if(state.value.isMultiWindowed)
 	{
 		ContentScale.Fit
 	}
@@ -332,9 +328,10 @@ fun ShowAsynchImage(
 				enableOneFingerZoom = false,
 				onTap =
 				{
-					changeVisabilityState(!isVisible.value)
-					isVisible.value = !isVisible.value
-					changeBarsVisability(isVisible.value)
+					val visibility = state.value.barsAreVisible
+					state.value = state.value.copy(barsAreVisible = !visibility)
+					changeVisabilityState(visibility)
+					changeBarsVisability(visibility)
 				}
 			)
 			.pointerInput(Unit) {
@@ -432,7 +429,7 @@ fun ShowError(
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AppBar(
-	isVisible: MutableState<Boolean>,
+	isVisible: Boolean,
 	context: Context, nc: NavController,
 	list: List<String>,
 	pagerState: PagerState,
@@ -442,7 +439,7 @@ fun AppBar(
 	val navBack = remember { mutableStateOf(false) }
 	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 	Log.d("wahwah", "$screenWidth")
-	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+	AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(
 			modifier = Modifier
 				.background(MaterialTheme.colorScheme.background)
