@@ -308,7 +308,7 @@ fun ShowAsynchImage(
 				onTap =
 				{
 					val visibility = state.value.barsAreVisible
-					changeBarsVisability(visibility)
+					changeBarsVisability(!visibility)
 				}
 			)
 			.pointerInput(Unit) {
