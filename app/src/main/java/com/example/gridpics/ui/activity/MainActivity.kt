@@ -212,7 +212,7 @@ class MainActivity: AppCompatActivity()
 		{
 			if((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED))
 			{
-				startService()
+				startMainService()
 			}
 		}
 	}
@@ -233,7 +233,7 @@ class MainActivity: AppCompatActivity()
 		}
 		if(mainNotificationService == null)
 		{
-			startService()
+			startMainService()
 		}
 		Log.d("lifecycle", "onResume()")
 		super.onResume()
@@ -308,7 +308,7 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	private fun startService()
+	private fun startMainService()
 	{
 		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 		val connectionLocal = connection
