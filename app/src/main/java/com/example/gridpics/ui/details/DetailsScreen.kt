@@ -126,7 +126,7 @@ fun DetailsScreen(
 	}
 	val valuePicUi = picturesScreenState.value
 	val currentPicture = valuePicUi.currentPicture
-	val pictures = remember { valuePicUi.picturesUrl }
+	val pictures = valuePicUi.picturesUrl
 	if(pictures != null)
 	{
 		Log.d("pic", currentPicture)
