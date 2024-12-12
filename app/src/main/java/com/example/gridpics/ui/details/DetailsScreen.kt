@@ -105,7 +105,6 @@ fun DetailsScreen(
 	addError: (String) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	removeSpecialError: (String) -> Unit,
-	changeVisabilityState: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	postPositiveState: () -> Unit,
 	picturesScreenState: MutableState<PicturesScreenUiState>,
@@ -125,8 +124,9 @@ fun DetailsScreen(
 			launchSingleTop = true
 		}
 	}
-	val currentPicture = picturesScreenState.value.currentPicture
-	val pictures = remember { picturesScreenState.value.picturesUrl }
+	val valuePicUi = picturesScreenState.value
+	val currentPicture = valuePicUi.currentPicture
+	val pictures = remember { valuePicUi.picturesUrl }
 	if(pictures != null)
 	{
 		Log.d("pic", currentPicture)
@@ -164,7 +164,6 @@ fun DetailsScreen(
 			},
 			content = { padding ->
 				ShowDetails(
-					img = currentPicture,
 					navController = navController,
 					list = list,
 					pagerState = pagerState,
@@ -173,7 +172,6 @@ fun DetailsScreen(
 					addError = addError,
 					removeSpecialError = removeSpecialError,
 					state = state,
-					changeVisabilityState = changeVisabilityState,
 					postPositiveState = postPositiveState,
 					isValidUrl = isValidUrl,
 					padding = padding,
@@ -188,7 +186,6 @@ fun DetailsScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ShowDetails(
-	img: String,
 	navController: NavController,
 	list: List<String>,
 	pagerState: PagerState,
@@ -197,7 +194,6 @@ fun ShowDetails(
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
-	changeVisabilityState: (Boolean) -> Unit,
 	postPositiveState: () -> Unit,
 	isValidUrl: (String) -> Boolean,
 	padding: PaddingValues,
@@ -205,9 +201,6 @@ fun ShowDetails(
 	postUrl: (String, Bitmap?) -> Unit,
 )
 {
-	val firstPage = remember(img) { mutableStateOf(true) }
-	val startPage = remember(img) { list.indexOf(img) }
-	val exit = remember { mutableStateOf(false) }
 	val topBarHeight = 64.dp
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
 	Log.d("padding1", "sverhu ${padding.calculateTopPadding().value.dp}")
@@ -220,43 +213,30 @@ fun ShowDetails(
 		userScrollEnabled = true,
 		pageSpacing = 10.dp
 	) { page ->
-		LaunchedEffect(page) {
-			if(firstPage.value)
-			{
-				pagerState.animateScrollToPage(startPage)
-				firstPage.value = false
-			}
-		}
-		val currentUrlCheck = checkIfExists(list[page])
-		when
+		if(checkIfExists(list[page]))
 		{
-			currentUrlCheck ->
-			{
-				ShowError(
-					context = context,
-					list = list,
-					currentPage = page,
-					pagerState = pagerState,
-					isValidUrl = isValidUrl
-				)
-			}
-			!currentUrlCheck ->
-			{
-				ShowAsynchImage(
-					list = list,
-					page = page,
-					addError = addError,
-					removeSpecialError = removeSpecialError,
-					changeVisabilityState = changeVisabilityState,
-					postPositiveState = postPositiveState,
-					navController = navController,
-					exit = exit,
-					state = state,
-					context = context,
-					changeBarsVisability = changeBarsVisability,
-					postUrl = postUrl
-				)
-			}
+			ShowError(
+				context = context,
+				list = list,
+				currentPage = page,
+				pagerState = pagerState,
+				isValidUrl = isValidUrl
+			)
+		}
+		else
+		{
+			ShowAsynchImage(
+				list = list,
+				page = page,
+				addError = addError,
+				removeSpecialError = removeSpecialError,
+				postPositiveState = postPositiveState,
+				navController = navController,
+				state = state,
+				context = context,
+				changeBarsVisability = changeBarsVisability,
+				postUrl = postUrl
+			)
 		}
 	}
 }
@@ -268,10 +248,8 @@ fun ShowAsynchImage(
 	page: Int,
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
-	changeVisabilityState: (Boolean) -> Unit,
 	postPositiveState: () -> Unit,
 	navController: NavController,
-	exit: MutableState<Boolean>,
 	state: MutableState<DetailsScreenUiState>,
 	context: Context,
 	changeBarsVisability: (Boolean) -> Unit,
@@ -296,13 +274,14 @@ fun ShowAsynchImage(
 	}
 	val zoom = rememberZoomState(15f, Size.Zero)
 	var imageSize by remember { mutableStateOf(Size.Zero) }
-	val imgRequest = remember(list[page]) {
+	val img = list[page]
+	val imgRequest = remember(img) {
 		ImageRequest.Builder(context)
-			.data(list[page])
+			.data(img)
 			.placeholder(R.drawable.loading)
 			.error(R.drawable.loading)
 			.allowHardware(false)
-			.diskCacheKey(list[page])
+			.diskCacheKey(img)
 			.networkCachePolicy(CachePolicy.ENABLED)
 			.build()
 	}
@@ -329,9 +308,7 @@ fun ShowAsynchImage(
 				onTap =
 				{
 					val visibility = state.value.barsAreVisible
-					changeVisabilityState(visibility)
-					state.value = state.value.copy(barsAreVisible = !visibility)
-					changeBarsVisability(!visibility)
+					changeBarsVisability(visibility)
 				}
 			)
 			.pointerInput(Unit) {
@@ -342,7 +319,7 @@ fun ShowAsynchImage(
 					{
 						val event = awaitPointerEvent()
 						val changes = event.changes
-						exit.value = !changes.any {
+						val exit = !changes.any {
 							it.isConsumed
 						}
 						if(count.size >= 3)
@@ -353,7 +330,7 @@ fun ShowAsynchImage(
 						}
 						if(changes.any { !it.pressed })
 						{
-							if(zoom.scale < 0.92.toFloat() && exit.value && countLastThree.max() == 2)
+							if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
 							{
 								postUrl(DEFAULT_STRING_VALUE, null)
 								postPositiveState()
