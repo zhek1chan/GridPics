@@ -47,6 +47,7 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
+	private var shareWasNotPressed = true
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -179,7 +180,8 @@ class MainActivity: AppCompatActivity()
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
-					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) }
+					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
+					buttonShareWasPressed = { shareWasNotPressed = !shareWasNotPressed}
 				)
 			}
 		}
@@ -247,12 +249,18 @@ class MainActivity: AppCompatActivity()
 	override fun onPause()
 	{
 		Log.d("lifecycle", "onPause()")
-		if(mainNotificationService != null)
+		if(shareWasNotPressed)
 		{
-			unbindService(connection)
-			mainNotificationService = null
+			unbindMainService()
 		}
 		super.onPause()
+	}
+
+	override fun onStop()
+	{
+		unbindMainService()
+		Log.d("lifecycle", "onStop()")
+		super.onStop()
 	}
 
 	override fun onDestroy()
@@ -335,6 +343,15 @@ class MainActivity: AppCompatActivity()
 				}
 				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
+		}
+	}
+
+	private fun unbindMainService() {
+		if(mainNotificationService != null)
+		{
+			Log.d("share", "was pressed")
+			unbindService(connection)
+			mainNotificationService = null
 		}
 	}
 

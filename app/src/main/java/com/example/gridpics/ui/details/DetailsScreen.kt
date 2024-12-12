@@ -93,6 +93,8 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.TEXT_PLAIN
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -113,6 +115,7 @@ fun DetailsScreen(
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
 	saveCurrentPictureUrl: (String) -> Unit,
+	buttonShareWasPressed: () -> Unit
 )
 {
 	val context = LocalContext.current
@@ -127,6 +130,7 @@ fun DetailsScreen(
 	}
 	val isVisible = remember { mutableStateOf(state.value.barsAreVisible) }
 	val pictures = remember(picturesScreenState.value.picturesUrl) { picturesScreenState.value.picturesUrl }
+	val scrollIsEnabled =  remember { mutableStateOf(true) }
 	if(pictures != null)
 	{
 		Log.d("pic", picturesScreenState.value.currentPicture)
@@ -152,7 +156,17 @@ fun DetailsScreen(
 		}
 		Scaffold(
 			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
-			topBar = { AppBar(isVisible, context, navController, list, pagerState, postUrl) },
+			topBar = {
+				AppBar(
+					isVisible = isVisible,
+					context = context,
+					nc = navController,
+					list = list,
+					pagerState = pagerState,
+					postUrl = postUrl,
+					scrollIsEnabled = scrollIsEnabled,
+					buttonShareWasPressed = buttonShareWasPressed
+				)},
 			content = { padding ->
 				ShowDetails(
 					img = currentPicture,
@@ -170,7 +184,8 @@ fun DetailsScreen(
 					isValidUrl = isValidUrl,
 					padding = padding,
 					changeBarsVisability = changeBarsVisability,
-					postUrl = postUrl
+					postUrl = postUrl,
+					scrollIsEnabled = scrollIsEnabled
 				)
 			}
 		)
@@ -196,6 +211,7 @@ fun ShowDetails(
 	padding: PaddingValues,
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
+	scrollIsEnabled: MutableState<Boolean>
 )
 {
 	val firstPage = remember(img) { mutableStateOf(true) }
@@ -210,7 +226,7 @@ fun ShowDetails(
 		state = pagerState,
 		pageSize = PageSize.Fill,
 		contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
-		userScrollEnabled = true,
+		userScrollEnabled = scrollIsEnabled.value,
 		pageSpacing = 10.dp
 	) { page ->
 		LaunchedEffect(page) {
@@ -428,10 +444,13 @@ fun AppBar(
 	list: List<String>,
 	pagerState: PagerState,
 	postUrl: (String, Bitmap?) -> Unit,
+	scrollIsEnabled: MutableState<Boolean>,
+	buttonShareWasPressed: () -> Unit
 )
 {
 	val navBack = remember { mutableStateOf(false) }
 	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+	val scope = rememberCoroutineScope()
 	Log.d("wahwah", "$screenWidth")
 	AnimatedVisibility(visible = isVisible.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(
@@ -484,7 +503,7 @@ fun AppBar(
 				IconButton(
 					onClick =
 					{
-						share(list[pagerState.currentPage], context, TEXT_PLAIN)
+						share(list[pagerState.currentPage], context, TEXT_PLAIN, scope, scrollIsEnabled, buttonShareWasPressed)
 					}
 				) {
 					Icon(
@@ -510,7 +529,7 @@ fun AppBar(
 				.fillMaxWidth()
 				.padding(screenWidth - 50.dp, 0.dp, 0.dp, 0.dp)
 				.clickable {
-					share(list[pagerState.currentPage], context, TEXT_PLAIN)
+					share(list[pagerState.currentPage], context, TEXT_PLAIN, scope, scrollIsEnabled, buttonShareWasPressed)
 				})
 		}
 		if(navBack.value)
@@ -522,8 +541,15 @@ fun AppBar(
 	}
 }
 
-fun share(text: String, context: Context, plain: String)
+fun share(text: String, context: Context, plain: String, scope: CoroutineScope, scrollIsEnabled: MutableState<Boolean>, buttonShareWasPressed: () -> Unit)
 {
+	scope.launch {
+		scrollIsEnabled.value = false
+		buttonShareWasPressed()
+		delay(1000)
+		scrollIsEnabled.value = true
+		buttonShareWasPressed()
+	}
 	val sendIntent = Intent(Intent.ACTION_SEND).apply {
 		putExtra(Intent.EXTRA_TEXT, text)
 		type = plain
