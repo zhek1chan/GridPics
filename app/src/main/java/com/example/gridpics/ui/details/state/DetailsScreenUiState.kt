@@ -1,6 +1,6 @@
 package com.example.gridpics.ui.details.state
 
 data class DetailsScreenUiState(
-	val isNotMultiWindowed: Boolean,
+	val isMultiWindowed: Boolean,
 	val barsAreVisible: Boolean
 )

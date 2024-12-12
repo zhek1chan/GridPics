@@ -139,7 +139,7 @@ fun DetailsScreen(
 
 		LaunchedEffect(currentPage) {
 			val pic = list[currentPage]
-			saveCurrentPictureUrl(list[currentPage])
+			saveCurrentPictureUrl(pic)
 			if(checkIfExists(pic))
 			{
 				Log.d("checkMa", "gruzim oshibku")
@@ -283,7 +283,7 @@ fun ShowAsynchImage(
 )
 {
 	val orientation = context.resources.configuration.orientation
-	val scale = if(!multiWindow.value.isNotMultiWindowed)
+	val scale = if(!multiWindow.value.isMultiWindowed)
 	{
 		if(orientation == Configuration.ORIENTATION_PORTRAIT)
 		{
