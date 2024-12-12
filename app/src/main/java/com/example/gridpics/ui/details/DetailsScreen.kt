@@ -125,11 +125,11 @@ fun DetailsScreen(
 			launchSingleTop = true
 		}
 	}
-	val pictures = remember(picturesScreenState.value.picturesUrl) { picturesScreenState.value.picturesUrl }
+	val currentPicture = picturesScreenState.value.currentPicture
+	val pictures = remember { picturesScreenState.value.picturesUrl }
 	if(pictures != null)
 	{
-		Log.d("pic", picturesScreenState.value.currentPicture)
-		val currentPicture = picturesScreenState.value.currentPicture
+		Log.d("pic", currentPicture)
 		val list = remember { pictures.split("\n") }
 		Log.d("list", "$list")
 		val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
@@ -329,9 +329,9 @@ fun ShowAsynchImage(
 				onTap =
 				{
 					val visibility = state.value.barsAreVisible
-					state.value = state.value.copy(barsAreVisible = !visibility)
 					changeVisabilityState(visibility)
-					changeBarsVisability(visibility)
+					state.value = state.value.copy(barsAreVisible = !visibility)
+					changeBarsVisability(!visibility)
 				}
 			)
 			.pointerInput(Unit) {
