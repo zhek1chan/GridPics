@@ -349,7 +349,6 @@ class MainActivity: AppCompatActivity()
 	private fun unbindMainService() {
 		if(mainNotificationService != null)
 		{
-			Log.d("share", "was pressed")
 			unbindService(connection)
 			mainNotificationService = null
 		}
