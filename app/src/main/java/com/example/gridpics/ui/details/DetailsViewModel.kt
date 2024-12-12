@@ -20,7 +20,7 @@ class DetailsViewModel(
 	private val imageFlow =
 		MutableStateFlow<Pair<String, Bitmap?>>(Pair(DEFAULT_STRING_VALUE, null))
 	val uiState =
-		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true))
+		mutableStateOf(DetailsScreenUiState(isNotMultiWindowed = false, barsAreVisible = true))
 	private val job = Job()
 	fun observeUrlFlow() = imageFlow
 	fun postNewPic(url: String, bitmap: Bitmap?)
@@ -43,11 +43,11 @@ class DetailsViewModel(
 		}
 	}
 
-	fun changeMultiWindowState(isMultiWindowed: Boolean)
+	fun changeMultiWindowState(notMultiWindowed: Boolean)
 	{
 		val uiState = uiState
 		viewModelScope.launch {
-			uiState.value = uiState.value.copy(isMultiWindowed = !isMultiWindowed)
+			uiState.value = uiState.value.copy(isNotMultiWindowed = notMultiWindowed)
 		}
 	}
 

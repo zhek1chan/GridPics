@@ -191,11 +191,11 @@ class MainActivity: AppCompatActivity()
 		val detVM = detailsViewModel
 		if(isInMultiWindowMode || isInPictureInPictureMode)
 		{
-			detVM.changeMultiWindowState(true)
+			detVM.changeMultiWindowState(false)
 		}
 		else
 		{
-			detVM.changeMultiWindowState(false)
+			detVM.changeMultiWindowState(true)
 		}
 	}
 
@@ -304,10 +304,10 @@ class MainActivity: AppCompatActivity()
 
 	private fun startMainService()
 	{
-		val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
-		val connectionLocal = connection
 		if(mainNotificationService == null)
 		{
+			val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
+			val connectionLocal = connection
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
 			{
 				if(

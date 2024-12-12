@@ -283,7 +283,7 @@ fun ShowAsynchImage(
 )
 {
 	val orientation = context.resources.configuration.orientation
-	val scale = if(!multiWindow.value.isMultiWindowed)
+	val scale = if(!multiWindow.value.isNotMultiWindowed)
 	{
 		if(orientation == Configuration.ORIENTATION_PORTRAIT)
 		{
