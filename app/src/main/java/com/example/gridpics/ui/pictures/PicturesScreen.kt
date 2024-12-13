@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -95,7 +96,7 @@ fun PicturesScreen(
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	postPositiveState: () -> Unit,
-	currentPicture: (String) -> Unit,
+	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
 )
@@ -103,7 +104,6 @@ fun PicturesScreen(
 	val context = LocalContext.current
 	postPositiveState()
 	BackHandler {
-		Log.d("gobacl", "ffafafa")
 		postPressOnBackButton()
 	}
 	val orientation = context.resources.configuration.orientation
@@ -177,16 +177,19 @@ fun PicturesScreen(
 	)
 }
 
+@SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
 fun itemNewsCard(
 	item: String,
 	navController: NavController,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	currentPicture: (String) -> Unit,
+	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postState: (Boolean, String) -> Unit,
 	urls: String,
+	postSavedUrls: (String) -> Unit,
+	lazyState: LazyGridState,
 ): Boolean
 {
 	var isError by remember { mutableStateOf(false) }
@@ -248,13 +251,15 @@ fun itemNewsCard(
 	)
 	if(isClicked)
 	{
-		isClicked = false
-		currentPicture(item)
+		Log.d("current", item)
+		postSavedUrls(urls)
+		currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
 		navController.navigate(Screen.Details.route) {
 			popUpTo(Screen.Home.route) {
 				inclusive = true
 			}
 		}
+		isClicked = false
 	}
 	when
 	{
@@ -303,7 +308,7 @@ fun ShowList(
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	navController: NavController,
-	currentPicture: (String) -> Unit,
+	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
 )
@@ -311,6 +316,7 @@ fun ShowList(
 	val context = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
+	val canChangeState = remember { mutableStateOf(false) }
 	val scope = rememberCoroutineScope()
 	val listState = rememberLazyGridState()
 	if(imagesUrlsSP.isNullOrEmpty())
@@ -320,9 +326,9 @@ fun ShowList(
 			is PicturesState.SearchIsOk ->
 			{
 				val loadingString = stringResource(R.string.loading_has_been_started)
-				Log.d("Now state is", "Loading")
+				Log.d("Now state is", "Search Is Ok")
 				val status = state.value.loadingState as PicturesState.SearchIsOk
-				LaunchedEffect(Unit) {
+				LaunchedEffect(status) {
 					saveToSharedPrefs(context, status.data)
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 				}
@@ -332,8 +338,9 @@ fun ShowList(
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
-						.fillMaxSize(), columns = GridCells.Fixed(count = calculateGridSpan())) {
-					items(list) {
+						.fillMaxSize(),
+					columns = GridCells.Fixed(count = calculateGridSpan())) {
+					items(items = list) {
 						itemNewsCard(
 							item = it,
 							navController = navController,
@@ -342,7 +349,9 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postState = postState,
-							urls = value
+							urls = value,
+							postSavedUrls = postSavedUrls,
+							lazyState = listState
 						)
 					}
 				}
@@ -369,6 +378,7 @@ fun ShowList(
 			is PicturesState.NothingFound -> Unit
 			is PicturesState.Loaded ->
 			{
+				Log.d("Now state is", "Loaded")
 				val loadingEnded = stringResource(R.string.loading_has_been_ended)
 				val status = state.value.loadingState as PicturesState.Loaded
 				LaunchedEffect(Unit) {
@@ -383,7 +393,7 @@ fun ShowList(
 					modifier = Modifier
 						.fillMaxSize(),
 					columns = GridCells.Fixed(count = calculateGridSpan())) {
-					items(list) {
+					items(items = list) {
 						itemNewsCard(
 							item = it,
 							navController = navController,
@@ -392,10 +402,13 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postState = postState,
-							urls = value
+							urls = value,
+							postSavedUrls = postSavedUrls,
+							lazyState = listState
 						)
 					}
 				}
+				canChangeState.value = true
 			}
 		}
 	}
@@ -423,10 +436,16 @@ fun ShowList(
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					postState = postState,
-					urls = imagesUrlsSP
+					urls = imagesUrlsSP,
+					postSavedUrls = postSavedUrls,
+					lazyState = listState
 				)
 			}
 		}
+	}
+	val value = state.value
+	scope.launch {
+		listState.scrollToItem(value.index, value.offset)
 	}
 }
 

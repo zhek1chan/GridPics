@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.pictures
 
-import android.annotation.SuppressLint
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,13 +9,11 @@ import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import kotlinx.coroutines.launch
 
-@SuppressLint("StaticFieldLeak")
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, ""))
-	var currentPicture = mutableStateOf("")
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, "", 0, 0, ""))
 	private val errorsList: MutableList<String> = mutableListOf()
 
 	init
@@ -69,11 +66,7 @@ class PicturesViewModel(
 	fun checkOnErrorExists(url: String): Boolean
 	{
 		val list = errorsList
-		return if(list.isNotEmpty())
-		{
-			list.contains(url)
-		}
-		else false
+		return (list.isNotEmpty() && list.contains(url))
 	}
 
 	fun removeSpecialError(url: String)
@@ -90,9 +83,16 @@ class PicturesViewModel(
 		errorsList.clear()
 	}
 
-	fun clickOnPicture(url: String)
+	fun clickOnPicture(url: String, index: Int, offset: Int)
 	{
-		currentPicture.value = url
+		val state = picturesUiState
+		state.value = state.value.copy(index = index, offset = offset, currentPicture = url)
+	}
+
+	fun saveCurrentPictureUrl(url: String)
+	{
+		val state = picturesUiState
+		state.value = state.value.copy(currentPicture = url)
 	}
 
 	fun isValidUrl(url: String): Boolean
