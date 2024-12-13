@@ -47,6 +47,7 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
+	private var caseActivityWasRecreated = false
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -156,6 +157,7 @@ class MainActivity: AppCompatActivity()
 					picVM.clickOnPicture(sharedLink, 0, 0)
 					detVM.isSharedImage(true)
 					navController.navigate(Screen.Details.route)
+					intent.extras?.clear()
 				}
 			}
 		}
@@ -374,11 +376,10 @@ class MainActivity: AppCompatActivity()
 
 	private fun unbindMainService()
 	{
-		if(mainNotificationService != null)
+		if(mainNotificationService != null && !caseActivityWasRecreated)
 		{
 			Log.d("service", "unBind was called in main")
 			unbindService(connection)
-			mainNotificationService = null
 		}
 	}
 
@@ -387,10 +388,10 @@ class MainActivity: AppCompatActivity()
 		super.onNewIntent(intent)
 		if(intent?.action == Intent.ACTION_SEND)
 		{
-			Log.d("lifecycle", "its called")
-			intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+			Log.d("service", "newIntent was called")
+			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 			setIntent(intent)
-			unbindMainService()
+			caseActivityWasRecreated = true
 			this.recreate()
 		}
 	}
