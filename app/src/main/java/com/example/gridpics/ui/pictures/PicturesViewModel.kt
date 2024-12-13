@@ -14,8 +14,9 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, "", 0, 0, ""))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, ""))
 	private val errorsList: MutableList<String> = mutableListOf()
+	private var saveSharedPictureForFirstLaunch = ""
 
 	init
 	{
@@ -24,7 +25,18 @@ class PicturesViewModel(
 			interactor.getPics().collect { urls ->
 				when(urls)
 				{
-					is Resource.Data -> flow.value = flow.value.copy(loadingState = PicturesState.SearchIsOk(urls.value))
+					is Resource.Data ->
+					{
+						var savedUrls = saveSharedPictureForFirstLaunch
+						if(savedUrls.isNotEmpty())
+						{
+							savedUrls += "\n"
+						}
+						flow.value = flow.value.copy(
+							loadingState = PicturesState.SearchIsOk(savedUrls + urls.value)
+						)
+						Log.d("pictures were loaded", savedUrls + urls.value)
+					}
 					is Resource.ConnectionError -> flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
 					is Resource.NotFound -> flow.value = flow.value.copy(loadingState = PicturesState.NothingFound)
 				}
@@ -47,12 +59,20 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postSavedUrls(urls: String?)
+	fun postSavedUrls(urls: String?, caseEmptySharedPreferenceOnFirstLaunch: Boolean)
 	{
 		Log.d("pictures urls", "$urls")
 		val flow = picturesUiState
-		viewModelScope.launch {
-			flow.value = flow.value.copy(picturesUrl = urls)
+		val notNullUrls = urls ?: ""
+		if(caseEmptySharedPreferenceOnFirstLaunch)
+		{
+			saveSharedPictureForFirstLaunch = notNullUrls
+		}
+		else
+		{
+			viewModelScope.launch {
+				flow.value = flow.value.copy(picturesUrl = notNullUrls)
+			}
 		}
 	}
 
@@ -60,24 +80,22 @@ class PicturesViewModel(
 	{
 		val flow = picturesUiState
 		val urls = removePrefix(flow.value.picturesUrl, "$url\n")
-		Log.d("updated", "$urls")
+		Log.d("updated", urls)
 		viewModelScope.launch {
 			flow.value = flow.value.copy(picturesUrl = urls)
 		}
 	}
 
-	private fun removePrefix(str: String?, prefix: String): String? {
-		return if (str != null)
+	private fun removePrefix(str: String, prefix: String): String
+	{
+		return if(str.startsWith(prefix))
 		{
-			if(str.startsWith(prefix))
-			{
-				str.substring(prefix.length)
-			}
-			else
-			{
-				str
-			}
-		} else null
+			str.substring(prefix.length)
+		}
+		else
+		{
+			str
+		}
 	}
 
 	fun addError(url: String)

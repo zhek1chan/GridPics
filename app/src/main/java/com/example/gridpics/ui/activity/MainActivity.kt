@@ -125,15 +125,15 @@ class MainActivity: AppCompatActivity()
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		if(sharedLink.isNotEmpty() && picturesFromSP != null)
 		{
-			picVM.postSavedUrls("$sharedLink\n$picturesFromSP")
+			picVM.postSavedUrls(urls = "$sharedLink\n$picturesFromSP", caseEmptySharedPreferenceOnFirstLaunch = false)
 		}
 		else if(picturesFromSP == null && sharedLink.isNotEmpty())
 		{
-			picVM.postSavedUrls(null)
+			picVM.postSavedUrls(urls = sharedLink, caseEmptySharedPreferenceOnFirstLaunch = true)
 		}
 		else if(sharedLink.isEmpty())
 		{
-			picVM.postSavedUrls(picturesFromSP)
+			picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = false)
 		}
 		Log.d("SharedLink", sharedLink)
 		setContent {
@@ -193,7 +193,7 @@ class MainActivity: AppCompatActivity()
 						detVM.isSharedImage(false)
 					},
 					isValidUrl = { url -> picVM.isValidUrl(url) },
-					postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
+					postSavedUrls = { urls -> picVM.postSavedUrls(urls = urls, caseEmptySharedPreferenceOnFirstLaunch = false) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {

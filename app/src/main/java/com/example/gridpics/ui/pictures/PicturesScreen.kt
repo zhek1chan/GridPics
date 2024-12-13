@@ -142,10 +142,11 @@ fun PicturesScreen(
 					.consumeWindowInsets(padding)
 					.fillMaxSize()
 			) {
-				if(!state.value.picturesUrl.isNullOrEmpty())
+				val urls = state.value.picturesUrl
+				if(urls.isNotEmpty())
 				{
 					ShowList(
-						imagesUrlsSP = state.value.picturesUrl,
+						imagesUrlsSP = urls,
 						checkIfExists = checkIfExists,
 						addError = addError,
 						postState = postState,

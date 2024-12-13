@@ -124,7 +124,7 @@ fun DetailsScreen(
 	Log.d("Case shared", currentPicture)
 	val pictures = valuePicUi.picturesUrl
 	val value = state.value
-	Log.d("pictures", "$pictures")
+	Log.d("pictures", pictures)
 	val scrollIsEnabled = remember { mutableStateOf(true) }
 	BackHandler {
 		if(value.isSharedImage)
@@ -139,64 +139,68 @@ fun DetailsScreen(
 			launchSingleTop = true
 		}
 	}
-	if(pictures != null)
+	val list = if(pictures.isNotEmpty())
 	{
-		Log.d("pic", currentPicture)
-		val list = remember { pictures.split("\n").toSet().toList() }
-		Log.d("list", "$list")
-		val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
-		val currentPage = pagerState.currentPage
-		val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
-
-		LaunchedEffect(currentPage) {
-			val pic = list[currentPage]
-			saveCurrentPictureUrl(pic)
-			if(checkIfExists(pic))
-			{
-				Log.d("checkMa", "gruzim oshibku")
-				postUrl(pic, errorPicture)
-			}
-			else
-			{
-				postNewBitmap(pic)
-			}
-		}
-		Scaffold(
-			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
-			topBar = {
-				AppBar(
-					isVisible = value.barsAreVisible,
-					context = context,
-					nc = navController,
-					list = list,
-					pagerState = pagerState,
-					postUrl = postUrl,
-					state = state,
-					removeUrl = removeUrl
-				)
-			},
-			content = { padding ->
-				ShowDetails(
-					navController = navController,
-					list = list,
-					pagerState = pagerState,
-					context = context,
-					checkIfExists = checkIfExists,
-					addError = addError,
-					removeSpecialError = removeSpecialError,
-					state = state,
-					postPositiveState = postPositiveState,
-					isValidUrl = isValidUrl,
-					padding = padding,
-					changeBarsVisability = changeBarsVisability,
-					postUrl = postUrl,
-					scrollIsEnabled = scrollIsEnabled,
-					postFalseToSharedImageState = postFalseToSharedImageState,
-					removeUrl = removeUrl
-				)
-			}
-		)
+		remember { pictures.split("\n").toSet().toList() }
 	}
+	else
+	{
+		remember { listOf(currentPicture) }
+	}
+	Log.d("pic", currentPicture)
+	Log.d("list", "$list")
+	val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
+	val currentPage = pagerState.currentPage
+	val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
+
+	LaunchedEffect(currentPage) {
+		val pic = list[currentPage]
+		saveCurrentPictureUrl(pic)
+		if(checkIfExists(pic))
+		{
+			Log.d("checkMa", "gruzim oshibku")
+			postUrl(pic, errorPicture)
+		}
+		else
+		{
+			postNewBitmap(pic)
+		}
+	}
+	Scaffold(
+		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
+		topBar = {
+			AppBar(
+				isVisible = value.barsAreVisible,
+				context = context,
+				nc = navController,
+				list = list,
+				pagerState = pagerState,
+				postUrl = postUrl,
+				state = state,
+				removeUrl = removeUrl
+			)
+		},
+		content = { padding ->
+			ShowDetails(
+				navController = navController,
+				list = list,
+				pagerState = pagerState,
+				context = context,
+				checkIfExists = checkIfExists,
+				addError = addError,
+				removeSpecialError = removeSpecialError,
+				state = state,
+				postPositiveState = postPositiveState,
+				isValidUrl = isValidUrl,
+				padding = padding,
+				changeBarsVisability = changeBarsVisability,
+				postUrl = postUrl,
+				scrollIsEnabled = scrollIsEnabled,
+				postFalseToSharedImageState = postFalseToSharedImageState,
+				removeUrl = removeUrl
+			)
+		}
+	)
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -482,6 +486,7 @@ fun AppBar(
 {
 	val navBack = remember { mutableStateOf(false) }
 	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+	Log.d("wtf", list[pagerState.currentPage])
 	val currentPicture = list[pagerState.currentPage]
 	Log.d("wahwah", "$screenWidth")
 	AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
