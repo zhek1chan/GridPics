@@ -120,10 +120,10 @@ fun DetailsScreen(
 {
 	val context = LocalContext.current
 	val valuePicUi = picturesScreenState.value
+	val value = state.value
 	val currentPicture = valuePicUi.currentPicture
 	Log.d("Case shared", currentPicture)
 	val pictures = valuePicUi.picturesUrl
-	val value = state.value
 	Log.d("pictures", pictures)
 	val scrollIsEnabled = remember { mutableStateOf(true) }
 	BackHandler {
@@ -203,7 +203,7 @@ fun DetailsScreen(
 	)
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ShowDetails(
 	navController: NavController,
@@ -277,40 +277,43 @@ fun ShowDetails(
 						.padding(0.dp, 20.dp, 0.dp, 0.dp)
 						.align(Alignment.BottomCenter)
 				) {
-					Button(
-						modifier = Modifier
-							.align(Alignment.CenterVertically)
-							.size(130.dp, 60.dp),
-						onClick = {
-							postPositiveState()
-							changeBarsVisability(true)
-							navController.navigate(Screen.Home.route)
-							removeUrl(list[page])
-							postUrl(DEFAULT_STRING_VALUE, null)
-						},
-						border = BorderStroke(3.dp, Color.Red),
-						colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
-					) {
-						Text(text = cancelString, color = Color.Red)
-					}
-					if(showButtonAdd.value)
-					{
+					val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+					CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 						Button(
 							modifier = Modifier
 								.align(Alignment.CenterVertically)
-								.padding(30.dp, 0.dp, 0.dp, 0.dp)
 								.size(130.dp, 60.dp),
 							onClick = {
-								postFalseToSharedImageState()
-								if(list.size != 1)
-								{
-									scrollIsEnabled.value = true
-								}
+								postPositiveState()
+								changeBarsVisability(true)
+								navController.navigate(Screen.Home.route)
+								removeUrl(list[page])
+								postUrl(DEFAULT_STRING_VALUE, null)
 							},
-							border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
+							border = BorderStroke(3.dp, Color.Red),
 							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
 						) {
-							Text(text = addString, color = MaterialTheme.colorScheme.primary)
+							Text(text = cancelString, color = Color.Red)
+						}
+						if(showButtonAdd.value)
+						{
+							Button(
+								modifier = Modifier
+									.align(Alignment.CenterVertically)
+									.padding(30.dp, 0.dp, 0.dp, 0.dp)
+									.size(130.dp, 60.dp),
+								onClick = {
+									postFalseToSharedImageState()
+									if(list.size != 1)
+									{
+										scrollIsEnabled.value = true
+									}
+								},
+								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
+								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+							) {
+								Text(text = addString, color = MaterialTheme.colorScheme.primary)
+							}
 						}
 					}
 				}
@@ -495,7 +498,6 @@ fun AppBar(
 {
 	val navBack = remember { mutableStateOf(false) }
 	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-	Log.d("wtf", list[pagerState.currentPage])
 	val currentPicture = list[pagerState.currentPage]
 	Log.d("wahwah", "$screenWidth")
 	AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {

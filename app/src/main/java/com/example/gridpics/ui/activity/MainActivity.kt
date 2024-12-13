@@ -101,22 +101,27 @@ class MainActivity: AppCompatActivity()
 				{
 					Log.d("service", "data $it")
 					mainNotificationService?.putValues(it)
+					intent.extras?.remove(Intent.EXTRA_TEXT)
 				}
 			}
 		}
 		themePick = theme
 		//реализация фичи - поделиться картинкой в приложение
-		var sharedLink = ""
 		val intent = intent
 		val action = intent.action
-		when
+		var sharedLink = ""
+		if(sharedPreferences.getBoolean(USE_LAST_INTENT, false))
 		{
-			action == Intent.ACTION_SEND ->
+			when
 			{
-				if(getString(R.string.text_plain) == intent.type)
+				action == Intent.ACTION_SEND ->
 				{
-					intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
-						sharedLink = it
+					if(getString(R.string.text_plain) == intent.type)
+					{
+						intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
+							sharedLink = it
+						}
+						intent.putExtra(Intent.EXTRA_TEXT, "")
 					}
 				}
 			}
@@ -143,8 +148,7 @@ class MainActivity: AppCompatActivity()
 				NavigationSetup(navController = navController)
 			}
 			LaunchedEffect(Unit) {
-				if(
-					(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty())
+				if((!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty())
 					&& action != null)
 				{
 					Log.d("action", "$action")
@@ -156,8 +160,9 @@ class MainActivity: AppCompatActivity()
 					Log.d("shared", "$action")
 					picVM.clickOnPicture(sharedLink, 0, 0)
 					detVM.isSharedImage(true)
-					navController.navigate(Screen.Details.route)
-					intent.extras?.clear()
+					navController.navigate(Screen.Details.route) {
+						launchSingleTop = true
+					}
 				}
 			}
 		}
@@ -279,6 +284,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onPause()
 	{
+		saveToSharedPrefs(false)
 		Log.d("lifecycle", "onPause()")
 		super.onPause()
 	}
@@ -387,12 +393,20 @@ class MainActivity: AppCompatActivity()
 		super.onNewIntent(intent)
 		if(intent?.action == Intent.ACTION_SEND)
 		{
-			Log.d("service", "newIntent was called")
 			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 			setIntent(intent)
+			saveToSharedPrefs(true)
 			caseActivityWasRecreated = true
 			this.recreate()
 		}
+	}
+
+	private fun saveToSharedPrefs(useLastIntent: Boolean)
+	{
+		val sharedPreferencesPictures = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
+		val editorPictures = sharedPreferencesPictures.edit()
+		editorPictures.putBoolean(USE_LAST_INTENT, useLastIntent)
+		editorPictures.apply()
 	}
 
 	companion object
@@ -409,5 +423,6 @@ class MainActivity: AppCompatActivity()
 		const val HTTP_ERROR = "HTTP error: 404"
 		const val WAS_OPENED_SCREEN = "wasOpenedScreen"
 		const val DETAILS = "DETAILS"
+		const val USE_LAST_INTENT = "USE_LAST_INTENT"
 	}
 }
