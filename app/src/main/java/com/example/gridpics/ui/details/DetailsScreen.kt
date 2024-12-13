@@ -236,9 +236,11 @@ fun ShowDetails(
 		userScrollEnabled = scrollIsEnabled.value,
 		pageSpacing = 10.dp
 	) { page ->
+		val showButtonAdd = remember { mutableStateOf(true) }
 		Box(modifier = Modifier.fillMaxSize()) {
 			if(checkIfExists(list[page]))
 			{
+				showButtonAdd.value = false
 				ShowError(
 					context = context,
 					list = list,
@@ -249,6 +251,7 @@ fun ShowDetails(
 			}
 			else
 			{
+				showButtonAdd.value = true
 				ShowAsynchImage(
 					list = list,
 					page = page,
@@ -290,22 +293,25 @@ fun ShowDetails(
 					) {
 						Text(text = cancelString, color = Color.Red)
 					}
-					Button(
-						modifier = Modifier
-							.align(Alignment.CenterVertically)
-							.padding(30.dp, 0.dp, 0.dp, 0.dp)
-							.size(130.dp, 60.dp),
-						onClick = {
-							postFalseToSharedImageState()
-							if(list.size != 1)
-							{
-								scrollIsEnabled.value = true
-							}
-						},
-						border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
-						colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
-					) {
-						Text(text = addString, color = MaterialTheme.colorScheme.primary)
+					if(showButtonAdd.value)
+					{
+						Button(
+							modifier = Modifier
+								.align(Alignment.CenterVertically)
+								.padding(30.dp, 0.dp, 0.dp, 0.dp)
+								.size(130.dp, 60.dp),
+							onClick = {
+								postFalseToSharedImageState()
+								if(list.size != 1)
+								{
+									scrollIsEnabled.value = true
+								}
+							},
+							border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
+							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+						) {
+							Text(text = addString, color = MaterialTheme.colorScheme.primary)
+						}
 					}
 				}
 			}
