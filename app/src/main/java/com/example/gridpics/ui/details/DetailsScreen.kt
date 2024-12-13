@@ -142,7 +142,7 @@ fun DetailsScreen(
 	if(pictures != null)
 	{
 		Log.d("pic", currentPicture)
-		val list = remember { pictures.split("\n") }
+		val list = remember { pictures.split("\n").toSet().toList() }
 		Log.d("list", "$list")
 		val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
 		val currentPage = pagerState.currentPage
