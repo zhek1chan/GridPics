@@ -376,8 +376,22 @@ class MainActivity: AppCompatActivity()
 	{
 		if(mainNotificationService != null)
 		{
+			Log.d("service", "unBind was called in main")
 			unbindService(connection)
 			mainNotificationService = null
+		}
+	}
+
+	override fun onNewIntent(intent: Intent?)
+	{
+		super.onNewIntent(intent)
+		if(intent?.action == Intent.ACTION_SEND)
+		{
+			Log.d("lifecycle", "its called")
+			intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+			setIntent(intent)
+			unbindMainService()
+			this.recreate()
 		}
 	}
 

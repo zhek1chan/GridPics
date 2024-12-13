@@ -73,9 +73,9 @@ class MainNotificationService: Service()
 
 	override fun onRebind(intent: Intent?)
 	{
+		super.onRebind(intent)
 		Log.d("service", "onRebind()")
 		jobForCancelingNotification?.cancel()
-		super.onRebind(intent)
 	}
 
 	private fun showNotification(builder: Builder)
