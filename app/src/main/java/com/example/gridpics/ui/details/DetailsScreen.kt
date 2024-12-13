@@ -297,7 +297,10 @@ fun ShowDetails(
 							.size(130.dp, 60.dp),
 						onClick = {
 							postFalseToSharedImageState()
-							scrollIsEnabled.value = true
+							if(list.size != 1)
+							{
+								scrollIsEnabled.value = true
+							}
 						},
 						border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
 						colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
