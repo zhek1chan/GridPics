@@ -91,10 +91,6 @@ class MainActivity: AppCompatActivity()
 			statusBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black)),
 			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
 		)
-		// Здесь происходит получение всех кэшированных картинок,точнее их url,
-		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
-		picVM.postSavedUrls(sharedPreferences.getString(SHARED_PREFS_PICTURES, null))
-		// Здесь мы проверяем менялась ли тема при прошлой жизни Activity, если да, то не создавать новое уведомление
 		lifeCycScope.launch {
 			detVM.observeUrlFlow().collect {
 				if(ContextCompat.checkSelfPermission(
@@ -108,18 +104,57 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 		themePick = theme
+		//реализация фичи - поделиться картинкой в приложение
+		var sharedLink = ""
+		val intent = intent
+		val action = intent.action
+		when
+		{
+			action == Intent.ACTION_SEND ->
+			{
+				if(getString(R.string.text_plain) == intent.type)
+				{
+					intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
+						sharedLink = it
+					}
+				}
+			}
+		}
+		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+		// Здесь происходит получение всех кэшированных картинок,точнее их url,
+		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
+		if(sharedLink.isNotEmpty() && picturesFromSP != null)
+		{
+			picVM.postSavedUrls("$sharedLink\n$picturesFromSP")
+		}
+		else if(picturesFromSP == null && sharedLink.isNotEmpty())
+		{
+			picVM.postSavedUrls(null)
+		}
+		else if(sharedLink.isEmpty())
+		{
+			picVM.postSavedUrls(picturesFromSP)
+		}
+		Log.d("SharedLink", sharedLink)
 		setContent {
 			val navController = rememberNavController()
 			ComposeTheme {
 				NavigationSetup(navController = navController)
 			}
 			LaunchedEffect(Unit) {
-				val intent = intent
-				val action = intent.action
-				if(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty() && action != null)
+				if(
+					(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty())
+					&& action != null)
 				{
-					Log.d("Descript from intent", "$action")
+					Log.d("action", "$action")
 					picVM.clickOnPicture(action, 0, 0)
+					navController.navigate(Screen.Details.route)
+				}
+				else if(sharedLink.isNotEmpty())
+				{
+					Log.d("shared", "$action")
+					picVM.clickOnPicture(sharedLink, 0, 0)
+					detVM.isSharedImage(true)
 					navController.navigate(Screen.Details.route)
 				}
 			}
@@ -153,7 +188,10 @@ class MainActivity: AppCompatActivity()
 					state = picState,
 					clearErrors = { picVM.clearErrors() },
 					postPositiveState = { detVM.changeVisabilityState(true) },
-					currentPicture = { url, index, offset -> picVM.clickOnPicture(url, index, offset) },
+					currentPicture = { url, index, offset ->
+						picVM.clickOnPicture(url, index, offset)
+						detVM.isSharedImage(false)
+					},
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls -> picVM.postSavedUrls(urls) }
 				)
@@ -179,6 +217,8 @@ class MainActivity: AppCompatActivity()
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
+					postFalseToSharedImageState = { detVM.isSharedImage(false) },
+					removeUrl = { url -> picVM.removeUrlFromSavedUrls(url) },
 				)
 			}
 		}
@@ -331,7 +371,8 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	private fun unbindMainService() {
+	private fun unbindMainService()
+	{
 		if(mainNotificationService != null)
 		{
 			unbindService(connection)

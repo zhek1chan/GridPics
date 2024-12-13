@@ -419,7 +419,7 @@ fun ShowList(
 			saveToSharedPrefs(context, imagesUrlsSP)
 			postSavedUrls(imagesUrlsSP)
 		}
-		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n") }
+		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n").toSet().toList() }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			state = listState,

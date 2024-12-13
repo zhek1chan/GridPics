@@ -1,5 +1,6 @@
 package com.example.gridpics.ui.pictures
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -48,10 +49,35 @@ class PicturesViewModel(
 
 	fun postSavedUrls(urls: String?)
 	{
+		Log.d("pictures urls", "$urls")
 		val flow = picturesUiState
 		viewModelScope.launch {
 			flow.value = flow.value.copy(picturesUrl = urls)
 		}
+	}
+
+	fun removeUrlFromSavedUrls(url: String)
+	{
+		val flow = picturesUiState
+		val urls = removePrefix(flow.value.picturesUrl, "$url\n")
+		Log.d("updated", "$urls")
+		viewModelScope.launch {
+			flow.value = flow.value.copy(picturesUrl = urls)
+		}
+	}
+
+	private fun removePrefix(str: String?, prefix: String): String? {
+		return if (str != null)
+		{
+			if(str.startsWith(prefix))
+			{
+				str.substring(prefix.length)
+			}
+			else
+			{
+				str
+			}
+		} else null
 	}
 
 	fun addError(url: String)
