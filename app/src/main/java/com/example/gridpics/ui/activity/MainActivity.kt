@@ -202,8 +202,7 @@ class MainActivity: AppCompatActivity()
 				SettingsScreen(
 					navController = navController,
 					option = themePick,
-					changeTheme = { int -> changeTheme(int) },
-					clearUrls = { picVM.postSavedUrls(urls = null, caseEmptySharedPreferenceOnFirstLaunch = false) }
+					changeTheme = { int -> changeTheme(int) }
 				)
 			}
 			composable(Screen.Details.route) {

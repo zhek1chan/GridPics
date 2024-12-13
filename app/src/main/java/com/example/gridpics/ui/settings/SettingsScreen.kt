@@ -65,8 +65,7 @@ import com.example.gridpics.ui.pictures.AlertDialogMain
 fun SettingsScreen(
 	navController: NavController,
 	option: Int,
-	changeTheme: (Int) -> Unit,
-	clearUrls: () -> Unit
+	changeTheme: (Int) -> Unit
 )
 {
 	val orientation = LocalContext.current.resources.configuration.orientation
@@ -106,7 +105,7 @@ fun SettingsScreen(
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
-				SettingsCompose(option = option, changeTheme = changeTheme, clearUrls = clearUrls)
+				SettingsCompose(option = option, changeTheme = changeTheme)
 			}
 		}
 	)
@@ -115,8 +114,7 @@ fun SettingsScreen(
 @Composable
 fun SettingsCompose(
 	option: Int,
-	changeTheme: (Int) -> Unit,
-	clearUrls: () -> Unit
+	changeTheme: (Int) -> Unit
 )
 {
 	var showDialog by remember { mutableStateOf(false) }
@@ -239,7 +237,6 @@ fun SettingsCompose(
 					dialogText = null,
 					dialogTitle = stringResource(R.string.delete_all_question),
 					onConfirmation = {
-						clearUrls()
 						val imageLoader = context.imageLoader
 						imageLoader.diskCache?.clear()
 						imageLoader.memoryCache?.clear()
