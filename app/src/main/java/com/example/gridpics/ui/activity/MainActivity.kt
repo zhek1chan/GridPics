@@ -390,13 +390,14 @@ class MainActivity: AppCompatActivity()
 		{
 			picVM.removeUrlFromSavedUrls(sharedLinkLocal)
 		}
-		picVM.postSavedUrls(urls = "$sharedLinkLocal\n$urls", caseEmptySharedPreferenceOnFirstLaunch = urls=="")
+		picVM.postSavedUrls(urls = "$sharedLinkLocal\n$urls", caseEmptySharedPreferenceOnFirstLaunch = urls == "")
 		sharedLink = sharedLinkLocal
 		val nav = navigation
-		if(action != null && !intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty())
+		val oldUrl = intent!!.getStringExtra(WAS_OPENED_SCREEN)
+		Log.d("nav", "$oldUrl")
+		if(!oldUrl.isNullOrEmpty())
 		{
-			Log.d("action", "$action")
-			picVM.clickOnPicture(action, 0, 0)
+			picVM.clickOnPicture(oldUrl, 0, 0)
 			nav.navigate(Screen.Details.route)
 		}
 		else if(sharedLinkLocal.isNotEmpty())
@@ -429,6 +430,5 @@ class MainActivity: AppCompatActivity()
 		const val DEFAULT_STRING_VALUE = "default"
 		const val HTTP_ERROR = "HTTP error: 404"
 		const val WAS_OPENED_SCREEN = "wasOpenedScreen"
-		const val DETAILS = "DETAILS"
 	}
 }

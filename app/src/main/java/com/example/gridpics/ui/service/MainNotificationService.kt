@@ -18,7 +18,6 @@ import androidx.core.app.NotificationCompat.Builder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
-import com.example.gridpics.ui.activity.MainActivity.Companion.DETAILS
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.WAS_OPENED_SCREEN
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -113,8 +112,7 @@ class MainNotificationService: Service()
 		val resultIntent = Intent(this@MainNotificationService, MainActivity::class.java)
 		if(bitmap != null)
 		{
-			resultIntent.putExtra(WAS_OPENED_SCREEN, DETAILS)
-			resultIntent.setAction(description)
+			resultIntent.putExtra(WAS_OPENED_SCREEN, description)
 		}
 		resultIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
 		Log.d("intent URI", resultIntent.toUri(0))
@@ -163,7 +161,8 @@ class MainNotificationService: Service()
 		notificationCreationCounter++
 	}
 
-	private fun prepareNotification() {
+	private fun prepareNotification()
+	{
 		gridPics = this@MainNotificationService.getString(R.string.gridpics)
 		defaultText = this@MainNotificationService.getString(R.string.notification_content_text)
 		createNotificationChannel()
