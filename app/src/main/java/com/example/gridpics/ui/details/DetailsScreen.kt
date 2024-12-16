@@ -279,26 +279,26 @@ fun ShowDetails(
 						.padding(0.dp, 20.dp, 0.dp, 0.dp)
 						.align(Alignment.BottomCenter)
 				) {
-					Button(
-						modifier = Modifier
-							.align(Alignment.CenterVertically)
-							.size(130.dp, 60.dp),
-						onClick = {
-							postPositiveState()
-							changeBarsVisability(true)
-							navController.navigate(Screen.Home.route)
-							removeUrl(list[page])
-							postUrl(DEFAULT_STRING_VALUE, null)
-						},
-						border = BorderStroke(3.dp, Color.Red),
-						colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
-					) {
-						Text(text = cancelString, color = Color.Red)
-					}
-					if(showButtonAdd.value)
-					{
-						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-						CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+					val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+					CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+						Button(
+							modifier = Modifier
+								.align(Alignment.CenterVertically)
+								.size(130.dp, 60.dp),
+							onClick = {
+								postPositiveState()
+								changeBarsVisability(true)
+								navController.navigate(Screen.Home.route)
+								removeUrl(list[page])
+								postUrl(DEFAULT_STRING_VALUE, null)
+							},
+							border = BorderStroke(3.dp, Color.Red),
+							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+						) {
+							Text(text = cancelString, color = Color.Red)
+						}
+						if(showButtonAdd.value)
+						{
 							Button(
 								modifier = Modifier
 									.align(Alignment.CenterVertically)
