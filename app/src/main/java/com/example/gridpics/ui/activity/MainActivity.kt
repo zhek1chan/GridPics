@@ -49,6 +49,8 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
+	private var sharedLink = ""
+	private lateinit var navigation: NavHostController
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -86,6 +88,10 @@ class MainActivity: AppCompatActivity()
 		picVM.changeOrientation(this.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		//serviceIntentForNotification
+		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
+		// Здесь происходит получение всех кэшированных картинок,точнее их url,
+		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		Log.d("intent uri", "${intent.action}")
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
@@ -108,62 +114,15 @@ class MainActivity: AppCompatActivity()
 		}
 		themePick = theme
 		//реализация фичи - поделиться картинкой в приложение
-		var sharedLink = ""
-		val intent = intent
-		val action = intent.action
-		when
-		{
-			action == Intent.ACTION_SEND ->
-			{
-				if(getString(R.string.text_plain) == intent.type)
-				{
-					intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
-						sharedLink = it
-					}
-				}
-			}
-		}
-		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
-		// Здесь происходит получение всех кэшированных картинок,точнее их url,
-		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
-		if(sharedLink.isNotEmpty() && picturesFromSP != null)
-		{
-			if(picturesFromSP.contains(sharedLink))
-			{
-				picVM.removeUrlFromSavedUrls(sharedLink)
-			}
-			picVM.postSavedUrls(urls = "$sharedLink\n$picturesFromSP", caseEmptySharedPreferenceOnFirstLaunch = false)
-		}
-		else if(picturesFromSP == null && sharedLink.isNotEmpty())
-		{
-			picVM.postSavedUrls(urls = sharedLink, caseEmptySharedPreferenceOnFirstLaunch = true)
-		}
-		else if(sharedLink.isEmpty())
-		{
-			picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = false)
-		}
-		Log.d("SharedLink", sharedLink)
 		setContent {
 			val navController = rememberNavController()
+			LaunchedEffect (Unit) {
+				navigation = navController
+				val urls = picturesFromSP ?: ""
+				postValuesFromIntent(intent, urls, picVM)
+			}
 			ComposeTheme {
 				NavigationSetup(navController = navController)
-			}
-			LaunchedEffect(Unit) {
-				if(
-					(!intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty())
-					&& action != null)
-				{
-					Log.d("action", "$action")
-					picVM.clickOnPicture(action, 0, 0)
-					navController.navigate(Screen.Details.route)
-				}
-				else if(sharedLink.isNotEmpty())
-				{
-					Log.d("shared", "$action")
-					picVM.clickOnPicture(sharedLink, 0, 0)
-					detVM.isSharedImage(true)
-					navController.navigate(Screen.Details.route)
-				}
 			}
 		}
 	}
@@ -400,15 +359,69 @@ class MainActivity: AppCompatActivity()
 	override fun onNewIntent(intent: Intent?)
 	{
 		super.onNewIntent(intent)
-		if(intent?.action == Intent.ACTION_SEND)
+		getValuesFromIntent(intent)
+		setIntent(intent)
+	}
+
+	private fun getValuesFromIntent(intent: Intent?)
+	{
+		val action = intent?.action
+		if(action == Intent.ACTION_SEND)
 		{
 			Log.d("service", "newIntent was called")
 			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-			setIntent(intent)
-			// если использовать restart(), то появляется баг с пропажей уведомления, если пользователь находится на экране добавления картинки и
-			// сворачивает приложение - уведомление не пропадает
-			this.finish()
-			this.startActivity(intent)
+			val picVM = picturesViewModel
+			val urls = picVM.picturesUiState.value.picturesUrl
+			postValuesFromIntent(intent, urls, picVM)
+		}
+	}
+
+	private fun postValuesFromIntent(intent: Intent?, urls: String, picVM: PicturesViewModel)
+	{
+		val action = intent?.action
+		var sharedLinkLocal = ""
+		when
+		{
+			action == Intent.ACTION_SEND ->
+			{
+				if(getString(R.string.text_plain) == intent.type)
+				{
+					intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
+						sharedLinkLocal = it
+					}
+				}
+			}
+		}
+		if(sharedLinkLocal.isNotEmpty() && urls.isNotEmpty())
+		{
+			if(urls.contains(sharedLinkLocal))
+			{
+				picVM.removeUrlFromSavedUrls(sharedLinkLocal)
+			}
+			picVM.postSavedUrls(urls = "$sharedLinkLocal\n$urls", caseEmptySharedPreferenceOnFirstLaunch = false)
+		}
+		else if(urls.isEmpty() && sharedLinkLocal.isNotEmpty())
+		{
+			picVM.postSavedUrls(urls = sharedLinkLocal, caseEmptySharedPreferenceOnFirstLaunch = true)
+		}
+		else if(sharedLinkLocal.isEmpty())
+		{
+			picVM.postSavedUrls(urls = urls, caseEmptySharedPreferenceOnFirstLaunch = false)
+		}
+		sharedLink = sharedLinkLocal
+		val nav = navigation
+		if(action != null && !intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty())
+		{
+			Log.d("action", "$action")
+			picVM.clickOnPicture(action, 0, 0)
+			nav.navigate(Screen.Details.route)
+		}
+		else if(sharedLinkLocal.isNotEmpty())
+		{
+			Log.d("shared", "$action")
+			picVM.clickOnPicture(sharedLinkLocal, 0, 0)
+			detailsViewModel.isSharedImage(true)
+			nav.navigate(Screen.Details.route)
 		}
 	}
 
