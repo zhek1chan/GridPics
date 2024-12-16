@@ -241,14 +241,7 @@ class MainActivity: AppCompatActivity()
 		requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
 		val orientation = newConfig.orientation
 		val picVM = picturesViewModel
-		if(orientation == Configuration.ORIENTATION_LANDSCAPE)
-		{
-			picVM.changeOrientation(isPortrait = false)
-		}
-		else if(orientation == Configuration.ORIENTATION_PORTRAIT)
-		{
-			picVM.changeOrientation(isPortrait = true)
-		}
+		picVM.changeOrientation(orientation != Configuration.ORIENTATION_LANDSCAPE)
 	}
 
 	override fun onRequestPermissionsResult(
