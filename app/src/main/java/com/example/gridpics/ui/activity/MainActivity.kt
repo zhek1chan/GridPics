@@ -238,7 +238,7 @@ class MainActivity: AppCompatActivity()
 	{
 		super.onConfigurationChanged(newConfig)
 		detailsViewModel.changeMultiWindowState(isInMultiWindowMode || isInPictureInPictureMode)
-		requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+		requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
 		val orientation = newConfig.orientation
 		val picVM = picturesViewModel
 		picVM.changeOrientation(orientation != Configuration.ORIENTATION_LANDSCAPE)
@@ -251,12 +251,9 @@ class MainActivity: AppCompatActivity()
 	)
 	{
 		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-		if(requestCode == RESULT_SUCCESS)
+		if(requestCode == RESULT_SUCCESS && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
 		{
-			if((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED))
-			{
-				startMainService()
-			}
+			startMainService()
 		}
 	}
 
