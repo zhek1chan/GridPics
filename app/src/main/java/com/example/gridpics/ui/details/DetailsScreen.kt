@@ -225,7 +225,7 @@ fun ShowDetails(
 	postFalseToSharedImageState: () -> Unit,
 	removeUrl: (String) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
-	saveToSharedPrefs: (String) -> Unit
+	saveToSharedPrefs: (String) -> Unit,
 )
 {
 	val topBarHeight = 64.dp
@@ -506,6 +506,7 @@ fun AppBar(
 	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 	Log.d("wtf", list[pagerState.currentPage])
 	val currentPicture = list[pagerState.currentPage]
+	val sharedImgCase = state.value.isSharedImage
 	Log.d("wahwah", "$screenWidth")
 	AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(
@@ -555,37 +556,49 @@ fun AppBar(
 				containerColor = MaterialTheme.colorScheme.background
 			),
 			actions = {
-				IconButton(
-					onClick =
-					{
-						share(currentPicture, context, TEXT_PLAIN)
+				AnimatedVisibility(!sharedImgCase) {
+					IconButton(
+						onClick =
+						{
+							share(currentPicture, context, TEXT_PLAIN)
+						}
+					) {
+						Icon(
+							imageVector = Icons.Default.Share,
+							contentDescription = "share",
+							tint = MaterialTheme.colorScheme.onPrimary,
+						)
 					}
-				) {
-					Icon(
-						imageVector = Icons.Default.Share,
-						contentDescription = "share",
-						tint = MaterialTheme.colorScheme.onPrimary,
-					)
 				}
 			}
 		)
 		val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+		val width = if(sharedImgCase)
+		{
+			screenWidth - 0.dp
+		}
+		else
+		{
+			screenWidth - 50.dp
+		}
 		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 			Box(modifier = Modifier
 				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 				.height(64.dp)
-				.width(screenWidth - 50.dp)
+				.width(width)
 				.clickable {
 					navBack.value = true
 				})
-			Box(modifier = Modifier
-				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-				.height(64.dp)
-				.fillMaxWidth()
-				.padding(screenWidth - 50.dp, 0.dp, 0.dp, 0.dp)
-				.clickable {
-					share(currentPicture, context, TEXT_PLAIN)
-				})
+			AnimatedVisibility(!sharedImgCase) {
+				Box(modifier = Modifier
+					.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+					.height(64.dp)
+					.fillMaxWidth()
+					.padding(screenWidth - 50.dp, 0.dp, 0.dp, 0.dp)
+					.clickable {
+						share(currentPicture, context, TEXT_PLAIN)
+					})
+			}
 		}
 		if(navBack.value)
 		{
