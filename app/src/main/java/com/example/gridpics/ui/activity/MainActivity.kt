@@ -48,7 +48,6 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
-	private var caseActivityWasRecreated = false
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -277,6 +276,7 @@ class MainActivity: AppCompatActivity()
 		}
 		if(mainNotificationService == null)
 		{
+			Log.d("service", "starting service from onResume()")
 			startMainService()
 		}
 		Log.d("lifecycle", "onResume()")
@@ -298,7 +298,10 @@ class MainActivity: AppCompatActivity()
 
 	override fun onStop()
 	{
-		unbindMainService()
+		if(mainNotificationService != null)
+		{
+			unbindMainService()
+		}
 		Log.d("lifecycle", "onStop()")
 		super.onStop()
 	}
@@ -388,23 +391,11 @@ class MainActivity: AppCompatActivity()
 
 	private fun unbindMainService()
 	{
-		if(mainNotificationService != null && !caseActivityWasRecreated)
+		if(mainNotificationService != null)
 		{
 			Log.d("service", "unBind was called in main")
 			unbindService(connection)
-		}
-	}
-
-	override fun onNewIntent(intent: Intent?)
-	{
-		super.onNewIntent(intent)
-		if(intent?.action == Intent.ACTION_SEND)
-		{
-			Log.d("service", "newIntent was called")
-			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-			setIntent(intent)
-			caseActivityWasRecreated = true
-			this.recreate()
+			mainNotificationService = null
 		}
 	}
 

@@ -37,6 +37,7 @@ class MainNotificationService: Service()
 	private lateinit var defaultText: String
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
+		Log.d("service", "onStartCommand()")
 		prepareNotification()
 		return START_NOT_STICKY
 	}
@@ -165,7 +166,6 @@ class MainNotificationService: Service()
 	private fun prepareNotification() {
 		gridPics = this@MainNotificationService.getString(R.string.gridpics)
 		defaultText = this@MainNotificationService.getString(R.string.notification_content_text)
-		Log.d("service", "onStartCommand()")
 		createNotificationChannel()
 		createLogic(DEFAULT_STRING_VALUE, null)
 	}
