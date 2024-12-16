@@ -405,7 +405,14 @@ class MainActivity: AppCompatActivity()
 		{
 			picVM.removeUrlFromSavedUrls(sharedLinkLocal)
 		}
-		picVM.postSavedUrls(urls = "$sharedLinkLocal\n$urls", caseEmptySharedPreferenceOnFirstLaunch = urls == "")
+		val stringToAdd = if (!sharedLinkLocal.isEmpty())
+		{
+			sharedLinkLocal+"\n"
+		} else 
+		{
+			""
+		}
+		picVM.postSavedUrls(urls = "$stringToAdd$urls", caseEmptySharedPreferenceOnFirstLaunch = urls == "")
 		sharedLink = sharedLinkLocal
 		val nav = navigation
 		Log.d("nav", oldUrl)
