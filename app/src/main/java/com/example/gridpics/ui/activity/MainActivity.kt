@@ -380,10 +380,14 @@ class MainActivity: AppCompatActivity()
 	{
 		val action = intent?.action
 		var sharedLinkLocal = ""
+		var oldUrl = ""
 		if(action == Intent.ACTION_SEND && getString(R.string.text_plain) == intent.type)
 		{
 			intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
 				sharedLinkLocal = it
+			}
+			intent.getStringExtra(WAS_OPENED_SCREEN)?.let {
+				oldUrl = it
 			}
 		}
 		if(urls.contains(sharedLinkLocal))
@@ -393,9 +397,8 @@ class MainActivity: AppCompatActivity()
 		picVM.postSavedUrls(urls = "$sharedLinkLocal\n$urls", caseEmptySharedPreferenceOnFirstLaunch = urls == "")
 		sharedLink = sharedLinkLocal
 		val nav = navigation
-		val oldUrl = intent!!.getStringExtra(WAS_OPENED_SCREEN)
-		Log.d("nav", "$oldUrl")
-		if(!oldUrl.isNullOrEmpty())
+		Log.d("nav", oldUrl)
+		if(oldUrl.isNotEmpty())
 		{
 			picVM.clickOnPicture(oldUrl, 0, 0)
 			nav.navigate(Screen.Details.route)
