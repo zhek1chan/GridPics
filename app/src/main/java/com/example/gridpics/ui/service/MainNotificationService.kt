@@ -112,6 +112,7 @@ class MainNotificationService: Service()
 		val resultIntent = Intent(this@MainNotificationService, MainActivity::class.java)
 		if(bitmap != null)
 		{
+			resultIntent.action = Intent.ACTION_MAIN
 			resultIntent.putExtra(WAS_OPENED_SCREEN, description)
 		}
 		resultIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
