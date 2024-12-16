@@ -5,5 +5,6 @@ data class PicturesScreenUiState(
 	val picturesUrl: String,
 	val index: Int,
 	val offset: Int,
-	val currentPicture: String
+	val currentPicture: String,
+	val isPortraitOrientation: Boolean,
 )

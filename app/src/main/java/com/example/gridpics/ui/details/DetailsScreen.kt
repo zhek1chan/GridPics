@@ -3,7 +3,6 @@ package com.example.gridpics.ui.details
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.util.Log
 import android.widget.Toast
@@ -197,13 +196,14 @@ fun DetailsScreen(
 				postUrl = postUrl,
 				scrollIsEnabled = scrollIsEnabled,
 				postFalseToSharedImageState = postFalseToSharedImageState,
-				removeUrl = removeUrl
+				removeUrl = removeUrl,
+				isScreenInPortraitState = picturesScreenState
 			)
 		}
 	)
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ShowDetails(
 	navController: NavController,
@@ -222,6 +222,7 @@ fun ShowDetails(
 	scrollIsEnabled: MutableState<Boolean>,
 	postFalseToSharedImageState: () -> Unit,
 	removeUrl: (String) -> Unit,
+	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 )
 {
 	val topBarHeight = 64.dp
@@ -262,7 +263,8 @@ fun ShowDetails(
 					state = state,
 					context = context,
 					changeBarsVisability = changeBarsVisability,
-					postUrl = postUrl
+					postUrl = postUrl,
+					isScreenInPortraitState = isScreenInPortraitState
 				)
 			}
 			if(state.value.isSharedImage)
@@ -295,22 +297,25 @@ fun ShowDetails(
 					}
 					if(showButtonAdd.value)
 					{
-						Button(
-							modifier = Modifier
-								.align(Alignment.CenterVertically)
-								.padding(30.dp, 0.dp, 0.dp, 0.dp)
-								.size(130.dp, 60.dp),
-							onClick = {
-								postFalseToSharedImageState()
-								if(list.size != 1)
-								{
-									scrollIsEnabled.value = true
-								}
-							},
-							border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
-							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
-						) {
-							Text(text = addString, color = MaterialTheme.colorScheme.primary)
+						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+						CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+							Button(
+								modifier = Modifier
+									.align(Alignment.CenterVertically)
+									.padding(30.dp, 0.dp, 0.dp, 0.dp)
+									.size(130.dp, 60.dp),
+								onClick = {
+									postFalseToSharedImageState()
+									if(list.size != 1)
+									{
+										scrollIsEnabled.value = true
+									}
+								},
+								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
+								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+							) {
+								Text(text = addString, color = MaterialTheme.colorScheme.primary)
+							}
 						}
 					}
 				}
@@ -332,16 +337,16 @@ fun ShowAsynchImage(
 	context: Context,
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
+	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 )
 {
-	val orientation = context.resources.configuration.orientation
 	val scale = if(state.value.isMultiWindowed)
 	{
 		ContentScale.Fit
 	}
 	else
 	{
-		if(orientation == Configuration.ORIENTATION_PORTRAIT)
+		if(isScreenInPortraitState.value.isPortraitOrientation)
 		{
 			ContentScale.FillWidth
 		}

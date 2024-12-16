@@ -101,13 +101,11 @@ fun PicturesScreen(
 	postSavedUrls: (String) -> Unit,
 )
 {
-	val context = LocalContext.current
 	postPositiveState()
 	BackHandler {
 		postPressOnBackButton()
 	}
-	val orientation = context.resources.configuration.orientation
-	val windowInsets = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
+	val windowInsets = if(!state.value.isPortraitOrientation)
 	{
 		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
 	}

@@ -14,7 +14,7 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, ""))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, "", true))
 	private val errorsList: MutableList<String> = mutableListOf()
 	private var saveSharedPictureForFirstLaunch = ""
 
@@ -131,6 +131,15 @@ class PicturesViewModel(
 	{
 		val state = picturesUiState
 		state.value = state.value.copy(index = index, offset = offset, currentPicture = url)
+	}
+
+	fun changeOrientation(isPortrait: Boolean) {
+		val state = picturesUiState
+		if (isPortrait) {
+			state.value = state.value.copy(isPortraitOrientation = true)
+		} else {
+			state.value = state.value.copy(isPortraitOrientation = false)
+		}
 	}
 
 	fun saveCurrentPictureUrl(url: String)

@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
@@ -82,6 +83,7 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val lifeCycScope = lifecycleScope
+		picVM.changeOrientation(this.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		//serviceIntentForNotification
 		Log.d("intent uri", "${intent.action}")
@@ -157,7 +159,6 @@ class MainActivity: AppCompatActivity()
 					picVM.clickOnPicture(sharedLink, 0, 0)
 					detVM.isSharedImage(true)
 					navController.navigate(Screen.Details.route)
-					intent.extras?.clear()
 				}
 			}
 		}
@@ -202,7 +203,8 @@ class MainActivity: AppCompatActivity()
 				SettingsScreen(
 					navController = navController,
 					option = themePick,
-					changeTheme = { int -> changeTheme(int) }
+					changeTheme = { int -> changeTheme(int) },
+					isScreenInPortraitState = picState
 				)
 			}
 			composable(Screen.Details.route) {
@@ -230,6 +232,17 @@ class MainActivity: AppCompatActivity()
 	{
 		super.onConfigurationChanged(newConfig)
 		detailsViewModel.changeMultiWindowState(isInMultiWindowMode || isInPictureInPictureMode)
+		requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+		val orientation = newConfig.orientation
+		val picVM = picturesViewModel
+		if(orientation == Configuration.ORIENTATION_LANDSCAPE)
+		{
+			picVM.changeOrientation(isPortrait = false)
+		}
+		else if(orientation == Configuration.ORIENTATION_PORTRAIT)
+		{
+			picVM.changeOrientation(isPortrait = true)
+		}
 	}
 
 	override fun onRequestPermissionsResult(
