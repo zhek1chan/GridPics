@@ -50,6 +50,7 @@ class MainActivity: AppCompatActivity()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
 	private var sharedLink = ""
+	private var isDisconnected = false
 	private lateinit var navigation: NavHostController
 	private val connection = object: ServiceConnection
 	{
@@ -62,12 +63,14 @@ class MainActivity: AppCompatActivity()
 			{
 				mainService.putValues(flowValue)
 			}
+			isDisconnected = false
 			mainNotificationService = mainService
 		}
 
 		override fun onServiceDisconnected(arg0: ComponentName)
 		{
 			mainNotificationService = null
+			isDisconnected = true
 		}
 
 		override fun onBindingDied(name: ComponentName?)
@@ -311,8 +314,8 @@ class MainActivity: AppCompatActivity()
 	{
 		if(mainNotificationService == null)
 		{
-			val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 			val connectionLocal = connection
+			val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
 			{
 				if(
@@ -322,7 +325,7 @@ class MainActivity: AppCompatActivity()
 					) == PackageManager.PERMISSION_GRANTED
 				)
 				{
-					startForegroundService(serviceIntentLocal)
+					launchService(serviceIntentLocal)
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 				}
 				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
@@ -332,15 +335,22 @@ class MainActivity: AppCompatActivity()
 			}
 			else
 			{
-				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-				{
-					startForegroundService(serviceIntentLocal)
-				}
-				else
-				{
-					startService(serviceIntentLocal)
-				}
+				launchService(serviceIntentLocal)
 				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
+			}
+		}
+	}
+
+	private fun launchService(serviceIntentLocal: Intent) {
+		if (isDisconnected)
+		{
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			{
+				startForegroundService(serviceIntentLocal)
+			}
+			else
+			{
+				startService(serviceIntentLocal)
 			}
 		}
 	}
