@@ -133,11 +133,15 @@ class PicturesViewModel(
 		state.value = state.value.copy(index = index, offset = offset, currentPicture = url)
 	}
 
-	fun changeOrientation(isPortrait: Boolean) {
+	fun changeOrientation(isPortrait: Boolean)
+	{
 		val state = picturesUiState
-		if (isPortrait) {
+		if(isPortrait)
+		{
 			state.value = state.value.copy(isPortraitOrientation = true)
-		} else {
+		}
+		else
+		{
 			state.value = state.value.copy(isPortraitOrientation = false)
 		}
 	}

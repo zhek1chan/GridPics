@@ -115,6 +115,7 @@ fun DetailsScreen(
 	saveCurrentPictureUrl: (String) -> Unit,
 	postFalseToSharedImageState: () -> Unit,
 	removeUrl: (String) -> Unit,
+	saveToSharedPrefs: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -140,11 +141,11 @@ fun DetailsScreen(
 	}
 	val list = if(pictures.isNotEmpty())
 	{
-		remember { pictures.split("\n").toSet().toList() }
+		pictures.split("\n").toSet().toList()
 	}
 	else
 	{
-		remember { listOf(currentPicture) }
+		listOf(currentPicture)
 	}
 	Log.d("pic", currentPicture)
 	Log.d("list", "$list")
@@ -197,7 +198,8 @@ fun DetailsScreen(
 				scrollIsEnabled = scrollIsEnabled,
 				postFalseToSharedImageState = postFalseToSharedImageState,
 				removeUrl = removeUrl,
-				isScreenInPortraitState = picturesScreenState
+				isScreenInPortraitState = picturesScreenState,
+				saveToSharedPrefs = saveToSharedPrefs
 			)
 		}
 	)
@@ -223,6 +225,7 @@ fun ShowDetails(
 	postFalseToSharedImageState: () -> Unit,
 	removeUrl: (String) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
+	saveToSharedPrefs: (String) -> Unit
 )
 {
 	val topBarHeight = 64.dp
@@ -305,11 +308,12 @@ fun ShowDetails(
 									.padding(30.dp, 0.dp, 0.dp, 0.dp)
 									.size(130.dp, 60.dp),
 								onClick = {
-									postFalseToSharedImageState()
 									if(list.size != 1)
 									{
 										scrollIsEnabled.value = true
 									}
+									saveToSharedPrefs(isScreenInPortraitState.value.picturesUrl)
+									postFalseToSharedImageState()
 								},
 								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
 								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)

@@ -127,6 +127,10 @@ class MainActivity: AppCompatActivity()
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		if(sharedLink.isNotEmpty() && picturesFromSP != null)
 		{
+			if(picturesFromSP.contains(sharedLink))
+			{
+				picVM.removeUrlFromSavedUrls(sharedLink)
+			}
 			picVM.postSavedUrls(urls = "$sharedLink\n$picturesFromSP", caseEmptySharedPreferenceOnFirstLaunch = false)
 		}
 		else if(picturesFromSP == null && sharedLink.isNotEmpty())
@@ -195,7 +199,8 @@ class MainActivity: AppCompatActivity()
 						detVM.isSharedImage(false)
 					},
 					isValidUrl = { url -> picVM.isValidUrl(url) },
-					postSavedUrls = { urls -> picVM.postSavedUrls(urls = urls, caseEmptySharedPreferenceOnFirstLaunch = false) }
+					postSavedUrls = { urls -> picVM.postSavedUrls(urls = urls, caseEmptySharedPreferenceOnFirstLaunch = false) },
+					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
@@ -222,6 +227,7 @@ class MainActivity: AppCompatActivity()
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
 					postFalseToSharedImageState = { detVM.isSharedImage(false) },
 					removeUrl = { url -> picVM.removeUrlFromSavedUrls(url) },
+					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) }
 				)
 			}
 		}
@@ -409,6 +415,14 @@ class MainActivity: AppCompatActivity()
 			setIntent(intent)
 			this.recreate()
 		}
+	}
+
+	private fun saveToSharedPrefs(picturesUrl: String)
+	{
+		val sharedPreferencesPictures = this.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
+		val editorPictures = sharedPreferencesPictures.edit()
+		editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
+		editorPictures.apply()
 	}
 
 	companion object

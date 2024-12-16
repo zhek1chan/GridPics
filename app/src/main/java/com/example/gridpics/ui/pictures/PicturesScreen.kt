@@ -1,8 +1,6 @@
 package com.example.gridpics.ui.pictures
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Context.MODE_PRIVATE
 import android.content.res.Configuration
 import android.util.Log
 import android.widget.Toast
@@ -75,8 +73,6 @@ import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.LENGTH_OF_PICTURE
-import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
-import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
@@ -99,6 +95,7 @@ fun PicturesScreen(
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
+	saveToSharedPrefs: (String) -> Unit,
 )
 {
 	postPositiveState()
@@ -153,7 +150,8 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls
+						postSavedUrls = postSavedUrls,
+						saveToSharedPrefs = saveToSharedPrefs
 					)
 				}
 				else
@@ -168,7 +166,8 @@ fun PicturesScreen(
 						navController = navController,
 						currentPicture = currentPicture,
 						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls
+						postSavedUrls = postSavedUrls,
+						saveToSharedPrefs = saveToSharedPrefs
 					)
 				}
 			}
@@ -310,6 +309,7 @@ fun ShowList(
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
+	saveToSharedPrefs: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -328,7 +328,7 @@ fun ShowList(
 				Log.d("Now state is", "Search Is Ok")
 				val status = state.value.loadingState as PicturesState.SearchIsOk
 				LaunchedEffect(status) {
-					saveToSharedPrefs(context, status.data)
+					saveToSharedPrefs(status.data)
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 				}
 				val value = remember(status) { status.data }
@@ -415,7 +415,7 @@ fun ShowList(
 	{
 		Log.d("Now state is", "Loaded from sp")
 		LaunchedEffect(Unit) {
-			saveToSharedPrefs(context, imagesUrlsSP)
+			saveToSharedPrefs(imagesUrlsSP)
 			postSavedUrls(imagesUrlsSP)
 		}
 		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n").toSet().toList() }
@@ -552,14 +552,6 @@ fun AlertDialogSecondary(
 			Text(stringResource(R.string.okey))
 		}
 	})
-}
-
-private fun saveToSharedPrefs(context: Context, picturesUrl: String)
-{
-	val sharedPreferencesPictures = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-	val editorPictures = sharedPreferencesPictures.edit()
-	editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
-	editorPictures.apply()
 }
 
 @Composable
