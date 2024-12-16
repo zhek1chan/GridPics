@@ -76,6 +76,7 @@ class MainActivity: AppCompatActivity()
 		override fun onBindingDied(name: ComponentName?)
 		{
 			mainNotificationService = null
+			isDisconnected = true
 		}
 	}
 
@@ -396,9 +397,9 @@ class MainActivity: AppCompatActivity()
 			intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
 				sharedLinkLocal = it
 			}
-			intent.getStringExtra(WAS_OPENED_SCREEN)?.let {
-				oldUrl = it
-			}
+		}
+		intent.getStringExtra(WAS_OPENED_SCREEN)?.let {
+		        oldUrl = it
 		}
 		if(urls.contains(sharedLinkLocal))
 		{
