@@ -399,6 +399,18 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
+	override fun onNewIntent(intent: Intent?)
+	{
+		super.onNewIntent(intent)
+		if(intent?.action == Intent.ACTION_SEND)
+		{
+			Log.d("service", "newIntent was called")
+			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+			setIntent(intent)
+			this.recreate()
+		}
+	}
+
 	companion object
 	{
 		const val RESULT_SUCCESS = 100
