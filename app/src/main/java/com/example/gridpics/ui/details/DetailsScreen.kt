@@ -148,7 +148,7 @@ fun DetailsScreen(
 		listOf(currentPicture)
 	}
 	Log.d("pic", currentPicture)
-	Log.d("list", "$list")
+	Log.d("list221122", "$list")
 	val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
 	val currentPage = pagerState.currentPage
 	val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }

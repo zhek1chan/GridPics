@@ -116,7 +116,7 @@ class MainActivity: AppCompatActivity()
 		//реализация фичи - поделиться картинкой в приложение
 		setContent {
 			val navController = rememberNavController()
-			LaunchedEffect (Unit) {
+			LaunchedEffect(Unit) {
 				navigation = navController
 				val urls = picturesFromSP ?: ""
 				postValuesFromIntent(intent, urls, picVM)
@@ -380,34 +380,17 @@ class MainActivity: AppCompatActivity()
 	{
 		val action = intent?.action
 		var sharedLinkLocal = ""
-		when
+		if(action == Intent.ACTION_SEND && getString(R.string.text_plain) == intent.type)
 		{
-			action == Intent.ACTION_SEND ->
-			{
-				if(getString(R.string.text_plain) == intent.type)
-				{
-					intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
-						sharedLinkLocal = it
-					}
-				}
+			intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
+				sharedLinkLocal = it
 			}
 		}
-		if(sharedLinkLocal.isNotEmpty() && urls.isNotEmpty())
+		if(urls.contains(sharedLinkLocal))
 		{
-			if(urls.contains(sharedLinkLocal))
-			{
-				picVM.removeUrlFromSavedUrls(sharedLinkLocal)
-			}
-			picVM.postSavedUrls(urls = "$sharedLinkLocal\n$urls", caseEmptySharedPreferenceOnFirstLaunch = false)
+			picVM.removeUrlFromSavedUrls(sharedLinkLocal)
 		}
-		else if(urls.isEmpty() && sharedLinkLocal.isNotEmpty())
-		{
-			picVM.postSavedUrls(urls = sharedLinkLocal, caseEmptySharedPreferenceOnFirstLaunch = true)
-		}
-		else if(sharedLinkLocal.isEmpty())
-		{
-			picVM.postSavedUrls(urls = urls, caseEmptySharedPreferenceOnFirstLaunch = false)
-		}
+		picVM.postSavedUrls(urls = "$sharedLinkLocal\n$urls", caseEmptySharedPreferenceOnFirstLaunch = urls=="")
 		sharedLink = sharedLinkLocal
 		val nav = navigation
 		if(action != null && !intent.getStringExtra(WAS_OPENED_SCREEN).isNullOrEmpty())
