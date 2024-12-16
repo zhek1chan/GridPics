@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -405,6 +406,7 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
+	@SuppressLint("UnsafeIntentLaunch")
 	override fun onNewIntent(intent: Intent?)
 	{
 		super.onNewIntent(intent)
@@ -413,7 +415,10 @@ class MainActivity: AppCompatActivity()
 			Log.d("service", "newIntent was called")
 			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 			setIntent(intent)
-			this.recreate()
+			// если использовать restart(), то появляется баг с пропажей уведомления, если пользователь находится на экране добавления картинки и
+			// сворачивает приложение - уведомление не пропадает
+			this.finish()
+			this.startActivity(intent)
 		}
 	}
 
