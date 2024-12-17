@@ -52,9 +52,9 @@ class MainNotificationService: Service()
 
 	override fun onBind(intent: Intent?): IBinder
 	{
+		mMessenger = Messenger(IncomingHandler())
 		prepareNotification()
 		Log.d("service", "onBind()")
-		mMessenger = Messenger(IncomingHandler(this))
 		return mMessenger.binder
 	}
 
@@ -112,6 +112,8 @@ class MainNotificationService: Service()
 			Log.d("service", "stopNotificationCoroutine has been started")
 			delay(2000)
 			serviceIsAlive = false
+			val msg = Message.obtain(null, SERVICE_IS_DEAD, serviceIsAlive)
+			mMessenger.send(msg)
 			stopSelf()
 			Log.d("service", "service was stopped")
 		}
@@ -191,7 +193,7 @@ class MainNotificationService: Service()
 
 	@SuppressLint("HandlerLeak")
 	@Suppress("UNCHECKED_CAST")
-	inner class IncomingHandler(private val service: MainNotificationService): Handler(Looper.getMainLooper())
+	inner class IncomingHandler: Handler(Looper.getMainLooper())
 	{
 		override fun handleMessage(msg: Message)
 		{
@@ -200,7 +202,7 @@ class MainNotificationService: Service()
 				MESSAGE_SAY_HELLO ->
 				{
 					Log.d("message", "Received hello message")
-					val replyMsg = Message.obtain(null, SERVICE_IS_DEAD, !serviceIsAlive)
+					val replyMsg = Message.obtain(null, SERVICE_IS_DEAD, serviceIsAlive)
 					replyMsg.replyTo = msg.obj as Messenger?
 					try
 					{
@@ -213,7 +215,7 @@ class MainNotificationService: Service()
 				}
 				NOTIFICATION_ID ->
 				{
-					service.putValues(msg.obj as Pair<String, Bitmap?>)
+					this@MainNotificationService.putValues(msg.obj as Pair<String, Bitmap?>)
 					Log.d("message", "$msg")
 				}
 				KILL_SERVICE -> {
