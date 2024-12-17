@@ -389,7 +389,7 @@ class MainActivity: AppCompatActivity()
 		val action = intent.action
 		var sharedLinkLocal = ""
 		var oldUrl = ""
-		if(action == Intent.ACTION_SEND && "text/plain" == intent.type)
+		if(action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
 			intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
 				sharedLinkLocal = it
