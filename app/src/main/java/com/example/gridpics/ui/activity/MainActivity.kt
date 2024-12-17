@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -87,12 +86,10 @@ class MainActivity: AppCompatActivity()
 		val lifeCycScope = lifecycleScope
 		picVM.changeOrientation(this.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-		//serviceIntentForNotification
-		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
-		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
-		Log.d("intent uri", "${intent.action}")
+		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
@@ -369,61 +366,62 @@ class MainActivity: AppCompatActivity()
 
 	private fun getValuesFromIntent(intent: Intent?)
 	{
-		if (intent!=null)
+
+		val action = intent?.action
+		if(action == Intent.ACTION_SEND)
 		{
-			val action = intent.action
-			if(action == Intent.ACTION_SEND)
-			{
-				Log.d("service", "newIntent was called")
-				intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-				val picVM = picturesViewModel
-				val urls = picVM.picturesUiState.value.picturesUrl
-				postValuesFromIntent(intent, urls, picVM)
-			}
+			Log.d("service", "newIntent was called")
+			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+			val picVM = picturesViewModel
+			val urls = picVM.picturesUiState.value.picturesUrl
+			postValuesFromIntent(intent, urls, picVM)
 		}
 	}
 
-	private fun postValuesFromIntent(intent: Intent, urls: String, picVM: PicturesViewModel)
+	private fun postValuesFromIntent(intent: Intent?, urls: String, picVM: PicturesViewModel)
 	{
-		val action = intent.action
-		var sharedLinkLocal = ""
-		var oldUrl = ""
-		if(action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
+		if (intent!= null)
 		{
-			intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
-				sharedLinkLocal = it
+			val action = intent.action
+			var sharedLinkLocal = ""
+			var oldUrl = ""
+			if(action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
+			{
+				intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
+					sharedLinkLocal = it
+				}
 			}
-		}
-		intent.getStringExtra(WAS_OPENED_SCREEN)?.let {
-			oldUrl = it
-		}
-		if(urls.contains(sharedLinkLocal))
-		{
-			picVM.removeUrlFromSavedUrls(sharedLinkLocal)
-		}
-		val stringToAdd = if(sharedLinkLocal.isNotEmpty())
-		{
-			sharedLinkLocal + "\n"
-		}
-		else
-		{
-			""
-		}
-		picVM.postSavedUrls(urls = "$stringToAdd$urls", caseEmptySharedPreferenceOnFirstLaunch = urls == "")
-		sharedLink = sharedLinkLocal
-		val nav = navigation
-		Log.d("nav", oldUrl)
-		if(oldUrl.isNotEmpty())
-		{
-			picVM.clickOnPicture(oldUrl, 0, 0)
-			nav.navigate(Screen.Details.route)
-		}
-		else if(sharedLinkLocal.isNotEmpty())
-		{
-			Log.d("shared", "$action")
-			picVM.clickOnPicture(sharedLinkLocal, 0, 0)
-			detailsViewModel.isSharedImage(true)
-			nav.navigate(Screen.Details.route)
+			else
+			{
+				intent.getStringExtra(WAS_OPENED_SCREEN)?.let {
+					oldUrl = it
+				}
+			}
+			if(sharedLinkLocal.isNotEmpty())
+			{
+				if(urls.contains(sharedLinkLocal))
+				{
+					picVM.removeUrlFromSavedUrls(sharedLinkLocal)
+				}
+				sharedLinkLocal += "\n"
+			}
+
+			picVM.postSavedUrls(urls = "$sharedLinkLocal$urls", caseEmptySharedPreferenceOnFirstLaunch = urls.isEmpty())
+			sharedLink = sharedLinkLocal
+			val nav = navigation
+			Log.d("nav", oldUrl)
+			if(oldUrl.isNotEmpty())
+			{
+				picVM.clickOnPicture(oldUrl, 0, 0)
+				nav.navigate(Screen.Details.route)
+			}
+			else if(sharedLinkLocal.isNotEmpty())
+			{
+				Log.d("shared", "$action")
+				picVM.clickOnPicture(sharedLinkLocal, 0, 0)
+				detailsViewModel.isSharedImage(true)
+				nav.navigate(Screen.Details.route)
+			}
 		}
 	}
 
