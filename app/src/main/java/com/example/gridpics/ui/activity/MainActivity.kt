@@ -342,8 +342,9 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	private fun launchService(serviceIntentLocal: Intent) {
-		if (isDisconnected)
+	private fun launchService(serviceIntentLocal: Intent)
+	{
+		if(isDisconnected)
 		{
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
@@ -398,17 +399,18 @@ class MainActivity: AppCompatActivity()
 				sharedLinkLocal = it
 			}
 		}
-		intent.getStringExtra(WAS_OPENED_SCREEN)?.let {
-		        oldUrl = it
+		intent?.getStringExtra(WAS_OPENED_SCREEN)?.let {
+			oldUrl = it
 		}
 		if(urls.contains(sharedLinkLocal))
 		{
 			picVM.removeUrlFromSavedUrls(sharedLinkLocal)
 		}
-		val stringToAdd = if (!sharedLinkLocal.isEmpty())
+		val stringToAdd = if(sharedLinkLocal.isNotEmpty())
 		{
-			sharedLinkLocal+"\n"
-		} else 
+			sharedLinkLocal + "\n"
+		}
+		else
 		{
 			""
 		}
