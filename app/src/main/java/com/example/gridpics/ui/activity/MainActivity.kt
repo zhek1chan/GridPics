@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -54,7 +55,7 @@ class MainActivity: AppCompatActivity()
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
 		{
-			val binder = service as MainNotificationService.NetworkServiceBinder
+			val binder = service as MainNotificationService.ServiceBinder
 			val mainService = binder.get()
 			val flowValue = detailsViewModel.observeUrlFlow().value
 			if(flowValue.first != DEFAULT_STRING_VALUE)
@@ -65,11 +66,6 @@ class MainActivity: AppCompatActivity()
 		}
 
 		override fun onServiceDisconnected(arg0: ComponentName)
-		{
-			mainNotificationService = null
-		}
-
-		override fun onBindingDied(name: ComponentName?)
 		{
 			mainNotificationService = null
 		}
@@ -221,6 +217,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onResume()
 	{
+		Log.d("service", "disconnected and == $mainNotificationService")
 		val value = detailsViewModel.uiState.value.barsAreVisible
 		if(!value)
 		{
@@ -337,13 +334,19 @@ class MainActivity: AppCompatActivity()
 
 	private fun launchService(serviceIntentLocal: Intent)
 	{
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+		if(!isMyServiceRunning(MainNotificationService::class.java))
 		{
-			startForegroundService(serviceIntentLocal)
-		}
-		else
-		{
-			startService(serviceIntentLocal)
+			Log.d("lifecycle test service", "service was dead")
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			{
+				startForegroundService(serviceIntentLocal)
+			}
+			else
+			{
+				startService(serviceIntentLocal)
+			}
+		} else {
+			Log.d("lifecycle test service", "service was alive")
 		}
 	}
 
@@ -366,12 +369,10 @@ class MainActivity: AppCompatActivity()
 
 	private fun getValuesFromIntent(intent: Intent?)
 	{
-
 		val action = intent?.action
 		if(action == Intent.ACTION_SEND)
 		{
 			Log.d("service", "newIntent was called")
-			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 			val picVM = picturesViewModel
 			val urls = picVM.picturesUiState.value.picturesUrl
 			postValuesFromIntent(intent, urls, picVM)
@@ -380,7 +381,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun postValuesFromIntent(intent: Intent?, urls: String, picVM: PicturesViewModel)
 	{
-		if (intent!= null)
+		if(intent != null)
 		{
 			val action = intent.action
 			var sharedLinkLocal = ""
@@ -431,6 +432,20 @@ class MainActivity: AppCompatActivity()
 		val editorPictures = sharedPreferencesPictures.edit()
 		editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
 		editorPictures.apply()
+	}
+
+	@Suppress("DEPRECATION")
+	private fun isMyServiceRunning(serviceClass: Class<*>): Boolean
+	{
+		val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+		for(service in manager.getRunningServices(Int.MAX_VALUE))
+		{
+			if(serviceClass.name == service.service.className)
+			{
+				return true
+			}
+		}
+		return false
 	}
 
 	companion object

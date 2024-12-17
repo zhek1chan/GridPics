@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 @OptIn(DelicateCoroutinesApi::class)
 class MainNotificationService: Service()
 {
-	private val binder = NetworkServiceBinder()
+	private val binder = ServiceBinder()
 	private var jobForCancelingNotification: Job? = null
 	private var notificationCreationCounter = 0
 	private lateinit var gridPics: String
@@ -171,7 +171,7 @@ class MainNotificationService: Service()
 		createLogic(DEFAULT_STRING_VALUE, null)
 	}
 
-	inner class NetworkServiceBinder: Binder()
+	inner class ServiceBinder: Binder()
 	{
 		fun get(): MainNotificationService = this@MainNotificationService
 	}
