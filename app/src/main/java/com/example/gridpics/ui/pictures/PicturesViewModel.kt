@@ -142,6 +142,7 @@ class PicturesViewModel(
 
 	fun saveCurrentPictureUrl(url: String)
 	{
+		Log.d("nav", url)
 		val state = picturesUiState
 		state.value = state.value.copy(currentPicture = url)
 	}

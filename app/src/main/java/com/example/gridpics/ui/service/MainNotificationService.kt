@@ -22,6 +22,7 @@ import androidx.core.app.NotificationCompat.Builder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
+import com.example.gridpics.ui.activity.MainActivity.Companion.KILL_SERVICE
 import com.example.gridpics.ui.activity.MainActivity.Companion.MESSAGE_SAY_HELLO
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.SERVICE_IS_DEAD
@@ -124,7 +125,8 @@ class MainNotificationService: Service()
 		{
 			resultIntent.action = Intent.ACTION_SEND
 			resultIntent.addCategory(Intent.CATEGORY_DEFAULT)
-			resultIntent.putExtra(WAS_OPENED_SCREEN, description)
+			Log.d("wtf1 1 save intent", description)
+			resultIntent.putExtra(WAS_OPENED_SCREEN, description as String?)
 		}
 		resultIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
 		Log.d("intent URI", resultIntent.toUri(0))
@@ -199,12 +201,12 @@ class MainNotificationService: Service()
 				{
 					Log.d("message", "Received hello message")
 					val replyMsg = Message.obtain(null, SERVICE_IS_DEAD, !serviceIsAlive)
-					replyMsg.replyTo = msg.replyTo
+					replyMsg.replyTo = msg.obj as Messenger?
 					try
 					{
 						msg.replyTo.send(replyMsg)
 					}
-					catch(e: NullPointerException)
+					catch(e: Exception)
 					{
 						Log.e("MyService", "Error sending reply: ${e.message}")
 					}
@@ -213,6 +215,9 @@ class MainNotificationService: Service()
 				{
 					service.putValues(msg.obj as Pair<String, Bitmap?>)
 					Log.d("message", "$msg")
+				}
+				KILL_SERVICE -> {
+					this@MainNotificationService.stopSelf()
 				}
 			}
 		}

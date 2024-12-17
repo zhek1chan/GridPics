@@ -240,6 +240,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onResume()
 	{
+		Log.d("wtf1 resume", picturesViewModel.picturesUiState.value.currentPicture)
 		val value = detailsViewModel.uiState.value.barsAreVisible
 		if(!value)
 		{
@@ -258,7 +259,8 @@ class MainActivity: AppCompatActivity()
 	private fun handleBackButtonPressFromPicturesScreen()
 	{
 		Log.d("callback", "callback was called")
-		//mainNotificationService?.stopSelf()
+		val msg = Message.obtain(null, KILL_SERVICE)
+		mService?.send(msg)
 		this@MainActivity.finish()
 	}
 
@@ -270,6 +272,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onStop()
 	{
+		Log.d("wtf1 stop", picturesViewModel.picturesUiState.value.currentPicture)
 		if(bound)
 		{
 			unbindMainService()
@@ -281,6 +284,7 @@ class MainActivity: AppCompatActivity()
 	override fun onDestroy()
 	{
 		super.onPause()
+		Log.d("wtf1 destroy", picturesViewModel.picturesUiState.value.currentPicture)
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}
@@ -427,7 +431,7 @@ class MainActivity: AppCompatActivity()
 			else
 			{
 				val oldUrl = intent.getStringExtra(WAS_OPENED_SCREEN)
-				Log.d("nav", "$oldUrl")
+				Log.d("wtf1 intent", "$oldUrl")
 				if(!oldUrl.isNullOrEmpty())
 				{
 					picVM.clickOnPicture(oldUrl, 0, 0)
@@ -447,6 +451,7 @@ class MainActivity: AppCompatActivity()
 
 	companion object
 	{
+		const val KILL_SERVICE = 2
 		const val MESSAGE_SAY_HELLO = 0
 		const val SERVICE_IS_DEAD = 1
 		const val RESULT_SUCCESS = 100
@@ -459,6 +464,6 @@ class MainActivity: AppCompatActivity()
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
 		const val DEFAULT_STRING_VALUE = "default"
 		const val HTTP_ERROR = "HTTP error: 404"
-		const val WAS_OPENED_SCREEN = "wasOpenedScreen"
+		const val WAS_OPENED_SCREEN = "WAS_OPENED_SCREEN"
 	}
 }
