@@ -15,10 +15,13 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.Builder
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
+import com.example.gridpics.ui.activity.MainActivity.Companion.IS_SERVICE_DEAD
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
+import com.example.gridpics.ui.activity.MainActivity.Companion.SERVICE_MESSAGE
 import com.example.gridpics.ui.activity.MainActivity.Companion.WAS_OPENED_SCREEN
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -34,9 +37,11 @@ class MainNotificationService: Service()
 	private var notificationCreationCounter = 0
 	private lateinit var gridPics: String
 	private lateinit var defaultText: String
+
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
 		Log.d("service", "onStartCommand()")
+		sendStatusOfLifeToActivity(isDead = false)
 		prepareNotification()
 		return START_NOT_STICKY
 	}
@@ -102,8 +107,16 @@ class MainNotificationService: Service()
 			Log.d("service", "stopNotificationCoroutine has been started")
 			delay(2000)
 			stopSelf()
+			sendStatusOfLifeToActivity(isDead = true)
 			Log.d("service", "service was stopped")
 		}
+	}
+
+	private fun sendStatusOfLifeToActivity(isDead: Boolean)
+	{
+		val intent = Intent(SERVICE_MESSAGE)
+		intent.putExtra(IS_SERVICE_DEAD, isDead)
+		LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
 	}
 
 	private fun createLogic(description: String, bitmap: Bitmap?)
@@ -169,6 +182,12 @@ class MainNotificationService: Service()
 		defaultText = this@MainNotificationService.getString(R.string.notification_content_text)
 		createNotificationChannel()
 		createLogic(DEFAULT_STRING_VALUE, null)
+	}
+
+	override fun onDestroy()
+	{
+		sendStatusOfLifeToActivity(isDead = true)
+		super.onDestroy()
 	}
 
 	inner class ServiceBinder: Binder()

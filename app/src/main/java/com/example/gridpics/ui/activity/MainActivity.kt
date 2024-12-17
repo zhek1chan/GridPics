@@ -1,9 +1,11 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -26,6 +28,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -49,6 +52,15 @@ class MainActivity: AppCompatActivity()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
 	private lateinit var navigation: NavHostController
+	private var serviceIsStopped = true
+	private val messageReceiver: BroadcastReceiver = object: BroadcastReceiver()
+	{
+		override fun onReceive(context: Context?, intent: Intent)
+		{
+			serviceIsStopped = intent.getBooleanExtra(IS_SERVICE_DEAD, true)
+			Log.d("test message", "service is dead: $serviceIsStopped")
+		}
+	}
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -216,6 +228,8 @@ class MainActivity: AppCompatActivity()
 	override fun onResume()
 	{
 		Log.d("service", "disconnected and == $mainNotificationService")
+		LocalBroadcastManager.getInstance(this)
+			.registerReceiver(messageReceiver, IntentFilter(SERVICE_MESSAGE))
 		val value = detailsViewModel.uiState.value.barsAreVisible
 		if(!value)
 		{
@@ -235,7 +249,7 @@ class MainActivity: AppCompatActivity()
 	{
 		Log.d("callback", "callback was called")
 		mainNotificationService?.stopSelf()
-		this@MainActivity.finishAffinity()
+		this@MainActivity.finish()
 	}
 
 	override fun onPause()
@@ -256,6 +270,8 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
+		LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver)
+		super.onPause()
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}
@@ -332,14 +348,17 @@ class MainActivity: AppCompatActivity()
 
 	private fun launchService(serviceIntentLocal: Intent)
 	{
-		Log.d("lifecycle test service", "service was dead")
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+		if (serviceIsStopped)
 		{
-			startForegroundService(serviceIntentLocal)
-		}
-		else
-		{
-			startService(serviceIntentLocal)
+			Log.d("test message", "recreating service")
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			{
+				startForegroundService(serviceIntentLocal)
+			}
+			else
+			{
+				startService(serviceIntentLocal)
+			}
 		}
 	}
 
@@ -393,7 +412,8 @@ class MainActivity: AppCompatActivity()
 				picVM.clickOnPicture(sharedLinkLocal, 0, 0)
 				detailsViewModel.isSharedImage(true)
 				nav.navigate(Screen.Details.route)
-			} else
+			}
+			else
 			{
 				val oldUrl = intent.getStringExtra(WAS_OPENED_SCREEN)
 				Log.d("nav", "$oldUrl")
@@ -416,6 +436,8 @@ class MainActivity: AppCompatActivity()
 
 	companion object
 	{
+		const val SERVICE_MESSAGE = "SERVICE_MESSAGE"
+		const val IS_SERVICE_DEAD = "IS_SERVICE_DEAD"
 		const val RESULT_SUCCESS = 100
 		const val LENGTH_OF_PICTURE = 110
 		const val TEXT_PLAIN = "text/plain"
