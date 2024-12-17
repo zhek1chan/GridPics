@@ -15,11 +15,13 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.Builder
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
-import com.example.gridpics.ui.activity.MainActivity.Companion.DETAILS
+import com.example.gridpics.ui.activity.MainActivity.Companion.IS_SERVICE_DEAD
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
+import com.example.gridpics.ui.activity.MainActivity.Companion.SERVICE_MESSAGE
 import com.example.gridpics.ui.activity.MainActivity.Companion.WAS_OPENED_SCREEN
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -30,13 +32,16 @@ import kotlinx.coroutines.launch
 @OptIn(DelicateCoroutinesApi::class)
 class MainNotificationService: Service()
 {
-	private val binder = NetworkServiceBinder()
+	private val binder = ServiceBinder()
 	private var jobForCancelingNotification: Job? = null
 	private var notificationCreationCounter = 0
 	private lateinit var gridPics: String
 	private lateinit var defaultText: String
+
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
+		Log.d("service", "onStartCommand()")
+		sendStatusOfLifeToActivity(isDead = false)
 		prepareNotification()
 		return START_NOT_STICKY
 	}
@@ -73,9 +78,9 @@ class MainNotificationService: Service()
 
 	override fun onRebind(intent: Intent?)
 	{
+		super.onRebind(intent)
 		Log.d("service", "onRebind()")
 		jobForCancelingNotification?.cancel()
-		super.onRebind(intent)
 	}
 
 	private fun showNotification(builder: Builder)
@@ -102,8 +107,16 @@ class MainNotificationService: Service()
 			Log.d("service", "stopNotificationCoroutine has been started")
 			delay(2000)
 			stopSelf()
+			sendStatusOfLifeToActivity(isDead = true)
 			Log.d("service", "service was stopped")
 		}
+	}
+
+	private fun sendStatusOfLifeToActivity(isDead: Boolean)
+	{
+		val intent = Intent(SERVICE_MESSAGE)
+		intent.putExtra(IS_SERVICE_DEAD, isDead)
+		LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
 	}
 
 	private fun createLogic(description: String, bitmap: Bitmap?)
@@ -112,8 +125,9 @@ class MainNotificationService: Service()
 		val resultIntent = Intent(this@MainNotificationService, MainActivity::class.java)
 		if(bitmap != null)
 		{
-			resultIntent.putExtra(WAS_OPENED_SCREEN, DETAILS)
-			resultIntent.setAction(description)
+			resultIntent.action = Intent.ACTION_SEND
+			resultIntent.addCategory(Intent.CATEGORY_DEFAULT)
+			resultIntent.putExtra(WAS_OPENED_SCREEN, description)
 		}
 		resultIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
 		Log.d("intent URI", resultIntent.toUri(0))
@@ -162,15 +176,21 @@ class MainNotificationService: Service()
 		notificationCreationCounter++
 	}
 
-	private fun prepareNotification() {
+	private fun prepareNotification()
+	{
 		gridPics = this@MainNotificationService.getString(R.string.gridpics)
 		defaultText = this@MainNotificationService.getString(R.string.notification_content_text)
-		Log.d("service", "onStartCommand()")
 		createNotificationChannel()
 		createLogic(DEFAULT_STRING_VALUE, null)
 	}
 
-	inner class NetworkServiceBinder: Binder()
+	override fun onDestroy()
+	{
+		sendStatusOfLifeToActivity(isDead = true)
+		super.onDestroy()
+	}
+
+	inner class ServiceBinder: Binder()
 	{
 		fun get(): MainNotificationService = this@MainNotificationService
 	}

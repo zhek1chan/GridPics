@@ -3,7 +3,6 @@ package com.example.gridpics.ui.details
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.util.Log
 import android.widget.Toast
@@ -11,6 +10,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
@@ -112,10 +113,24 @@ fun DetailsScreen(
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
 	saveCurrentPictureUrl: (String) -> Unit,
+	postFalseToSharedImageState: () -> Unit,
+	removeUrl: (String) -> Unit,
+	saveToSharedPrefs: (String) -> Unit,
 )
 {
 	val context = LocalContext.current
+	val valuePicUi = picturesScreenState.value
+	val currentPicture = valuePicUi.currentPicture
+	Log.d("Case shared", currentPicture)
+	val pictures = valuePicUi.picturesUrl
+	val value = state.value
+	Log.d("pictures", pictures)
+	val scrollIsEnabled = remember { mutableStateOf(true) }
 	BackHandler {
+		if(value.isSharedImage)
+		{
+			removeUrl(currentPicture)
+		}
 		changeBarsVisability(true)
 		postUrl(DEFAULT_STRING_VALUE, null)
 		navController.navigate(Screen.Home.route) {
@@ -124,66 +139,73 @@ fun DetailsScreen(
 			launchSingleTop = true
 		}
 	}
-	val valuePicUi = picturesScreenState.value
-	val currentPicture = valuePicUi.currentPicture
-	val pictures = valuePicUi.picturesUrl
-	if(pictures != null)
+	val list = if(pictures.isNotEmpty())
 	{
-		Log.d("pic", currentPicture)
-		val list = remember { pictures.split("\n") }
-		Log.d("list", "$list")
-		val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
-		val currentPage = pagerState.currentPage
-		val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
-		val value = state.value
-
-		LaunchedEffect(currentPage) {
-			val pic = list[currentPage]
-			saveCurrentPictureUrl(pic)
-			if(checkIfExists(pic))
-			{
-				Log.d("checkMa", "gruzim oshibku")
-				postUrl(pic, errorPicture)
-			}
-			else
-			{
-				postNewBitmap(pic)
-			}
-		}
-		Scaffold(
-			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
-			topBar = {
-				AppBar(
-					isVisible = value.barsAreVisible,
-					context = context,
-					nc = navController,
-					list = list,
-					pagerState = pagerState,
-					postUrl = postUrl,
-				)
-			},
-			content = { padding ->
-				ShowDetails(
-					navController = navController,
-					list = list,
-					pagerState = pagerState,
-					context = context,
-					checkIfExists = checkIfExists,
-					addError = addError,
-					removeSpecialError = removeSpecialError,
-					state = state,
-					postPositiveState = postPositiveState,
-					isValidUrl = isValidUrl,
-					padding = padding,
-					changeBarsVisability = changeBarsVisability,
-					postUrl = postUrl
-				)
-			}
-		)
+		pictures.split("\n").toSet().toList()
 	}
+	else
+	{
+		listOf(currentPicture)
+	}
+	Log.d("pic", currentPicture)
+	Log.d("list221122", "$list")
+	val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
+	val currentPage = pagerState.currentPage
+	val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
+
+	LaunchedEffect(currentPage) {
+		val pic = list[currentPage]
+		saveCurrentPictureUrl(pic)
+		if(checkIfExists(pic))
+		{
+			Log.d("checkMa", "gruzim oshibku")
+			postUrl(pic, errorPicture)
+		}
+		else
+		{
+			postNewBitmap(pic)
+		}
+	}
+	Scaffold(
+		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
+		topBar = {
+			AppBar(
+				isVisible = value.barsAreVisible,
+				context = context,
+				nc = navController,
+				list = list,
+				pagerState = pagerState,
+				postUrl = postUrl,
+				state = state,
+				removeUrl = removeUrl
+			)
+		},
+		content = { padding ->
+			ShowDetails(
+				navController = navController,
+				list = list,
+				pagerState = pagerState,
+				context = context,
+				checkIfExists = checkIfExists,
+				addError = addError,
+				removeSpecialError = removeSpecialError,
+				state = state,
+				postPositiveState = postPositiveState,
+				isValidUrl = isValidUrl,
+				padding = padding,
+				changeBarsVisability = changeBarsVisability,
+				postUrl = postUrl,
+				scrollIsEnabled = scrollIsEnabled,
+				postFalseToSharedImageState = postFalseToSharedImageState,
+				removeUrl = removeUrl,
+				isScreenInPortraitState = picturesScreenState,
+				saveToSharedPrefs = saveToSharedPrefs
+			)
+		}
+	)
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ShowDetails(
 	navController: NavController,
@@ -199,6 +221,11 @@ fun ShowDetails(
 	padding: PaddingValues,
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
+	scrollIsEnabled: MutableState<Boolean>,
+	postFalseToSharedImageState: () -> Unit,
+	removeUrl: (String) -> Unit,
+	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
+	saveToSharedPrefs: (String) -> Unit,
 )
 {
 	val topBarHeight = 64.dp
@@ -210,33 +237,93 @@ fun ShowDetails(
 		state = pagerState,
 		pageSize = PageSize.Fill,
 		contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
-		userScrollEnabled = true,
+		userScrollEnabled = scrollIsEnabled.value,
 		pageSpacing = 10.dp
 	) { page ->
-		if(checkIfExists(list[page]))
-		{
-			ShowError(
-				context = context,
-				list = list,
-				currentPage = page,
-				pagerState = pagerState,
-				isValidUrl = isValidUrl
-			)
-		}
-		else
-		{
-			ShowAsynchImage(
-				list = list,
-				page = page,
-				addError = addError,
-				removeSpecialError = removeSpecialError,
-				postPositiveState = postPositiveState,
-				navController = navController,
-				state = state,
-				context = context,
-				changeBarsVisability = changeBarsVisability,
-				postUrl = postUrl
-			)
+		val showButtonAdd = remember { mutableStateOf(true) }
+		Box(modifier = Modifier.fillMaxSize()) {
+			if(checkIfExists(list[page]))
+			{
+				showButtonAdd.value = false
+				ShowError(
+					context = context,
+					list = list,
+					currentPage = page,
+					pagerState = pagerState,
+					isValidUrl = isValidUrl
+				)
+			}
+			else
+			{
+				showButtonAdd.value = true
+				ShowAsynchImage(
+					list = list,
+					page = page,
+					addError = addError,
+					removeSpecialError = removeSpecialError,
+					postPositiveState = postPositiveState,
+					navController = navController,
+					state = state,
+					context = context,
+					changeBarsVisability = changeBarsVisability,
+					postUrl = postUrl,
+					isScreenInPortraitState = isScreenInPortraitState
+				)
+			}
+			if(state.value.isSharedImage)
+			{
+				scrollIsEnabled.value = false
+				val addString = stringResource(R.string.add)
+				val cancelString = stringResource(R.string.cancel)
+				Log.d("case shared", "show buttons")
+				Row(
+					modifier = Modifier
+						.height(80.dp)
+						.padding(0.dp, 20.dp, 0.dp, 0.dp)
+						.align(Alignment.BottomCenter)
+				) {
+					val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+					CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+						Button(
+							modifier = Modifier
+								.align(Alignment.CenterVertically)
+								.size(130.dp, 60.dp),
+							onClick = {
+								postPositiveState()
+								changeBarsVisability(true)
+								navController.navigate(Screen.Home.route)
+								removeUrl(list[page])
+								postUrl(DEFAULT_STRING_VALUE, null)
+							},
+							border = BorderStroke(3.dp, Color.Red),
+							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+						) {
+							Text(text = cancelString, color = Color.Red)
+						}
+						if(showButtonAdd.value)
+						{
+							Button(
+								modifier = Modifier
+									.align(Alignment.CenterVertically)
+									.padding(30.dp, 0.dp, 0.dp, 0.dp)
+									.size(130.dp, 60.dp),
+								onClick = {
+									if(list.size != 1)
+									{
+										scrollIsEnabled.value = true
+									}
+									saveToSharedPrefs(isScreenInPortraitState.value.picturesUrl)
+									postFalseToSharedImageState()
+								},
+								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
+								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+							) {
+								Text(text = addString, color = MaterialTheme.colorScheme.primary)
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }
@@ -254,16 +341,16 @@ fun ShowAsynchImage(
 	context: Context,
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
+	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 )
 {
-	val orientation = context.resources.configuration.orientation
 	val scale = if(state.value.isMultiWindowed)
 	{
 		ContentScale.Fit
 	}
 	else
 	{
-		if(orientation == Configuration.ORIENTATION_PORTRAIT)
+		if(isScreenInPortraitState.value.isPortraitOrientation)
 		{
 			ContentScale.FillWidth
 		}
@@ -411,10 +498,15 @@ fun AppBar(
 	list: List<String>,
 	pagerState: PagerState,
 	postUrl: (String, Bitmap?) -> Unit,
+	state: MutableState<DetailsScreenUiState>,
+	removeUrl: (String) -> Unit,
 )
 {
 	val navBack = remember { mutableStateOf(false) }
 	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+	Log.d("wtf", list[pagerState.currentPage])
+	val currentPicture = list[pagerState.currentPage]
+	val sharedImgCase = state.value.isSharedImage
 	Log.d("wahwah", "$screenWidth")
 	AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(
@@ -432,7 +524,7 @@ fun AppBar(
 				.wrapContentSize(),
 			title = {
 				Text(
-					text = list[pagerState.currentPage],
+					text = currentPicture,
 					fontSize = 18.sp,
 					maxLines = 2,
 					modifier = Modifier
@@ -464,40 +556,56 @@ fun AppBar(
 				containerColor = MaterialTheme.colorScheme.background
 			),
 			actions = {
-				IconButton(
-					onClick =
-					{
-						share(list[pagerState.currentPage], context, TEXT_PLAIN)
+				AnimatedVisibility(!sharedImgCase) {
+					IconButton(
+						onClick =
+						{
+							share(currentPicture, context, TEXT_PLAIN)
+						}
+					) {
+						Icon(
+							imageVector = Icons.Default.Share,
+							contentDescription = "share",
+							tint = MaterialTheme.colorScheme.onPrimary,
+						)
 					}
-				) {
-					Icon(
-						imageVector = Icons.Default.Share,
-						contentDescription = "share",
-						tint = MaterialTheme.colorScheme.onPrimary,
-					)
 				}
 			}
 		)
 		val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+		val width = if(sharedImgCase)
+		{
+			screenWidth - 0.dp
+		}
+		else
+		{
+			screenWidth - 50.dp
+		}
 		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 			Box(modifier = Modifier
 				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 				.height(64.dp)
-				.width(screenWidth - 50.dp)
+				.width(width)
 				.clickable {
 					navBack.value = true
 				})
-			Box(modifier = Modifier
-				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-				.height(64.dp)
-				.fillMaxWidth()
-				.padding(screenWidth - 50.dp, 0.dp, 0.dp, 0.dp)
-				.clickable {
-					share(list[pagerState.currentPage], context, TEXT_PLAIN)
-				})
+			AnimatedVisibility(!sharedImgCase) {
+				Box(modifier = Modifier
+					.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+					.height(64.dp)
+					.fillMaxWidth()
+					.padding(screenWidth - 50.dp, 0.dp, 0.dp, 0.dp)
+					.clickable {
+						share(currentPicture, context, TEXT_PLAIN)
+					})
+			}
 		}
 		if(navBack.value)
 		{
+			if(state.value.isSharedImage)
+			{
+				removeUrl(currentPicture)
+			}
 			postUrl(DEFAULT_STRING_VALUE, null)
 			navBack.value = false
 			nc.navigate(BottomNavItem.Home.route)

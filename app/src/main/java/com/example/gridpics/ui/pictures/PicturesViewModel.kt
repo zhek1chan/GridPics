@@ -1,5 +1,6 @@
 package com.example.gridpics.ui.pictures
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,8 +14,9 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.NothingFound, "", 0, 0, ""))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, "", true))
 	private val errorsList: MutableList<String> = mutableListOf()
+	private var saveSharedPictureForFirstLaunch = ""
 
 	init
 	{
@@ -23,7 +25,18 @@ class PicturesViewModel(
 			interactor.getPics().collect { urls ->
 				when(urls)
 				{
-					is Resource.Data -> flow.value = flow.value.copy(loadingState = PicturesState.SearchIsOk(urls.value))
+					is Resource.Data ->
+					{
+						var savedUrls = saveSharedPictureForFirstLaunch
+						if(savedUrls.isNotEmpty())
+						{
+							savedUrls += "\n"
+						}
+						flow.value = flow.value.copy(
+							loadingState = PicturesState.SearchIsOk(savedUrls + urls.value)
+						)
+						Log.d("pictures were loaded", savedUrls + urls.value)
+					}
 					is Resource.ConnectionError -> flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
 					is Resource.NotFound -> flow.value = flow.value.copy(loadingState = PicturesState.NothingFound)
 				}
@@ -46,11 +59,42 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postSavedUrls(urls: String?)
+	fun postSavedUrls(urls: String?, caseEmptySharedPreferenceOnFirstLaunch: Boolean)
+	{
+		Log.d("pictures urls", "$urls")
+		val flow = picturesUiState
+		val notNullUrls = urls ?: ""
+		if(caseEmptySharedPreferenceOnFirstLaunch)
+		{
+			saveSharedPictureForFirstLaunch = notNullUrls
+		}
+		else
+		{
+			viewModelScope.launch {
+				flow.value = flow.value.copy(picturesUrl = notNullUrls)
+			}
+		}
+	}
+
+	fun removeUrlFromSavedUrls(url: String)
 	{
 		val flow = picturesUiState
+		val urls = removePrefix(flow.value.picturesUrl, "$url\n")
+		Log.d("updated", urls)
 		viewModelScope.launch {
 			flow.value = flow.value.copy(picturesUrl = urls)
+		}
+	}
+
+	private fun removePrefix(str: String, prefix: String): String
+	{
+		return if(str.startsWith(prefix))
+		{
+			str.substring(prefix.length)
+		}
+		else
+		{
+			str
 		}
 	}
 
@@ -87,6 +131,13 @@ class PicturesViewModel(
 	{
 		val state = picturesUiState
 		state.value = state.value.copy(index = index, offset = offset, currentPicture = url)
+	}
+
+	fun changeOrientation(isPortrait: Boolean)
+	{
+		val state = picturesUiState
+		state.value = state.value.copy(isPortraitOrientation = isPortrait)
+
 	}
 
 	fun saveCurrentPictureUrl(url: String)

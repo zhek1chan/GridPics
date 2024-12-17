@@ -2,7 +2,6 @@ package com.example.gridpics.ui.settings
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
-import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -33,6 +32,7 @@ import androidx.compose.material3.RadioButtonColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,17 +59,18 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
 import com.example.gridpics.ui.pictures.AlertDialogMain
+import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
 	navController: NavController,
 	option: Int,
-	changeTheme: (Int) -> Unit
+	changeTheme: (Int) -> Unit,
+	isScreenInPortraitState: MutableState<PicturesScreenUiState>
 )
 {
-	val orientation = LocalContext.current.resources.configuration.orientation
-	val windowInsets = if(orientation == Configuration.ORIENTATION_LANDSCAPE)
+	val windowInsets = if(!isScreenInPortraitState.value.isPortraitOrientation)
 	{
 		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
 	}
