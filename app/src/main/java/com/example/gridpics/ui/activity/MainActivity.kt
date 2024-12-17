@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -49,7 +48,6 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
-	private var sharedLink = ""
 	private lateinit var navigation: NavHostController
 	private val connection = object: ServiceConnection
 	{
@@ -334,19 +332,14 @@ class MainActivity: AppCompatActivity()
 
 	private fun launchService(serviceIntentLocal: Intent)
 	{
-		if(!isMyServiceRunning(MainNotificationService::class.java))
+		Log.d("lifecycle test service", "service was dead")
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 		{
-			Log.d("lifecycle test service", "service was dead")
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-			{
-				startForegroundService(serviceIntentLocal)
-			}
-			else
-			{
-				startService(serviceIntentLocal)
-			}
-		} else {
-			Log.d("lifecycle test service", "service was alive")
+			startForegroundService(serviceIntentLocal)
+		}
+		else
+		{
+			startService(serviceIntentLocal)
 		}
 	}
 
@@ -385,43 +378,30 @@ class MainActivity: AppCompatActivity()
 		{
 			val action = intent.action
 			var sharedLinkLocal = ""
-			var oldUrl = ""
-			if(action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
+			val nav = navigation
+			if(action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type && !intent.getStringExtra(Intent.EXTRA_TEXT).isNullOrEmpty())
 			{
 				intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
 					sharedLinkLocal = it
 				}
-			}
-			else
-			{
-				intent.getStringExtra(WAS_OPENED_SCREEN)?.let {
-					oldUrl = it
-				}
-			}
-			if(sharedLinkLocal.isNotEmpty())
-			{
 				if(urls.contains(sharedLinkLocal))
 				{
 					picVM.removeUrlFromSavedUrls(sharedLinkLocal)
 				}
-				sharedLinkLocal += "\n"
-			}
-
-			picVM.postSavedUrls(urls = "$sharedLinkLocal$urls", caseEmptySharedPreferenceOnFirstLaunch = urls.isEmpty())
-			sharedLink = sharedLinkLocal
-			val nav = navigation
-			Log.d("nav", oldUrl)
-			if(oldUrl.isNotEmpty())
-			{
-				picVM.clickOnPicture(oldUrl, 0, 0)
-				nav.navigate(Screen.Details.route)
-			}
-			else if(sharedLinkLocal.isNotEmpty())
-			{
+				picVM.postSavedUrls(urls = "$sharedLinkLocal\n$urls", caseEmptySharedPreferenceOnFirstLaunch = urls.isEmpty())
 				Log.d("shared", "$action")
 				picVM.clickOnPicture(sharedLinkLocal, 0, 0)
 				detailsViewModel.isSharedImage(true)
 				nav.navigate(Screen.Details.route)
+			} else
+			{
+				val oldUrl = intent.getStringExtra(WAS_OPENED_SCREEN)
+				Log.d("nav", "$oldUrl")
+				if(!oldUrl.isNullOrEmpty())
+				{
+					picVM.clickOnPicture(oldUrl, 0, 0)
+					nav.navigate(Screen.Details.route)
+				}
 			}
 		}
 	}
@@ -432,20 +412,6 @@ class MainActivity: AppCompatActivity()
 		val editorPictures = sharedPreferencesPictures.edit()
 		editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
 		editorPictures.apply()
-	}
-
-	@Suppress("DEPRECATION")
-	private fun isMyServiceRunning(serviceClass: Class<*>): Boolean
-	{
-		val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
-		for(service in manager.getRunningServices(Int.MAX_VALUE))
-		{
-			if(serviceClass.name == service.service.className)
-			{
-				return true
-			}
-		}
-		return false
 	}
 
 	companion object
