@@ -1,5 +1,6 @@
 package com.example.gridpics.ui.service
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -8,20 +9,22 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Icon
-import android.os.Binder
 import android.os.Build
 import android.os.Build.VERSION_CODES
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
+import android.os.Message
+import android.os.Messenger
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.Builder
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
-import com.example.gridpics.ui.activity.MainActivity.Companion.IS_SERVICE_DEAD
+import com.example.gridpics.ui.activity.MainActivity.Companion.MESSAGE_SAY_HELLO
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
-import com.example.gridpics.ui.activity.MainActivity.Companion.SERVICE_MESSAGE
+import com.example.gridpics.ui.activity.MainActivity.Companion.SERVICE_IS_DEAD
 import com.example.gridpics.ui.activity.MainActivity.Companion.WAS_OPENED_SCREEN
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -32,16 +35,16 @@ import kotlinx.coroutines.launch
 @OptIn(DelicateCoroutinesApi::class)
 class MainNotificationService: Service()
 {
-	private val binder = ServiceBinder()
 	private var jobForCancelingNotification: Job? = null
 	private var notificationCreationCounter = 0
 	private lateinit var gridPics: String
+	private lateinit var mMessenger: Messenger
 	private lateinit var defaultText: String
-
+	private var serviceIsAlive = false
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
 		Log.d("service", "onStartCommand()")
-		sendStatusOfLifeToActivity(isDead = false)
+		serviceIsAlive = true
 		prepareNotification()
 		return START_NOT_STICKY
 	}
@@ -50,7 +53,8 @@ class MainNotificationService: Service()
 	{
 		prepareNotification()
 		Log.d("service", "onBind()")
-		return binder
+		mMessenger = Messenger(IncomingHandler(this))
+		return mMessenger.binder
 	}
 
 	private fun createNotificationChannel()
@@ -106,17 +110,10 @@ class MainNotificationService: Service()
 		jobForCancelingNotification = GlobalScope.launch {
 			Log.d("service", "stopNotificationCoroutine has been started")
 			delay(2000)
+			serviceIsAlive = false
 			stopSelf()
-			sendStatusOfLifeToActivity(isDead = true)
 			Log.d("service", "service was stopped")
 		}
-	}
-
-	private fun sendStatusOfLifeToActivity(isDead: Boolean)
-	{
-		val intent = Intent(SERVICE_MESSAGE)
-		intent.putExtra(IS_SERVICE_DEAD, isDead)
-		LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
 	}
 
 	private fun createLogic(description: String, bitmap: Bitmap?)
@@ -186,12 +183,38 @@ class MainNotificationService: Service()
 
 	override fun onDestroy()
 	{
-		sendStatusOfLifeToActivity(isDead = true)
+		serviceIsAlive = false
 		super.onDestroy()
 	}
 
-	inner class ServiceBinder: Binder()
+	@SuppressLint("HandlerLeak")
+	@Suppress("UNCHECKED_CAST")
+	inner class IncomingHandler(private val service: MainNotificationService): Handler(Looper.getMainLooper())
 	{
-		fun get(): MainNotificationService = this@MainNotificationService
+		override fun handleMessage(msg: Message)
+		{
+			when(msg.what)
+			{
+				MESSAGE_SAY_HELLO ->
+				{
+					Log.d("message", "Received hello message")
+					val replyMsg = Message.obtain(null, SERVICE_IS_DEAD, !serviceIsAlive)
+					replyMsg.replyTo = msg.replyTo
+					try
+					{
+						msg.replyTo.send(replyMsg)
+					}
+					catch(e: NullPointerException)
+					{
+						Log.e("MyService", "Error sending reply: ${e.message}")
+					}
+				}
+				NOTIFICATION_ID ->
+				{
+					service.putValues(msg.obj as Pair<String, Bitmap?>)
+					Log.d("message", "$msg")
+				}
+			}
+		}
 	}
 }

@@ -1,18 +1,21 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
+import android.os.Message
+import android.os.Messenger
+import android.os.RemoteException
 import android.util.Log
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -28,7 +31,6 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -50,34 +52,44 @@ class MainActivity: AppCompatActivity()
 	private val detailsViewModel by viewModel<DetailsViewModel>()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
-	private var mainNotificationService: MainNotificationService? = null
+	private var mService: Messenger? = null
+	private var serviceIsDead = true
+	private var bound: Boolean = false
 	private lateinit var navigation: NavHostController
-	private var serviceIsStopped = true
-	private val messageReceiver: BroadcastReceiver = object: BroadcastReceiver()
-	{
-		override fun onReceive(context: Context?, intent: Intent)
-		{
-			serviceIsStopped = intent.getBooleanExtra(IS_SERVICE_DEAD, true)
-			Log.d("test message", "service is dead: $serviceIsStopped")
-		}
-	}
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
 		{
-			val binder = service as MainNotificationService.ServiceBinder
-			val mainService = binder.get()
-			val flowValue = detailsViewModel.observeUrlFlow().value
-			if(flowValue.first != DEFAULT_STRING_VALUE)
+			mService = Messenger(service)
+			val msg = Message.obtain(null, MESSAGE_SAY_HELLO)
+			msg.replyTo = Messenger(object: Handler(Looper.getMainLooper())
 			{
-				mainService.putValues(flowValue)
+				override fun handleMessage(msg: Message)
+				{
+					when(msg.what)
+					{
+						SERVICE_IS_DEAD ->
+						{
+							serviceIsDead = msg.obj as Boolean
+						}
+					}
+				}
+			})
+			try
+			{
+				mService?.send(msg)
 			}
-			mainNotificationService = mainService
+			catch(e: RemoteException)
+			{
+				Log.e("MainActivity", "Error sending message: ${e.message}")
+			}
+			bound = true
 		}
 
 		override fun onServiceDisconnected(arg0: ComponentName)
 		{
-			mainNotificationService = null
+			mService = null
+			bound = false
 		}
 	}
 
@@ -111,7 +123,8 @@ class MainActivity: AppCompatActivity()
 					) == PackageManager.PERMISSION_GRANTED)
 				{
 					Log.d("service", "data $it")
-					mainNotificationService?.putValues(it)
+					val msg: Message = Message.obtain(null, NOTIFICATION_ID, it)
+					mService?.send(msg)
 				}
 			}
 		}
@@ -227,15 +240,13 @@ class MainActivity: AppCompatActivity()
 
 	override fun onResume()
 	{
-		LocalBroadcastManager.getInstance(this)
-			.registerReceiver(messageReceiver, IntentFilter(SERVICE_MESSAGE))
 		val value = detailsViewModel.uiState.value.barsAreVisible
 		if(!value)
 		{
 			changeBarsVisability(visible = false, fromDetailsScreen = false)
 			Log.d("bars", "change visability to false")
 		}
-		if(mainNotificationService == null)
+		if(!bound)
 		{
 			Log.d("service", "starting service from onResume()")
 			startMainService()
@@ -247,7 +258,7 @@ class MainActivity: AppCompatActivity()
 	private fun handleBackButtonPressFromPicturesScreen()
 	{
 		Log.d("callback", "callback was called")
-		mainNotificationService?.stopSelf()
+		//mainNotificationService?.stopSelf()
 		this@MainActivity.finish()
 	}
 
@@ -259,7 +270,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onStop()
 	{
-		if(mainNotificationService != null)
+		if(bound)
 		{
 			unbindMainService()
 		}
@@ -269,7 +280,6 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
-		LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver)
 		super.onPause()
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
@@ -316,7 +326,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun startMainService()
 	{
-		if(mainNotificationService == null)
+		if(!bound)
 		{
 			val connectionLocal = connection
 			val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
@@ -342,14 +352,16 @@ class MainActivity: AppCompatActivity()
 				launchService(serviceIntentLocal)
 				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
+			val newMsg: Message = Message.obtain(null, MESSAGE_SAY_HELLO)
+			mService?.send(newMsg)
 		}
 	}
 
 	private fun launchService(serviceIntentLocal: Intent)
 	{
-		if (serviceIsStopped)
+		if(serviceIsDead)
 		{
-			Log.d("test message", "recreating service")
+			Log.d("message", "recreating service")
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 			{
 				startForegroundService(serviceIntentLocal)
@@ -363,11 +375,11 @@ class MainActivity: AppCompatActivity()
 
 	private fun unbindMainService()
 	{
-		if(mainNotificationService != null)
+		if(bound)
 		{
 			Log.d("service", "unBind was called in main")
 			unbindService(connection)
-			mainNotificationService = null
+			bound = false
 		}
 	}
 
@@ -435,8 +447,8 @@ class MainActivity: AppCompatActivity()
 
 	companion object
 	{
-		const val SERVICE_MESSAGE = "SERVICE_MESSAGE"
-		const val IS_SERVICE_DEAD = "IS_SERVICE_DEAD"
+		const val MESSAGE_SAY_HELLO = 0
+		const val SERVICE_IS_DEAD = 1
 		const val RESULT_SUCCESS = 100
 		const val LENGTH_OF_PICTURE = 110
 		const val TEXT_PLAIN = "text/plain"
