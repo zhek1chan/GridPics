@@ -50,7 +50,6 @@ class MainActivity: AppCompatActivity()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
 	private var sharedLink = ""
-	private var isDisconnected = false
 	private lateinit var navigation: NavHostController
 	private val connection = object: ServiceConnection
 	{
@@ -63,20 +62,17 @@ class MainActivity: AppCompatActivity()
 			{
 				mainService.putValues(flowValue)
 			}
-			isDisconnected = false
 			mainNotificationService = mainService
 		}
 
 		override fun onServiceDisconnected(arg0: ComponentName)
 		{
 			mainNotificationService = null
-			isDisconnected = true
 		}
 
 		override fun onBindingDied(name: ComponentName?)
 		{
 			mainNotificationService = null
-			isDisconnected = true
 		}
 	}
 
@@ -344,16 +340,13 @@ class MainActivity: AppCompatActivity()
 
 	private fun launchService(serviceIntentLocal: Intent)
 	{
-		if(isDisconnected)
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 		{
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-			{
-				startForegroundService(serviceIntentLocal)
-			}
-			else
-			{
-				startService(serviceIntentLocal)
-			}
+			startForegroundService(serviceIntentLocal)
+		}
+		else
+		{
+			startService(serviceIntentLocal)
 		}
 	}
 
@@ -377,29 +370,32 @@ class MainActivity: AppCompatActivity()
 
 	private fun getValuesFromIntent(intent: Intent?)
 	{
-		val action = intent?.action
-		if(action == Intent.ACTION_SEND)
+		if (intent!=null)
 		{
-			Log.d("service", "newIntent was called")
-			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-			val picVM = picturesViewModel
-			val urls = picVM.picturesUiState.value.picturesUrl
-			postValuesFromIntent(intent, urls, picVM)
+			val action = intent.action
+			if(action == Intent.ACTION_SEND)
+			{
+				Log.d("service", "newIntent was called")
+				intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+				val picVM = picturesViewModel
+				val urls = picVM.picturesUiState.value.picturesUrl
+				postValuesFromIntent(intent, urls, picVM)
+			}
 		}
 	}
 
-	private fun postValuesFromIntent(intent: Intent?, urls: String, picVM: PicturesViewModel)
+	private fun postValuesFromIntent(intent: Intent, urls: String, picVM: PicturesViewModel)
 	{
-		val action = intent?.action
+		val action = intent.action
 		var sharedLinkLocal = ""
 		var oldUrl = ""
-		if(action == Intent.ACTION_SEND && getString(R.string.text_plain) == intent.type)
+		if(action == Intent.ACTION_SEND && "text/plain" == intent.type)
 		{
 			intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
 				sharedLinkLocal = it
 			}
 		}
-		intent?.getStringExtra(WAS_OPENED_SCREEN)?.let {
+		intent.getStringExtra(WAS_OPENED_SCREEN)?.let {
 			oldUrl = it
 		}
 		if(urls.contains(sharedLinkLocal))

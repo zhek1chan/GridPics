@@ -27,7 +27,6 @@
 	<string name="loading_has_been_ended">Загрузка завершена</string>
 	<string name="cancel">Отменить</string>
 	<string name="confirm">Подтвердить</string>
-	<string name="text_plain">text/plain</string>
 	<string name="intentPrefix">image/</string>
 	<string name="add">Добавить\nкартинку</string>
 </resources>
