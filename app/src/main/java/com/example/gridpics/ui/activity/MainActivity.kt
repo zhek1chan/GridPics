@@ -360,7 +360,6 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	@SuppressLint("UnsafeIntentLaunch")
 	override fun onNewIntent(intent: Intent?)
 	{
 		super.onNewIntent(intent)
