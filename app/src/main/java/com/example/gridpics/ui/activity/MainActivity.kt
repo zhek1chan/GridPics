@@ -227,14 +227,13 @@ class MainActivity: AppCompatActivity()
 
 	override fun onResume()
 	{
-		Log.d("service", "disconnected and == $mainNotificationService")
 		LocalBroadcastManager.getInstance(this)
 			.registerReceiver(messageReceiver, IntentFilter(SERVICE_MESSAGE))
 		val value = detailsViewModel.uiState.value.barsAreVisible
 		if(!value)
 		{
 			changeBarsVisability(visible = false, fromDetailsScreen = false)
-			Log.d("barsaaa", "change visability to false")
+			Log.d("bars", "change visability to false")
 		}
 		if(mainNotificationService == null)
 		{
