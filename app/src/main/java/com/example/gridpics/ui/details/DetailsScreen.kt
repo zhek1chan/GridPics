@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
@@ -563,7 +562,7 @@ fun AppBar(
 					Box(modifier = Modifier
 						.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 						.height(64.dp)
-						.wrapContentWidth()
+						.width(50.dp)
 						.clickable {
 							navBack.value = true
 						}) {
@@ -586,7 +585,7 @@ fun AppBar(
 						Box(modifier = Modifier
 							.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 							.height(64.dp)
-							.wrapContentWidth()
+							.width(50.dp)
 							.clickable {
 								share(currentPicture, context, TEXT_PLAIN, clearPrevIntent)
 							}
