@@ -395,9 +395,9 @@ class MainActivity: AppCompatActivity()
 			}
 			else
 			{
-				val oldUrl = intent.getStringExtra(WAS_OPENED_SCREEN)
+				val oldUrl = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
 				Log.d("nav", "$oldUrl")
-				if(!oldUrl.isNullOrEmpty())
+				if(!oldUrl.isNullOrEmpty() && urls.contains(oldUrl))
 				{
 					picVM.clickOnPicture(oldUrl, 0, 0)
 					nav.navigate(Screen.Details.route)
@@ -428,6 +428,6 @@ class MainActivity: AppCompatActivity()
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
 		const val DEFAULT_STRING_VALUE = "default"
 		const val HTTP_ERROR = "HTTP error: 404"
-		const val WAS_OPENED_SCREEN = "wasOpenedScreen"
+		const val SAVED_URL_FROM_SCREEN_DETAILS = "SAVED_URL_FROM_SCREEN_DETAILS"
 	}
 }

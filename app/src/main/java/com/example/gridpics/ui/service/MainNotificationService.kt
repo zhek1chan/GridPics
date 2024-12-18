@@ -21,7 +21,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VA
 import com.example.gridpics.ui.activity.MainActivity.Companion.IS_SERVICE_DEAD
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.SERVICE_MESSAGE
-import com.example.gridpics.ui.activity.MainActivity.Companion.WAS_OPENED_SCREEN
+import com.example.gridpics.ui.activity.MainActivity.Companion.SAVED_URL_FROM_SCREEN_DETAILS
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -125,7 +125,7 @@ class MainNotificationService: Service()
 		{
 			resultIntent.action = Intent.ACTION_SEND
 			resultIntent.addCategory(Intent.CATEGORY_DEFAULT)
-			resultIntent.putExtra(WAS_OPENED_SCREEN, description)
+			resultIntent.putExtra(SAVED_URL_FROM_SCREEN_DETAILS, description)
 		}
 		resultIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
 		Log.d("intent URI", resultIntent.toUri(0))
