@@ -185,20 +185,11 @@ class MainActivity: AppCompatActivity()
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
 					postFalseToSharedImageState = { detVM.isSharedImage(false) },
 					removeUrl = { url -> picVM.removeUrlFromSavedUrls(url) },
-					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) }
+					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) },
+					clearPrevIntent = { picVM.clearUsedIntentValue() }
 				)
 			}
 		}
-	}
-
-	override fun onConfigurationChanged(newConfig: Configuration)
-	{
-		super.onConfigurationChanged(newConfig)
-		detailsViewModel.changeMultiWindowState(isInMultiWindowMode || isInPictureInPictureMode)
-		requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
-		val orientation = newConfig.orientation
-		val picVM = picturesViewModel
-		picVM.changeOrientation(orientation != Configuration.ORIENTATION_LANDSCAPE)
 	}
 
 	override fun onRequestPermissionsResult(
@@ -283,6 +274,16 @@ class MainActivity: AppCompatActivity()
 		{
 			detVM.changeVisabilityState(visible)
 		}
+	}
+
+	override fun onConfigurationChanged(newConfig: Configuration)
+	{
+		super.onConfigurationChanged(newConfig)
+		detailsViewModel.changeMultiWindowState(isInMultiWindowMode || isInPictureInPictureMode)
+		requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+		val orientation = newConfig.orientation
+		val picVM = picturesViewModel
+		picVM.changeOrientation(orientation != Configuration.ORIENTATION_LANDSCAPE)
 	}
 
 	private fun changeTheme(option: Int)
@@ -373,11 +374,12 @@ class MainActivity: AppCompatActivity()
 		val action = intent?.action
 		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
+			val usedIntentValue = picVM.usedValueFromIntent
 			val urls = picUrls ?: ""
 			val nav = navigation
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
 			val cacheIsEmpty = urls.isEmpty()
-			if(!sharedValue.isNullOrEmpty())
+			if(!sharedValue.isNullOrEmpty() && sharedValue != usedIntentValue)
 			{
 				if(!cacheIsEmpty && urls.contains(sharedValue))
 				{
@@ -388,15 +390,18 @@ class MainActivity: AppCompatActivity()
 				picVM.clickOnPicture(sharedValue, 0, 0)
 				detailsViewModel.isSharedImage(true)
 				nav.navigate(Screen.Details.route)
+				picVM.postUsedIntent(sharedValue)
 			}
 			else
 			{
 				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
-				if(!oldString.isNullOrEmpty() && urls.contains(oldString))
+				Log.d("OldString get", "$oldString")
+				if(!oldString.isNullOrEmpty() && urls.contains(oldString) && oldString != usedIntentValue)
 				{
+					Log.d("OldString get22", "$oldString")
 					picVM.clickOnPicture(oldString, 0, 0)
-
 					nav.navigate(Screen.Details.route)
+					picVM.postUsedIntent(oldString)
 				}
 			}
 		}

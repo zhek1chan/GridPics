@@ -21,11 +21,13 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.CHANNEL_NOTIFICAT
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.SAVED_URL_FROM_SCREEN_DETAILS
+import com.example.gridpics.ui.activity.MainActivity.Companion.TEXT_PLAIN
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 class MainNotificationService: Service()
 {
@@ -68,7 +70,7 @@ class MainNotificationService: Service()
 	{
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.notify(NOTIFICATION_ID, builder.build())
-		if(useSound)
+		if(!useSound)
 		{
 			startForeground(NOTIFICATION_ID, builder.build())
 		}
@@ -97,12 +99,14 @@ class MainNotificationService: Service()
 		val resultIntent = Intent(this@MainNotificationService, MainActivity::class.java)
 		if(bitmap != null)
 		{
+			Log.d("OldString put", description)
 			resultIntent.action = Intent.ACTION_SEND
 			resultIntent.addCategory(Intent.CATEGORY_DEFAULT)
+			resultIntent.setType(TEXT_PLAIN)
 			resultIntent.putExtra(SAVED_URL_FROM_SCREEN_DETAILS, description)
 		}
 		Log.d("intent URI", resultIntent.toUri(0))
-		val resultPendingIntent = PendingIntent.getActivity(this@MainNotificationService, 0, resultIntent,
+		val resultPendingIntent = PendingIntent.getActivity(this@MainNotificationService, Random.nextInt(), resultIntent,
 			PendingIntent.FLAG_IMMUTABLE)
 		val color = getColor(R.color.green)
 		val gridPics = this@MainNotificationService.getString(R.string.gridpics)

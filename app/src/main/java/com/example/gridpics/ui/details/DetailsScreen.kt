@@ -115,6 +115,7 @@ fun DetailsScreen(
 	postFalseToSharedImageState: () -> Unit,
 	removeUrl: (String) -> Unit,
 	saveToSharedPrefs: (String) -> Unit,
+	clearPrevIntent: () -> Unit
 )
 {
 	val context = LocalContext.current
@@ -176,7 +177,8 @@ fun DetailsScreen(
 				postUrl = postUrl,
 				state = state,
 				removeUrl = removeUrl,
-				changeBarsVisability = changeBarsVisability
+				changeBarsVisability = changeBarsVisability,
+				clearPrevIntent = clearPrevIntent
 			)
 		},
 		content = { padding ->
@@ -504,6 +506,8 @@ fun AppBar(
 	state: MutableState<DetailsScreenUiState>,
 	removeUrl: (String) -> Unit,
 	changeBarsVisability: (Boolean) -> Unit,
+	clearPrevIntent: () -> Unit
+
 )
 {
 	val navBack = remember { mutableStateOf(false) }
@@ -584,7 +588,7 @@ fun AppBar(
 							.height(64.dp)
 							.wrapContentWidth()
 							.clickable {
-								share(currentPicture, context, TEXT_PLAIN)
+								share(currentPicture, context, TEXT_PLAIN, clearPrevIntent)
 							}
 						) {
 							Icon(
@@ -635,7 +639,7 @@ fun navigateToHome(
 	}
 }
 
-fun share(text: String, context: Context, plain: String)
+fun share(text: String, context: Context, plain: String, clearPrevIntent: () -> Unit)
 {
 	val sendIntent = Intent(Intent.ACTION_SEND).apply {
 		putExtra(Intent.EXTRA_TEXT, text)
@@ -643,4 +647,5 @@ fun share(text: String, context: Context, plain: String)
 	}
 	val shareIntent = Intent.createChooser(sendIntent, null)
 	startActivity(context, shareIntent, null)
+	clearPrevIntent()
 }

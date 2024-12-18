@@ -15,11 +15,13 @@ class PicturesViewModel(
 ): ViewModel()
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, "", true))
+	var usedValueFromIntent = ""
 	private val errorsList: MutableList<String> = mutableListOf()
 	private var saveSharedPictureForFirstLaunch = ""
 
 	init
 	{
+		Log.d("lifecycle", "vm is recreated")
 		val flow = picturesUiState
 		viewModelScope.launch {
 			interactor.getPics().collect { urls ->
@@ -134,6 +136,16 @@ class PicturesViewModel(
 	{
 		val state = picturesUiState
 		state.value = state.value.copy(currentPicture = url)
+	}
+
+	fun postUsedIntent(url: String)
+	{
+		usedValueFromIntent = url
+	}
+
+	fun clearUsedIntentValue()
+	{
+		usedValueFromIntent = ""
 	}
 
 	fun isValidUrl(url: String): Boolean
