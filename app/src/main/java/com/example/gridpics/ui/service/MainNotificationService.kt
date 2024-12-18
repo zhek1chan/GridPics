@@ -15,7 +15,6 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.Builder
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
@@ -116,7 +115,6 @@ class MainNotificationService: Service()
 	{
 		val intent = Intent(SERVICE_MESSAGE)
 		intent.putExtra(IS_SERVICE_DEAD, isDead)
-		LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
 	}
 
 	private fun createLogic(description: String, bitmap: Bitmap?)
@@ -182,12 +180,6 @@ class MainNotificationService: Service()
 		defaultText = this@MainNotificationService.getString(R.string.notification_content_text)
 		createNotificationChannel()
 		createLogic(DEFAULT_STRING_VALUE, null)
-	}
-
-	override fun onDestroy()
-	{
-		sendStatusOfLifeToActivity(isDead = true)
-		super.onDestroy()
 	}
 
 	inner class ServiceBinder: Binder()

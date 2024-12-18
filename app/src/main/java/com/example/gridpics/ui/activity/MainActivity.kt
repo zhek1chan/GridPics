@@ -1,11 +1,9 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -28,7 +26,6 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -53,14 +50,6 @@ class MainActivity: AppCompatActivity()
 	private var mainNotificationService: MainNotificationService? = null
 	private lateinit var navigation: NavHostController
 	private var serviceIsStopped = true
-	private val messageReceiver: BroadcastReceiver = object: BroadcastReceiver()
-	{
-		override fun onReceive(context: Context?, intent: Intent)
-		{
-			serviceIsStopped = intent.getBooleanExtra(IS_SERVICE_DEAD, true)
-			Log.d("test message", "service is dead: $serviceIsStopped")
-		}
-	}
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -227,8 +216,6 @@ class MainActivity: AppCompatActivity()
 
 	override fun onResume()
 	{
-		LocalBroadcastManager.getInstance(this)
-			.registerReceiver(messageReceiver, IntentFilter(SERVICE_MESSAGE))
 		val value = detailsViewModel.uiState.value.barsAreVisible
 		if(!value)
 		{
@@ -269,7 +256,6 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
-		LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver)
 		super.onPause()
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
@@ -347,7 +333,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun launchService(serviceIntentLocal: Intent)
 	{
-		if (serviceIsStopped)
+		if(serviceIsStopped)
 		{
 			Log.d("test message", "recreating service")
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
