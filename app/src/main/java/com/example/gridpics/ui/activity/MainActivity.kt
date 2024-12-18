@@ -78,7 +78,7 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val lifeCycScope = lifecycleScope
-		picVM.changeOrientation(this.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
+		picVM.changeOrientation(resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
@@ -87,9 +87,11 @@ class MainActivity: AppCompatActivity()
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
+		val blackColor = getColor(R.color.black)
+		val whiteColor = getColor(R.color.white)
 		enableEdgeToEdge(
-			statusBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black)),
-			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
+			statusBarStyle = SystemBarStyle.auto(whiteColor, blackColor),
+			navigationBarStyle = SystemBarStyle.auto(whiteColor, blackColor)
 		)
 		lifeCycScope.launch {
 			detVM.observeUrlFlow().collect {
@@ -109,8 +111,7 @@ class MainActivity: AppCompatActivity()
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
 				navigation = navController
-				val urls = picturesFromSP ?: ""
-				postValuesFromIntent(intent, urls, picVM)
+				postValuesFromIntent(intent, picturesFromSP, picVM)
 			}
 			ComposeTheme {
 				NavigationSetup(navController = navController)
@@ -372,25 +373,23 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	private fun postValuesFromIntent(intent: Intent?, urls: String, picVM: PicturesViewModel)
+	private fun postValuesFromIntent(intent: Intent?, picUrls: String?, picVM: PicturesViewModel)
 	{
 		if(intent != null)
 		{
+			val urls = picUrls?: ""
 			val action = intent.action
-			var sharedLinkLocal = ""
 			val nav = navigation
-			if(action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type && !intent.getStringExtra(Intent.EXTRA_TEXT).isNullOrEmpty())
+			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
+			if(action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type && !sharedValue.isNullOrEmpty())
 			{
-				intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
-					sharedLinkLocal = it
-				}
-				if(urls.contains(sharedLinkLocal))
+				if(urls.isNotEmpty() && urls.contains(sharedValue))
 				{
-					picVM.removeUrlFromSavedUrls(sharedLinkLocal)
+					picVM.removeUrlFromSavedUrls(sharedValue)
 				}
-				picVM.postSavedUrls(urls = "$sharedLinkLocal\n$urls", caseEmptySharedPreferenceOnFirstLaunch = urls.isEmpty())
+				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = urls.isEmpty())
 				Log.d("shared", "$action")
-				picVM.clickOnPicture(sharedLinkLocal, 0, 0)
+				picVM.clickOnPicture(sharedValue, 0, 0)
 				detailsViewModel.isSharedImage(true)
 				nav.navigate(Screen.Details.route)
 			}
