@@ -6,7 +6,6 @@ coreSplashscreen = "1.0.1"
 gson = "2.11.0"
 koinAndroidxCompose = "3.5.3"
 kotlin = "1.9.0"
-coreKtx = "1.13.1"
 material = "1.12.0"
 lifecycleLivedataKtx = "2.8.6"
 materialVersion = "1.7.3"
@@ -23,7 +22,6 @@ uiGraphicsAndroid = "1.7.3"
 constraintlayoutCompose = "1.0.1"
 library = "1.0.0"
 runtimeLivedata = "1.7.1"
-workRuntimeKtx = "2.9.1"
 workRuntimeKtxVersion = "2.10.0"
 zoomable = "1.6.2"
 
@@ -37,7 +35,6 @@ androidx-navigation-compose-v240alpha01 = { module = "androidx.navigation:naviga
 androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "pagingCompose" }
 androidx-ui = { module = "androidx.compose.ui:ui", version.ref = "uiGraphicsAndroid" }
 androidx-ui-v100 = { module = "androidx.compose.ui:ui", version.ref = "ui" }
-androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-work-runtime-ktx-v2100 = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtxVersion" }
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }

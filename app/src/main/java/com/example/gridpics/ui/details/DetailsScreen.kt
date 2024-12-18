@@ -139,13 +139,15 @@ fun DetailsScreen(
 			launchSingleTop = true
 		}
 	}
-	val list = if(pictures.isNotEmpty())
-	{
-		pictures.split("\n").toSet().toList()
-	}
-	else
-	{
-		listOf(currentPicture)
+	val list = remember (pictures) {
+		if(pictures.isNotEmpty())
+		{
+			pictures.split("\n").toSet().toList()
+		}
+		else
+		{
+			listOf(currentPicture)
+		}
 	}
 	Log.d("pic", currentPicture)
 	Log.d("list221122", "$list")

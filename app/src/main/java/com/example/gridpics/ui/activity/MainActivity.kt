@@ -67,6 +67,11 @@ class MainActivity: AppCompatActivity()
 		{
 			mainNotificationService = null
 		}
+
+		override fun onBindingDied(name: ComponentName?)
+		{
+			mainNotificationService = null
+		}
 	}
 
 	override fun onCreate(savedInstanceState: Bundle?)
@@ -160,7 +165,8 @@ class MainActivity: AppCompatActivity()
 					navController = navController,
 					option = themePick,
 					changeTheme = { int -> changeTheme(int) },
-					isScreenInPortraitState = picState
+					isScreenInPortraitState = picState,
+					clearImageCache = { saveToSharedPrefs("") }
 				)
 			}
 			composable(Screen.Details.route) {
@@ -256,7 +262,6 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
-		super.onPause()
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}
@@ -304,8 +309,8 @@ class MainActivity: AppCompatActivity()
 	{
 		if(mainNotificationService == null)
 		{
-			val connectionLocal = connection
 			val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
+			val connectionLocal = connection
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
 			{
 				if(
@@ -315,7 +320,7 @@ class MainActivity: AppCompatActivity()
 					) == PackageManager.PERMISSION_GRANTED
 				)
 				{
-					launchService(serviceIntentLocal)
+					startForegroundService(serviceIntentLocal)
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 				}
 				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
@@ -325,22 +330,16 @@ class MainActivity: AppCompatActivity()
 			}
 			else
 			{
-				launchService(serviceIntentLocal)
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				{
+					startForegroundService(serviceIntentLocal)
+				}
+				else
+				{
+					startService(serviceIntentLocal)
+				}
 				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
-		}
-	}
-
-	private fun launchService(serviceIntentLocal: Intent)
-	{
-		Log.d("test message", "recreating service")
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-		{
-			startForegroundService(serviceIntentLocal)
-		}
-		else
-		{
-			startService(serviceIntentLocal)
 		}
 	}
 
@@ -364,7 +363,7 @@ class MainActivity: AppCompatActivity()
 	private fun getValuesFromIntent(intent: Intent?)
 	{
 		val action = intent?.action
-		if(action == Intent.ACTION_SEND)
+		if(action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
 			Log.d("service", "newIntent was called")
 			val picVM = picturesViewModel
@@ -377,11 +376,11 @@ class MainActivity: AppCompatActivity()
 	{
 		if(intent != null)
 		{
-			val urls = picUrls?: ""
+			val urls = picUrls ?: ""
 			val action = intent.action
 			val nav = navigation
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
-			if(action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type && !sharedValue.isNullOrEmpty())
+			if(!sharedValue.isNullOrEmpty())
 			{
 				if(urls.isNotEmpty() && urls.contains(sharedValue))
 				{
@@ -393,15 +392,10 @@ class MainActivity: AppCompatActivity()
 				detailsViewModel.isSharedImage(true)
 				nav.navigate(Screen.Details.route)
 			}
-			else
+			else if(!intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS).isNullOrEmpty() && urls.contains(intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS).toString()))
 			{
-				val oldUrl = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
-				Log.d("nav", "$oldUrl")
-				if(!oldUrl.isNullOrEmpty() && urls.contains(oldUrl))
-				{
-					picVM.clickOnPicture(oldUrl, 0, 0)
-					nav.navigate(Screen.Details.route)
-				}
+				picVM.clickOnPicture(intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)!!, 0, 0)
+				nav.navigate(Screen.Details.route)
 			}
 		}
 	}
@@ -416,8 +410,6 @@ class MainActivity: AppCompatActivity()
 
 	companion object
 	{
-		const val SERVICE_MESSAGE = "SERVICE_MESSAGE"
-		const val IS_SERVICE_DEAD = "IS_SERVICE_DEAD"
 		const val RESULT_SUCCESS = 100
 		const val LENGTH_OF_PICTURE = 110
 		const val TEXT_PLAIN = "text/plain"

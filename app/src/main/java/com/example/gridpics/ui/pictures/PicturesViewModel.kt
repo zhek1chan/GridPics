@@ -86,17 +86,8 @@ class PicturesViewModel(
 		}
 	}
 
-	private fun removePrefix(str: String, prefix: String): String
-	{
-		return if(str.startsWith(prefix))
-		{
-			str.substring(prefix.length)
-		}
-		else
-		{
-			str
-		}
-	}
+	private fun removePrefix(str: String, prefix: String): String =
+		if(str.startsWith(prefix)) str.substring(prefix.length) else str
 
 	fun addError(url: String)
 	{
@@ -137,7 +128,6 @@ class PicturesViewModel(
 	{
 		val state = picturesUiState
 		state.value = state.value.copy(isPortraitOrientation = isPortrait)
-
 	}
 
 	fun saveCurrentPictureUrl(url: String)

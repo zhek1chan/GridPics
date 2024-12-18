@@ -56,7 +56,6 @@ import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
-import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
@@ -67,7 +66,8 @@ fun SettingsScreen(
 	navController: NavController,
 	option: Int,
 	changeTheme: (Int) -> Unit,
-	isScreenInPortraitState: MutableState<PicturesScreenUiState>
+	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
+	clearImageCache: () -> Unit,
 )
 {
 	val windowInsets = if(!isScreenInPortraitState.value.isPortraitOrientation)
@@ -106,7 +106,7 @@ fun SettingsScreen(
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
-				SettingsCompose(option = option, changeTheme = changeTheme)
+				SettingsCompose(option = option, changeTheme = changeTheme, clearImageCache = clearImageCache)
 			}
 		}
 	)
@@ -115,7 +115,8 @@ fun SettingsScreen(
 @Composable
 fun SettingsCompose(
 	option: Int,
-	changeTheme: (Int) -> Unit
+	changeTheme: (Int) -> Unit,
+	clearImageCache: () -> Unit,
 )
 {
 	var showDialog by remember { mutableStateOf(false) }
@@ -144,9 +145,12 @@ fun SettingsCompose(
 								.fillMaxWidth()
 								.padding(18.dp, 10.dp, 18.dp, 0.dp)
 								.clickable {
-									onOptionSelected(text)
-									saveThemeState(context, listOfThemeOptions.indexOf(text))
-									changeTheme(listOfThemeOptions.indexOf(text))
+									if(text != selectedOption)
+									{
+										onOptionSelected(text)
+										saveThemeState(context, listOfThemeOptions.indexOf(text))
+										changeTheme(listOfThemeOptions.indexOf(text))
+									}
 								}
 						) {
 							val painter = when(text)
@@ -187,12 +191,7 @@ fun SettingsCompose(
 							)
 							RadioButton(
 								selected = (text == selectedOption),
-								onClick =
-								{
-									onOptionSelected(text)
-									saveThemeState(context, listOfThemeOptions.indexOf(text))
-									changeTheme(listOfThemeOptions.indexOf(text))
-								},
+								onClick = {},
 								colors = RadioButtonColors(
 									Color.Green,
 									MaterialTheme.colorScheme.onSecondary,
@@ -241,10 +240,7 @@ fun SettingsCompose(
 						val imageLoader = context.imageLoader
 						imageLoader.diskCache?.clear()
 						imageLoader.memoryCache?.clear()
-						val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-						val editor = sharedPreferences.edit()
-						editor.putString(SHARED_PREFS_PICTURES, null)
-						editor.apply()
+						clearImageCache()
 						showDialog = false
 						Toast.makeText(context, textClear, Toast.LENGTH_SHORT).show()
 					},
