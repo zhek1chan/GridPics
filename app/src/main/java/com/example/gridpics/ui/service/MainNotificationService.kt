@@ -31,37 +31,27 @@ class MainNotificationService: Service()
 {
 	private val binder = ServiceBinder()
 	private var jobForCancelingNotification: Job? = null
-	private var notificationIsNotCreated = true
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
 		Log.d("service", "onStartCommand()")
-		prepareNotification()
+		prepareNotification(false)
 		return START_NOT_STICKY
 	}
 
 	override fun onBind(intent: Intent?): IBinder
 	{
-		prepareNotification()
+		prepareNotification(true)
 		Log.d("service", "onBind()")
 		return binder
 	}
 
 	private fun createNotificationChannel(notificationManager: NotificationManager)
 	{
-		val name = this.getString(R.string.my_notification_channel)
-		val description = this.getString(R.string.channel_for_my_notification)
-
-		if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
+		if(Build.VERSION.SDK_INT >= VERSION_CODES.O && notificationManager.getNotificationChannel(CHANNEL_NOTIFICATIONS_ID) == null)
 		{
-			val importance = if(notificationIsNotCreated)
-			{
-				NotificationManager.IMPORTANCE_MAX
-			}
-			else
-			{
-				NotificationManager.IMPORTANCE_DEFAULT
-			}
-			val channel = NotificationChannel(CHANNEL_NOTIFICATIONS_ID, name, importance)
+			val name = this.getString(R.string.my_notification_channel)
+			val description = this.getString(R.string.channel_for_my_notification)
+			val channel = NotificationChannel(CHANNEL_NOTIFICATIONS_ID, name, NotificationManager.IMPORTANCE_HIGH)
 			channel.description = description
 			notificationManager.createNotificationChannel(channel)
 		}
@@ -74,12 +64,11 @@ class MainNotificationService: Service()
 		jobForCancelingNotification?.cancel()
 	}
 
-	private fun showNotification(builder: Builder)
+	private fun showNotification(builder: Builder, useSound: Boolean)
 	{
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.notify(NOTIFICATION_ID, builder.build())
-		Log.d("counterrrr", "$notificationIsNotCreated")
-		if(notificationIsNotCreated)
+		if(useSound)
 		{
 			startForeground(NOTIFICATION_ID, builder.build())
 		}
@@ -103,9 +92,8 @@ class MainNotificationService: Service()
 		}
 	}
 
-	private fun createLogic(description: String, bitmap: Bitmap?)
+	private fun createLogic(description: String, bitmap: Bitmap?, useSound: Boolean)
 	{
-		val dontUseSound = !notificationIsNotCreated
 		val resultIntent = Intent(this@MainNotificationService, MainActivity::class.java)
 		if(bitmap != null)
 		{
@@ -123,12 +111,12 @@ class MainNotificationService: Service()
 			.setContentIntent(resultPendingIntent)
 			.setAutoCancel(true)
 			.setOngoing(true)
-			.setSilent(dontUseSound)
+			.setSilent(!useSound)
 			.setSmallIcon(R.mipmap.ic_launcher)
 			.setColor(color)
 			.setContentTitle(gridPics)
 			.setContentText(defaultText)
-		if(description != DEFAULT_STRING_VALUE)
+		if(bitmap != null)
 		{
 			Log.d("description in service", description)
 			builder.setLargeIcon(bitmap)
@@ -136,31 +124,18 @@ class MainNotificationService: Service()
 					.bigPicture(bitmap)
 					.bigLargeIcon(null as Icon?))
 		}
-		showNotification(builder)
+		showNotification(builder, useSound)
 	}
 
 	fun putValues(valuesPair: Pair<String, Bitmap?>)
 	{
-		notificationIsNotCreated = false
-		createLogic(valuesPair.first, valuesPair.second)
+		createLogic(valuesPair.first, valuesPair.second, false)
 	}
 
-	private fun prepareNotification()
+	private fun prepareNotification(useSound: Boolean)
 	{
-		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-		val notificationChannel = if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
-		{
-			notificationManager.getNotificationChannel(CHANNEL_NOTIFICATIONS_ID)
-		}
-		else
-		{
-			null
-		}
-		if(notificationChannel == null)
-		{
-			createNotificationChannel(notificationManager)
-		}
-		createLogic(DEFAULT_STRING_VALUE, null)
+		createNotificationChannel(this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+		createLogic(DEFAULT_STRING_VALUE, null, useSound)
 	}
 
 	inner class ServiceBinder: Binder()

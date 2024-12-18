@@ -144,42 +144,23 @@ fun PicturesScreen(
 				val loadingState = value.loadingState
 				val offset = value.offset
 				val index = value.index
-				if(urls.isNotEmpty())
-				{
-					ShowList(
-						imagesUrlsSP = urls,
-						checkIfExists = checkIfExists,
-						addError = addError,
-						postState = postState,
-						state = loadingState,
-						clearErrors = clearErrors,
-						navController = navController,
-						currentPicture = currentPicture,
-						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls,
-						saveToSharedPrefs = saveToSharedPrefs,
-						offset = offset,
-						index = index
-					)
-				}
-				else
-				{
-					ShowList(
-						imagesUrlsSP = null,
-						checkIfExists = checkIfExists,
-						addError = addError,
-						postState = postState,
-						state = loadingState,
-						clearErrors = clearErrors,
-						navController = navController,
-						currentPicture = currentPicture,
-						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls,
-						saveToSharedPrefs = saveToSharedPrefs,
-						offset = offset,
-						index = index
-					)
-				}
+				ShowList(
+					imagesUrlsSP = urls.ifEmpty {
+						null
+					},
+					checkIfExists = checkIfExists,
+					addError = addError,
+					postState = postState,
+					state = loadingState,
+					clearErrors = clearErrors,
+					navController = navController,
+					currentPicture = currentPicture,
+					isValidUrl = isValidUrl,
+					postSavedUrls = postSavedUrls,
+					saveToSharedPrefs = saveToSharedPrefs,
+					offset = offset,
+					index = index
+				)
 			}
 		}
 	)
@@ -320,7 +301,7 @@ fun ShowList(
 	postSavedUrls: (String) -> Unit,
 	saveToSharedPrefs: (String) -> Unit,
 	offset: Int,
-	index: Int
+	index: Int,
 )
 {
 	val context = LocalContext.current

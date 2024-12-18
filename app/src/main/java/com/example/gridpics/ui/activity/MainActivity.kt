@@ -362,40 +362,42 @@ class MainActivity: AppCompatActivity()
 
 	private fun getValuesFromIntent(intent: Intent?)
 	{
-		val action = intent?.action
-		if(action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
-		{
-			Log.d("service", "newIntent was called")
-			val picVM = picturesViewModel
-			val urls = picVM.picturesUiState.value.picturesUrl
-			postValuesFromIntent(intent, urls, picVM)
-		}
+		Log.d("service", "newIntent was called")
+		val picVM = picturesViewModel
+		val urls = picVM.picturesUiState.value.picturesUrl
+		postValuesFromIntent(intent, urls, picVM)
 	}
 
 	private fun postValuesFromIntent(intent: Intent?, picUrls: String?, picVM: PicturesViewModel)
 	{
-		if(intent != null)
+		val action = intent?.action
+		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
 			val urls = picUrls ?: ""
-			val action = intent.action
 			val nav = navigation
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
+			val cacheIsEmpty = urls.isEmpty()
 			if(!sharedValue.isNullOrEmpty())
 			{
-				if(urls.isNotEmpty() && urls.contains(sharedValue))
+				if(!cacheIsEmpty && urls.contains(sharedValue))
 				{
 					picVM.removeUrlFromSavedUrls(sharedValue)
 				}
-				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = urls.isEmpty())
+				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
 				Log.d("shared", "$action")
 				picVM.clickOnPicture(sharedValue, 0, 0)
 				detailsViewModel.isSharedImage(true)
 				nav.navigate(Screen.Details.route)
 			}
-			else if(!intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS).isNullOrEmpty() && urls.contains(intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS).toString()))
+			else
 			{
-				picVM.clickOnPicture(intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)!!, 0, 0)
-				nav.navigate(Screen.Details.route)
+				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
+				if(!oldString.isNullOrEmpty() && urls.contains(oldString))
+				{
+					picVM.clickOnPicture(oldString, 0, 0)
+
+					nav.navigate(Screen.Details.route)
+				}
 			}
 		}
 	}

@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
@@ -46,7 +47,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RippleConfiguration
@@ -87,7 +87,6 @@ import coil3.request.allowHardware
 import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
-import com.example.gridpics.ui.activity.BottomNavItem
 import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.MainActivity.Companion.TEXT_PLAIN
@@ -127,19 +126,16 @@ fun DetailsScreen(
 	Log.d("pictures", pictures)
 	val scrollIsEnabled = remember { mutableStateOf(true) }
 	BackHandler {
-		if(value.isSharedImage)
-		{
-			removeUrl(currentPicture)
-		}
-		changeBarsVisability(true)
-		postUrl(DEFAULT_STRING_VALUE, null)
-		navController.navigate(Screen.Home.route) {
-			popUpTo(navController.graph.findStartDestination().id)
-			restoreState = true
-			launchSingleTop = true
-		}
+		navigateToHome(
+			isSharedImage = state.value.isSharedImage,
+			removeUrl = removeUrl,
+			currentPicture = currentPicture,
+			changeBarsVisability = changeBarsVisability,
+			postUrl = postUrl,
+			navController = navController
+		)
 	}
-	val list = remember (pictures) {
+	val list = remember(pictures) {
 		if(pictures.isNotEmpty())
 		{
 			pictures.split("\n").toSet().toList()
@@ -179,7 +175,8 @@ fun DetailsScreen(
 				pagerState = pagerState,
 				postUrl = postUrl,
 				state = state,
-				removeUrl = removeUrl
+				removeUrl = removeUrl,
+				changeBarsVisability = changeBarsVisability
 			)
 		},
 		content = { padding ->
@@ -272,7 +269,8 @@ fun ShowDetails(
 					isScreenInPortraitState = isScreenInPortraitState
 				)
 			}
-			if(state.value.isSharedImage)
+			val isSharedImage = state.value.isSharedImage
+			if(isSharedImage)
 			{
 				scrollIsEnabled.value = false
 				val addString = stringResource(R.string.add)
@@ -291,11 +289,14 @@ fun ShowDetails(
 								.align(Alignment.CenterVertically)
 								.size(130.dp, 60.dp),
 							onClick = {
-								postPositiveState()
-								changeBarsVisability(true)
-								navController.navigate(Screen.Home.route)
-								removeUrl(list[page])
-								postUrl(DEFAULT_STRING_VALUE, null)
+								navigateToHome(
+									isSharedImage = isSharedImage,
+									removeUrl = removeUrl,
+									navController = navController,
+									changeBarsVisability = changeBarsVisability,
+									currentPicture = list[page],
+									postUrl = postUrl
+								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
 							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
@@ -502,6 +503,7 @@ fun AppBar(
 	postUrl: (String, Bitmap?) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	removeUrl: (String) -> Unit,
+	changeBarsVisability: (Boolean) -> Unit,
 )
 {
 	val navBack = remember { mutableStateOf(false) }
@@ -520,98 +522,116 @@ fun AppBar(
 						.calculateTopPadding() + 64.dp
 				)
 				.fillMaxWidth())
-		TopAppBar(
-			modifier = Modifier
-				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-				.wrapContentSize(),
-			title = {
-				Text(
-					text = currentPicture,
-					fontSize = 18.sp,
-					maxLines = 2,
-					modifier = Modifier
-						.clickable { navBack.value = true }
-						.padding(10.dp, 0.dp, 0.dp, 0.dp),
-					overflow = TextOverflow.Ellipsis,
-				)
-			},
-			navigationIcon = {
-				IconButton(
-					modifier = Modifier
-						.size(30.dp, 30.dp)
-						.padding(5.dp, 0.dp, 0.dp, 0.dp),
-					onClick = { navBack.value = true }
-				)
-				{
-					Icon(
-						imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-						contentDescription = "back",
-						modifier = Modifier
-							.size(50.dp, 24.dp)
-					)
-				}
-			},
-			colors = TopAppBarDefaults.topAppBarColors(
-				titleContentColor = MaterialTheme.colorScheme.onPrimary,
-				navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-				actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-				containerColor = MaterialTheme.colorScheme.background
-			),
-			actions = {
-				AnimatedVisibility(!sharedImgCase) {
-					IconButton(
-						onClick =
-						{
-							share(currentPicture, context, TEXT_PLAIN)
-						}
-					) {
-						Icon(
-							imageVector = Icons.Default.Share,
-							contentDescription = "share",
-							tint = MaterialTheme.colorScheme.onPrimary,
+		val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+			TopAppBar(
+				modifier = Modifier
+					.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+					.wrapContentSize(),
+				title = {
+					val width = if(sharedImgCase)
+					{
+						screenWidth - 0.dp
+					}
+					else
+					{
+						screenWidth - 50.dp
+					}
+					Box(modifier = Modifier
+						.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+						.height(64.dp)
+						.width(width)
+						.clickable {
+							navBack.value = true
+						}) {
+						Text(
+							text = currentPicture,
+							fontSize = 18.sp,
+							maxLines = 2,
+							modifier = Modifier
+								.align(Alignment.Center)
+								.clickable { navBack.value = true },
+							overflow = TextOverflow.Ellipsis,
 						)
 					}
+				},
+				navigationIcon = {
+					Box(modifier = Modifier
+						.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+						.height(64.dp)
+						.wrapContentWidth()
+						.clickable {
+							navBack.value = true
+						}) {
+						Icon(
+							imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+							contentDescription = "back",
+							modifier = Modifier
+								.align(Alignment.Center)
+						)
+					}
+				},
+				colors = TopAppBarDefaults.topAppBarColors(
+					titleContentColor = MaterialTheme.colorScheme.onPrimary,
+					navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+					actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+					containerColor = MaterialTheme.colorScheme.background
+				),
+				actions = {
+					AnimatedVisibility(!sharedImgCase) {
+						Box(modifier = Modifier
+							.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+							.height(64.dp)
+							.wrapContentWidth()
+							.clickable {
+								share(currentPicture, context, TEXT_PLAIN)
+							}
+						) {
+							Icon(
+								modifier = Modifier.align(Alignment.Center),
+								imageVector = Icons.Default.Share,
+								contentDescription = "share",
+								tint = MaterialTheme.colorScheme.onPrimary,
+							)
+						}
+					}
 				}
-			}
+			)
+		}
+	}
+	if(navBack.value)
+	{
+		navBack.value = false
+		navigateToHome(
+			isSharedImage = state.value.isSharedImage,
+			removeUrl = removeUrl,
+			currentPicture = currentPicture,
+			changeBarsVisability = changeBarsVisability,
+			postUrl = postUrl,
+			navController = nc
 		)
-		val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-		val width = if(sharedImgCase)
-		{
-			screenWidth - 0.dp
-		}
-		else
-		{
-			screenWidth - 50.dp
-		}
-		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-			Box(modifier = Modifier
-				.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-				.height(64.dp)
-				.width(width)
-				.clickable {
-					navBack.value = true
-				})
-			AnimatedVisibility(!sharedImgCase) {
-				Box(modifier = Modifier
-					.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-					.height(64.dp)
-					.fillMaxWidth()
-					.padding(screenWidth - 50.dp, 0.dp, 0.dp, 0.dp)
-					.clickable {
-						share(currentPicture, context, TEXT_PLAIN)
-					})
-			}
-		}
-		if(navBack.value)
-		{
-			if(state.value.isSharedImage)
-			{
-				removeUrl(currentPicture)
-			}
-			postUrl(DEFAULT_STRING_VALUE, null)
-			navBack.value = false
-			nc.navigate(BottomNavItem.Home.route)
-		}
+	}
+}
+
+fun navigateToHome(
+	isSharedImage: Boolean,
+	removeUrl: (String) -> Unit,
+	currentPicture: String,
+	changeBarsVisability: (Boolean) -> Unit,
+	postUrl: (String, Bitmap?) -> Unit,
+	navController: NavController,
+)
+{
+	if(isSharedImage)
+	{
+		removeUrl(currentPicture)
+	}
+	changeBarsVisability(true)
+	postUrl(DEFAULT_STRING_VALUE, null)
+	navController.navigate(Screen.Home.route) {
+		popUpTo(navController.graph.findStartDestination().id)
+		restoreState = true
+		launchSingleTop = true
 	}
 }
 

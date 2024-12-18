@@ -20,18 +20,22 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.ripple.RippleAlpha
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonColors
+import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -112,6 +116,7 @@ fun SettingsScreen(
 	)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsCompose(
 	option: Int,
@@ -136,8 +141,9 @@ fun SettingsCompose(
 				listOfThemeOptions.add(stringResource(R.string.synch_with_sys))
 			}
 			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option]) }
-			Column {
-				Column(Modifier.selectableGroup()) {
+			val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+			CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+				Column {
 					listOfThemeOptions.forEach { text ->
 						Row(
 							verticalAlignment = Alignment.CenterVertically,
@@ -191,7 +197,14 @@ fun SettingsCompose(
 							)
 							RadioButton(
 								selected = (text == selectedOption),
-								onClick = {},
+								onClick = {
+									if(text != selectedOption)
+									{
+										onOptionSelected(text)
+										saveThemeState(context, listOfThemeOptions.indexOf(text))
+										changeTheme(listOfThemeOptions.indexOf(text))
+									}
+								},
 								colors = RadioButtonColors(
 									Color.Green,
 									MaterialTheme.colorScheme.onSecondary,
