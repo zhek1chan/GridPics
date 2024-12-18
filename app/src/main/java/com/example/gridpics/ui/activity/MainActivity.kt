@@ -49,7 +49,6 @@ class MainActivity: AppCompatActivity()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
 	private lateinit var navigation: NavHostController
-	private var serviceIsStopped = true
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -333,17 +332,14 @@ class MainActivity: AppCompatActivity()
 
 	private fun launchService(serviceIntentLocal: Intent)
 	{
-		if(serviceIsStopped)
+		Log.d("test message", "recreating service")
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 		{
-			Log.d("test message", "recreating service")
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-			{
-				startForegroundService(serviceIntentLocal)
-			}
-			else
-			{
-				startService(serviceIntentLocal)
-			}
+			startForegroundService(serviceIntentLocal)
+		}
+		else
+		{
+			startService(serviceIntentLocal)
 		}
 	}
 
