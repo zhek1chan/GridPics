@@ -47,8 +47,9 @@ class MainNotificationService: Service()
 		return binder
 	}
 
-	private fun createNotificationChannel(notificationManager: NotificationManager)
+	private fun createNotificationChannel()
 	{
+		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		if(Build.VERSION.SDK_INT >= VERSION_CODES.O && notificationManager.getNotificationChannel(CHANNEL_NOTIFICATIONS_ID) == null)
 		{
 			val name = this.getString(R.string.my_notification_channel)
@@ -138,7 +139,7 @@ class MainNotificationService: Service()
 
 	private fun prepareNotification(useSound: Boolean)
 	{
-		createNotificationChannel(this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+		createNotificationChannel()
 		createLogic(DEFAULT_STRING_VALUE, null, useSound)
 	}
 
