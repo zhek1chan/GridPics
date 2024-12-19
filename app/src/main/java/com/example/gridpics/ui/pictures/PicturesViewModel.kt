@@ -8,6 +8,7 @@ import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class PicturesViewModel(
@@ -29,11 +30,7 @@ class PicturesViewModel(
 				{
 					is Resource.Data ->
 					{
-						var savedUrls = saveSharedPictureForFirstLaunch
-						if(savedUrls.isNotEmpty())
-						{
-							savedUrls += "\n"
-						}
+						val savedUrls = saveSharedPictureForFirstLaunch
 						flow.value = flow.value.copy(
 							loadingState = PicturesState.SearchIsOk(savedUrls + urls.value)
 						)
@@ -80,12 +77,16 @@ class PicturesViewModel(
 
 	fun removeUrlFromSavedUrls(url: String)
 	{
+		Log.d("Removed from list", url)
 		val flow = picturesUiState
-		val urls = removePrefix(flow.value.picturesUrl, "$url\n")
-		Log.d("updated", urls)
 		viewModelScope.launch {
-			flow.value = flow.value.copy(picturesUrl = urls)
+			while(flow.value.picturesUrl.isEmpty())
+			{
+				delay(100)
+			}
+			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, "$url\n"))
 		}
+		Log.d("Removed from list - now list is", flow.value.picturesUrl)
 	}
 
 	private fun removePrefix(str: String, prefix: String): String =

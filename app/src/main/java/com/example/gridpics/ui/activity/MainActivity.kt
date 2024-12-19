@@ -113,7 +113,7 @@ class MainActivity: AppCompatActivity()
 		//реализация фичи - поделиться картинкой в приложение
 		setContent {
 			val navController = rememberNavController()
-			LaunchedEffect(Unit) {
+			LaunchedEffect(this@MainActivity) {
 				navigation = navController
 				postValuesFromIntent(intent, picturesFromSP, picVM)
 			}
@@ -355,6 +355,7 @@ class MainActivity: AppCompatActivity()
 	override fun onNewIntent(intent: Intent?)
 	{
 		super.onNewIntent(intent)
+		intent?.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 		getValuesFromIntent(intent)
 		setIntent(intent)
 	}
