@@ -113,7 +113,14 @@ class MainNotificationService: Service()
 			PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 		val color = getColor(R.color.green)
 		val gridPics = this@MainNotificationService.getString(R.string.gridpics)
-		val defaultText = this@MainNotificationService.getString(R.string.notification_content_text)
+		val defaultText = if(description == DEFAULT_STRING_VALUE)
+		{
+			this@MainNotificationService.getString(R.string.notification_content_text)
+		}
+		else
+		{
+			description
+		}
 		val builder = Builder(this@MainNotificationService, CHANNEL_NOTIFICATIONS_ID)
 			.setContentIntent(resultPendingIntent)
 			.setAutoCancel(true)
