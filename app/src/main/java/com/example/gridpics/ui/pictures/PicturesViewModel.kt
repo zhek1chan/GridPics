@@ -84,6 +84,7 @@ class PicturesViewModel(
 			{
 				delay(100)
 			}
+			saveSharedPictureForFirstLaunch = ""
 			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, "$url\n"))
 		}
 		Log.d("Removed from list - now list is", flow.value.picturesUrl)
