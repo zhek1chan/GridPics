@@ -27,7 +27,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.random.Random
 
 class MainNotificationService: Service()
 {
@@ -110,8 +109,8 @@ class MainNotificationService: Service()
 			resultIntent.putExtra(SAVED_URL_FROM_SCREEN_DETAILS, description)
 		}
 		Log.d("intent URI", resultIntent.toUri(0))
-		val resultPendingIntent = PendingIntent.getActivity(this@MainNotificationService, Random.nextInt(), resultIntent,
-			PendingIntent.FLAG_IMMUTABLE)
+		val resultPendingIntent = PendingIntent.getActivity(this@MainNotificationService, 100, resultIntent,
+			PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 		val color = getColor(R.color.green)
 		val gridPics = this@MainNotificationService.getString(R.string.gridpics)
 		val defaultText = this@MainNotificationService.getString(R.string.notification_content_text)

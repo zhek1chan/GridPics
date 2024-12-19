@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
@@ -280,7 +279,6 @@ class MainActivity: AppCompatActivity()
 	{
 		super.onConfigurationChanged(newConfig)
 		detailsViewModel.changeMultiWindowState(isInMultiWindowMode || isInPictureInPictureMode)
-		requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
 		val orientation = newConfig.orientation
 		val picVM = picturesViewModel
 		picVM.changeOrientation(orientation != Configuration.ORIENTATION_LANDSCAPE)
