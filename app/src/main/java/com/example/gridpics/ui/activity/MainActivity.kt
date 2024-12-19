@@ -252,6 +252,10 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
+		val picVM = picturesViewModel
+		if(detailsViewModel.uiState.value.isSharedImage){
+			picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture)
+		}
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}
