@@ -82,7 +82,7 @@ class PicturesViewModel(
 		viewModelScope.launch {
 			while(flow.value.picturesUrl.isEmpty())
 			{
-				delay(100)
+				delay(300)
 			}
 			saveSharedPictureForFirstLaunch = ""
 			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, "$url\n"))
