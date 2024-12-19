@@ -31,7 +31,11 @@ class PicturesViewModel(
 				{
 					is Resource.Data ->
 					{
-						val savedUrls = saveSharedPictureForFirstLaunch
+						var savedUrls = saveSharedPictureForFirstLaunch
+						if(savedUrls.isNotEmpty())
+						{
+							savedUrls += "\n"
+						}
 						flow.value = flow.value.copy(
 							loadingState = PicturesState.SearchIsOk(savedUrls + urls.value)
 						)
@@ -64,13 +68,13 @@ class PicturesViewModel(
 		Log.d("pictures urls", "$urls")
 		val flow = picturesUiState
 		val notNullUrls = urls ?: ""
-		if(caseEmptySharedPreferenceOnFirstLaunch)
-		{
-			saveSharedPictureForFirstLaunch = notNullUrls
-		}
-		else
-		{
-			viewModelScope.launch {
+		viewModelScope.launch {
+			if(caseEmptySharedPreferenceOnFirstLaunch)
+			{
+				saveSharedPictureForFirstLaunch = notNullUrls
+			}
+			else
+			{
 				flow.value = flow.value.copy(picturesUrl = notNullUrls)
 			}
 		}
@@ -89,14 +93,6 @@ class PicturesViewModel(
 			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, "$url\n"))
 		}
 		Log.d("Removed from list - now list is", flow.value.picturesUrl)
-	}
-
-	fun addUrlToSavedUrls(url: String)
-	{
-		val flow = picturesUiState
-		viewModelScope.launch {
-			flow.value = flow.value.copy(picturesUrl = "$url\n${flow.value.picturesUrl}")
-		}
 	}
 
 	private fun removePrefix(str: String, prefix: String): String =

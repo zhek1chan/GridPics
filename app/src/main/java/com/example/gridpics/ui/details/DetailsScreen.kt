@@ -114,7 +114,7 @@ fun DetailsScreen(
 	postFalseToSharedImageState: () -> Unit,
 	removeUrl: (String) -> Unit,
 	saveToSharedPrefs: (String) -> Unit,
-	clearPrevIntent: () -> Unit
+	clearPrevIntent: () -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -146,7 +146,7 @@ fun DetailsScreen(
 		}
 	}
 	Log.d("pic", currentPicture)
-	Log.d("list221122", "$list")
+	Log.d("shared", "$list")
 	val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
 	val currentPage = pagerState.currentPage
 	val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
@@ -505,13 +505,12 @@ fun AppBar(
 	state: MutableState<DetailsScreenUiState>,
 	removeUrl: (String) -> Unit,
 	changeBarsVisability: (Boolean) -> Unit,
-	clearPrevIntent: () -> Unit
-
+	clearPrevIntent: () -> Unit,
 )
 {
 	val navBack = remember { mutableStateOf(false) }
 	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-	Log.d("wtf", list[pagerState.currentPage])
+	Log.d("shared", pagerState.currentPage.toString())
 	val currentPicture = list[pagerState.currentPage]
 	val sharedImgCase = state.value.isSharedImage
 	Log.d("wahwah", "$screenWidth")

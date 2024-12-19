@@ -114,7 +114,7 @@ class MainActivity: AppCompatActivity()
 		//реализация фичи - поделиться картинкой в приложение
 		setContent {
 			val navController = rememberNavController()
-			LaunchedEffect(this@MainActivity) {
+			LaunchedEffect(Unit) {
 				navigation = navController
 				postValuesFromIntent(intent, picturesFromSP, picVM)
 			}
@@ -207,11 +207,6 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
-		val picVM = picturesViewModel
-		if(detailsViewModel.uiState.value.isSharedImage && !newIntentFlag)
-		{
-			picVM.addUrlToSavedUrls(picVM.picturesUiState.value.currentPicture)
-		}
 		Log.d("lifecycle", "onRestart()")
 		super.onRestart()
 	}
@@ -237,7 +232,7 @@ class MainActivity: AppCompatActivity()
 	{
 		Log.d("callback", "callback was called")
 		mainNotificationService?.stopSelf()
-		this@MainActivity.finish()
+		this.finish()
 	}
 
 	override fun onPause()
@@ -252,18 +247,15 @@ class MainActivity: AppCompatActivity()
 		{
 			unbindMainService()
 		}
-		val picVM = picturesViewModel
 		newIntentFlag = false
-		if(detailsViewModel.uiState.value.isSharedImage)
-		{
-			picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture)
-		}
 		Log.d("lifecycle", "onStop()")
 		super.onStop()
 	}
 
 	override fun onDestroy()
 	{
+		val picVM = picturesViewModel
+		caseSharedImageExit { picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture) }
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}
@@ -418,6 +410,14 @@ class MainActivity: AppCompatActivity()
 					picVM.postUsedIntent(oldString)
 				}
 			}
+		}
+	}
+
+	private fun caseSharedImageExit(shouldDo: () -> Unit)
+	{
+		if(detailsViewModel.uiState.value.isSharedImage)
+		{
+			shouldDo()
 		}
 	}
 
