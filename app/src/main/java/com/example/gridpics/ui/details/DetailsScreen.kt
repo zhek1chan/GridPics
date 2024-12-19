@@ -552,8 +552,7 @@ fun AppBar(
 							fontSize = 18.sp,
 							maxLines = 2,
 							modifier = Modifier
-								.align(Alignment.Center)
-								.clickable { navBack.value = true },
+								.align(Alignment.Center),
 							overflow = TextOverflow.Ellipsis,
 						)
 					}
