@@ -49,14 +49,17 @@ class MainNotificationService: Service()
 
 	private fun createNotificationChannel()
 	{
-		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-		if(Build.VERSION.SDK_INT >= VERSION_CODES.O && notificationManager.getNotificationChannel(CHANNEL_NOTIFICATIONS_ID) == null)
+		if(Build.VERSION.SDK_INT >= VERSION_CODES.R)
 		{
-			val name = this.getString(R.string.my_notification_channel)
-			val description = this.getString(R.string.channel_for_my_notification)
-			val channel = NotificationChannel(CHANNEL_NOTIFICATIONS_ID, name, NotificationManager.IMPORTANCE_HIGH)
-			channel.description = description
-			notificationManager.createNotificationChannel(channel)
+			val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+			if(notificationManager.getNotificationChannel(CHANNEL_NOTIFICATIONS_ID) == null)
+			{
+				val name = this.getString(R.string.my_notification_channel)
+				val description = this.getString(R.string.channel_for_my_notification)
+				val channel = NotificationChannel(CHANNEL_NOTIFICATIONS_ID, name, NotificationManager.IMPORTANCE_HIGH)
+				channel.description = description
+				notificationManager.createNotificationChannel(channel)
+			}
 		}
 	}
 
