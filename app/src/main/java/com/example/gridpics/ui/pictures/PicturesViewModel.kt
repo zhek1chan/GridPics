@@ -8,6 +8,7 @@ import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -79,7 +80,7 @@ class PicturesViewModel(
 	{
 		Log.d("Removed from list", url)
 		val flow = picturesUiState
-		viewModelScope.launch {
+		viewModelScope.launch(Dispatchers.IO) {
 			while(flow.value.picturesUrl.isEmpty())
 			{
 				delay(300)
@@ -88,6 +89,14 @@ class PicturesViewModel(
 			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, "$url\n"))
 		}
 		Log.d("Removed from list - now list is", flow.value.picturesUrl)
+	}
+
+	fun addUrlToSavedUrls(url: String)
+	{
+		val flow = picturesUiState
+		viewModelScope.launch {
+			flow.value = flow.value.copy(picturesUrl = "$url\n${flow.value.picturesUrl}")
+		}
 	}
 
 	private fun removePrefix(str: String, prefix: String): String =

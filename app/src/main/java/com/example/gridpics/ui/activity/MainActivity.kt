@@ -47,6 +47,7 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
+	private var newIntentFlag = false
 	private lateinit var navigation: NavHostController
 	private val connection = object: ServiceConnection
 	{
@@ -206,6 +207,11 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
+		val picVM = picturesViewModel
+		if(detailsViewModel.uiState.value.isSharedImage && !newIntentFlag)
+		{
+			picVM.addUrlToSavedUrls(picVM.picturesUiState.value.currentPicture)
+		}
 		Log.d("lifecycle", "onRestart()")
 		super.onRestart()
 	}
@@ -246,16 +252,18 @@ class MainActivity: AppCompatActivity()
 		{
 			unbindMainService()
 		}
+		val picVM = picturesViewModel
+		newIntentFlag = false
+		if(detailsViewModel.uiState.value.isSharedImage)
+		{
+			picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture)
+		}
 		Log.d("lifecycle", "onStop()")
 		super.onStop()
 	}
 
 	override fun onDestroy()
 	{
-		val picVM = picturesViewModel
-		if(detailsViewModel.uiState.value.isSharedImage){
-			picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture)
-		}
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}
@@ -359,6 +367,7 @@ class MainActivity: AppCompatActivity()
 	override fun onNewIntent(intent: Intent?)
 	{
 		super.onNewIntent(intent)
+		newIntentFlag = true
 		picturesViewModel.clearUsedIntentValue()
 		intent?.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 		getValuesFromIntent(intent)
@@ -378,6 +387,7 @@ class MainActivity: AppCompatActivity()
 		val action = intent?.action
 		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
+			newIntentFlag = true
 			val usedIntentValue = picVM.usedValueFromIntent
 			val urls = picUrls ?: ""
 			val nav = navigation
