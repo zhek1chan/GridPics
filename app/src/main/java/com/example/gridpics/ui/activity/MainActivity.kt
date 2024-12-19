@@ -376,9 +376,9 @@ class MainActivity: AppCompatActivity()
 			val urls = picUrls ?: ""
 			val nav = navigation
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
-			val cacheIsEmpty = urls.isEmpty()
 			if(!sharedValue.isNullOrEmpty() && sharedValue != usedIntentValue)
 			{
+				val cacheIsEmpty = urls.isEmpty()
 				if(!cacheIsEmpty && urls.contains(sharedValue))
 				{
 					picVM.removeUrlFromSavedUrls(sharedValue)
