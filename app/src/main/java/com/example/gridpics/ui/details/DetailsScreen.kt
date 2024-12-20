@@ -519,6 +519,7 @@ fun AppBar(
 	val navBack = remember { mutableStateOf(false) }
 	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 	val currentPicture = list[pagerState.currentPage]
+	Log.d("shared pic url",currentPicture)
 	val sharedImgCase = state.value.isSharedImage
 	Log.d("wahwah", "$screenWidth")
 	AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {

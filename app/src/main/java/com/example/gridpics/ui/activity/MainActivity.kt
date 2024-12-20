@@ -176,7 +176,8 @@ class MainActivity: AppCompatActivity()
 					option = themePick,
 					changeTheme = { int -> changeTheme(int) },
 					isScreenInPortraitState = picState,
-					clearImageCache = { saveToSharedPrefs("") }
+					clearImageCache = { saveToSharedPrefs("") },
+					postStartOfPager = { picVM.clickOnPicture("", 0, 0) }
 				)
 			}
 			composable(Screen.Details.route) {
@@ -403,7 +404,7 @@ class MainActivity: AppCompatActivity()
 				val cacheIsEmpty = urls.isEmpty()
 				if(!cacheIsEmpty && urls.contains(sharedValue))
 				{
-					picVM.removeUrlFromSavedUrls(sharedValue)
+					picVM.urlWasAlreadyInSP(sharedValue, urls)
 				}
 				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
 				picVM.saveCurrentPictureUrl(sharedValue)

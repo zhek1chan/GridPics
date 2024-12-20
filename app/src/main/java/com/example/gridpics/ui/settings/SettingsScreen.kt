@@ -72,8 +72,10 @@ fun SettingsScreen(
 	changeTheme: (Int) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 	clearImageCache: () -> Unit,
+	postStartOfPager: () -> Unit
 )
 {
+	postStartOfPager()
 	val windowInsets = if(!isScreenInPortraitState.value.isPortraitOrientation)
 	{
 		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)

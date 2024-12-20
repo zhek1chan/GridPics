@@ -20,6 +20,7 @@ class PicturesViewModel(
 	var usedValueFromIntent = ""
 	private val errorsList: MutableList<String> = mutableListOf()
 	private var saveSharedPictureForFirstLaunch = ""
+	private var index = 0
 
 	init
 	{
@@ -72,6 +73,7 @@ class PicturesViewModel(
 			{
 				flow.value = flow.value.copy(picturesUrl = notNullUrls)
 			}
+			Log.d("shared list", flow.value.picturesUrl)
 		}
 	}
 
@@ -86,7 +88,7 @@ class PicturesViewModel(
 			saveSharedPictureForFirstLaunch = ""
 			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, "$url\n"))
 		}
-		Log.d("Removed from list - now list is", flow.value.picturesUrl)
+		Log.d("Removed from list - now list is", flow.value.picturesUrl.slice(0 .. 50))
 	}
 
 	private fun removePrefix(str: String, prefix: String): String =
@@ -136,13 +138,20 @@ class PicturesViewModel(
 	fun saveCurrentPictureUrl(url: String)
 	{
 		val state = picturesUiState
-		state.value = state.value.copy(currentPicture = url)
+		state.value = state.value.copy(currentPicture = url + "\n")
 	}
 
 	fun restoreDeletedUrl(url: String)
 	{
 		val state = picturesUiState
-		state.value = state.value.copy(picturesUrl = url+state.value.picturesUrl)
+		val list = state.value.picturesUrl.split("\n").toMutableList()
+		list.add(index, url)
+		var newString = ""
+		for (i in 0 ..< list.size) {
+			 newString += list[i]+"\n"
+		}
+		Log.d("index", newString)
+		state.value = state.value.copy(picturesUrl = newString)
 	}
 
 	fun postUsedIntent(url: String)
@@ -153,6 +162,13 @@ class PicturesViewModel(
 	fun clearUsedIntentValue()
 	{
 		usedValueFromIntent = ""
+	}
+
+	fun urlWasAlreadyInSP(url: String, urlsFromSP: String)
+	{
+		val list = urlsFromSP.split("\n")
+		index = list.indexOf(url)
+		Log.d("index", "$index")
 	}
 
 	fun isValidUrl(url: String): Boolean
