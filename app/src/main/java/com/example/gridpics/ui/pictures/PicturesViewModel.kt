@@ -22,7 +22,6 @@ class PicturesViewModel(
 	private var saveSharedPictureForFirstLaunch = ""
 	private var index = 0
 	var newIntentFlag = true
-	var onStopWasUsed = false
 
 	init
 	{
@@ -81,7 +80,7 @@ class PicturesViewModel(
 
 	fun removeUrlFromSavedUrls(url: String)
 	{
-		Log.d("index rm url -", url)
+		Log.d("index", "i called removeUrl")
 		val flow = picturesUiState
 		viewModelScope.launch(Dispatchers.IO) {
 			while(flow.value.picturesUrl.isEmpty())
@@ -148,6 +147,7 @@ class PicturesViewModel(
 
 	fun restoreDeletedUrl(url: String)
 	{
+		Log.d("index", "i called restoreDeleted")
 		val state = picturesUiState
 		val list = state.value.picturesUrl.split("\n").toMutableList()
 		list.add(index, url)
@@ -172,12 +172,20 @@ class PicturesViewModel(
 	private fun newStringWithoutDoubles(list: MutableList<String>): String
 	{
 		var newString = ""
-		for(i in 0 ..< list.size)
+		val size = list.size
+		for(i in 0 ..< size)
 		{
 			val item = list[i]
 			if(item.isNotEmpty() && !item.contains("\n"))
 			{
-				newString += item + "\n"
+				newString += if(i != size - 1)
+				{
+					item + "\n"
+				}
+				else
+				{
+					item
+				}
 			}
 		}
 		return newString
@@ -193,39 +201,28 @@ class PicturesViewModel(
 		usedValueFromIntent = ""
 	}
 
-	fun postUsedOnStop(used: Boolean)
-	{
-		onStopWasUsed = used
-	}
-
-	fun postUsedIntent(used: Boolean)
+	fun postIntentWasUsed(used: Boolean)
 	{
 		newIntentFlag = used
 	}
 
 	fun urlWasAlreadyInSP(url: String, urlsFromSP: String)
 	{
+		Log.d("index", "i called urlWasAlready")
 		val list = urlsFromSP.split("\n")
 		index = list.indexOf(url)
+		Log.d("index num", index.toString())
 	}
 
 	fun replaceInRightWay()
 	{
+		Log.d("index", "i called replace")
 		val state = picturesUiState
 		val list = state.value.picturesUrl.split("\n").toMutableList()
-		var newString = ""
 		val wrongFirst = list[0]
 		list.add(index, wrongFirst)
 		list.removeAt(0)
-		for(i in 0 ..< list.size)
-		{
-			val item = list[i]
-			if(item.isNotEmpty() && !item.contains("\n"))
-			{
-				newString += item + "\n"
-			}
-		}
-		state.value = state.value.copy(picturesUrl = newString)
+		state.value = state.value.copy(picturesUrl = newStringWithoutDoubles(list))
 	}
 
 	fun isValidUrl(url: String): Boolean

@@ -120,7 +120,7 @@ fun DetailsScreen(
 	val context = LocalContext.current
 	val valuePicUi = picturesScreenState.value
 	val currentPicture = valuePicUi.currentPicture
-	Log.d("Case shared", currentPicture)
+	Log.d("index current picture", currentPicture)
 	val pictures = valuePicUi.picturesUrl
 	val value = state.value
 	Log.d("pictures", pictures)

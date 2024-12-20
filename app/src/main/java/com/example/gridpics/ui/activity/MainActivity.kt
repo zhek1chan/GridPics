@@ -115,7 +115,7 @@ class MainActivity: AppCompatActivity()
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
 				navigation = navController
-				picVM.postUsedIntent(true)
+				picVM.postIntentWasUsed(true)
 				postValuesFromIntent(intent, picturesFromSP, picVM)
 			}
 			ComposeTheme {
@@ -220,15 +220,12 @@ class MainActivity: AppCompatActivity()
 		Log.d("lifecycle", "onRestart()")
 		val picVM = picturesViewModel
 		val pic = picVM.picturesUiState.value.currentPicture
-		if(detailsViewModel.uiState.value.isSharedImage)
+		caseSharedImageExit { picVM.saveCurrentPictureUrl(pic) }
+		if(picVM.newIntentFlag && detailsViewModel.uiState.value.isSharedImage)
 		{
-			caseSharedImageExit { picVM.saveCurrentPictureUrl(pic) }
-			if(picVM.onStopWasUsed)
-			{
-				picVM.replaceInRightWay()
-			}
+			Log.d("index replaced in rightWay", "replaced in rightWay")
+			picVM.replaceInRightWay()
 		}
-		picVM.postUsedOnStop(false)
 		super.onRestart()
 	}
 
@@ -269,14 +266,10 @@ class MainActivity: AppCompatActivity()
 			unbindMainService()
 		}
 		val picVM = picturesViewModel
-		picVM.postUsedIntent(false)
-		picVM.postUsedOnStop(true)
+		picVM.postIntentWasUsed(false)
 		val currentPicture = picVM.picturesUiState.value.currentPicture
-		if(detailsViewModel.uiState.value.isSharedImage)
-		{
-			caseSharedImageExit { picVM.removeUrlFromSavedUrls(currentPicture) }
-			picVM.restoreDeletedUrl(currentPicture)
-		}
+		caseSharedImageExit { picVM.removeUrlFromSavedUrls(currentPicture) }
+		caseSharedImageExit { picVM.restoreDeletedUrl(currentPicture) }
 		Log.d("lifecycle", "onStop()")
 		super.onStop()
 	}
@@ -407,10 +400,10 @@ class MainActivity: AppCompatActivity()
 		val action = intent?.action
 		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
-			picVM.postUsedIntent(true)
 			val usedIntentValue = picVM.usedValueFromIntent
 			val urls = picUrls ?: ""
 			val nav = navigation
+			val detVM = detailsViewModel
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
 			if(!sharedValue.isNullOrEmpty() && sharedValue != usedIntentValue)
 			{
@@ -422,7 +415,7 @@ class MainActivity: AppCompatActivity()
 				}
 				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
 				picVM.saveCurrentPictureUrl(sharedValue)
-				detailsViewModel.isSharedImage(true)
+				detVM.isSharedImage(true)
 				nav.navigate(Screen.Details.route)
 				picVM.postUsedIntent(sharedValue)
 			}
@@ -439,11 +432,12 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
+		picVM.postIntentWasUsed(true)
 	}
 
 	private fun caseSharedImageExit(shouldDo: () -> Unit)
 	{
-		if(!picturesViewModel.newIntentFlag)
+		if(detailsViewModel.uiState.value.isSharedImage)
 		{
 			shouldDo()
 		}
