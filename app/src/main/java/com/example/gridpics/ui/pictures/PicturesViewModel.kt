@@ -21,6 +21,8 @@ class PicturesViewModel(
 	private val errorsList: MutableList<String> = mutableListOf()
 	private var saveSharedPictureForFirstLaunch = ""
 	private var index = 0
+	var newIntentFlag = true
+	var onStopWasUsed = false
 
 	init
 	{
@@ -64,21 +66,22 @@ class PicturesViewModel(
 	{
 		viewModelScope.launch(Dispatchers.IO) {
 			val flow = picturesUiState
-			val notNullUrls = urls ?: ""
+			var notNullUrls = urls ?: ""
 			if(caseEmptySharedPreferenceOnFirstLaunch)
 			{
 				saveSharedPictureForFirstLaunch = notNullUrls
 			}
 			else
 			{
+				notNullUrls = newStringWithoutDoubles(notNullUrls.split("\n").toMutableList())
 				flow.value = flow.value.copy(picturesUrl = notNullUrls)
 			}
-			Log.d("shared list", flow.value.picturesUrl)
 		}
 	}
 
 	fun removeUrlFromSavedUrls(url: String)
 	{
+		Log.d("index rm url -", url)
 		val flow = picturesUiState
 		viewModelScope.launch(Dispatchers.IO) {
 			while(flow.value.picturesUrl.isEmpty())
@@ -86,9 +89,11 @@ class PicturesViewModel(
 				delay(100)
 			}
 			saveSharedPictureForFirstLaunch = ""
-			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, "$url\n"))
+			for(i in 0 .. 1)
+			{
+				flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, "$url\n"))
+			}
 		}
-		Log.d("Removed from list - now list is", flow.value.picturesUrl.slice(0 .. 50))
 	}
 
 	private fun removePrefix(str: String, prefix: String): String =
@@ -146,12 +151,36 @@ class PicturesViewModel(
 		val state = picturesUiState
 		val list = state.value.picturesUrl.split("\n").toMutableList()
 		list.add(index, url)
-		var newString = ""
-		for (i in 0 ..< list.size) {
-			 newString += list[i]+"\n"
+		val newString = newStringWithoutDoubles(list)
+		//string problems fixer
+		if(newString.startsWith("\n"))
+		{
+			newString.removeRange(0 .. 1)
 		}
-		Log.d("index", newString)
+		if(newString.endsWith("\n"))
+		{
+			newString.removeRange(newString.length - 2 ..< newString.length)
+		}
+		if(newString.contains("\n\n"))
+		{
+			newString.replace("\n\n", "\n")
+		}
+		Log.d("index tut new string", newString)
 		state.value = state.value.copy(picturesUrl = newString)
+	}
+
+	private fun newStringWithoutDoubles(list: MutableList<String>): String
+	{
+		var newString = ""
+		for(i in 0 ..< list.size)
+		{
+			val item = list[i]
+			if(item.isNotEmpty() && !item.contains("\n"))
+			{
+				newString += item + "\n"
+			}
+		}
+		return newString
 	}
 
 	fun postUsedIntent(url: String)
@@ -164,11 +193,39 @@ class PicturesViewModel(
 		usedValueFromIntent = ""
 	}
 
+	fun postUsedOnStop(used: Boolean)
+	{
+		onStopWasUsed = used
+	}
+
+	fun postUsedIntent(used: Boolean)
+	{
+		newIntentFlag = used
+	}
+
 	fun urlWasAlreadyInSP(url: String, urlsFromSP: String)
 	{
 		val list = urlsFromSP.split("\n")
 		index = list.indexOf(url)
-		Log.d("index", "$index")
+	}
+
+	fun replaceInRightWay()
+	{
+		val state = picturesUiState
+		val list = state.value.picturesUrl.split("\n").toMutableList()
+		var newString = ""
+		val wrongFirst = list[0]
+		list.add(index, wrongFirst)
+		list.removeAt(0)
+		for(i in 0 ..< list.size)
+		{
+			val item = list[i]
+			if(item.isNotEmpty() && !item.contains("\n"))
+			{
+				newString += item + "\n"
+			}
+		}
+		state.value = state.value.copy(picturesUrl = newString)
 	}
 
 	fun isValidUrl(url: String): Boolean

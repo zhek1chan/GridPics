@@ -411,6 +411,7 @@ fun ShowList(
 			postSavedUrls(imagesUrlsSP)
 		}
 		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n").toSet().toList() }
+		Log.d("index tut new string", items.toString())
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			state = listState,
