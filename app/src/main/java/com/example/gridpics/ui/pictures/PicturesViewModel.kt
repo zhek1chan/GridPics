@@ -31,11 +31,7 @@ class PicturesViewModel(
 				{
 					is Resource.Data ->
 					{
-						var savedUrls = saveSharedPictureForFirstLaunch
-						if(savedUrls.isNotEmpty())
-						{
-							savedUrls += "\n"
-						}
+						val savedUrls = saveSharedPictureForFirstLaunch
 						flow.value = flow.value.copy(
 							loadingState = PicturesState.SearchIsOk(savedUrls + urls.value)
 						)
@@ -65,10 +61,9 @@ class PicturesViewModel(
 
 	fun postSavedUrls(urls: String?, caseEmptySharedPreferenceOnFirstLaunch: Boolean)
 	{
-		Log.d("pictures urls", "$urls")
-		val flow = picturesUiState
-		val notNullUrls = urls ?: ""
-		viewModelScope.launch {
+		viewModelScope.launch(Dispatchers.IO) {
+			val flow = picturesUiState
+			val notNullUrls = urls ?: ""
 			if(caseEmptySharedPreferenceOnFirstLaunch)
 			{
 				saveSharedPictureForFirstLaunch = notNullUrls
@@ -82,12 +77,11 @@ class PicturesViewModel(
 
 	fun removeUrlFromSavedUrls(url: String)
 	{
-		Log.d("Removed from list", url)
 		val flow = picturesUiState
 		viewModelScope.launch(Dispatchers.IO) {
 			while(flow.value.picturesUrl.isEmpty())
 			{
-				delay(300)
+				delay(100)
 			}
 			saveSharedPictureForFirstLaunch = ""
 			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, "$url\n"))
@@ -143,6 +137,12 @@ class PicturesViewModel(
 	{
 		val state = picturesUiState
 		state.value = state.value.copy(currentPicture = url)
+	}
+
+	fun restoreDeletedUrl(url: String)
+	{
+		val state = picturesUiState
+		state.value = state.value.copy(picturesUrl = url+state.value.picturesUrl)
 	}
 
 	fun postUsedIntent(url: String)

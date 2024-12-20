@@ -47,7 +47,7 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
-	private var newIntentFlag = false
+	private var newIntentFlag = true
 	private lateinit var navigation: NavHostController
 	private val connection = object: ServiceConnection
 	{
@@ -116,6 +116,7 @@ class MainActivity: AppCompatActivity()
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
 				navigation = navController
+				newIntentFlag = true
 				postValuesFromIntent(intent, picturesFromSP, picVM)
 			}
 			ComposeTheme {
@@ -156,7 +157,16 @@ class MainActivity: AppCompatActivity()
 						detVM.isSharedImage(false)
 					},
 					isValidUrl = { url -> picVM.isValidUrl(url) },
-					postSavedUrls = { urls -> picVM.postSavedUrls(urls = urls, caseEmptySharedPreferenceOnFirstLaunch = false) },
+					postSavedUrls = { urls ->
+						if(!detVM.uiState.value.isSharedImage)
+						{
+							picVM.postSavedUrls(urls = urls, caseEmptySharedPreferenceOnFirstLaunch = false)
+						}
+						else
+						{
+							Unit
+						}
+					},
 					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) }
 				)
 			}
@@ -208,6 +218,10 @@ class MainActivity: AppCompatActivity()
 	override fun onRestart()
 	{
 		Log.d("lifecycle", "onRestart()")
+		val picVM = picturesViewModel
+		val pic = picVM.picturesUiState.value.currentPicture
+		caseSharedImageExit { picVM.restoreDeletedUrl(pic) }
+		caseSharedImageExit { picVM.saveCurrentPictureUrl(pic) }
 		super.onRestart()
 	}
 
@@ -248,14 +262,14 @@ class MainActivity: AppCompatActivity()
 			unbindMainService()
 		}
 		newIntentFlag = false
+		val picVM = picturesViewModel
+		caseSharedImageExit { picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture) }
 		Log.d("lifecycle", "onStop()")
 		super.onStop()
 	}
 
 	override fun onDestroy()
 	{
-		val picVM = picturesViewModel
-		caseSharedImageExit { picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture) }
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}
@@ -392,8 +406,7 @@ class MainActivity: AppCompatActivity()
 					picVM.removeUrlFromSavedUrls(sharedValue)
 				}
 				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
-				Log.d("shared", "$action")
-				picVM.clickOnPicture(sharedValue, 0, 0)
+				picVM.saveCurrentPictureUrl(sharedValue)
 				detailsViewModel.isSharedImage(true)
 				nav.navigate(Screen.Details.route)
 				picVM.postUsedIntent(sharedValue)
@@ -415,7 +428,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun caseSharedImageExit(shouldDo: () -> Unit)
 	{
-		if(detailsViewModel.uiState.value.isSharedImage)
+		if(detailsViewModel.uiState.value.isSharedImage && !newIntentFlag)
 		{
 			shouldDo()
 		}
