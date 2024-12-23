@@ -182,7 +182,7 @@ class PicturesViewModel(
 
 	fun clearUsedIntentValue()
 	{
-		usedValueFromIntent = ""
+		usedValueFromIntent = "null"
 	}
 
 	fun urlWasAlreadyInSP(url: String, urlsFromSP: String)
