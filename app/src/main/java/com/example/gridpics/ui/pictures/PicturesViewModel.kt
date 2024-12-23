@@ -87,7 +87,12 @@ class PicturesViewModel(
 				delay(100)
 			}
 			saveSharedPictureForFirstLaunch = ""
-			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, url))
+			val newString = removePrefix(flow.value.picturesUrl, "$url\n")
+			Log.d("we got:", "removed $newString")
+			while(newString.startsWith("\n")){
+				newString.removeRange(0..1)
+			}
+			flow.value = flow.value.copy(picturesUrl = newString)
 		}
 	}
 
@@ -182,8 +187,6 @@ class PicturesViewModel(
 		val value = state.value
 		val list = value.picturesUrl.split("\n").toSet().toMutableList()
 		viewModelScope.launch {
-			Log.d("test newString value", oldPicture)
-			Log.d("test newString first val", list[1])
 			while(list.contains(oldPicture))
 			{
 				list.remove(oldPicture)
@@ -194,7 +197,6 @@ class PicturesViewModel(
 				list.remove("\n")
 			}
 			val newString = createNewString(list)
-			Log.d("test newString", newString)
 			state.value = state.value.copy(picturesUrl = newString)
 		}
 		index = 0
