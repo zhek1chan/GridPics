@@ -226,7 +226,6 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val pic = picVM.picturesUiState.value.currentPicture
 		caseSharedImageExit { picVM.restoreDeletedUrl(pic) }
-		caseSharedImageExit { picVM.saveCurrentPictureUrl(pic) }
 		super.onRestart()
 	}
 

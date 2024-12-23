@@ -157,6 +157,7 @@ fun DetailsScreen(
 		0
 	}
 	Log.d("pic", currentPicture)
+	Log.d("index current", index.toString())
 	val pagerState = rememberPagerState(initialPage = startPage, initialPageOffsetFraction = 0f, pageCount = { list.size })
 	val currentPage = pagerState.currentPage
 	val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
