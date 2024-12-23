@@ -160,16 +160,17 @@ class PicturesViewModel(
 
 	fun restoreDeletedUrl(url: String)
 	{
+		val state = picturesUiState
+		val list = state.value.picturesUrl.split("\n").toMutableList()
+		val index = index
+		if(index < list.size)
+		{
+			list.add(index, url)
+		}
 		viewModelScope.launch(Dispatchers.IO) {
-			val state = picturesUiState
-			val list = state.value.picturesUrl.split("\n").toMutableList()
-			val index = index
-			if(index < list.size)
-			{
-				list.add(index, url)
-			}
 			val newString = createNewString(list)
-			Log.d("index", newString)
+			Log.d("index new list", list.toString())
+			Log.d("index new string", newString)
 			state.value = state.value.copy(picturesUrl = newString)
 		}
 	}
@@ -202,7 +203,7 @@ class PicturesViewModel(
 		val state = picturesUiState
 		val value = state.value
 		val list = value.picturesUrl.split("\n").toSet().toMutableList()
-		viewModelScope.launch {
+		viewModelScope.launch(Dispatchers.IO) {
 			while(list.contains(oldPicture))
 			{
 				list.remove(oldPicture)
@@ -222,32 +223,30 @@ class PicturesViewModel(
 	private fun createNewString(list: MutableList<String>): String
 	{
 		var newString = ""
-		viewModelScope.launch(Dispatchers.IO) {
-			val size = list.size
-			for(i in 0 ..< size)
+		val size = list.size
+		for(i in 0 ..< size)
+		{
+			newString += if(i != size)
 			{
-				newString += if(i != size)
-				{
-					list[i] + "\n"
-				}
-				else
-				{
-					list[i]
-				}
+				list[i] + "\n"
 			}
-			//fix problems with string
-			while(newString.endsWith("\n") && newString.length >= 2)
+			else
 			{
-				newString.removeRange(newString.length - 2 ..< newString.length)
+				list[i]
 			}
-			if(newString.contains("\n\n"))
-			{
-				newString.replace("\n\n", "\n")
-			}
-			if(newString.startsWith("\n") && newString.length >= 2)
-			{
-				newString.removeRange(0 .. 1)
-			}
+		}
+		//fix problems with string
+		while(newString.endsWith("\n") && newString.length >= 2)
+		{
+			newString.removeRange(newString.length - 2 ..< newString.length)
+		}
+		if(newString.contains("\n\n"))
+		{
+			newString.replace("\n\n", "\n")
+		}
+		if(newString.startsWith("\n") && newString.length >= 2)
+		{
+			newString.removeRange(0 .. 1)
 		}
 		return newString
 	}

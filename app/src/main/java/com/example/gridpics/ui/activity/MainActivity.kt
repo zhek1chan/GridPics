@@ -419,12 +419,12 @@ class MainActivity: AppCompatActivity()
 						picVM.urlWasAlreadyInSP(sharedValue, urls)
 					}
 				}
+				detVM.changeAddedState(null)
 				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
 				picVM.saveCurrentPictureUrl(sharedValue)
 				Log.d("we changed current picture", "$sharedValue")
 				detVM.isSharedImage(true)
 				picVM.postUsedIntent(sharedValue)
-				detVM.changeAddedState(null)
 				nav.navigate(Screen.Details.route)
 			}
 			else
