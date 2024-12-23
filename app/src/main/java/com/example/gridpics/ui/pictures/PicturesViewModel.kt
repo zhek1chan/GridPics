@@ -89,8 +89,9 @@ class PicturesViewModel(
 			saveSharedPictureForFirstLaunch = ""
 			val newString = removePrefix(flow.value.picturesUrl, "$url\n")
 			Log.d("we got:", "removed $newString")
-			while(newString.startsWith("\n")){
-				newString.removeRange(0..1)
+			while(newString.startsWith("\n"))
+			{
+				newString.removeRange(0 .. 1)
 			}
 			flow.value = flow.value.copy(picturesUrl = newString)
 		}
@@ -151,7 +152,11 @@ class PicturesViewModel(
 		viewModelScope.launch(Dispatchers.IO) {
 			val state = picturesUiState
 			val list = state.value.picturesUrl.split("\n").toMutableList()
-			list.add(index, url)
+			val index = index
+			if(index < list.size)
+			{
+				list.add(index, url)
+			}
 			val newString = createNewString(list)
 			Log.d("index", newString)
 			state.value = state.value.copy(picturesUrl = newString)
@@ -193,7 +198,8 @@ class PicturesViewModel(
 			}
 			val index = index
 			list.add(index, oldPicture)
-			while(list.contains("\n")) {
+			while(list.contains("\n"))
+			{
 				list.remove("\n")
 			}
 			val newString = createNewString(list)
@@ -219,7 +225,7 @@ class PicturesViewModel(
 				}
 			}
 			//fix problems with string
-			while(newString.endsWith("\n"))
+			while(newString.endsWith("\n") && newString.length >= 2)
 			{
 				newString.removeRange(newString.length - 2 ..< newString.length)
 			}
@@ -227,7 +233,7 @@ class PicturesViewModel(
 			{
 				newString.replace("\n\n", "\n")
 			}
-			if(newString.startsWith("\n"))
+			if(newString.startsWith("\n") && newString.length >= 2)
 			{
 				newString.removeRange(0 .. 1)
 			}
