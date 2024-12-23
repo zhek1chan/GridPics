@@ -303,7 +303,6 @@ fun ShowDetails(
 								.align(Alignment.CenterVertically)
 								.size(130.dp, 60.dp),
 							onClick = {
-								changeAddedState(false)
 								navigateToHome(
 									isSharedImage = isSharedImage,
 									removeUrl = removeUrl,

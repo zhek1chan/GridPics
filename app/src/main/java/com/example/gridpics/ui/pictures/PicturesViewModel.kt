@@ -21,6 +21,7 @@ class PicturesViewModel(
 	private val errorsList: MutableList<String> = mutableListOf()
 	private var saveSharedPictureForFirstLaunch = ""
 	private var index = 0
+	var onPauseWasCalled = false
 
 	init
 	{
@@ -86,7 +87,7 @@ class PicturesViewModel(
 				delay(100)
 			}
 			saveSharedPictureForFirstLaunch = ""
-			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, "$url\n"))
+			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, url))
 		}
 	}
 

@@ -256,6 +256,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onPause()
 	{
+		picturesViewModel.onPauseWasCalled = true
 		Log.d("lifecycle", "onPause()")
 		super.onPause()
 	}
@@ -345,7 +346,7 @@ class MainActivity: AppCompatActivity()
 					startForegroundService(serviceIntentLocal)
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 				}
-				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
+				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) && !picturesViewModel.onPauseWasCalled)
 				{
 					requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), RESULT_SUCCESS)
 				}
