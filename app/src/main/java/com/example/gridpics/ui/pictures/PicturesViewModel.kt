@@ -87,11 +87,20 @@ class PicturesViewModel(
 				delay(100)
 			}
 			saveSharedPictureForFirstLaunch = ""
-			val newString = removePrefix(flow.value.picturesUrl, "$url\n")
+			val urls = flow.value.picturesUrl
+			val newString = if(!urls.startsWith(url))
+			{
+				removePrefix(urls, "$url\n")
+			}
+			else
+			{
+				urls
+			}
 			Log.d("we got:", "removed $newString")
 			while(newString.startsWith("\n"))
 			{
-				newString.removeRange(0 .. 1)
+				newString.drop(0)
+				newString.drop(0)
 			}
 			flow.value = flow.value.copy(picturesUrl = newString)
 		}
@@ -144,6 +153,7 @@ class PicturesViewModel(
 	fun saveCurrentPictureUrl(url: String)
 	{
 		val state = picturesUiState
+		Log.d("we changed current, new", url)
 		state.value = state.value.copy(currentPicture = url + "\n")
 	}
 
