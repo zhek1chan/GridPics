@@ -87,7 +87,15 @@ class PicturesViewModel(
 				delay(100)
 			}
 			saveSharedPictureForFirstLaunch = ""
-			val newString = removePrefix(flow.value.picturesUrl, "$url\n")
+			val urls = flow.value.picturesUrl
+			val newString = if(urls.startsWith("$url\n"))
+			{
+				removePrefix(urls, "$url\n")
+			}
+			else
+			{
+				removePrefix(urls, url)
+			}
 			Log.d("we got:", "removed $newString")
 			while(newString.startsWith("\n"))
 			{
