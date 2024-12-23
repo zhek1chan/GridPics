@@ -115,6 +115,7 @@ fun DetailsScreen(
 	removeUrl: (String) -> Unit,
 	saveToSharedPrefs: (String) -> Unit,
 	clearPrevIntent: () -> Unit,
+	changeAddedState: (Boolean?) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -132,7 +133,8 @@ fun DetailsScreen(
 			currentPicture = currentPicture,
 			changeBarsVisability = changeBarsVisability,
 			postUrl = postUrl,
-			navController = navController
+			navController = navController,
+			changeAddedState = changeAddedState
 		)
 	}
 	val list = remember(pictures) {
@@ -185,7 +187,8 @@ fun DetailsScreen(
 				state = state,
 				removeUrl = removeUrl,
 				changeBarsVisability = changeBarsVisability,
-				clearPrevIntent = clearPrevIntent
+				clearPrevIntent = clearPrevIntent,
+				changeAddedState = changeAddedState
 			)
 		},
 		content = { padding ->
@@ -207,7 +210,8 @@ fun DetailsScreen(
 				postFalseToSharedImageState = postFalseToSharedImageState,
 				removeUrl = removeUrl,
 				isScreenInPortraitState = picturesScreenState,
-				saveToSharedPrefs = saveToSharedPrefs
+				saveToSharedPrefs = saveToSharedPrefs,
+				changeAddedState = changeAddedState
 			)
 		}
 	)
@@ -234,6 +238,7 @@ fun ShowDetails(
 	removeUrl: (String) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 	saveToSharedPrefs: (String) -> Unit,
+	changeAddedState: (Boolean?) -> Unit,
 )
 {
 	val topBarHeight = 64.dp
@@ -298,13 +303,15 @@ fun ShowDetails(
 								.align(Alignment.CenterVertically)
 								.size(130.dp, 60.dp),
 							onClick = {
+								changeAddedState(false)
 								navigateToHome(
 									isSharedImage = isSharedImage,
 									removeUrl = removeUrl,
 									navController = navController,
 									changeBarsVisability = changeBarsVisability,
 									currentPicture = list[page],
-									postUrl = postUrl
+									postUrl = postUrl,
+									changeAddedState = changeAddedState
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -326,6 +333,7 @@ fun ShowDetails(
 									}
 									saveToSharedPrefs(isScreenInPortraitState.value.picturesUrl)
 									postFalseToSharedImageState()
+									changeAddedState(true)
 								},
 								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
 								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
@@ -336,6 +344,7 @@ fun ShowDetails(
 					}
 				}
 			}
+			else changeAddedState(null)
 		}
 	}
 }
@@ -514,12 +523,13 @@ fun AppBar(
 	removeUrl: (String) -> Unit,
 	changeBarsVisability: (Boolean) -> Unit,
 	clearPrevIntent: () -> Unit,
+	changeAddedState: (Boolean?) -> Unit,
 )
 {
 	val navBack = remember { mutableStateOf(false) }
 	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 	val currentPicture = list[pagerState.currentPage]
-	Log.d("shared pic url",currentPicture)
+	Log.d("shared pic url", currentPicture)
 	val sharedImgCase = state.value.isSharedImage
 	Log.d("wahwah", "$screenWidth")
 	AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
@@ -617,7 +627,8 @@ fun AppBar(
 			currentPicture = currentPicture,
 			changeBarsVisability = changeBarsVisability,
 			postUrl = postUrl,
-			navController = nc
+			navController = nc,
+			changeAddedState = changeAddedState
 		)
 	}
 }
@@ -629,11 +640,13 @@ fun navigateToHome(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	navController: NavController,
+	changeAddedState: (Boolean?) -> Unit,
 )
 {
 	if(isSharedImage)
 	{
 		removeUrl(currentPicture)
+		changeAddedState(null)
 	}
 	changeBarsVisability(true)
 	postUrl(DEFAULT_STRING_VALUE, null)

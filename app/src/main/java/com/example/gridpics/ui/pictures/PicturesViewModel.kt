@@ -88,7 +88,6 @@ class PicturesViewModel(
 			saveSharedPictureForFirstLaunch = ""
 			flow.value = flow.value.copy(picturesUrl = removePrefix(flow.value.picturesUrl, "$url\n"))
 		}
-		Log.d("Removed from list - now list is", flow.value.picturesUrl.slice(0 .. 50))
 	}
 
 	private fun removePrefix(str: String, prefix: String): String =
@@ -143,15 +142,14 @@ class PicturesViewModel(
 
 	fun restoreDeletedUrl(url: String)
 	{
-		val state = picturesUiState
-		val list = state.value.picturesUrl.split("\n").toMutableList()
-		list.add(index, url)
-		var newString = ""
-		for (i in 0 ..< list.size) {
-			 newString += list[i]+"\n"
+		viewModelScope.launch(Dispatchers.IO) {
+			val state = picturesUiState
+			val list = state.value.picturesUrl.split("\n").toMutableList()
+			list.add(index, url)
+			val newString = createNewString(list)
+			Log.d("index", newString)
+			state.value = state.value.copy(picturesUrl = newString)
 		}
-		Log.d("index", newString)
-		state.value = state.value.copy(picturesUrl = newString)
 	}
 
 	fun postUsedIntent(url: String)
@@ -175,5 +173,62 @@ class PicturesViewModel(
 	{
 		val urlPattern = Regex("^(https?|ftp)://([a-z0-9-]+\\.)+[a-z0-9]{2,6}(:[0-9]+)?(/\\S*)?$")
 		return urlPattern.matches(url)
+	}
+
+	fun putPreviousPictureCorrectly(oldPicture: String)
+	{
+		val state = picturesUiState
+		val value = state.value
+		val list = value.picturesUrl.split("\n").toSet().toMutableList()
+		viewModelScope.launch {
+			Log.d("test newString value", oldPicture)
+			Log.d("test newString first val", list[1])
+			while(list.contains(oldPicture))
+			{
+				list.remove(oldPicture)
+			}
+			val index = index
+			list.add(index, oldPicture)
+			while(list.contains("\n")) {
+				list.remove("\n")
+			}
+			val newString = createNewString(list)
+			Log.d("test newString", newString)
+			state.value = state.value.copy(picturesUrl = newString)
+		}
+		index = 0
+	}
+
+	private fun createNewString(list: MutableList<String>): String
+	{
+		var newString = ""
+		viewModelScope.launch(Dispatchers.IO) {
+			val size = list.size
+			for(i in 0 ..< size)
+			{
+				newString += if(i != size)
+				{
+					list[i] + "\n"
+				}
+				else
+				{
+					list[i]
+				}
+			}
+			//fix problems with string
+			while(newString.endsWith("\n"))
+			{
+				newString.removeRange(newString.length - 2 ..< newString.length)
+			}
+			if(newString.contains("\n\n"))
+			{
+				newString.replace("\n\n", "\n")
+			}
+			if(newString.startsWith("\n"))
+			{
+				newString.removeRange(0 .. 1)
+			}
+		}
+		return newString
 	}
 }

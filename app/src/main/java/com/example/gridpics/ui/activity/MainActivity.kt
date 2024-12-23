@@ -196,8 +196,12 @@ class MainActivity: AppCompatActivity()
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
 					postFalseToSharedImageState = { detVM.isSharedImage(false) },
 					removeUrl = { url -> picVM.removeUrlFromSavedUrls(url) },
-					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) },
-					clearPrevIntent = { picVM.clearUsedIntentValue() }
+					saveToSharedPrefs = { urls ->
+						saveToSharedPrefs(urls)
+						picVM.clearUsedIntentValue()
+					},
+					clearPrevIntent = { picVM.clearUsedIntentValue() },
+					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) },
 				)
 			}
 		}
@@ -375,7 +379,6 @@ class MainActivity: AppCompatActivity()
 	{
 		super.onNewIntent(intent)
 		newIntentFlag = true
-		picturesViewModel.clearUsedIntentValue()
 		intent?.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 		getValuesFromIntent(intent)
 		setIntent(intent)
@@ -396,21 +399,35 @@ class MainActivity: AppCompatActivity()
 		{
 			newIntentFlag = true
 			val usedIntentValue = picVM.usedValueFromIntent
-			val urls = picUrls ?: ""
+			var urls = picUrls ?: ""
 			val nav = navigation
+			val detVM = detailsViewModel
+			val uiStateValue = detVM.uiState.value
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
-			if(!sharedValue.isNullOrEmpty() && sharedValue != usedIntentValue)
+			if(!sharedValue.isNullOrEmpty())
 			{
 				val cacheIsEmpty = urls.isEmpty()
-				if(!cacheIsEmpty && urls.contains(sharedValue))
+				if(!cacheIsEmpty)
 				{
-					picVM.urlWasAlreadyInSP(sharedValue, urls)
+					if(uiStateValue.isSharedImage && uiStateValue.wasAddedAfterSharing != true)
+					{
+						picVM.putPreviousPictureCorrectly(usedIntentValue)
+						urls = picVM.picturesUiState.value.picturesUrl
+					}
+					if(urls.contains(sharedValue))
+					{
+						picVM.urlWasAlreadyInSP(sharedValue, urls)
+					}
 				}
-				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
-				picVM.saveCurrentPictureUrl(sharedValue)
-				detailsViewModel.isSharedImage(true)
-				nav.navigate(Screen.Details.route)
+				if (sharedValue != usedIntentValue)
+				{
+					picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
+					picVM.saveCurrentPictureUrl(sharedValue)
+				}
+				detVM.isSharedImage(true)
 				picVM.postUsedIntent(sharedValue)
+				detVM.changeAddedState(null)
+				nav.navigate(Screen.Details.route)
 			}
 			else
 			{
