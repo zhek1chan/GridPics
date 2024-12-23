@@ -420,11 +420,12 @@ class MainActivity: AppCompatActivity()
 						picVM.urlWasAlreadyInSP(sharedValue, urls)
 					}
 				}
-				if (sharedValue != usedIntentValue)
+				if(sharedValue == usedIntentValue)
 				{
-					picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
-					picVM.saveCurrentPictureUrl(sharedValue)
+					picVM.removeUrlFromSavedUrls(sharedValue)
 				}
+				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
+				picVM.saveCurrentPictureUrl(sharedValue)
 				detVM.isSharedImage(true)
 				picVM.postUsedIntent(sharedValue)
 				detVM.changeAddedState(null)
