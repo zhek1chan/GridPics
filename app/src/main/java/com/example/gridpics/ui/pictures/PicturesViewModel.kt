@@ -63,7 +63,7 @@ class PicturesViewModel(
 
 	fun postSavedUrls(urls: String?, caseEmptySharedPreferenceOnFirstLaunch: Boolean)
 	{
-		viewModelScope.launch(Dispatchers.IO) {
+		viewModelScope.launch {
 			val flow = picturesUiState
 			val notNullUrls = urls ?: ""
 			if(caseEmptySharedPreferenceOnFirstLaunch)
@@ -84,7 +84,7 @@ class PicturesViewModel(
 		viewModelScope.launch(Dispatchers.IO) {
 			while(flow.value.picturesUrl.isEmpty())
 			{
-				delay(100)
+				delay(300)
 			}
 			saveSharedPictureForFirstLaunch = ""
 			val urls = flow.value.picturesUrl
