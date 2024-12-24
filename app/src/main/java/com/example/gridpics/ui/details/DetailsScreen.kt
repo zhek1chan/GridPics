@@ -133,8 +133,7 @@ fun DetailsScreen(
 			currentPicture = currentPicture,
 			changeBarsVisability = changeBarsVisability,
 			postUrl = postUrl,
-			navController = navController,
-			changeAddedState = changeAddedState
+			navController = navController
 		)
 	}
 	val list = remember(currentPicture) {
@@ -189,8 +188,7 @@ fun DetailsScreen(
 				state = state,
 				removeUrl = removeUrl,
 				changeBarsVisability = changeBarsVisability,
-				clearPrevIntent = clearPrevIntent,
-				changeAddedState = changeAddedState
+				clearPrevIntent = clearPrevIntent
 			)
 		},
 		content = { padding ->
@@ -308,11 +306,10 @@ fun ShowDetails(
 								navigateToHome(
 									isSharedImage = isSharedImage,
 									removeUrl = removeUrl,
-									navController = navController,
-									changeBarsVisability = changeBarsVisability,
 									currentPicture = list[page],
+									changeBarsVisability = changeBarsVisability,
 									postUrl = postUrl,
-									changeAddedState = changeAddedState
+									navController = navController
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -407,7 +404,6 @@ fun ShowAsynchImage(
 		},
 		onError = {
 			addError(list[page])
-			navController.navigate(Screen.Details.route)
 		},
 		modifier = Modifier
 			.fillMaxSize()
@@ -524,7 +520,6 @@ fun AppBar(
 	removeUrl: (String) -> Unit,
 	changeBarsVisability: (Boolean) -> Unit,
 	clearPrevIntent: () -> Unit,
-	changeAddedState: (Boolean?) -> Unit,
 )
 {
 	val navBack = remember { mutableStateOf(false) }
@@ -628,8 +623,7 @@ fun AppBar(
 			currentPicture = currentPicture,
 			changeBarsVisability = changeBarsVisability,
 			postUrl = postUrl,
-			navController = nc,
-			changeAddedState = changeAddedState
+			navController = nc
 		)
 	}
 }
@@ -641,13 +635,12 @@ fun navigateToHome(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	navController: NavController,
-	changeAddedState: (Boolean?) -> Unit,
 )
 {
 	if(isSharedImage)
 	{
 		removeUrl(currentPicture)
-		changeAddedState(null)
+		Log.d("ahaha", "ya vizval")
 	}
 	changeBarsVisability(true)
 	postUrl(DEFAULT_STRING_VALUE, null)

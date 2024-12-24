@@ -89,7 +89,8 @@ class MainActivity: AppCompatActivity()
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		val currentPicture = sharedPreferences.getString(CURRENT_PICTURE, null)
-		if (!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage) {
+		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
+		{
 			picVM.saveCurrentPictureUrl(currentPicture)
 			picVM.postPicsFromThemeChange(currentPicture)
 		}
@@ -203,12 +204,14 @@ class MainActivity: AppCompatActivity()
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
 					postFalseToSharedImageState = { detVM.isSharedImage(false) },
-					removeUrl = { url -> picVM.removeUrlFromSavedUrls(url) },
+					removeUrl = { url ->
+						picVM.removeUrlFromSavedUrls(url)
+						detVM.changeAddedState(null)
+					},
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(urls, false)
-						picVM.clearUsedIntentValue()
 					},
-					clearPrevIntent = { picVM.clearUsedIntentValue() },
+					clearPrevIntent = {  },
 					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) }
 				)
 			}
@@ -411,7 +414,7 @@ class MainActivity: AppCompatActivity()
 			val detVM = detailsViewModel
 			val uiStateValue = detVM.uiState.value
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
-			if(!sharedValue.isNullOrEmpty())
+			if(!sharedValue.isNullOrEmpty() && !(usedIntentValue == sharedValue && detVM.uiState.value.wasAddedAfterSharing != true))
 			{
 				val cacheIsEmpty = urls.isEmpty()
 				if(!cacheIsEmpty)
@@ -463,7 +466,7 @@ class MainActivity: AppCompatActivity()
 	{
 		val sharedPreferencesPictures = this.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		val editorPictures = sharedPreferencesPictures.edit()
-		if (!saveCurrentImg)
+		if(!saveCurrentImg)
 		{
 			editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
 		}

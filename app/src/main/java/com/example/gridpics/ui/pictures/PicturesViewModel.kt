@@ -9,7 +9,6 @@ import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class PicturesViewModel(
@@ -19,11 +18,16 @@ class PicturesViewModel(
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, "", true))
 	var usedValueFromIntent = ""
 	private val errorsList: MutableList<String> = mutableListOf()
-	private var saveSharedPictureForFirstLaunch = ""
 	private var index = 0
 	var onPauseWasCalled = false
+	private var caseFirstStart = false
 
 	init
+	{
+		search()
+	}
+
+	private fun search()
 	{
 		Log.d("lifecycle", "vm is recreated")
 		val flow = picturesUiState
@@ -33,11 +37,9 @@ class PicturesViewModel(
 				{
 					is Resource.Data ->
 					{
-						val savedUrls = saveSharedPictureForFirstLaunch
 						flow.value = flow.value.copy(
-							loadingState = PicturesState.SearchIsOk(savedUrls + urls.value)
+							loadingState = PicturesState.SearchIsOk(urls.value)
 						)
-						Log.d("pictures were loaded", savedUrls + urls.value)
 					}
 					is Resource.ConnectionError -> flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
 					is Resource.NotFound -> flow.value = flow.value.copy(loadingState = PicturesState.NothingFound)
@@ -68,10 +70,11 @@ class PicturesViewModel(
 			val notNullUrls = urls ?: ""
 			if(caseEmptySharedPreferenceOnFirstLaunch)
 			{
-				saveSharedPictureForFirstLaunch = notNullUrls
+				caseFirstStart = true
 			}
 			else
 			{
+				caseFirstStart = false
 				flow.value = flow.value.copy(picturesUrl = notNullUrls)
 			}
 			Log.d("shared list", flow.value.picturesUrl)
@@ -80,26 +83,14 @@ class PicturesViewModel(
 
 	fun removeUrlFromSavedUrls(url: String)
 	{
-		val state = picturesUiState
-		val urls = state.value.picturesUrl
-		val urlsAreEmpty = urls.isEmpty()
-		if(urlsAreEmpty)
-		{
-			viewModelScope.launch(Dispatchers.IO) {
-				while(urlsAreEmpty)
-				{
-					//кейс, когда нет сохранённых картинок,
-					//не успел загрузиться список с сервера и мы поделились картинкой в приложение (до первого входа)
-					//ждём ответа-результата с сервера перед вставкой картинки, которой поделились
-					//чтобы не блокировать main поток использую IO
-					delay(300)
-				}
-				saveSharedPictureForFirstLaunch = ""
-				removeUrlAndPostNewString(urls, url)
-			}
-		}
-		else viewModelScope.launch {
+		viewModelScope.launch {
+			Log.d("ahaha removing", url)
+			val state = picturesUiState
+			val urls = state.value.picturesUrl
+			Log.d("ahaha first start?", "$caseFirstStart")
+			Log.d("ahaha removing", url)
 			removeUrlAndPostNewString(urls, url)
+			caseFirstStart = false
 		}
 	}
 
@@ -181,9 +172,7 @@ class PicturesViewModel(
 			{
 				list.add(index, url)
 			}
-			// тк мы запускаем функцию во время onRestart(),
-			// то нужно использовать IO иначе main поток блокируется
-			viewModelScope.launch(Dispatchers.IO) {
+			viewModelScope.launch {
 				val newString = createNewString(list)
 				Log.d("index new list", list.toString())
 				Log.d("index new string", newString)
@@ -195,11 +184,6 @@ class PicturesViewModel(
 	fun postUsedIntent(url: String)
 	{
 		usedValueFromIntent = url
-	}
-
-	fun clearUsedIntentValue()
-	{
-		usedValueFromIntent = ""
 	}
 
 	fun getUsedIntentValue(): String
@@ -258,19 +242,10 @@ class PicturesViewModel(
 			}
 		}
 		//fix problems with string
-		if(newString.endsWith("\n") && newString.length >= 2)
-		{
-			newString.removeRange(newString.length - 2 ..< newString.length)
-		}
-		if(newString.contains("\n\n"))
-		{
-			newString.replace("\n\n", "\n")
-		}
-		if(newString.startsWith("\n") && newString.length >= 2)
-		{
-			newString.removeRange(0 .. 1)
-		}
-		return newString
+		val withoutDoubleNewlines = newString.replace("\n\n", "\n")
+		val withoutNewLinesInStart = withoutDoubleNewlines.trimStart('\n')
+		val withoutTrailingNewlines = withoutNewLinesInStart.trimEnd('\n')
+		return withoutTrailingNewlines
 	}
 
 	private fun removeUrlAndPostNewString(urls: String, url: String)
@@ -285,10 +260,6 @@ class PicturesViewModel(
 			removePrefix(urls, url)
 		}
 		Log.d("we got removed:", "removed $newString")
-		while(newString.startsWith("\n"))
-		{
-			newString.removeRange(0 .. 1)
-		}
 		state.value = state.value.copy(picturesUrl = newString)
 	}
 }
