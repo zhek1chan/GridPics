@@ -203,7 +203,10 @@ class MainActivity: AppCompatActivity()
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
-					postFalseToSharedImageState = { detVM.isSharedImage(false) },
+					postFalseToSharedImageState = {
+						detVM.isSharedImage(false)
+						picVM.addPictureToState()
+					},
 					removeUrl = { url ->
 						picVM.removeUrlFromSavedUrls(url)
 						detVM.changeAddedState(null)
@@ -211,7 +214,7 @@ class MainActivity: AppCompatActivity()
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(urls, false)
 					},
-					clearPrevIntent = {  },
+					clearPrevIntent = { },
 					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) }
 				)
 			}

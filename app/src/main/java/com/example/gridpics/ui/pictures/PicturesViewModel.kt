@@ -20,14 +20,10 @@ class PicturesViewModel(
 	private val errorsList: MutableList<String> = mutableListOf()
 	private var index = 0
 	var onPauseWasCalled = false
-	private var caseFirstStart = false
+	private var rememberSharedPictureOnFirstStart = ""
+	private var flagResultFromServerIsOk = false
 
 	init
-	{
-		search()
-	}
-
-	private fun search()
 	{
 		Log.d("lifecycle", "vm is recreated")
 		val flow = picturesUiState
@@ -40,6 +36,7 @@ class PicturesViewModel(
 						flow.value = flow.value.copy(
 							loadingState = PicturesState.SearchIsOk(urls.value)
 						)
+						flagResultFromServerIsOk = true
 					}
 					is Resource.ConnectionError -> flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
 					is Resource.NotFound -> flow.value = flow.value.copy(loadingState = PicturesState.NothingFound)
@@ -63,6 +60,18 @@ class PicturesViewModel(
 		}
 	}
 
+	fun addPictureToState()
+	{
+		if(rememberSharedPictureOnFirstStart.isNotEmpty())
+		{
+			val state = picturesUiState
+			if(flagResultFromServerIsOk)
+				viewModelScope.launch {
+					state.value = state.value.copy(picturesUrl = rememberSharedPictureOnFirstStart + (state.value.loadingState as PicturesState.SearchIsOk).data)
+				}
+		}
+	}
+
 	fun postSavedUrls(urls: String?, caseEmptySharedPreferenceOnFirstLaunch: Boolean)
 	{
 		viewModelScope.launch {
@@ -70,11 +79,11 @@ class PicturesViewModel(
 			val notNullUrls = urls ?: ""
 			if(caseEmptySharedPreferenceOnFirstLaunch)
 			{
-				caseFirstStart = true
+				rememberSharedPictureOnFirstStart = notNullUrls
 			}
 			else
 			{
-				caseFirstStart = false
+				rememberSharedPictureOnFirstStart = ""
 				flow.value = flow.value.copy(picturesUrl = notNullUrls)
 			}
 			Log.d("shared list", flow.value.picturesUrl)
@@ -87,10 +96,10 @@ class PicturesViewModel(
 			Log.d("ahaha removing", url)
 			val state = picturesUiState
 			val urls = state.value.picturesUrl
-			Log.d("ahaha first start?", "$caseFirstStart")
+			Log.d("ahaha first start?", rememberSharedPictureOnFirstStart)
 			Log.d("ahaha removing", url)
 			removeUrlAndPostNewString(urls, url)
-			caseFirstStart = false
+			rememberSharedPictureOnFirstStart = ""
 		}
 	}
 
