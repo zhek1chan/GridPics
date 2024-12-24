@@ -117,7 +117,6 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 		themePick = theme
-		//реализация фичи - поделиться картинкой в приложение
 		setContent {
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
@@ -407,6 +406,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun postValuesFromIntent(intent: Intent?, picUrls: String?, picVM: PicturesViewModel)
 	{
+		//реализация фичи - поделиться картинкой в приложение
 		val action = intent?.action
 		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
@@ -417,7 +417,7 @@ class MainActivity: AppCompatActivity()
 			val detVM = detailsViewModel
 			val uiStateValue = detVM.uiState.value
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
-			if(!sharedValue.isNullOrEmpty() && !(usedIntentValue == sharedValue && detVM.uiState.value.wasAddedAfterSharing != true))
+			if(!sharedValue.isNullOrEmpty() && !(usedIntentValue == sharedValue && uiStateValue.wasAddedAfterSharing != true))
 			{
 				val cacheIsEmpty = urls.isEmpty()
 				if(!cacheIsEmpty)

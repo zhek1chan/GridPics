@@ -62,6 +62,7 @@ class PicturesViewModel(
 
 	fun addPictureToState()
 	{
+		val rememberSharedPictureOnFirstStart = rememberSharedPictureOnFirstStart
 		if(rememberSharedPictureOnFirstStart.isNotEmpty())
 		{
 			val state = picturesUiState
@@ -86,18 +87,13 @@ class PicturesViewModel(
 				rememberSharedPictureOnFirstStart = ""
 				flow.value = flow.value.copy(picturesUrl = notNullUrls)
 			}
-			Log.d("shared list", flow.value.picturesUrl)
 		}
 	}
 
 	fun removeUrlFromSavedUrls(url: String)
 	{
 		viewModelScope.launch {
-			Log.d("ahaha removing", url)
-			val state = picturesUiState
-			val urls = state.value.picturesUrl
-			Log.d("ahaha first start?", rememberSharedPictureOnFirstStart)
-			Log.d("ahaha removing", url)
+			val urls = picturesUiState.value.picturesUrl
 			removeUrlAndPostNewString(urls, url)
 			rememberSharedPictureOnFirstStart = ""
 		}
@@ -137,7 +133,6 @@ class PicturesViewModel(
 
 	fun clickOnPicture(url: String, index: Int, offset: Int)
 	{
-		Log.d("lifecycle", "current pic was changed in click")
 		val state = picturesUiState
 		state.value = state.value.copy(index = index, offset = offset, currentPicture = url)
 	}
@@ -151,9 +146,7 @@ class PicturesViewModel(
 	fun saveCurrentPictureUrl(url: String)
 	{
 		viewModelScope.launch {
-			Log.d("lifecycle", "current pic was changed in save")
 			val state = picturesUiState
-			Log.d("current picture", "real current pic $url")
 			state.value = state.value.copy(currentPicture = url + "\n")
 		}
 	}
@@ -183,8 +176,6 @@ class PicturesViewModel(
 			}
 			viewModelScope.launch {
 				val newString = createNewString(list)
-				Log.d("index new list", list.toString())
-				Log.d("index new string", newString)
 				state.value = state.value.copy(picturesUrl = newString)
 			}
 		}
@@ -204,7 +195,6 @@ class PicturesViewModel(
 	{
 		val list = urlsFromSP.split("\n")
 		index = list.indexOf(url)
-		Log.d("now index", "$index")
 	}
 
 	fun isValidUrl(url: String): Boolean
@@ -232,7 +222,6 @@ class PicturesViewModel(
 			val newString = createNewString(list)
 			state.value = state.value.copy(picturesUrl = newString)
 		}
-		Log.d("now index 2", "$index")
 	}
 
 	private fun createNewString(list: MutableList<String>): String
@@ -251,10 +240,10 @@ class PicturesViewModel(
 			}
 		}
 		//fix problems with string
-		val withoutDoubleNewlines = newString.replace("\n\n", "\n")
-		val withoutNewLinesInStart = withoutDoubleNewlines.trimStart('\n')
-		val withoutTrailingNewlines = withoutNewLinesInStart.trimEnd('\n')
-		return withoutTrailingNewlines
+		val withoutDoubleNewLines = newString.replace("\n\n", "\n")
+		val withoutNewLinesInStart = withoutDoubleNewLines.trimStart('\n')
+		val withoutTrailingNewLines = withoutNewLinesInStart.trimEnd('\n')
+		return withoutTrailingNewLines
 	}
 
 	private fun removeUrlAndPostNewString(urls: String, url: String)
@@ -268,7 +257,6 @@ class PicturesViewModel(
 		{
 			removePrefix(urls, url)
 		}
-		Log.d("we got removed:", "removed $newString")
 		state.value = state.value.copy(picturesUrl = newString)
 	}
 }
