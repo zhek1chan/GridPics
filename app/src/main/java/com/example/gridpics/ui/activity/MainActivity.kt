@@ -89,10 +89,9 @@ class MainActivity: AppCompatActivity()
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		val currentPicture = sharedPreferences.getString(CURRENT_PICTURE, null)
-		if (!currentPicture.isNullOrEmpty()) {
+		if (!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage) {
 			picVM.saveCurrentPictureUrl(currentPicture)
-			picVM.restoreDeletedUrl()
-			picVM.replaceFirstValue()
+			picVM.postPicsFromThemeChange(currentPicture)
 		}
 		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
@@ -210,7 +209,7 @@ class MainActivity: AppCompatActivity()
 						picVM.clearUsedIntentValue()
 					},
 					clearPrevIntent = { picVM.clearUsedIntentValue() },
-					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) },
+					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) }
 				)
 			}
 		}

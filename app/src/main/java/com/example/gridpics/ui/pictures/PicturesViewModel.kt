@@ -158,6 +158,17 @@ class PicturesViewModel(
 		}
 	}
 
+	fun postPicsFromThemeChange(url: String)
+	{
+		val state = picturesUiState
+		val list = state.value.picturesUrl.split("\n").toMutableList()
+		viewModelScope.launch(Dispatchers.IO) {
+			list.add(0, url)
+			val newString = createNewString(list)
+			state.value = state.value.copy(picturesUrl = newString)
+		}
+	}
+
 	fun restoreDeletedUrl()
 	{
 		val state = picturesUiState
@@ -200,7 +211,7 @@ class PicturesViewModel(
 	{
 		val list = urlsFromSP.split("\n")
 		index = list.indexOf(url)
-		Log.d("index", "$index")
+		Log.d("now index", "$index")
 	}
 
 	fun isValidUrl(url: String): Boolean
@@ -214,21 +225,21 @@ class PicturesViewModel(
 		val state = picturesUiState
 		val value = state.value
 		val list = value.picturesUrl.split("\n").toSet().toMutableList()
-		viewModelScope.launch(Dispatchers.IO) {
-			while(list.contains(oldPicture))
+		viewModelScope.launch {
+			if(list.contains(oldPicture))
 			{
 				list.remove(oldPicture)
 			}
 			val index = index
 			list.add(index, oldPicture)
-			while(list.contains("\n"))
+			if(list.contains("\n"))
 			{
 				list.remove("\n")
 			}
 			val newString = createNewString(list)
 			state.value = state.value.copy(picturesUrl = newString)
 		}
-		index = 0
+		Log.d("now index 2", "$index")
 	}
 
 	private fun createNewString(list: MutableList<String>): String
@@ -247,7 +258,7 @@ class PicturesViewModel(
 			}
 		}
 		//fix problems with string
-		while(newString.endsWith("\n") && newString.length >= 2)
+		if(newString.endsWith("\n") && newString.length >= 2)
 		{
 			newString.removeRange(newString.length - 2 ..< newString.length)
 		}
@@ -279,11 +290,5 @@ class PicturesViewModel(
 			newString.removeRange(0 .. 1)
 		}
 		state.value = state.value.copy(picturesUrl = newString)
-	}
-
-	fun replaceFirstValue() {
-		/*val state = picturesUiState.value
-		val currentPic = state.currentPicture
-		postSavedUrls(currentPic+"\n"+state.picturesUrl, false)*/
 	}
 }

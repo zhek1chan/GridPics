@@ -148,7 +148,7 @@ fun DetailsScreen(
 		}
 	}
 	val index = list.indexOf(currentPicture)
-	val startPage = if(index != -1)
+	val startPage = if(index > -1)
 	{
 		index
 	}
