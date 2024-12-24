@@ -88,6 +88,12 @@ class MainActivity: AppCompatActivity()
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+		val currentPicture = sharedPreferences.getString(CURRENT_PICTURE, null)
+		if (!currentPicture.isNullOrEmpty()) {
+			picVM.saveCurrentPictureUrl(currentPicture)
+			picVM.restoreDeletedUrl()
+			picVM.replaceFirstValue()
+		}
 		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
@@ -170,7 +176,7 @@ class MainActivity: AppCompatActivity()
 							Unit
 						}
 					},
-					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) }
+					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls, false) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
@@ -179,7 +185,7 @@ class MainActivity: AppCompatActivity()
 					option = themePick,
 					changeTheme = { int -> changeTheme(int) },
 					isScreenInPortraitState = picState,
-					clearImageCache = { saveToSharedPrefs("") },
+					clearImageCache = { saveToSharedPrefs("", false) },
 					postStartOfPager = { picVM.clickOnPicture("", 0, 0) }
 				)
 			}
@@ -200,7 +206,7 @@ class MainActivity: AppCompatActivity()
 					postFalseToSharedImageState = { detVM.isSharedImage(false) },
 					removeUrl = { url -> picVM.removeUrlFromSavedUrls(url) },
 					saveToSharedPrefs = { urls ->
-						saveToSharedPrefs(urls)
+						saveToSharedPrefs(urls, false)
 						picVM.clearUsedIntentValue()
 					},
 					clearPrevIntent = { picVM.clearUsedIntentValue() },
@@ -227,8 +233,7 @@ class MainActivity: AppCompatActivity()
 	{
 		Log.d("lifecycle", "onRestart()")
 		val picVM = picturesViewModel
-		val pic = picVM.picturesUiState.value.currentPicture
-		caseSharedImageExit { picVM.restoreDeletedUrl(pic) }
+		caseSharedImageExit { picVM.restoreDeletedUrl() }
 		super.onRestart()
 	}
 
@@ -401,7 +406,7 @@ class MainActivity: AppCompatActivity()
 		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
 			newIntentFlag = true
-			val usedIntentValue = picVM.usedValueFromIntent
+			val usedIntentValue = picVM.getUsedIntentValue()
 			var urls = picUrls ?: ""
 			val nav = navigation
 			val detVM = detailsViewModel
@@ -415,6 +420,7 @@ class MainActivity: AppCompatActivity()
 					if(uiStateValue.isSharedImage && uiStateValue.wasAddedAfterSharing != true)
 					{
 						picVM.putPreviousPictureCorrectly(usedIntentValue)
+						//обновляем список, тк он поменялся
 						urls = picVM.picturesUiState.value.picturesUrl
 					}
 					if(urls.contains(sharedValue))
@@ -428,6 +434,7 @@ class MainActivity: AppCompatActivity()
 				Log.d("we changed current picture", "$sharedValue")
 				detVM.isSharedImage(true)
 				picVM.postUsedIntent(sharedValue)
+				saveToSharedPrefs(sharedValue, true)
 				nav.navigate(Screen.Details.route)
 			}
 			else
@@ -453,11 +460,18 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	private fun saveToSharedPrefs(picturesUrl: String)
+	private fun saveToSharedPrefs(picturesUrl: String, saveCurrentImg: Boolean)
 	{
 		val sharedPreferencesPictures = this.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		val editorPictures = sharedPreferencesPictures.edit()
-		editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
+		if (!saveCurrentImg)
+		{
+			editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
+		}
+		else
+		{
+			editorPictures.putString(CURRENT_PICTURE, picturesUrl)
+		}
 		editorPictures.apply()
 	}
 
@@ -465,6 +479,7 @@ class MainActivity: AppCompatActivity()
 	{
 		const val RESULT_SUCCESS = 100
 		const val LENGTH_OF_PICTURE = 110
+		const val CURRENT_PICTURE = "CURRENT_PICTURE"
 		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337
 		const val SHARED_PREFS_PICTURES = "SHARED_PREFS_PICTURES"

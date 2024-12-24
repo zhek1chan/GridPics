@@ -80,28 +80,26 @@ class PicturesViewModel(
 
 	fun removeUrlFromSavedUrls(url: String)
 	{
-		val flow = picturesUiState
-		viewModelScope.launch(Dispatchers.IO) {
-			while(flow.value.picturesUrl.isEmpty())
-			{
-				delay(300)
+		val state = picturesUiState
+		val urls = state.value.picturesUrl
+		val urlsAreEmpty = urls.isEmpty()
+		if(urlsAreEmpty)
+		{
+			viewModelScope.launch(Dispatchers.IO) {
+				while(urlsAreEmpty)
+				{
+					//кейс, когда нет сохранённых картинок,
+					//не успел загрузиться список с сервера и мы поделились картинкой в приложение (до первого входа)
+					//ждём ответа-результата с сервера перед вставкой картинки, которой поделились
+					//чтобы не блокировать main поток использую IO
+					delay(300)
+				}
+				saveSharedPictureForFirstLaunch = ""
+				removeUrlAndPostNewString(urls, url)
 			}
-			saveSharedPictureForFirstLaunch = ""
-			val urls = flow.value.picturesUrl
-			val newString = if(urls.startsWith("$url\n"))
-			{
-				removePrefix(urls, "$url\n")
-			}
-			else
-			{
-				removePrefix(urls, url)
-			}
-			Log.d("we got:", "removed $newString")
-			while(newString.startsWith("\n"))
-			{
-				newString.removeRange(0 .. 1)
-			}
-			flow.value = flow.value.copy(picturesUrl = newString)
+		}
+		else viewModelScope.launch {
+			removeUrlAndPostNewString(urls, url)
 		}
 	}
 
@@ -139,6 +137,7 @@ class PicturesViewModel(
 
 	fun clickOnPicture(url: String, index: Int, offset: Int)
 	{
+		Log.d("lifecycle", "current pic was changed in click")
 		val state = picturesUiState
 		state.value = state.value.copy(index = index, offset = offset, currentPicture = url)
 	}
@@ -152,26 +151,33 @@ class PicturesViewModel(
 	fun saveCurrentPictureUrl(url: String)
 	{
 		viewModelScope.launch {
+			Log.d("lifecycle", "current pic was changed in save")
 			val state = picturesUiState
 			Log.d("current picture", "real current pic $url")
 			state.value = state.value.copy(currentPicture = url + "\n")
 		}
 	}
 
-	fun restoreDeletedUrl(url: String)
+	fun restoreDeletedUrl()
 	{
 		val state = picturesUiState
-		val list = state.value.picturesUrl.split("\n").toMutableList()
-		val index = index
-		if(index < list.size)
+		val url = state.value.currentPicture
+		if(url.isNotEmpty())
 		{
-			list.add(index, url)
-		}
-		viewModelScope.launch(Dispatchers.IO) {
-			val newString = createNewString(list)
-			Log.d("index new list", list.toString())
-			Log.d("index new string", newString)
-			state.value = state.value.copy(picturesUrl = newString)
+			val list = state.value.picturesUrl.split("\n").toMutableList()
+			val index = index
+			if(index < list.size)
+			{
+				list.add(index, url)
+			}
+			// тк мы запускаем функцию во время onRestart(),
+			// то нужно использовать IO иначе main поток блокируется
+			viewModelScope.launch(Dispatchers.IO) {
+				val newString = createNewString(list)
+				Log.d("index new list", list.toString())
+				Log.d("index new string", newString)
+				state.value = state.value.copy(picturesUrl = newString)
+			}
 		}
 	}
 
@@ -182,7 +188,12 @@ class PicturesViewModel(
 
 	fun clearUsedIntentValue()
 	{
-		usedValueFromIntent = "null"
+		usedValueFromIntent = ""
+	}
+
+	fun getUsedIntentValue(): String
+	{
+		return usedValueFromIntent
 	}
 
 	fun urlWasAlreadyInSP(url: String, urlsFromSP: String)
@@ -249,5 +260,30 @@ class PicturesViewModel(
 			newString.removeRange(0 .. 1)
 		}
 		return newString
+	}
+
+	private fun removeUrlAndPostNewString(urls: String, url: String)
+	{
+		val state = picturesUiState
+		val newString = if(urls.startsWith("$url\n"))
+		{
+			removePrefix(urls, "$url\n")
+		}
+		else
+		{
+			removePrefix(urls, url)
+		}
+		Log.d("we got removed:", "removed $newString")
+		while(newString.startsWith("\n"))
+		{
+			newString.removeRange(0 .. 1)
+		}
+		state.value = state.value.copy(picturesUrl = newString)
+	}
+
+	fun replaceFirstValue() {
+		/*val state = picturesUiState.value
+		val currentPic = state.currentPicture
+		postSavedUrls(currentPic+"\n"+state.picturesUrl, false)*/
 	}
 }
