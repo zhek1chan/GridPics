@@ -22,6 +22,8 @@ class PicturesViewModel(
 	var onPauseWasCalled = false
 	private var rememberSharedPictureOnFirstStart = ""
 	private var flagResultFromServerIsOk = false
+	private var themeWasSetToBlack: Boolean? = null
+	private var wasChangedTheme = false
 
 	init
 	{
@@ -179,6 +181,39 @@ class PicturesViewModel(
 				state.value = state.value.copy(picturesUrl = newString)
 			}
 		}
+	}
+
+	fun themeWasSetToBlack(wasSet: Boolean)
+	{
+		when(themeWasSetToBlack)
+		{
+			null ->
+			{
+				postTheme(wasSet)
+				postChangedTheme(false)
+			}
+			wasSet ->
+			{
+				postChangedTheme(false)
+			}
+			else ->
+			{
+				postTheme(wasSet)
+				postChangedTheme(true)
+			}
+		}
+	}
+
+	private fun postTheme(darkTheme: Boolean) {
+		themeWasSetToBlack = darkTheme
+	}
+
+	fun postChangedTheme(changed: Boolean) {
+		wasChangedTheme = changed
+	}
+
+	fun getChangedThemeState():Boolean {
+		return wasChangedTheme
 	}
 
 	fun postUsedIntent(url: String)

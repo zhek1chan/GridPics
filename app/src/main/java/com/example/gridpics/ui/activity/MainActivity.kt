@@ -89,6 +89,7 @@ class MainActivity: AppCompatActivity()
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		val currentPicture = sharedPreferences.getString(CURRENT_PICTURE, null)
+		picVM.themeWasSetToBlack(isDarkTheme())
 		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
 		{
 			picVM.saveCurrentPictureUrl(currentPicture)
@@ -237,6 +238,7 @@ class MainActivity: AppCompatActivity()
 	{
 		Log.d("lifecycle", "onRestart()")
 		val picVM = picturesViewModel
+		picVM.postChangedTheme(false)
 		caseSharedImageExit { picVM.restoreDeletedUrl() }
 		super.onRestart()
 	}
@@ -417,7 +419,7 @@ class MainActivity: AppCompatActivity()
 			val detVM = detailsViewModel
 			val uiStateValue = detVM.uiState.value
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
-			if(!sharedValue.isNullOrEmpty() && !(usedIntentValue == sharedValue && uiStateValue.wasAddedAfterSharing != true))
+			if(!sharedValue.isNullOrEmpty() && !(usedIntentValue == sharedValue && uiStateValue.wasAddedAfterSharing != true && picVM.getChangedThemeState()))
 			{
 				val cacheIsEmpty = urls.isEmpty()
 				if(!cacheIsEmpty)
@@ -478,6 +480,12 @@ class MainActivity: AppCompatActivity()
 			editorPictures.putString(CURRENT_PICTURE, picturesUrl)
 		}
 		editorPictures.apply()
+	}
+
+	private fun isDarkTheme(): Boolean
+	{
+		return this.resources.configuration.uiMode and
+			Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 	}
 
 	companion object
