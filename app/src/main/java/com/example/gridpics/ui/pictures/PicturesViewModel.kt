@@ -87,8 +87,6 @@ class PicturesViewModel(
 			{
 				rememberSharedPictureOnFirstStart = ""
 				flow.value = flow.value.copy(picturesUrl = notNullUrls)
-				Log.d("remove2", "this does bullshit")
-				Log.d("remove", "added string ${notNullUrls.split("\n")[0]}")
 			}
 		}
 	}
@@ -310,8 +308,6 @@ class PicturesViewModel(
 		}
 
 		state.value = state.value.copy(picturesUrl = newString)
-		Log.d("remove", "string before $urls")
-		Log.d("remove", "we got new string, with first url \n $newString}")
 	}
 
 	fun postIsFirstPage(firstPage: Boolean)
