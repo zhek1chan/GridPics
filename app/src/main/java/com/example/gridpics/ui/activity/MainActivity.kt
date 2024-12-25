@@ -38,6 +38,8 @@ import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -48,7 +50,7 @@ class MainActivity: AppCompatActivity()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
 	private var newIntentFlag = true
-	private lateinit var navigation: NavHostController
+	private var navigation: NavHostController? = null
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -427,7 +429,7 @@ class MainActivity: AppCompatActivity()
 			newIntentFlag = true
 			val usedIntentValue = picVM.getUsedIntentValue()
 			var urls = picUrls ?: ""
-			val nav = navigation
+			var nav = navigation
 			val detVM = detailsViewModel
 			val uiStateValue = detVM.uiState.value
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
@@ -454,7 +456,17 @@ class MainActivity: AppCompatActivity()
 				detVM.isSharedImage(true)
 				picVM.postUsedIntent(sharedValue)
 				saveToSharedPrefs(sharedValue, true)
-				nav.navigate(Screen.Details.route)
+				picVM.themeWasSetToBlack(isDarkTheme())
+				lifecycleScope.launch(Dispatchers.IO) {
+					while(nav == null)
+					{
+						delay(500)
+						nav = navigation
+					}
+					runOnUiThread {
+						nav?.navigate(Screen.Details.route)
+					}
+				}
 			}
 			else
 			{
@@ -464,7 +476,16 @@ class MainActivity: AppCompatActivity()
 				{
 					Log.d("OldString get22", "$oldString")
 					picVM.clickOnPicture(oldString, 0, 0)
-					nav.navigate(Screen.Details.route)
+					lifecycleScope.launch(Dispatchers.IO) {
+						while(nav == null)
+						{
+							delay(100)
+							nav = navigation
+						}
+						runOnUiThread {
+							nav?.navigate(Screen.Details.route)
+						}
+					}
 					picVM.postUsedIntent(oldString)
 				}
 			}
