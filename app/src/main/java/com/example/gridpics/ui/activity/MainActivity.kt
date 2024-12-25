@@ -90,10 +90,17 @@ class MainActivity: AppCompatActivity()
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		val currentPicture = sharedPreferences.getString(CURRENT_PICTURE, null)
 		picVM.themeWasSetToBlack(isDarkTheme())
+		var intent = intent
+		// логика для отмены повторного использования intent при смене темы пользователем
 		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
 		{
+			Log.d("check", "usaem intent")
 			picVM.saveCurrentPictureUrl(currentPicture)
 			picVM.postPicsFromThemeChange(currentPicture)
+		} else if (!currentPicture.isNullOrEmpty())
+		{
+			Log.d("check", "ne usaem intent")
+			intent = Intent()
 		}
 		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
