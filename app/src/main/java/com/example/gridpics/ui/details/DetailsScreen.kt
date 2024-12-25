@@ -114,8 +114,8 @@ fun DetailsScreen(
 	postFalseToSharedImageState: () -> Unit,
 	removeUrl: (String) -> Unit,
 	saveToSharedPrefs: (String) -> Unit,
-	clearPrevIntent: () -> Unit,
 	changeAddedState: (Boolean?) -> Unit,
+	postIsFirstPage: (Boolean) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -188,7 +188,7 @@ fun DetailsScreen(
 				state = state,
 				removeUrl = removeUrl,
 				changeBarsVisability = changeBarsVisability,
-				clearPrevIntent = clearPrevIntent
+				postIsFirstPage = postIsFirstPage
 			)
 		},
 		content = { padding ->
@@ -238,7 +238,7 @@ fun ShowDetails(
 	removeUrl: (String) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 	saveToSharedPrefs: (String) -> Unit,
-	changeAddedState: (Boolean?) -> Unit,
+	changeAddedState: (Boolean?) -> Unit
 )
 {
 	val topBarHeight = 64.dp
@@ -519,7 +519,7 @@ fun AppBar(
 	state: MutableState<DetailsScreenUiState>,
 	removeUrl: (String) -> Unit,
 	changeBarsVisability: (Boolean) -> Unit,
-	clearPrevIntent: () -> Unit,
+	postIsFirstPage: (Boolean) -> Unit,
 )
 {
 	val navBack = remember { mutableStateOf(false) }
@@ -599,7 +599,7 @@ fun AppBar(
 							.height(64.dp)
 							.width(50.dp)
 							.clickable {
-								share(currentPicture, context, TEXT_PLAIN, clearPrevIntent)
+								share(currentPicture, context, TEXT_PLAIN, pagerState.currentPage, postIsFirstPage)
 							}
 						) {
 							Icon(
@@ -649,13 +649,20 @@ fun navigateToHome(
 	}
 }
 
-fun share(text: String, context: Context, plain: String, clearPrevIntent: () -> Unit)
+fun share(text: String, context: Context, plain: String, page: Int, postIsFirstPage: (Boolean) -> Unit)
 {
+	if(page == 0)
+	{
+		postIsFirstPage(true)
+	}
+	else
+	{
+		postIsFirstPage(false)
+	}
 	val sendIntent = Intent(Intent.ACTION_SEND).apply {
 		putExtra(Intent.EXTRA_TEXT, text)
 		type = plain
 	}
 	val shareIntent = Intent.createChooser(sendIntent, null)
 	startActivity(context, shareIntent, null)
-	clearPrevIntent()
 }

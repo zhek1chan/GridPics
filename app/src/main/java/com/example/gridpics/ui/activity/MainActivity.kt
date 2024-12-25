@@ -215,8 +215,8 @@ class MainActivity: AppCompatActivity()
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(urls, false)
 					},
-					clearPrevIntent = {  },
-					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) }
+					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) },
+					postIsFirstPage = {isFirstPage -> picVM.postIsFirstPage(isFirstPage) }
 				)
 			}
 		}

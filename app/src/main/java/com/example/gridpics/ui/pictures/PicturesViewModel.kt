@@ -23,6 +23,7 @@ class PicturesViewModel(
 	private var rememberSharedPictureOnFirstStart = ""
 	private var themeWasSetToBlack: Boolean? = null
 	private var wasChangedTheme = false
+	private var isFirstImage = false
 
 	init
 	{
@@ -295,7 +296,7 @@ class PicturesViewModel(
 	private fun removeUrlAndPostNewString(urls: String, url: String)
 	{
 		val state = picturesUiState
-		val newString = if(urls.startsWith("$url\n$url\n"))
+		val newString = if(urls.startsWith("$url\n$url\n") && !isFirstImage)
 		{
 			removePrefix(urls, "$url\n$url\n")
 		}
@@ -307,12 +308,14 @@ class PicturesViewModel(
 		{
 			removePrefix(urls, url)
 		}
-		if(newString.contains(url)) {
-			state.value = state.value.copy(picturesUrl = createNewString(urls.split("\n").toSet().toMutableList()))
-		} else {
-			state.value = state.value.copy(picturesUrl = newString)
-		}
+
+		state.value = state.value.copy(picturesUrl = newString)
 		Log.d("remove", "string before $urls")
 		Log.d("remove", "we got new string, with first url \n $newString}")
+	}
+
+	fun postIsFirstPage(firstPage: Boolean)
+	{
+		isFirstImage = firstPage
 	}
 }
