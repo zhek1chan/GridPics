@@ -21,7 +21,6 @@ class PicturesViewModel(
 	private var index = 0
 	var onPauseWasCalled = false
 	private var rememberSharedPictureOnFirstStart = ""
-	private var flagResultFromServerIsOk = false
 	private var themeWasSetToBlack: Boolean? = null
 	private var wasChangedTheme = false
 
@@ -34,14 +33,13 @@ class PicturesViewModel(
 				when(urls)
 				{
 					is Resource.Data ->
-					{
 						flow.value = flow.value.copy(
 							loadingState = PicturesState.SearchIsOk(urls.value)
 						)
-						flagResultFromServerIsOk = true
-					}
-					is Resource.ConnectionError -> flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
-					is Resource.NotFound -> flow.value = flow.value.copy(loadingState = PicturesState.NothingFound)
+					is Resource.ConnectionError ->
+						flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
+					is Resource.NotFound ->
+						flow.value = flow.value.copy(loadingState = PicturesState.NothingFound)
 				}
 			}
 		}
@@ -65,10 +63,10 @@ class PicturesViewModel(
 	fun addPictureToState()
 	{
 		val rememberSharedPictureOnFirstStart = rememberSharedPictureOnFirstStart
-		if(rememberSharedPictureOnFirstStart.isNotEmpty())
+		val state = picturesUiState
+		if(rememberSharedPictureOnFirstStart.isNotEmpty() && state.value.loadingState is PicturesState.SearchIsOk)
 		{
-			val state = picturesUiState
-			if(flagResultFromServerIsOk)
+			if(state.value.loadingState is PicturesState.SearchIsOk)
 				viewModelScope.launch {
 					state.value = state.value.copy(picturesUrl = rememberSharedPictureOnFirstStart + (state.value.loadingState as PicturesState.SearchIsOk).data)
 				}
@@ -88,12 +86,15 @@ class PicturesViewModel(
 			{
 				rememberSharedPictureOnFirstStart = ""
 				flow.value = flow.value.copy(picturesUrl = notNullUrls)
+				Log.d("remove2", "this does bullshit")
+				Log.d("remove", "added string ${notNullUrls.split("\n")[0]}")
 			}
 		}
 	}
 
 	fun removeUrlFromSavedUrls(url: String)
 	{
+		Log.d("remove", "removing url $url")
 		viewModelScope.launch {
 			val urls = picturesUiState.value.picturesUrl
 			removeUrlAndPostNewString(urls, url)
@@ -176,9 +177,11 @@ class PicturesViewModel(
 			{
 				list.add(index, url)
 			}
+
 			viewModelScope.launch {
 				val newString = createNewString(list)
 				state.value = state.value.copy(picturesUrl = newString)
+				Log.d("remove2", "added string ${newString.split("\n")[0]}")
 			}
 		}
 	}
@@ -204,15 +207,18 @@ class PicturesViewModel(
 		}
 	}
 
-	private fun postTheme(darkTheme: Boolean) {
+	private fun postTheme(darkTheme: Boolean)
+	{
 		themeWasSetToBlack = darkTheme
 	}
 
-	fun postChangedTheme(changed: Boolean) {
+	fun postChangedTheme(changed: Boolean)
+	{
 		wasChangedTheme = changed
 	}
 
-	fun getChangedThemeState():Boolean {
+	fun getChangedThemeState(): Boolean
+	{
 		return wasChangedTheme
 	}
 
@@ -259,6 +265,11 @@ class PicturesViewModel(
 		}
 	}
 
+	fun clearUsedIntentValue()
+	{
+		usedValueFromIntent = ""
+	}
+
 	private fun createNewString(list: MutableList<String>): String
 	{
 		var newString = ""
@@ -284,7 +295,11 @@ class PicturesViewModel(
 	private fun removeUrlAndPostNewString(urls: String, url: String)
 	{
 		val state = picturesUiState
-		val newString = if(urls.startsWith("$url\n"))
+		val newString = if(urls.startsWith("$url\n$url\n"))
+		{
+			removePrefix(urls, "$url\n$url\n")
+		}
+		else if(urls.startsWith("$url\n"))
 		{
 			removePrefix(urls, "$url\n")
 		}
@@ -292,6 +307,12 @@ class PicturesViewModel(
 		{
 			removePrefix(urls, url)
 		}
-		state.value = state.value.copy(picturesUrl = newString)
+		if(newString.contains(url)) {
+			state.value = state.value.copy(picturesUrl = createNewString(urls.split("\n").toSet().toMutableList()))
+		} else {
+			state.value = state.value.copy(picturesUrl = newString)
+		}
+		Log.d("remove", "string before $urls")
+		Log.d("remove", "we got new string, with first url \n $newString}")
 	}
 }

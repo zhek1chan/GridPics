@@ -206,6 +206,7 @@ class MainActivity: AppCompatActivity()
 					postFalseToSharedImageState = {
 						detVM.isSharedImage(false)
 						picVM.addPictureToState()
+						picVM.clearUsedIntentValue()
 					},
 					removeUrl = { url ->
 						picVM.removeUrlFromSavedUrls(url)
@@ -214,7 +215,7 @@ class MainActivity: AppCompatActivity()
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(urls, false)
 					},
-					clearPrevIntent = { },
+					clearPrevIntent = {  },
 					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) }
 				)
 			}
@@ -393,7 +394,6 @@ class MainActivity: AppCompatActivity()
 	{
 		super.onNewIntent(intent)
 		newIntentFlag = true
-		intent?.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 		getValuesFromIntent(intent)
 		setIntent(intent)
 	}

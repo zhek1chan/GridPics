@@ -646,7 +646,6 @@ fun navigateToHome(
 	postUrl(DEFAULT_STRING_VALUE, null)
 	navController.navigate(Screen.Home.route) {
 		popUpTo(navController.graph.findStartDestination().id)
-		launchSingleTop = true
 	}
 }
 
