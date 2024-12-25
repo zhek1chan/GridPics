@@ -90,6 +90,7 @@ class MainActivity: AppCompatActivity()
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		val currentPicture = sharedPreferences.getString(CURRENT_PICTURE, null)
 		picVM.themeWasSetToBlack(isDarkTheme())
+		val wasThemeChanged = picVM.getChangedThemeState()
 		var intent = intent
 		// логика для отмены повторного использования intent при смене темы пользователем
 		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
@@ -97,10 +98,13 @@ class MainActivity: AppCompatActivity()
 			Log.d("check", "usaem intent")
 			picVM.saveCurrentPictureUrl(currentPicture)
 			picVM.postPicsFromThemeChange(currentPicture)
-		} else if (!currentPicture.isNullOrEmpty())
+		}
+		else if(!currentPicture.isNullOrEmpty() && wasThemeChanged)
+		//тут надо как-то отсеять момент, что надо фотку поменять
 		{
 			Log.d("check", "ne usaem intent")
 			intent = Intent()
+			saveToSharedPrefs(picturesUrl = "", saveCurrentImg = true)
 		}
 		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
@@ -223,7 +227,7 @@ class MainActivity: AppCompatActivity()
 						saveToSharedPrefs(urls, false)
 					},
 					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) },
-					postIsFirstPage = {isFirstPage -> picVM.postIsFirstPage(isFirstPage) }
+					postIsFirstPage = { isFirstPage -> picVM.postIsFirstPage(isFirstPage) }
 				)
 			}
 		}
@@ -417,6 +421,7 @@ class MainActivity: AppCompatActivity()
 	{
 		//реализация фичи - поделиться картинкой в приложение
 		val action = intent?.action
+		Log.d("check", "start new intent")
 		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
 			newIntentFlag = true
@@ -426,7 +431,7 @@ class MainActivity: AppCompatActivity()
 			val detVM = detailsViewModel
 			val uiStateValue = detVM.uiState.value
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
-			if(!sharedValue.isNullOrEmpty() && !(usedIntentValue == sharedValue && uiStateValue.wasAddedAfterSharing != true && picVM.getChangedThemeState()))
+			if(!sharedValue.isNullOrEmpty())
 			{
 				val cacheIsEmpty = urls.isEmpty()
 				if(!cacheIsEmpty)

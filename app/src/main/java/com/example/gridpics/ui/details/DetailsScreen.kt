@@ -238,7 +238,7 @@ fun ShowDetails(
 	removeUrl: (String) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 	saveToSharedPrefs: (String) -> Unit,
-	changeAddedState: (Boolean?) -> Unit
+	changeAddedState: (Boolean?) -> Unit,
 )
 {
 	val topBarHeight = 64.dp
@@ -661,6 +661,7 @@ fun share(text: String, context: Context, plain: String, page: Int, postIsFirstP
 	}
 	val sendIntent = Intent(Intent.ACTION_SEND).apply {
 		putExtra(Intent.EXTRA_TEXT, text)
+		flags = Intent.FLAG_ACTIVITY_NEW_TASK
 		type = plain
 	}
 	val shareIntent = Intent.createChooser(sendIntent, null)
