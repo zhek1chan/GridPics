@@ -94,7 +94,7 @@ class PicturesViewModel(
 	fun removeUrlFromSavedUrls(url: String)
 	{
 		Log.d("remove", "removing url $url")
-		viewModelScope.launch {
+		viewModelScope.launch(Dispatchers.IO) {
 			val urls = picturesUiState.value.picturesUrl
 			removeUrlAndPostNewString(urls, url)
 			rememberSharedPictureOnFirstStart = ""
@@ -147,7 +147,7 @@ class PicturesViewModel(
 
 	fun saveCurrentPictureUrl(url: String)
 	{
-		viewModelScope.launch {
+		viewModelScope.launch(Dispatchers.IO) {
 			val state = picturesUiState
 			state.value = state.value.copy(currentPicture = url + "\n")
 		}
@@ -245,6 +245,7 @@ class PicturesViewModel(
 
 	fun putPreviousPictureCorrectly(oldPicture: String)
 	{
+		Log.d("remove", "we have put correctly")
 		val state = picturesUiState
 		val value = state.value
 		val list = value.picturesUrl.split("\n").toSet().toMutableList()
@@ -296,6 +297,7 @@ class PicturesViewModel(
 		val state = picturesUiState
 		val newString = if(urls.startsWith("$url\n$url\n") && !isFirstImage)
 		{
+			//TODO() tut nado chinit
 			removePrefix(urls, "$url\n$url\n")
 		}
 		else if(urls.startsWith("$url\n"))

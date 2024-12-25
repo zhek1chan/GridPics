@@ -432,16 +432,17 @@ class MainActivity: AppCompatActivity()
 			var nav = navigation
 			val detVM = detailsViewModel
 			val uiStateValue = detVM.uiState.value
+			val isSharedImage = uiStateValue.isSharedImage
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
+			picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture)
 			if(!sharedValue.isNullOrEmpty())
 			{
 				val cacheIsEmpty = urls.isEmpty()
 				if(!cacheIsEmpty)
 				{
-					if(uiStateValue.isSharedImage && uiStateValue.wasAddedAfterSharing != true)
+					if(isSharedImage && uiStateValue.wasAddedAfterSharing != true)
 					{
 						picVM.putPreviousPictureCorrectly(usedIntentValue)
-						//обновляем список, тк он поменялся
 						urls = picVM.picturesUiState.value.picturesUrl
 					}
 					if(urls.contains(sharedValue))
