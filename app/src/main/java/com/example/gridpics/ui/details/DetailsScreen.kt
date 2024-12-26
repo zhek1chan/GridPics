@@ -100,7 +100,7 @@ import net.engawapg.lib.zoomable.zoomable
 @Composable
 fun DetailsScreen(
 	navController: NavController,
-	checkIfItIsError: (String) -> Boolean,
+	checkOnErrorExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	removeError: (String) -> Unit,
@@ -111,7 +111,7 @@ fun DetailsScreen(
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
 	saveCurrentPictureUrl: (String) -> Unit,
-	postFalseToSharedImageState: (String) -> Unit,
+	addPicture: (String) -> Unit,
 	removeUrl: (String) -> Unit,
 	saveToSharedPrefs: (String) -> Unit,
 	changeAddedState: (Boolean?) -> Unit,
@@ -165,7 +165,7 @@ fun DetailsScreen(
 	LaunchedEffect(currentPage) {
 		val pic = list[currentPage]
 		saveCurrentPictureUrl(pic)
-		if(checkIfItIsError(pic))
+		if(checkOnErrorExists(pic))
 		{
 			Log.d("checkMa", "gruzim oshibku")
 			postUrl(pic, errorPicture)
@@ -197,7 +197,7 @@ fun DetailsScreen(
 				list = list,
 				pagerState = pagerState,
 				context = context,
-				checkIfExists = checkIfItIsError,
+				checkIfExists = checkOnErrorExists,
 				addError = addError,
 				removeSpecialError = removeError,
 				state = state,
@@ -207,7 +207,7 @@ fun DetailsScreen(
 				changeBarsVisability = changeBarsVisability,
 				postUrl = postUrl,
 				scrollIsEnabled = scrollIsEnabled,
-				postFalseToSharedImageState = postFalseToSharedImageState,
+				postFalseToSharedImageState = addPicture,
 				removeUrl = removeUrl,
 				isScreenInPortraitState = picturesScreenState,
 				saveToSharedPrefs = saveToSharedPrefs,

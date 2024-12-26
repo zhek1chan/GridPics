@@ -145,7 +145,7 @@ class MainActivity: AppCompatActivity()
 				PicturesScreen(
 					navController = navController,
 					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
-					checkIfItIsError = { str -> picVM.checkOnErrorExists(str) },
+					checkOnErrorExists = { str -> picVM.checkOnErrorExists(str) },
 					addError = { str -> picVM.addError(str) },
 					postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
 					state = picState,
@@ -181,7 +181,7 @@ class MainActivity: AppCompatActivity()
 			composable(Screen.Details.route) {
 				DetailsScreen(
 					navController = navController,
-					checkIfItIsError = { str -> picVM.checkOnErrorExists(str) },
+					checkOnErrorExists = { str -> picVM.checkOnErrorExists(str) },
 					addError = { str -> picVM.addError(str) },
 					state = detVM.uiState,
 					removeError = { str -> picVM.removeSpecialError(str) },
@@ -192,7 +192,7 @@ class MainActivity: AppCompatActivity()
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
-					postFalseToSharedImageState = { url ->
+					addPicture = { url ->
 						picVM.addPictureToUrls(url)
 						detVM.isSharedImage(false)
 					},
