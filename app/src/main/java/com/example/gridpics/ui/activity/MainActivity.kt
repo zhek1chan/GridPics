@@ -97,13 +97,11 @@ class MainActivity: AppCompatActivity()
 		// логика для отмены повторного использования intent при смене темы пользователем
 		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
 		{
-			Log.d("check", "usaem intent")
 			picVM.saveCurrentPictureUrl(currentPicture)
 			picVM.postPicsFromThemeChange(currentPicture)
 		}
 		else if(!currentPicture.isNullOrEmpty() && wasThemeChanged)
 		{
-			Log.d("check", "ne usaem intent")
 			intent = Intent()
 			saveToSharedPrefs(picturesUrl = "", saveCurrentImg = true)
 		}
