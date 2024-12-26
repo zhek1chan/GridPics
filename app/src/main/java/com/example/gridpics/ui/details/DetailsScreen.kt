@@ -100,7 +100,7 @@ import net.engawapg.lib.zoomable.zoomable
 @Composable
 fun DetailsScreen(
 	navController: NavController,
-	checkIfExists: (String) -> Boolean,
+	checkIfItIsError: (String) -> Boolean,
 	addError: (String) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	removeSpecialError: (String) -> Unit,
@@ -165,7 +165,7 @@ fun DetailsScreen(
 	LaunchedEffect(currentPage) {
 		val pic = list[currentPage]
 		saveCurrentPictureUrl(pic)
-		if(checkIfExists(pic))
+		if(checkIfItIsError(pic))
 		{
 			Log.d("checkMa", "gruzim oshibku")
 			postUrl(pic, errorPicture)
@@ -197,7 +197,7 @@ fun DetailsScreen(
 				list = list,
 				pagerState = pagerState,
 				context = context,
-				checkIfExists = checkIfExists,
+				checkIfExists = checkIfItIsError,
 				addError = addError,
 				removeSpecialError = removeSpecialError,
 				state = state,

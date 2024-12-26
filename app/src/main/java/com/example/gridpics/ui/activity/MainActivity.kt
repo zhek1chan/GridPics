@@ -145,7 +145,7 @@ class MainActivity: AppCompatActivity()
 				PicturesScreen(
 					navController = navController,
 					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
-					checkIfExists = { str -> picVM.checkOnErrorExists(str) },
+					checkIfItIsError = { str -> picVM.checkOnErrorExists(str) },
 					addError = { str -> picVM.addError(str) },
 					postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
 					state = picState,
@@ -181,7 +181,7 @@ class MainActivity: AppCompatActivity()
 			composable(Screen.Details.route) {
 				DetailsScreen(
 					navController = navController,
-					checkIfExists = { str -> picVM.checkOnErrorExists(str) },
+					checkIfItIsError = { str -> picVM.checkOnErrorExists(str) },
 					addError = { str -> picVM.addError(str) },
 					state = detVM.uiState,
 					removeSpecialError = { str -> picVM.removeSpecialError(str) },

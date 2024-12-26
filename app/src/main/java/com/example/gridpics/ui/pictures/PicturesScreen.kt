@@ -86,7 +86,7 @@ import kotlinx.coroutines.launch
 fun PicturesScreen(
 	navController: NavController,
 	postPressOnBackButton: () -> Unit,
-	checkIfExists: (String) -> Boolean,
+	checkIfItIsError: (String) -> Boolean,
 	addError: (String) -> Unit,
 	postState: (Boolean, String) -> Unit,
 	state: MutableState<PicturesScreenUiState>,
@@ -148,7 +148,7 @@ fun PicturesScreen(
 					imagesUrlsSP = urls.ifEmpty {
 						null
 					},
-					checkIfExists = checkIfExists,
+					checkIfExists = checkIfItIsError,
 					addError = addError,
 					postState = postState,
 					state = loadingState,
