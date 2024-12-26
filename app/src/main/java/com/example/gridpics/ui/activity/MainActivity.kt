@@ -280,7 +280,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onPause()
 	{
-		picturesViewModel.onPauseWasCalled = true
+		picturesViewModel.postOnPauseWasCalled(true)
 		Log.d("lifecycle", "onPause()")
 		super.onPause()
 	}
@@ -370,7 +370,7 @@ class MainActivity: AppCompatActivity()
 					startForegroundService(serviceIntentLocal)
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 				}
-				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) && !picturesViewModel.onPauseWasCalled)
+				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) && !picturesViewModel.getOnPauseWasCalled())
 				{
 					requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), RESULT_SUCCESS)
 				}
@@ -420,7 +420,6 @@ class MainActivity: AppCompatActivity()
 	{
 		//реализация фичи - поделиться картинкой в приложение
 		val action = intent?.action
-		Log.d("check", "start new intent")
 		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
 			newIntentFlag = true
@@ -455,7 +454,6 @@ class MainActivity: AppCompatActivity()
 				detVM.changeAddedState(null)
 				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
 				picVM.saveCurrentPictureUrl(sharedValue)
-				Log.d("we changed current picture", "$sharedValue")
 				detVM.isSharedImage(true)
 				picVM.postUsedIntent(sharedValue)
 				saveToSharedPrefs(sharedValue, true)
@@ -474,10 +472,8 @@ class MainActivity: AppCompatActivity()
 			else
 			{
 				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
-				Log.d("OldString get", "$oldString")
 				if(!oldString.isNullOrEmpty() && urls.contains(oldString) && oldString != usedIntentValue)
 				{
-					Log.d("OldString get22", "$oldString")
 					picVM.clickOnPicture(oldString, 0, 0)
 					lifecycleScope.launch(Dispatchers.IO) {
 						while(nav == null)

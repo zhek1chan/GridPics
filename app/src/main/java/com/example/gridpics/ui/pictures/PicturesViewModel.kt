@@ -19,7 +19,7 @@ class PicturesViewModel(
 	var usedValueFromIntent = ""
 	private val errorsList: MutableList<String> = mutableListOf()
 	private var index: Int? = null
-	var onPauseWasCalled = false
+	private var onPauseWasCalled = false
 	private var rememberSharedPictureOnFirstStart = ""
 	private var themeWasSetToBlack: Boolean? = null
 	private var wasChangedTheme = false
@@ -323,5 +323,15 @@ class PicturesViewModel(
 	fun postIsFirstPage(firstPage: Boolean)
 	{
 		isFirstImage = firstPage
+	}
+
+	fun postOnPauseWasCalled(wasCalled: Boolean)
+	{
+		onPauseWasCalled = wasCalled
+	}
+
+	fun getOnPauseWasCalled(): Boolean
+	{
+		return onPauseWasCalled
 	}
 }
