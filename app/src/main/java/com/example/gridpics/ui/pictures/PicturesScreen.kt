@@ -91,7 +91,7 @@ fun PicturesScreen(
 	postState: (Boolean, String) -> Unit,
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
-	postPositiveState: () -> Unit,
+	postVisibleBarsState: () -> Unit,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
@@ -99,7 +99,7 @@ fun PicturesScreen(
 )
 {
 	LaunchedEffect(Unit) {
-		postPositiveState()
+		postVisibleBarsState()
 	}
 	BackHandler {
 		postPressOnBackButton()
