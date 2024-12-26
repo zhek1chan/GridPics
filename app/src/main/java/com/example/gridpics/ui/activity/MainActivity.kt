@@ -90,12 +90,6 @@ class MainActivity: AppCompatActivity()
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
-		//тк у нас удаляется картинка из общего списка в onStop(), то эта провека нужна для добавления её обратно после смены темы
-		val currentPicture = picVM.picturesUiState.value.currentPicture
-		if(currentPicture.isNotEmpty() && detVM.uiState.value.isSharedImage)
-		{
-			picVM.postPicsFromThemeChange(currentPicture)
-		}
 		picVM.postSavedUrls(urls = picturesFromSP)
 		// Здесь мы получаем значение выбранной через настройки приложения темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
