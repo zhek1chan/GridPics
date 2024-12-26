@@ -118,10 +118,7 @@ class MainActivity: AppCompatActivity()
 			LaunchedEffect(Unit) {
 				navigation = navController
 				newIntentFlag = true
-				if(picVM.usedValueFromIntent.isEmpty())
-				{
-					postValuesFromIntent(intent, picturesFromSP, picVM)
-				}
+				postValuesFromIntent(intent, picturesFromSP, picVM)
 			}
 			ComposeTheme {
 				NavigationSetup(navController = navController)
