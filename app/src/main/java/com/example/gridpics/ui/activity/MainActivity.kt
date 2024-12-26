@@ -95,7 +95,6 @@ class MainActivity: AppCompatActivity()
 		if(currentPicture.isNotEmpty() && detVM.uiState.value.isSharedImage)
 		{
 			picVM.postPicsFromThemeChange(currentPicture)
-			picVM.saveCurrentPictureUrl(currentPicture)
 		}
 		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
 		// Здесь мы получаем значение выбранной через настройки приложения темы раннее, чтобы приложение сразу её выставило
