@@ -442,7 +442,6 @@ class MainActivity: AppCompatActivity()
 						//нужно обновить список
 						urls = picVM.picturesUiState.value.picturesUrl
 					}
-
 					if(urls.contains(sharedValue))
 					{
 						picVM.urlWasAlreadyInSP(sharedValue, urls)
