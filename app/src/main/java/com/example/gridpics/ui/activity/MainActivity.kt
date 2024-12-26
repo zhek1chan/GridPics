@@ -1,13 +1,10 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.ServiceConnection
-import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
@@ -28,7 +25,6 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,6 +38,8 @@ import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -51,16 +49,8 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
-	private lateinit var navigation: NavHostController
-	private var serviceIsStopped = true
-	private val messageReceiver: BroadcastReceiver = object: BroadcastReceiver()
-	{
-		override fun onReceive(context: Context?, intent: Intent)
-		{
-			serviceIsStopped = intent.getBooleanExtra(IS_SERVICE_DEAD, true)
-			Log.d("test message", "service is dead: $serviceIsStopped")
-		}
-	}
+	private var newIntentFlag = true
+	private var navigation: NavHostController? = null
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -79,6 +69,11 @@ class MainActivity: AppCompatActivity()
 		{
 			mainNotificationService = null
 		}
+
+		override fun onBindingDied(name: ComponentName?)
+		{
+			mainNotificationService = null
+		}
 	}
 
 	override fun onCreate(savedInstanceState: Bundle?)
@@ -90,18 +85,35 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val lifeCycScope = lifecycleScope
-		picVM.changeOrientation(this.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
+		picVM.changeOrientation(resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+		val currentPicture = sharedPreferences.getString(CURRENT_PICTURE, null)
+		picVM.themeWasSetToBlack(isDarkTheme())
+		val wasThemeChanged = picVM.getChangedThemeState()
+		var intent = intent
+		// логика для отмены повторного использования intent при смене темы пользователем
+		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
+		{
+			picVM.saveCurrentPictureUrl(currentPicture)
+			picVM.postPicsFromThemeChange(currentPicture)
+		}
+		else if(!currentPicture.isNullOrEmpty() && wasThemeChanged)
+		{
+			intent = Intent()
+			saveToSharedPrefs(picturesUrl = "", saveCurrentImg = true)
+		}
 		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
 		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
+		val blackColor = getColor(R.color.black)
+		val whiteColor = getColor(R.color.white)
 		enableEdgeToEdge(
-			statusBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black)),
-			navigationBarStyle = SystemBarStyle.auto(getColor(R.color.white), getColor(R.color.black))
+			statusBarStyle = SystemBarStyle.auto(whiteColor, blackColor),
+			navigationBarStyle = SystemBarStyle.auto(whiteColor, blackColor)
 		)
 		lifeCycScope.launch {
 			detVM.observeUrlFlow().collect {
@@ -116,13 +128,15 @@ class MainActivity: AppCompatActivity()
 			}
 		}
 		themePick = theme
-		//реализация фичи - поделиться картинкой в приложение
 		setContent {
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
 				navigation = navController
-				val urls = picturesFromSP ?: ""
-				postValuesFromIntent(intent, urls, picVM)
+				newIntentFlag = true
+				if(picVM.usedValueFromIntent.isEmpty())
+				{
+					postValuesFromIntent(intent, picturesFromSP, picVM)
+				}
 			}
 			ComposeTheme {
 				NavigationSetup(navController = navController)
@@ -162,8 +176,17 @@ class MainActivity: AppCompatActivity()
 						detVM.isSharedImage(false)
 					},
 					isValidUrl = { url -> picVM.isValidUrl(url) },
-					postSavedUrls = { urls -> picVM.postSavedUrls(urls = urls, caseEmptySharedPreferenceOnFirstLaunch = false) },
-					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) }
+					postSavedUrls = { urls ->
+						if(!detVM.uiState.value.isSharedImage)
+						{
+							picVM.postSavedUrls(urls = urls, caseEmptySharedPreferenceOnFirstLaunch = false)
+						}
+						else
+						{
+							Unit
+						}
+					},
+					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls, false) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
@@ -171,7 +194,9 @@ class MainActivity: AppCompatActivity()
 					navController = navController,
 					option = themePick,
 					changeTheme = { int -> changeTheme(int) },
-					isScreenInPortraitState = picState
+					isScreenInPortraitState = picState,
+					clearImageCache = { saveToSharedPrefs("", false) },
+					postStartOfPager = { picVM.clickOnPicture("", 0, 0) }
 				)
 			}
 			composable(Screen.Details.route) {
@@ -188,22 +213,23 @@ class MainActivity: AppCompatActivity()
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
-					postFalseToSharedImageState = { detVM.isSharedImage(false) },
-					removeUrl = { url -> picVM.removeUrlFromSavedUrls(url) },
-					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) }
+					postFalseToSharedImageState = {
+						detVM.isSharedImage(false)
+						picVM.addPictureToState()
+						picVM.clearUsedIntentValue()
+					},
+					removeUrl = { url ->
+						picVM.removeUrlFromSavedUrls(url)
+						detVM.changeAddedState(null)
+					},
+					saveToSharedPrefs = { urls ->
+						saveToSharedPrefs(urls, false)
+					},
+					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) },
+					postIsFirstPage = { isFirstPage -> picVM.postIsFirstPage(isFirstPage) }
 				)
 			}
 		}
-	}
-
-	override fun onConfigurationChanged(newConfig: Configuration)
-	{
-		super.onConfigurationChanged(newConfig)
-		detailsViewModel.changeMultiWindowState(isInMultiWindowMode || isInPictureInPictureMode)
-		requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
-		val orientation = newConfig.orientation
-		val picVM = picturesViewModel
-		picVM.changeOrientation(orientation != Configuration.ORIENTATION_LANDSCAPE)
 	}
 
 	override fun onRequestPermissionsResult(
@@ -222,13 +248,14 @@ class MainActivity: AppCompatActivity()
 	override fun onRestart()
 	{
 		Log.d("lifecycle", "onRestart()")
+		val picVM = picturesViewModel
+		picVM.postChangedTheme(false)
+		caseSharedImageExit { picVM.restoreDeletedUrl() }
 		super.onRestart()
 	}
 
 	override fun onResume()
 	{
-		LocalBroadcastManager.getInstance(this)
-			.registerReceiver(messageReceiver, IntentFilter(SERVICE_MESSAGE))
 		val value = detailsViewModel.uiState.value.barsAreVisible
 		if(!value)
 		{
@@ -248,11 +275,12 @@ class MainActivity: AppCompatActivity()
 	{
 		Log.d("callback", "callback was called")
 		mainNotificationService?.stopSelf()
-		this@MainActivity.finish()
+		this.finish()
 	}
 
 	override fun onPause()
 	{
+		picturesViewModel.postOnPauseWasCalled(true)
 		Log.d("lifecycle", "onPause()")
 		super.onPause()
 	}
@@ -263,14 +291,15 @@ class MainActivity: AppCompatActivity()
 		{
 			unbindMainService()
 		}
+		newIntentFlag = false
+		val picVM = picturesViewModel
+		caseSharedImageExit { picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture) }
 		Log.d("lifecycle", "onStop()")
 		super.onStop()
 	}
 
 	override fun onDestroy()
 	{
-		LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver)
-		super.onPause()
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}
@@ -292,6 +321,15 @@ class MainActivity: AppCompatActivity()
 		{
 			detVM.changeVisabilityState(visible)
 		}
+	}
+
+	override fun onConfigurationChanged(newConfig: Configuration)
+	{
+		super.onConfigurationChanged(newConfig)
+		detailsViewModel.changeMultiWindowState(isInMultiWindowMode || isInPictureInPictureMode)
+		val orientation = newConfig.orientation
+		val picVM = picturesViewModel
+		picVM.changeOrientation(orientation != Configuration.ORIENTATION_LANDSCAPE)
 	}
 
 	private fun changeTheme(option: Int)
@@ -318,8 +356,8 @@ class MainActivity: AppCompatActivity()
 	{
 		if(mainNotificationService == null)
 		{
-			val connectionLocal = connection
 			val serviceIntentLocal = Intent(this, MainNotificationService::class.java)
+			val connectionLocal = connection
 			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
 			{
 				if(
@@ -329,34 +367,25 @@ class MainActivity: AppCompatActivity()
 					) == PackageManager.PERMISSION_GRANTED
 				)
 				{
-					launchService(serviceIntentLocal)
+					startForegroundService(serviceIntentLocal)
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 				}
-				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
+				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) && !picturesViewModel.getOnPauseWasCalled())
 				{
 					requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), RESULT_SUCCESS)
 				}
 			}
 			else
 			{
-				launchService(serviceIntentLocal)
+				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				{
+					startForegroundService(serviceIntentLocal)
+				}
+				else
+				{
+					startService(serviceIntentLocal)
+				}
 				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
-			}
-		}
-	}
-
-	private fun launchService(serviceIntentLocal: Intent)
-	{
-		if (serviceIsStopped)
-		{
-			Log.d("test message", "recreating service")
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-			{
-				startForegroundService(serviceIntentLocal)
-			}
-			else
-			{
-				startService(serviceIntentLocal)
 			}
 		}
 	}
@@ -374,71 +403,128 @@ class MainActivity: AppCompatActivity()
 	override fun onNewIntent(intent: Intent?)
 	{
 		super.onNewIntent(intent)
+		newIntentFlag = true
 		getValuesFromIntent(intent)
 		setIntent(intent)
 	}
 
 	private fun getValuesFromIntent(intent: Intent?)
 	{
-		val action = intent?.action
-		if(action == Intent.ACTION_SEND)
-		{
-			Log.d("service", "newIntent was called")
-			val picVM = picturesViewModel
-			val urls = picVM.picturesUiState.value.picturesUrl
-			postValuesFromIntent(intent, urls, picVM)
-		}
+		Log.d("service", "newIntent was called")
+		val picVM = picturesViewModel
+		val urls = picVM.picturesUiState.value.picturesUrl
+		postValuesFromIntent(intent, urls, picVM)
 	}
 
-	private fun postValuesFromIntent(intent: Intent?, urls: String, picVM: PicturesViewModel)
+	private fun postValuesFromIntent(intent: Intent?, picUrls: String?, picVM: PicturesViewModel)
 	{
-		if(intent != null)
+		//реализация фичи - поделиться картинкой в приложение
+		val action = intent?.action
+		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
-			val action = intent.action
-			var sharedLinkLocal = ""
-			val nav = navigation
-			if(action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type && !intent.getStringExtra(Intent.EXTRA_TEXT).isNullOrEmpty())
+			newIntentFlag = true
+			val usedIntentValue = picVM.getUsedIntentValue()
+			var urls = picUrls ?: ""
+			var nav = navigation
+			val detVM = detailsViewModel
+			val uiStateValue = detVM.uiState.value
+			val isSharedImage = uiStateValue.isSharedImage
+			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
+			picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture)
+			if(!sharedValue.isNullOrEmpty())
 			{
-				intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
-					sharedLinkLocal = it
-				}
-				if(urls.contains(sharedLinkLocal))
+				val cacheIsEmpty = urls.isEmpty()
+				if(!cacheIsEmpty)
 				{
-					picVM.removeUrlFromSavedUrls(sharedLinkLocal)
+					if(isSharedImage && uiStateValue.wasAddedAfterSharing != true)
+					{
+						picVM.putPreviousPictureCorrectly(usedIntentValue)
+						//нужно обновить список
+						urls = picVM.picturesUiState.value.picturesUrl
+					}
+					if(urls.contains(sharedValue))
+					{
+						picVM.urlWasAlreadyInSP(sharedValue, urls)
+					}
+					else
+					{
+						picVM.clearIndex()
+					}
 				}
-				picVM.postSavedUrls(urls = "$sharedLinkLocal\n$urls", caseEmptySharedPreferenceOnFirstLaunch = urls.isEmpty())
-				Log.d("shared", "$action")
-				picVM.clickOnPicture(sharedLinkLocal, 0, 0)
-				detailsViewModel.isSharedImage(true)
-				nav.navigate(Screen.Details.route)
+				detVM.changeAddedState(null)
+				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
+				picVM.saveCurrentPictureUrl(sharedValue)
+				detVM.isSharedImage(true)
+				picVM.postUsedIntent(sharedValue)
+				saveToSharedPrefs(sharedValue, true)
+				picVM.themeWasSetToBlack(isDarkTheme())
+				lifecycleScope.launch(Dispatchers.IO) {
+					while(nav == null)
+					{
+						delay(500)
+						nav = navigation
+					}
+					runOnUiThread {
+						nav?.navigate(Screen.Details.route)
+					}
+				}
 			}
 			else
 			{
-				val oldUrl = intent.getStringExtra(WAS_OPENED_SCREEN)
-				Log.d("nav", "$oldUrl")
-				if(!oldUrl.isNullOrEmpty())
+				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
+				if(!oldString.isNullOrEmpty() && urls.contains(oldString) && oldString != usedIntentValue)
 				{
-					picVM.clickOnPicture(oldUrl, 0, 0)
-					nav.navigate(Screen.Details.route)
+					picVM.clickOnPicture(oldString, 0, 0)
+					lifecycleScope.launch(Dispatchers.IO) {
+						while(nav == null)
+						{
+							delay(100)
+							nav = navigation
+						}
+						runOnUiThread {
+							nav?.navigate(Screen.Details.route)
+						}
+					}
+					picVM.postUsedIntent(oldString)
 				}
 			}
 		}
 	}
 
-	private fun saveToSharedPrefs(picturesUrl: String)
+	private fun caseSharedImageExit(shouldDo: () -> Unit)
+	{
+		if(detailsViewModel.uiState.value.isSharedImage && !newIntentFlag)
+		{
+			shouldDo()
+		}
+	}
+
+	private fun saveToSharedPrefs(picturesUrl: String, saveCurrentImg: Boolean)
 	{
 		val sharedPreferencesPictures = this.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		val editorPictures = sharedPreferencesPictures.edit()
-		editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
+		if(!saveCurrentImg)
+		{
+			editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
+		}
+		else
+		{
+			editorPictures.putString(CURRENT_PICTURE, picturesUrl)
+		}
 		editorPictures.apply()
+	}
+
+	private fun isDarkTheme(): Boolean
+	{
+		return this.resources.configuration.uiMode and
+			Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 	}
 
 	companion object
 	{
-		const val SERVICE_MESSAGE = "SERVICE_MESSAGE"
-		const val IS_SERVICE_DEAD = "IS_SERVICE_DEAD"
 		const val RESULT_SUCCESS = 100
 		const val LENGTH_OF_PICTURE = 110
+		const val CURRENT_PICTURE = "CURRENT_PICTURE"
 		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337
 		const val SHARED_PREFS_PICTURES = "SHARED_PREFS_PICTURES"
@@ -447,6 +533,6 @@ class MainActivity: AppCompatActivity()
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
 		const val DEFAULT_STRING_VALUE = "default"
 		const val HTTP_ERROR = "HTTP error: 404"
-		const val WAS_OPENED_SCREEN = "wasOpenedScreen"
+		const val SAVED_URL_FROM_SCREEN_DETAILS = "SAVED_URL_FROM_SCREEN_DETAILS"
 	}
 }

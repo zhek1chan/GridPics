@@ -20,18 +20,22 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.ripple.RippleAlpha
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonColors
+import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,7 +60,6 @@ import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
-import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFS_PICTURES
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
@@ -67,9 +70,12 @@ fun SettingsScreen(
 	navController: NavController,
 	option: Int,
 	changeTheme: (Int) -> Unit,
-	isScreenInPortraitState: MutableState<PicturesScreenUiState>
+	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
+	clearImageCache: () -> Unit,
+	postStartOfPager: () -> Unit
 )
 {
+	postStartOfPager()
 	val windowInsets = if(!isScreenInPortraitState.value.isPortraitOrientation)
 	{
 		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
@@ -106,16 +112,18 @@ fun SettingsScreen(
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
-				SettingsCompose(option = option, changeTheme = changeTheme)
+				SettingsCompose(option = option, changeTheme = changeTheme, clearImageCache = clearImageCache)
 			}
 		}
 	)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsCompose(
 	option: Int,
-	changeTheme: (Int) -> Unit
+	changeTheme: (Int) -> Unit,
+	clearImageCache: () -> Unit,
 )
 {
 	var showDialog by remember { mutableStateOf(false) }
@@ -135,8 +143,9 @@ fun SettingsCompose(
 				listOfThemeOptions.add(stringResource(R.string.synch_with_sys))
 			}
 			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option]) }
-			Column {
-				Column(Modifier.selectableGroup()) {
+			val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+			CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+				Column {
 					listOfThemeOptions.forEach { text ->
 						Row(
 							verticalAlignment = Alignment.CenterVertically,
@@ -144,9 +153,12 @@ fun SettingsCompose(
 								.fillMaxWidth()
 								.padding(18.dp, 10.dp, 18.dp, 0.dp)
 								.clickable {
-									onOptionSelected(text)
-									saveThemeState(context, listOfThemeOptions.indexOf(text))
-									changeTheme(listOfThemeOptions.indexOf(text))
+									if(text != selectedOption)
+									{
+										onOptionSelected(text)
+										saveThemeState(context, listOfThemeOptions.indexOf(text))
+										changeTheme(listOfThemeOptions.indexOf(text))
+									}
 								}
 						) {
 							val painter = when(text)
@@ -187,11 +199,13 @@ fun SettingsCompose(
 							)
 							RadioButton(
 								selected = (text == selectedOption),
-								onClick =
-								{
-									onOptionSelected(text)
-									saveThemeState(context, listOfThemeOptions.indexOf(text))
-									changeTheme(listOfThemeOptions.indexOf(text))
+								onClick = {
+									if(text != selectedOption)
+									{
+										onOptionSelected(text)
+										saveThemeState(context, listOfThemeOptions.indexOf(text))
+										changeTheme(listOfThemeOptions.indexOf(text))
+									}
 								},
 								colors = RadioButtonColors(
 									Color.Green,
@@ -241,10 +255,7 @@ fun SettingsCompose(
 						val imageLoader = context.imageLoader
 						imageLoader.diskCache?.clear()
 						imageLoader.memoryCache?.clear()
-						val sharedPreferences = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
-						val editor = sharedPreferences.edit()
-						editor.putString(SHARED_PREFS_PICTURES, null)
-						editor.apply()
+						clearImageCache()
 						showDialog = false
 						Toast.makeText(context, textClear, Toast.LENGTH_SHORT).show()
 					},

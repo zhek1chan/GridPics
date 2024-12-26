@@ -98,11 +98,14 @@ fun PicturesScreen(
 	saveToSharedPrefs: (String) -> Unit,
 )
 {
-	postPositiveState()
+	LaunchedEffect(Unit) {
+		postPositiveState()
+	}
 	BackHandler {
 		postPressOnBackButton()
 	}
-	val windowInsets = if(!state.value.isPortraitOrientation)
+	val value = state.value
+	val windowInsets = if(!value.isPortraitOrientation)
 	{
 		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
 	}
@@ -137,39 +140,27 @@ fun PicturesScreen(
 					.consumeWindowInsets(padding)
 					.fillMaxSize()
 			) {
-				val urls = state.value.picturesUrl
-				if(urls.isNotEmpty())
-				{
-					ShowList(
-						imagesUrlsSP = urls,
-						checkIfExists = checkIfExists,
-						addError = addError,
-						postState = postState,
-						state = state,
-						clearErrors = clearErrors,
-						navController = navController,
-						currentPicture = currentPicture,
-						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls,
-						saveToSharedPrefs = saveToSharedPrefs
-					)
-				}
-				else
-				{
-					ShowList(
-						imagesUrlsSP = null,
-						checkIfExists = checkIfExists,
-						addError = addError,
-						postState = postState,
-						state = state,
-						clearErrors = clearErrors,
-						navController = navController,
-						currentPicture = currentPicture,
-						isValidUrl = isValidUrl,
-						postSavedUrls = postSavedUrls,
-						saveToSharedPrefs = saveToSharedPrefs
-					)
-				}
+				val urls = value.picturesUrl
+				val loadingState = value.loadingState
+				val offset = value.offset
+				val index = value.index
+				ShowList(
+					imagesUrlsSP = urls.ifEmpty {
+						null
+					},
+					checkIfExists = checkIfExists,
+					addError = addError,
+					postState = postState,
+					state = loadingState,
+					clearErrors = clearErrors,
+					navController = navController,
+					currentPicture = currentPicture,
+					isValidUrl = isValidUrl,
+					postSavedUrls = postSavedUrls,
+					saveToSharedPrefs = saveToSharedPrefs,
+					offset = offset,
+					index = index
+				)
 			}
 		}
 	)
@@ -296,20 +287,21 @@ fun itemNewsCard(
 	return isError
 }
 
-@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowList(
 	imagesUrlsSP: String?,
 	checkIfExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	postState: (Boolean, String) -> Unit,
-	state: MutableState<PicturesScreenUiState>,
+	state: PicturesState,
 	clearErrors: () -> Unit,
 	navController: NavController,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (String) -> Unit,
 	saveToSharedPrefs: (String) -> Unit,
+	offset: Int,
+	index: Int,
 )
 {
 	val context = LocalContext.current
@@ -320,19 +312,18 @@ fun ShowList(
 	val listState = rememberLazyGridState()
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
-		when(state.value.loadingState)
+		when(state)
 		{
 			is PicturesState.SearchIsOk ->
 			{
 				val loadingString = stringResource(R.string.loading_has_been_started)
 				Log.d("Now state is", "Search Is Ok")
-				val status = state.value.loadingState as PicturesState.SearchIsOk
-				LaunchedEffect(status) {
-					saveToSharedPrefs(status.data)
+				LaunchedEffect(state) {
+					saveToSharedPrefs(state.data)
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 				}
-				val value = remember(status) { status.data }
-				val list = remember(status) { value.split("\n") }
+				val value = remember(state) { state.data }
+				val list = remember(state) { value.split("\n") }
 				postSavedUrls(value)
 				LazyVerticalGrid(
 					state = listState,
@@ -354,9 +345,11 @@ fun ShowList(
 						)
 					}
 				}
-				scope.launch {
-					delay(6000)
-					postState(true, value)
+				LaunchedEffect(state) {
+					scope.launch {
+						delay(6000)
+						postState(true, value)
+					}
 				}
 			}
 			is PicturesState.ConnectionError ->
@@ -379,14 +372,13 @@ fun ShowList(
 			{
 				Log.d("Now state is", "Loaded")
 				val loadingEnded = stringResource(R.string.loading_has_been_ended)
-				val status = state.value.loadingState as PicturesState.Loaded
 				LaunchedEffect(Unit) {
 					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
-					postSavedUrls(status.data)
+					postSavedUrls(state.data)
 				}
-				val value = remember(status) { status.data }
+				val value = remember(state) { state.data }
 				Log.d("Now state is", "Loaded")
-				val list = remember(status) { (status.data).split("\n") }
+				val list = remember(state) { (state.data).split("\n") }
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
@@ -442,9 +434,10 @@ fun ShowList(
 			}
 		}
 	}
-	val value = state.value
-	scope.launch {
-		listState.scrollToItem(value.index, value.offset)
+	LaunchedEffect(Unit) {
+		scope.launch {
+			listState.scrollToItem(index, offset)
+		}
 	}
 }
 
