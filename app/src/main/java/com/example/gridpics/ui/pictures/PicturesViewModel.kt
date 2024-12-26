@@ -16,7 +16,6 @@ class PicturesViewModel(
 ): ViewModel()
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, "", true))
-	var usedValueFromIntent = ""
 	private val errorsList: MutableList<String> = mutableListOf()
 	private var index: Int? = null
 	private var onPauseWasCalled = false
@@ -146,16 +145,6 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postUsedIntent(url: String)
-	{
-		usedValueFromIntent = url
-	}
-
-	fun getUsedIntentValue(): String
-	{
-		return usedValueFromIntent
-	}
-
 	fun urlWasAlreadyInSP(url: String, urlsFromSP: String)
 	{
 		val list = urlsFromSP.split("\n")
@@ -171,11 +160,6 @@ class PicturesViewModel(
 	{
 		val urlPattern = Regex("^(https?|ftp)://([a-z0-9-]+\\.)+[a-z0-9]{2,6}(:[0-9]+)?(/\\S*)?$")
 		return urlPattern.matches(url)
-	}
-
-	fun clearUsedIntentValue()
-	{
-		usedValueFromIntent = ""
 	}
 
 	private fun removeUrlAndPostNewString(urls: String, url: String)

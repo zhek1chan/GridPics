@@ -199,7 +199,6 @@ class MainActivity: AppCompatActivity()
 					postFalseToSharedImageState = { url ->
 						picVM.addPictureToUrls(url)
 						detVM.isSharedImage(false)
-						picVM.clearUsedIntentValue()
 					},
 					removeUrl = { url ->
 						picVM.removeUrlFromSavedUrls(url)
@@ -406,7 +405,6 @@ class MainActivity: AppCompatActivity()
 		val action = intent?.action
 		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
-			val usedIntentValue = picVM.getUsedIntentValue()
 			val urls = picUrls ?: ""
 			val nav = navigation
 			val detVM = detailsViewModel
@@ -430,17 +428,15 @@ class MainActivity: AppCompatActivity()
 				detVM.changeAddedState(null)
 				picVM.saveCurrentPictureUrl(sharedValue)
 				detVM.isSharedImage(true)
-				picVM.postUsedIntent(sharedValue)
 				navToDetailsAfterNewIntent(nav)
 			}
 			else
 			{
 				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
-				if(!oldString.isNullOrEmpty() && urls.contains(oldString) && oldString != usedIntentValue)
+				if(!oldString.isNullOrEmpty() && urls.contains(oldString))
 				{
 					picVM.clickOnPicture(oldString, 0, 0)
 					navToDetailsAfterNewIntent(nav)
-					picVM.postUsedIntent(oldString)
 				}
 			}
 		}
