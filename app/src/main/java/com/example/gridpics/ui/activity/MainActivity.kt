@@ -161,10 +161,6 @@ class MainActivity: AppCompatActivity()
 						{
 							picVM.postSavedUrls(urls = urls)
 						}
-						else
-						{
-							Unit
-						}
 					},
 					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) }
 				)
