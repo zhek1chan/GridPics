@@ -489,15 +489,22 @@ class MainActivity: AppCompatActivity()
 	private fun navToDetailsAfterNewIntent(nav: NavHostController?)
 	{
 		var navv = nav
-		lifecycleScope.launch(Dispatchers.IO) {
-			while(navv == null)
-			{
-				delay(100)
-				navv = navigation
+		if(navv == null)
+		{
+			lifecycleScope.launch(Dispatchers.IO) {
+				while(navv == null)
+				{
+					delay(100)
+					navv = navigation
+				}
+				runOnUiThread {
+					navv?.navigate(Screen.Details.route)
+				}
 			}
-			runOnUiThread {
-				navv?.navigate(Screen.Details.route)
-			}
+		}
+		else
+		{
+			navv?.navigate(Screen.Details.route)
 		}
 	}
 
