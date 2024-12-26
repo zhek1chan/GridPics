@@ -74,20 +74,37 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postSavedUrls(urls: String?, caseEmptySharedPreferenceOnFirstLaunch: Boolean)
+	fun addPictureToUrls(pic: String)
+	{
+		val state = picturesUiState
+		viewModelScope.launch {
+			Log.d("nka", "${pic.contains("\n")}")
+			val sendUrl = if(pic.contains("\n"))
+			{
+				pic
+			}
+			else
+			{
+				pic + "\n"
+			}
+			state.value = state.value.copy(picturesUrl = sendUrl + state.value.picturesUrl)
+		}
+	}
+
+	fun postSavedUrls(urls: String?)
 	{
 		viewModelScope.launch {
 			val flow = picturesUiState
 			val notNullUrls = urls ?: ""
-			if(caseEmptySharedPreferenceOnFirstLaunch)
+			/*if(caseEmptySharedPreferenceOnFirstLaunch)
 			{
 				rememberSharedPictureOnFirstStart = notNullUrls
 			}
 			else
 			{
-				rememberSharedPictureOnFirstStart = ""
-				flow.value = flow.value.copy(picturesUrl = notNullUrls)
-			}
+				rememberSharedPictureOnFirstStart = ""*/
+			flow.value = flow.value.copy(picturesUrl = notNullUrls)
+			//}
 		}
 	}
 
@@ -165,7 +182,7 @@ class PicturesViewModel(
 		}
 	}
 
-	fun restoreDeletedUrl()
+	/*fun restoreDeletedUrl()
 	{
 		val state = picturesUiState
 		val url = state.value.currentPicture
@@ -184,8 +201,7 @@ class PicturesViewModel(
 				Log.d("remove2", "added string ${newString.split("\n")[0]}")
 			}
 		}
-	}
-
+	}*/
 	fun postUsedIntent(url: String)
 	{
 		usedValueFromIntent = url
@@ -213,7 +229,7 @@ class PicturesViewModel(
 		return urlPattern.matches(url)
 	}
 
-	fun putPreviousPictureCorrectly(oldPicture: String)
+	/*fun putPreviousPictureCorrectly(oldPicture: String)
 	{
 		val index = index
 		if(index != null)
@@ -236,8 +252,7 @@ class PicturesViewModel(
 				state.value = state.value.copy(picturesUrl = newString)
 			}
 		}
-	}
-
+	}*/
 	fun clearUsedIntentValue()
 	{
 		usedValueFromIntent = ""
@@ -268,7 +283,7 @@ class PicturesViewModel(
 	private fun removeUrlAndPostNewString(urls: String, url: String)
 	{
 		val state = picturesUiState
-		val newString = if(urls.startsWith("$url\n$url\n") && (!isFirstImage))
+		val newString = if(urls.startsWith("$url\n$url\n") && !isFirstImage && index != null)
 		{
 			Log.d("worked", "worked")
 			removePrefix(urls, "$url\n$url\n")

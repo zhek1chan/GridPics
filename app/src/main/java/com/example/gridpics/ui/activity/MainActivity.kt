@@ -96,7 +96,7 @@ class MainActivity: AppCompatActivity()
 		{
 			picVM.postPicsFromThemeChange(currentPicture)
 		}
-		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
+		picVM.postSavedUrls(urls = picturesFromSP)
 		// Здесь мы получаем значение выбранной через настройки приложения темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
@@ -170,7 +170,7 @@ class MainActivity: AppCompatActivity()
 					postSavedUrls = { urls ->
 						if(!detVM.uiState.value.isSharedImage)
 						{
-							picVM.postSavedUrls(urls = urls, caseEmptySharedPreferenceOnFirstLaunch = false)
+							picVM.postSavedUrls(urls = urls)
 						}
 						else
 						{
@@ -207,7 +207,8 @@ class MainActivity: AppCompatActivity()
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
-					postFalseToSharedImageState = {
+					postFalseToSharedImageState = { url ->
+						picVM.addPictureToUrls(url)
 						detVM.isSharedImage(false)
 						picVM.addPictureToState()
 						picVM.clearUsedIntentValue()
@@ -242,8 +243,8 @@ class MainActivity: AppCompatActivity()
 	override fun onRestart()
 	{
 		Log.d("lifecycle", "onRestart()")
-		val picVM = picturesViewModel
-		caseSharedImageExit { picVM.restoreDeletedUrl() }
+		//val picVM = picturesViewModel
+		//caseSharedImageExit { picVM.restoreDeletedUrl() }
 		super.onRestart()
 	}
 
@@ -284,9 +285,9 @@ class MainActivity: AppCompatActivity()
 		{
 			unbindMainService()
 		}
-		newIntentFlag = false
+		/*newIntentFlag = false
 		val picVM = picturesViewModel
-		caseSharedImageExit { picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture) }
+		caseSharedImageExit { picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture) }*/
 		Log.d("lifecycle", "onStop()")
 		super.onStop()
 	}
@@ -425,11 +426,11 @@ class MainActivity: AppCompatActivity()
 		{
 			newIntentFlag = true
 			val usedIntentValue = picVM.getUsedIntentValue()
-			var urls = picUrls ?: ""
+			val urls = picUrls ?: ""
 			val nav = navigation
 			val detVM = detailsViewModel
-			val uiStateValue = detVM.uiState.value
-			val isSharedImage = uiStateValue.isSharedImage
+			//val uiStateValue = detVM.uiState.value
+			//val isSharedImage = uiStateValue.isSharedImage
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
 			val picState = picVM.picturesUiState.value
 			picVM.removeUrlFromSavedUrls(picState.currentPicture)
@@ -438,12 +439,12 @@ class MainActivity: AppCompatActivity()
 				val cacheIsEmpty = urls.isEmpty()
 				if(!cacheIsEmpty)
 				{
-					if(isSharedImage && uiStateValue.wasAddedAfterSharing != true)
+					/*if(isSharedImage && uiStateValue.wasAddedAfterSharing != true)
 					{
 						picVM.putPreviousPictureCorrectly(usedIntentValue)
 						//нужно обновить список
 						urls = picState.picturesUrl
-					}
+					}*/
 					if(urls.contains(sharedValue))
 					{
 						picVM.urlWasAlreadyInSP(sharedValue, urls)
@@ -453,8 +454,8 @@ class MainActivity: AppCompatActivity()
 						picVM.clearIndex()
 					}
 				}
+				picVM.postSavedUrls(urls)
 				detVM.changeAddedState(null)
-				picVM.postSavedUrls(urls = "$sharedValue\n$urls", caseEmptySharedPreferenceOnFirstLaunch = cacheIsEmpty)
 				picVM.saveCurrentPictureUrl(sharedValue)
 				detVM.isSharedImage(true)
 				picVM.postUsedIntent(sharedValue)
@@ -495,13 +496,13 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	private fun caseSharedImageExit(shouldDo: () -> Unit)
+	/*private fun caseSharedImageExit(shouldDo: () -> Unit)
 	{
 		if(detailsViewModel.uiState.value.isSharedImage && !newIntentFlag)
 		{
 			shouldDo()
 		}
-	}
+	}*/
 
 	private fun saveToSharedPrefs(picturesUrl: String)
 	{

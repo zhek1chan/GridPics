@@ -111,7 +111,7 @@ fun DetailsScreen(
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
 	saveCurrentPictureUrl: (String) -> Unit,
-	postFalseToSharedImageState: () -> Unit,
+	postFalseToSharedImageState: (String) -> Unit,
 	removeUrl: (String) -> Unit,
 	saveToSharedPrefs: (String) -> Unit,
 	changeAddedState: (Boolean?) -> Unit,
@@ -136,8 +136,8 @@ fun DetailsScreen(
 			navController = navController
 		)
 	}
-	val list = remember(currentPicture) {
-		if(pictures.isNotEmpty())
+	val list = remember(pictures) {
+		if(!state.value.isSharedImage)
 		{
 			pictures.split("\n").toSet().toList()
 		}
@@ -234,7 +234,7 @@ fun ShowDetails(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	scrollIsEnabled: MutableState<Boolean>,
-	postFalseToSharedImageState: () -> Unit,
+	postFalseToSharedImageState: (String) -> Unit,
 	removeUrl: (String) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 	saveToSharedPrefs: (String) -> Unit,
@@ -329,9 +329,10 @@ fun ShowDetails(
 									{
 										scrollIsEnabled.value = true
 									}
+									postFalseToSharedImageState(list[page])
 									saveToSharedPrefs(isScreenInPortraitState.value.picturesUrl)
-									postFalseToSharedImageState()
 									changeAddedState(true)
+									navController.navigate(Screen.Details.route)
 								},
 								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
 								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
@@ -640,7 +641,6 @@ fun navigateToHome(
 	if(isSharedImage)
 	{
 		removeUrl(currentPicture)
-		Log.d("ahaha", "ya vizval")
 	}
 	changeBarsVisability(true)
 	postUrl(DEFAULT_STRING_VALUE, null)
