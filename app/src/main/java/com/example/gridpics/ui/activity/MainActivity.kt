@@ -443,7 +443,8 @@ class MainActivity: AppCompatActivity()
 			val uiStateValue = detVM.uiState.value
 			val isSharedImage = uiStateValue.isSharedImage
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
-			picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture)
+			val picState = picVM.picturesUiState.value
+			picVM.removeUrlFromSavedUrls(picState.currentPicture)
 			if(!sharedValue.isNullOrEmpty())
 			{
 				val cacheIsEmpty = urls.isEmpty()
@@ -453,7 +454,7 @@ class MainActivity: AppCompatActivity()
 					{
 						picVM.putPreviousPictureCorrectly(usedIntentValue)
 						//нужно обновить список
-						urls = picVM.picturesUiState.value.picturesUrl
+						urls = picState.picturesUrl
 					}
 					if(urls.contains(sharedValue))
 					{
