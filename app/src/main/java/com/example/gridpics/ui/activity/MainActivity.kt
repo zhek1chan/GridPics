@@ -474,7 +474,7 @@ class MainActivity: AppCompatActivity()
 				lifecycleScope.launch(Dispatchers.IO) {
 					while(nav == null)
 					{
-						delay(500)
+						delay(100)
 						nav = navigation
 					}
 					runOnUiThread {
