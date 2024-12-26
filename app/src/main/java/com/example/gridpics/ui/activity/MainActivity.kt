@@ -186,7 +186,10 @@ class MainActivity: AppCompatActivity()
 					option = picVM.themeState,
 					changeTheme = { int -> changeTheme(int) },
 					isScreenInPortraitState = picState,
-					clearImageCache = { saveToSharedPrefs("") },
+					clearImageCache = {
+						saveToSharedPrefs("")
+						picVM.clearErrors()
+					},
 					postStartOfPager = { picVM.clickOnPicture("", 0, 0) }
 				)
 			}
