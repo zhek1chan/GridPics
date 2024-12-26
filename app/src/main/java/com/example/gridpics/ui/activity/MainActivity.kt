@@ -184,7 +184,7 @@ class MainActivity: AppCompatActivity()
 					checkIfItIsError = { str -> picVM.checkOnErrorExists(str) },
 					addError = { str -> picVM.addError(str) },
 					state = detVM.uiState,
-					removeSpecialError = { str -> picVM.removeSpecialError(str) },
+					removeError = { str -> picVM.removeSpecialError(str) },
 					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
 					postPositiveState = { detVM.changeVisabilityState(true) },
 					picturesScreenState = picState,
