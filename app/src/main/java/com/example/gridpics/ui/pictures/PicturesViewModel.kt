@@ -245,28 +245,6 @@ class PicturesViewModel(
 		usedValueFromIntent = ""
 	}
 
-	private fun createNewString(list: MutableList<String>): String
-	{
-		var newString = ""
-		val size = list.size
-		for(i in 0 ..< size)
-		{
-			newString += if(i != size)
-			{
-				list[i] + "\n"
-			}
-			else
-			{
-				list[i]
-			}
-		}
-		//fix problems with string
-		val withoutDoubleNewLines = newString.replace("\n\n", "\n")
-		val withoutNewLinesInStart = withoutDoubleNewLines.trimStart('\n')
-		val withoutTrailingNewLines = withoutNewLinesInStart.trimEnd('\n')
-		return withoutTrailingNewLines
-	}
-
 	private fun removeUrlAndPostNewString(urls: String, url: String)
 	{
 		val state = picturesUiState
