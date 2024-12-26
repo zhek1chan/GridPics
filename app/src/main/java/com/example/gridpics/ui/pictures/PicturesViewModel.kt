@@ -22,7 +22,6 @@ class PicturesViewModel(
 	private var onPauseWasCalled = false
 	private var rememberSharedPictureOnFirstStart = ""
 	private var themeWasSetToBlack: Boolean? = null
-	private var wasChangedTheme = false
 	private var isFirstImage = false
 
 	init
@@ -186,40 +185,14 @@ class PicturesViewModel(
 		}
 	}
 
-	fun themeWasSetToBlack(wasSet: Boolean)
+	fun postThemeState(isBlack: Boolean)
 	{
-		when(themeWasSetToBlack)
-		{
-			null ->
-			{
-				postTheme(wasSet)
-				postChangedTheme(false)
-			}
-			wasSet ->
-			{
-				postChangedTheme(false)
-			}
-			else ->
-			{
-				postTheme(wasSet)
-				postChangedTheme(true)
-			}
-		}
+		themeWasSetToBlack = isBlack
 	}
 
-	private fun postTheme(darkTheme: Boolean)
+	fun getThemeState(): Boolean?
 	{
-		themeWasSetToBlack = darkTheme
-	}
-
-	fun postChangedTheme(changed: Boolean)
-	{
-		wasChangedTheme = changed
-	}
-
-	fun getChangedThemeState(): Boolean
-	{
-		return wasChangedTheme
+		return themeWasSetToBlack
 	}
 
 	fun postUsedIntent(url: String)

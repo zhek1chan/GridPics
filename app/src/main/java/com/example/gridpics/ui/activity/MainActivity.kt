@@ -91,22 +91,32 @@ class MainActivity: AppCompatActivity()
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		val currentPicture = sharedPreferences.getString(CURRENT_PICTURE, null)
-		picVM.themeWasSetToBlack(isDarkTheme())
-		val wasThemeChanged = picVM.getChangedThemeState()
-		var intent = intent
+
 		// логика для отмены повторного использования intent при смене темы пользователем
+		val currentUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+		val currentDarkTheme = currentUiMode == Configuration.UI_MODE_NIGHT_YES
+		val prevTheme = picVM.getThemeState()
+		val wasThemeChanged = prevTheme != null && prevTheme != currentDarkTheme
+		picVM.postThemeState(currentDarkTheme)
+		Log.d("theme was changed?", "$wasThemeChanged")
+		var intent = intent
+		if (wasThemeChanged) {
+			intent = Intent()
+		}
 		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
 		{
-			picVM.saveCurrentPictureUrl(currentPicture)
 			picVM.postPicsFromThemeChange(currentPicture)
+			picVM.saveCurrentPictureUrl(currentPicture)
+			intent = Intent()
 		}
 		else if(!currentPicture.isNullOrEmpty() && wasThemeChanged)
 		{
 			intent = Intent()
 			saveToSharedPrefs(picturesUrl = "", saveCurrentImg = true)
 		}
+
 		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
-		// Здесь мы получаем значение выбранной темы раннее, чтобы приложение сразу её выставило
+		// Здесь мы получаем значение выбранной через настройки приложения темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
 		val blackColor = getColor(R.color.black)
@@ -249,7 +259,6 @@ class MainActivity: AppCompatActivity()
 	{
 		Log.d("lifecycle", "onRestart()")
 		val picVM = picturesViewModel
-		picVM.postChangedTheme(false)
 		caseSharedImageExit { picVM.restoreDeletedUrl() }
 		super.onRestart()
 	}
@@ -457,7 +466,6 @@ class MainActivity: AppCompatActivity()
 				detVM.isSharedImage(true)
 				picVM.postUsedIntent(sharedValue)
 				saveToSharedPrefs(sharedValue, true)
-				picVM.themeWasSetToBlack(isDarkTheme())
 				lifecycleScope.launch(Dispatchers.IO) {
 					while(nav == null)
 					{
@@ -512,12 +520,6 @@ class MainActivity: AppCompatActivity()
 			editorPictures.putString(CURRENT_PICTURE, picturesUrl)
 		}
 		editorPictures.apply()
-	}
-
-	private fun isDarkTheme(): Boolean
-	{
-		return this.resources.configuration.uiMode and
-			Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 	}
 
 	companion object
