@@ -97,21 +97,18 @@ class MainActivity: AppCompatActivity()
 		val prevTheme = picVM.getThemeState()
 		val wasThemeChanged = prevTheme != null && prevTheme != currentDarkTheme
 		picVM.postThemeState(currentDarkTheme)
-		Log.d("theme was changed?", "$wasThemeChanged")
+		Log.d("lifecycle theme was changed?", "$wasThemeChanged")
 		var intent = intent
-		if(wasThemeChanged)
-		{
-			intent = Intent()
-		}
+		Log.d("lifecycle check intent", "${intent.getStringExtra(Intent.EXTRA_TEXT)}")
 		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
 		{
 			picVM.postPicsFromThemeChange(currentPicture)
 			picVM.saveCurrentPictureUrl(currentPicture)
-			intent = Intent()
+			intent = null
 		}
 		else if(!currentPicture.isNullOrEmpty() && wasThemeChanged)
 		{
-			intent = Intent()
+			intent = null
 			saveToSharedPrefs(picturesUrl = "", saveCurrentImg = true)
 		}
 
