@@ -91,26 +91,12 @@ class MainActivity: AppCompatActivity()
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		val currentPicture = sharedPreferences.getString(CURRENT_PICTURE, null)
-		// логика для отмены повторного использования intent при смене темы пользователем
-		val currentUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-		val currentDarkTheme = currentUiMode == Configuration.UI_MODE_NIGHT_YES
-		val prevTheme = picVM.getThemeState()
-		val wasThemeChanged = prevTheme != null && prevTheme != currentDarkTheme
-		picVM.postThemeState(currentDarkTheme)
-		Log.d("lifecycle theme was changed?", "$wasThemeChanged")
-		var intent = intent
+		//тк у нас удаляется картинка из общего списка в onStop(), то эта провека нужна для добавления её обратно после смены темы
 		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
 		{
 			picVM.postPicsFromThemeChange(currentPicture)
 			picVM.saveCurrentPictureUrl(currentPicture)
-			intent = null
 		}
-		else if(!currentPicture.isNullOrEmpty() && wasThemeChanged)
-		{
-			intent = null
-			saveToSharedPrefs(picturesUrl = "", saveCurrentImg = true)
-		}
-
 		picVM.postSavedUrls(urls = picturesFromSP, caseEmptySharedPreferenceOnFirstLaunch = (picturesFromSP == null))
 		// Здесь мы получаем значение выбранной через настройки приложения темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
@@ -305,6 +291,10 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
+		intent.replaceExtras(Bundle())
+		intent.action = ""
+		intent.data = null
+		intent.flags = 0
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}

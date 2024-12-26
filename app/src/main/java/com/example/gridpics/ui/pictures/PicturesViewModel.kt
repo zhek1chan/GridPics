@@ -22,7 +22,6 @@ class PicturesViewModel(
 	private var index: Int? = null
 	private var onPauseWasCalled = false
 	private var rememberSharedPictureOnFirstStart = ""
-	private var themeWasSetToBlack: Boolean? = null
 	private var isFirstImage = false
 	val themeState = mutableStateOf(ThemePick.FOLLOW_SYSTEM)
 
@@ -185,16 +184,6 @@ class PicturesViewModel(
 				Log.d("remove2", "added string ${newString.split("\n")[0]}")
 			}
 		}
-	}
-
-	fun postThemeState(isBlack: Boolean)
-	{
-		themeWasSetToBlack = isBlack
-	}
-
-	fun getThemeState(): Boolean?
-	{
-		return themeWasSetToBlack
 	}
 
 	fun postUsedIntent(url: String)
