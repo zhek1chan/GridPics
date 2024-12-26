@@ -390,7 +390,6 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val urls = picVM.picturesUiState.value.picturesUrl
 		postValuesFromIntent(intent, urls, picVM)
-		setIntent(intent)
 	}
 
 	private fun postValuesFromIntent(intent: Intent?, picUrls: String?, picVM: PicturesViewModel)
