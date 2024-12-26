@@ -49,7 +49,6 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
-	private var newIntentFlag = true
 	private var navigation: NavHostController? = null
 	private val connection = object: ServiceConnection
 	{
@@ -117,7 +116,6 @@ class MainActivity: AppCompatActivity()
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
 				navigation = navController
-				newIntentFlag = true
 				postValuesFromIntent(intent, picturesFromSP, picVM)
 			}
 			ComposeTheme {
@@ -390,7 +388,6 @@ class MainActivity: AppCompatActivity()
 	override fun onNewIntent(intent: Intent?)
 	{
 		super.onNewIntent(intent)
-		newIntentFlag = true
 		getValuesFromIntent(intent)
 		setIntent(intent)
 	}
@@ -409,7 +406,6 @@ class MainActivity: AppCompatActivity()
 		val action = intent?.action
 		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
-			newIntentFlag = true
 			val usedIntentValue = picVM.getUsedIntentValue()
 			val urls = picUrls ?: ""
 			val nav = navigation
