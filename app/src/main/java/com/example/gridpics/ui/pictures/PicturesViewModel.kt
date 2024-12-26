@@ -20,7 +20,6 @@ class PicturesViewModel(
 	private val errorsList: MutableList<String> = mutableListOf()
 	private var index: Int? = null
 	private var onPauseWasCalled = false
-	private var rememberSharedPictureOnFirstStart = ""
 	private var isFirstImage = false
 	val themeState = mutableStateOf(ThemePick.FOLLOW_SYSTEM)
 
@@ -60,19 +59,6 @@ class PicturesViewModel(
 		}
 	}
 
-	fun addPictureToState()
-	{
-		val rememberSharedPictureOnFirstStart = rememberSharedPictureOnFirstStart
-		val state = picturesUiState
-		if(rememberSharedPictureOnFirstStart.isNotEmpty() && state.value.loadingState is PicturesState.SearchIsOk)
-		{
-			if(state.value.loadingState is PicturesState.SearchIsOk)
-				viewModelScope.launch {
-					state.value = state.value.copy(picturesUrl = rememberSharedPictureOnFirstStart + (state.value.loadingState as PicturesState.SearchIsOk).data)
-				}
-		}
-	}
-
 	fun addPictureToUrls(pic: String)
 	{
 		val state = picturesUiState
@@ -95,15 +81,7 @@ class PicturesViewModel(
 		viewModelScope.launch {
 			val flow = picturesUiState
 			val notNullUrls = urls ?: ""
-			/*if(caseEmptySharedPreferenceOnFirstLaunch)
-			{
-				rememberSharedPictureOnFirstStart = notNullUrls
-			}
-			else
-			{
-				rememberSharedPictureOnFirstStart = ""*/
 			flow.value = flow.value.copy(picturesUrl = notNullUrls)
-			//}
 		}
 	}
 
@@ -113,7 +91,6 @@ class PicturesViewModel(
 		viewModelScope.launch {
 			val urls = picturesUiState.value.picturesUrl
 			removeUrlAndPostNewString(urls, url)
-			rememberSharedPictureOnFirstStart = ""
 		}
 	}
 

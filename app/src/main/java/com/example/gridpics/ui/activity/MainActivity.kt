@@ -204,7 +204,6 @@ class MainActivity: AppCompatActivity()
 					postFalseToSharedImageState = { url ->
 						picVM.addPictureToUrls(url)
 						detVM.isSharedImage(false)
-						picVM.addPictureToState()
 						picVM.clearUsedIntentValue()
 					},
 					removeUrl = { url ->
@@ -237,8 +236,6 @@ class MainActivity: AppCompatActivity()
 	override fun onRestart()
 	{
 		Log.d("lifecycle", "onRestart()")
-		//val picVM = picturesViewModel
-		//caseSharedImageExit { picVM.restoreDeletedUrl() }
 		super.onRestart()
 	}
 
@@ -279,9 +276,6 @@ class MainActivity: AppCompatActivity()
 		{
 			unbindMainService()
 		}
-		/*newIntentFlag = false
-		val picVM = picturesViewModel
-		caseSharedImageExit { picVM.removeUrlFromSavedUrls(picVM.picturesUiState.value.currentPicture) }*/
 		Log.d("lifecycle", "onStop()")
 		super.onStop()
 	}
@@ -433,12 +427,6 @@ class MainActivity: AppCompatActivity()
 				val cacheIsEmpty = urls.isEmpty()
 				if(!cacheIsEmpty)
 				{
-					/*if(isSharedImage && uiStateValue.wasAddedAfterSharing != true)
-					{
-						picVM.putPreviousPictureCorrectly(usedIntentValue)
-						//нужно обновить список
-						urls = picState.picturesUrl
-					}*/
 					if(urls.contains(sharedValue))
 					{
 						picVM.urlWasAlreadyInSP(sharedValue, urls)
@@ -489,14 +477,6 @@ class MainActivity: AppCompatActivity()
 			navv?.navigate(Screen.Details.route)
 		}
 	}
-
-	/*private fun caseSharedImageExit(shouldDo: () -> Unit)
-	{
-		if(detailsViewModel.uiState.value.isSharedImage && !newIntentFlag)
-		{
-			shouldDo()
-		}
-	}*/
 
 	private fun saveToSharedPrefs(picturesUrl: String)
 	{
