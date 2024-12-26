@@ -99,7 +99,6 @@ class MainActivity: AppCompatActivity()
 		picVM.postThemeState(currentDarkTheme)
 		Log.d("lifecycle theme was changed?", "$wasThemeChanged")
 		var intent = intent
-		Log.d("lifecycle check intent", "${intent.getStringExtra(Intent.EXTRA_TEXT)}")
 		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
 		{
 			picVM.postPicsFromThemeChange(currentPicture)
