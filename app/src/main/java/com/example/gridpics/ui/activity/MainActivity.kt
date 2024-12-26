@@ -419,8 +419,7 @@ class MainActivity: AppCompatActivity()
 			picVM.removeUrlFromSavedUrls(picState.currentPicture)
 			if(!sharedValue.isNullOrEmpty())
 			{
-				val cacheIsEmpty = urls.isEmpty()
-				if(!cacheIsEmpty)
+				if(urls.isNotEmpty())
 				{
 					if(urls.contains(sharedValue))
 					{
