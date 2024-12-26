@@ -9,7 +9,6 @@ import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class PicturesViewModel(
@@ -167,18 +166,6 @@ class PicturesViewModel(
 		viewModelScope.launch {
 			val state = picturesUiState
 			state.value = state.value.copy(currentPicture = url + "\n")
-		}
-	}
-
-	fun postPicsFromThemeChange(url: String)
-	{
-		val state = picturesUiState
-		val list = state.value.picturesUrl.split("\n").toMutableList()
-		//Main поток не срабатывает в нужное время, использую IO
-		viewModelScope.launch(Dispatchers.IO) {
-			list.add(0, url)
-			val newString = createNewString(list)
-			state.value = state.value.copy(picturesUrl = newString)
 		}
 	}
 
