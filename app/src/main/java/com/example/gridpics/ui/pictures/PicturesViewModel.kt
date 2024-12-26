@@ -8,6 +8,7 @@ import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
+import com.example.gridpics.ui.settings.ThemePick
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -23,6 +24,7 @@ class PicturesViewModel(
 	private var rememberSharedPictureOnFirstStart = ""
 	private var themeWasSetToBlack: Boolean? = null
 	private var isFirstImage = false
+	val themeState = mutableStateOf(ThemePick.FOLLOW_SYSTEM)
 
 	init
 	{
@@ -307,5 +309,10 @@ class PicturesViewModel(
 	fun getOnPauseWasCalled(): Boolean
 	{
 		return onPauseWasCalled
+	}
+
+	fun postThemePick(option: ThemePick)
+	{
+		themeState.value = option
 	}
 }

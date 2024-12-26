@@ -2,6 +2,7 @@ package com.example.gridpics.ui.settings
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -68,7 +69,7 @@ import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 @Composable
 fun SettingsScreen(
 	navController: NavController,
-	option: Int,
+	option: MutableState<ThemePick>,
 	changeTheme: (Int) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 	clearImageCache: () -> Unit,
@@ -121,11 +122,12 @@ fun SettingsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsCompose(
-	option: Int,
+	option: MutableState<ThemePick>,
 	changeTheme: (Int) -> Unit,
 	clearImageCache: () -> Unit,
 )
 {
+	Log.d("option", "got option $option")
 	var showDialog by remember { mutableStateOf(false) }
 	val context = LocalContext.current
 	ConstraintLayout {
@@ -142,7 +144,7 @@ fun SettingsCompose(
 				listOfThemeOptions.add(stringResource(R.string.dark_theme))
 				listOfThemeOptions.add(stringResource(R.string.synch_with_sys))
 			}
-			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option]) }
+			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option.value.intValue]) }
 			val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 			CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 				Column {
@@ -155,6 +157,7 @@ fun SettingsCompose(
 								.clickable {
 									if(text != selectedOption)
 									{
+										Log.d("i clicked on", "selected option $selectedOption")
 										onOptionSelected(text)
 										saveThemeState(context, listOfThemeOptions.indexOf(text))
 										changeTheme(listOfThemeOptions.indexOf(text))
@@ -271,6 +274,7 @@ fun SettingsCompose(
 private fun saveThemeState(context: Context, chosenOption: Int)
 {
 	val editor = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
+	Log.d("option saved", "$chosenOption")
 	editor.putInt(THEME_SHARED_PREFERENCE, chosenOption)
 	editor.apply()
 }

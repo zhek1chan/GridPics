@@ -202,7 +202,7 @@ class MainActivity: AppCompatActivity()
 			composable(BottomNavItem.Settings.route) {
 				SettingsScreen(
 					navController = navController,
-					option = themePick,
+					option = picVM.themeState,
 					changeTheme = { int -> changeTheme(int) },
 					isScreenInPortraitState = picState,
 					clearImageCache = { saveToSharedPrefs("", false) },
@@ -344,18 +344,22 @@ class MainActivity: AppCompatActivity()
 	private fun changeTheme(option: Int)
 	{
 		Log.d("theme option", "theme option: $option")
+		val picVM = picturesViewModel
 		when(option)
 		{
 			ThemePick.LIGHT_THEME.intValue ->
 			{
+				picVM.postThemePick(ThemePick.LIGHT_THEME)
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 			}
 			ThemePick.DARK_THEME.intValue ->
 			{
+				picVM.postThemePick(ThemePick.DARK_THEME)
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 			}
 			ThemePick.FOLLOW_SYSTEM.intValue ->
 			{
+				picVM.postThemePick(ThemePick.FOLLOW_SYSTEM)
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
 			}
 		}
