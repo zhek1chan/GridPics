@@ -102,7 +102,6 @@ class MainActivity: AppCompatActivity()
 			picVM.postPicsFromThemeChange(currentPicture)
 		}
 		else if(!currentPicture.isNullOrEmpty() && wasThemeChanged)
-		//тут надо как-то отсеять момент, что надо фотку поменять
 		{
 			Log.d("check", "ne usaem intent")
 			intent = Intent()
