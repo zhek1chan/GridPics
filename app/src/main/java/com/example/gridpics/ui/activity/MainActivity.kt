@@ -198,12 +198,10 @@ class MainActivity: AppCompatActivity()
 					},
 					removeUrl = { url ->
 						picVM.removeUrlFromSavedUrls(url)
-						detVM.changeAddedState(null)
 					},
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(urls)
 					},
-					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) },
 					postIsFirstPage = { isFirstPage -> picVM.postIsFirstPage(isFirstPage) }
 				)
 			}
@@ -414,7 +412,6 @@ class MainActivity: AppCompatActivity()
 					}
 				}
 				picVM.postSavedUrls(urls)
-				detVM.changeAddedState(null)
 				picVM.saveCurrentPictureUrl(sharedValue)
 				detVM.isSharedImage(true)
 				navToDetailsAfterNewIntent(nav)

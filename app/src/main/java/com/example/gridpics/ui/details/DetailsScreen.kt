@@ -114,7 +114,6 @@ fun DetailsScreen(
 	addPicture: (String) -> Unit,
 	removeUrl: (String) -> Unit,
 	saveToSharedPrefs: (String) -> Unit,
-	changeAddedState: (Boolean?) -> Unit,
 	postIsFirstPage: (Boolean) -> Unit,
 )
 {
@@ -211,7 +210,6 @@ fun DetailsScreen(
 				removeUrl = removeUrl,
 				isScreenInPortraitState = picturesScreenState,
 				saveToSharedPrefs = saveToSharedPrefs,
-				changeAddedState = changeAddedState
 			)
 		}
 	)
@@ -238,7 +236,6 @@ fun ShowDetails(
 	removeUrl: (String) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 	saveToSharedPrefs: (String) -> Unit,
-	changeAddedState: (Boolean?) -> Unit,
 )
 {
 	val topBarHeight = 64.dp
@@ -331,7 +328,6 @@ fun ShowDetails(
 									}
 									postFalseToSharedImageState(list[page])
 									saveToSharedPrefs(isScreenInPortraitState.value.picturesUrl)
-									changeAddedState(true)
 									navController.navigate(Screen.Details.route)
 								},
 								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
@@ -343,7 +339,6 @@ fun ShowDetails(
 					}
 				}
 			}
-			else changeAddedState(null)
 		}
 	}
 }
