@@ -94,7 +94,7 @@ class PicturesViewModel(
 	fun removeUrlFromSavedUrls(url: String)
 	{
 		Log.d("remove", "removing url $url")
-		viewModelScope.launch(Dispatchers.IO) {
+		viewModelScope.launch {
 			val urls = picturesUiState.value.picturesUrl
 			removeUrlAndPostNewString(urls, url)
 			rememberSharedPictureOnFirstStart = ""
@@ -147,7 +147,7 @@ class PicturesViewModel(
 
 	fun saveCurrentPictureUrl(url: String)
 	{
-		viewModelScope.launch(Dispatchers.IO) {
+		viewModelScope.launch {
 			val state = picturesUiState
 			state.value = state.value.copy(currentPicture = url + "\n")
 		}
@@ -157,6 +157,7 @@ class PicturesViewModel(
 	{
 		val state = picturesUiState
 		val list = state.value.picturesUrl.split("\n").toMutableList()
+		//Main поток не срабатывает в нужное время, использую IO
 		viewModelScope.launch(Dispatchers.IO) {
 			list.add(0, url)
 			val newString = createNewString(list)
