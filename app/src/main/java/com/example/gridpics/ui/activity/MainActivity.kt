@@ -387,16 +387,10 @@ class MainActivity: AppCompatActivity()
 	override fun onNewIntent(intent: Intent?)
 	{
 		super.onNewIntent(intent)
-		getValuesFromIntent(intent)
-		setIntent(intent)
-	}
-
-	private fun getValuesFromIntent(intent: Intent?)
-	{
-		Log.d("service", "newIntent was called")
 		val picVM = picturesViewModel
 		val urls = picVM.picturesUiState.value.picturesUrl
 		postValuesFromIntent(intent, urls, picVM)
+		setIntent(intent)
 	}
 
 	private fun postValuesFromIntent(intent: Intent?, picUrls: String?, picVM: PicturesViewModel)
