@@ -90,9 +90,9 @@ class MainActivity: AppCompatActivity()
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
-		val currentPicture = sharedPreferences.getString(CURRENT_PICTURE, null)
 		//тк у нас удаляется картинка из общего списка в onStop(), то эта провека нужна для добавления её обратно после смены темы
-		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
+		val currentPicture = picVM.picturesUiState.value.currentPicture
+		if(currentPicture.isNotEmpty() && detVM.uiState.value.isSharedImage)
 		{
 			picVM.postPicsFromThemeChange(currentPicture)
 			picVM.saveCurrentPictureUrl(currentPicture)
@@ -178,7 +178,7 @@ class MainActivity: AppCompatActivity()
 							Unit
 						}
 					},
-					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls, false) }
+					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
@@ -187,7 +187,7 @@ class MainActivity: AppCompatActivity()
 					option = picVM.themeState,
 					changeTheme = { int -> changeTheme(int) },
 					isScreenInPortraitState = picState,
-					clearImageCache = { saveToSharedPrefs("", false) },
+					clearImageCache = { saveToSharedPrefs("") },
 					postStartOfPager = { picVM.clickOnPicture("", 0, 0) }
 				)
 			}
@@ -215,7 +215,7 @@ class MainActivity: AppCompatActivity()
 						detVM.changeAddedState(null)
 					},
 					saveToSharedPrefs = { urls ->
-						saveToSharedPrefs(urls, false)
+						saveToSharedPrefs(urls)
 					},
 					changeAddedState = { wasAdded -> detVM.changeAddedState(wasAdded) },
 					postIsFirstPage = { isFirstPage -> picVM.postIsFirstPage(isFirstPage) }
@@ -456,7 +456,6 @@ class MainActivity: AppCompatActivity()
 				picVM.saveCurrentPictureUrl(sharedValue)
 				detVM.isSharedImage(true)
 				picVM.postUsedIntent(sharedValue)
-				saveToSharedPrefs(sharedValue, true)
 				navToDetailsAfterNewIntent(nav)
 			}
 			else
@@ -502,18 +501,11 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	private fun saveToSharedPrefs(picturesUrl: String, saveCurrentImg: Boolean)
+	private fun saveToSharedPrefs(picturesUrl: String)
 	{
 		val sharedPreferencesPictures = this.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		val editorPictures = sharedPreferencesPictures.edit()
-		if(!saveCurrentImg)
-		{
-			editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
-		}
-		else
-		{
-			editorPictures.putString(CURRENT_PICTURE, picturesUrl)
-		}
+		editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
 		editorPictures.apply()
 	}
 
@@ -521,7 +513,6 @@ class MainActivity: AppCompatActivity()
 	{
 		const val RESULT_SUCCESS = 100
 		const val LENGTH_OF_PICTURE = 110
-		const val CURRENT_PICTURE = "CURRENT_PICTURE"
 		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337
 		const val SHARED_PREFS_PICTURES = "SHARED_PREFS_PICTURES"
