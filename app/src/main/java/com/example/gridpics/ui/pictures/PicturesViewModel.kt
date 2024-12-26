@@ -169,26 +169,6 @@ class PicturesViewModel(
 		}
 	}
 
-	/*fun restoreDeletedUrl()
-	{
-		val state = picturesUiState
-		val url = state.value.currentPicture
-		if(url.isNotEmpty())
-		{
-			val list = state.value.picturesUrl.split("\n").toMutableList()
-			val index = index
-			if(index != null && index < list.size)
-			{
-				list.add(index, url)
-			}
-
-			viewModelScope.launch {
-				val newString = createNewString(list)
-				state.value = state.value.copy(picturesUrl = newString)
-				Log.d("remove2", "added string ${newString.split("\n")[0]}")
-			}
-		}
-	}*/
 	fun postUsedIntent(url: String)
 	{
 		usedValueFromIntent = url
@@ -216,30 +196,6 @@ class PicturesViewModel(
 		return urlPattern.matches(url)
 	}
 
-	/*fun putPreviousPictureCorrectly(oldPicture: String)
-	{
-		val index = index
-		if(index != null)
-		{
-			Log.d("remove", "we have put correctly")
-			val state = picturesUiState
-			val value = state.value
-			val list = value.picturesUrl.split("\n").toSet().toMutableList()
-			viewModelScope.launch {
-				if(list.contains(oldPicture))
-				{
-					list.remove(oldPicture)
-				}
-				list.add(index, oldPicture)
-				if(list.contains("\n"))
-				{
-					list.remove("\n")
-				}
-				val newString = createNewString(list)
-				state.value = state.value.copy(picturesUrl = newString)
-			}
-		}
-	}*/
 	fun clearUsedIntentValue()
 	{
 		usedValueFromIntent = ""
