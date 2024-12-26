@@ -91,7 +91,6 @@ class MainActivity: AppCompatActivity()
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		val currentPicture = sharedPreferences.getString(CURRENT_PICTURE, null)
-
 		// логика для отмены повторного использования intent при смене темы пользователем
 		val currentUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 		val currentDarkTheme = currentUiMode == Configuration.UI_MODE_NIGHT_YES
@@ -100,7 +99,8 @@ class MainActivity: AppCompatActivity()
 		picVM.postThemeState(currentDarkTheme)
 		Log.d("theme was changed?", "$wasThemeChanged")
 		var intent = intent
-		if (wasThemeChanged) {
+		if(wasThemeChanged)
+		{
 			intent = Intent()
 		}
 		if(!currentPicture.isNullOrEmpty() && detVM.uiState.value.isSharedImage)
@@ -438,7 +438,7 @@ class MainActivity: AppCompatActivity()
 			newIntentFlag = true
 			val usedIntentValue = picVM.getUsedIntentValue()
 			var urls = picUrls ?: ""
-			var nav = navigation
+			val nav = navigation
 			val detVM = detailsViewModel
 			val uiStateValue = detVM.uiState.value
 			val isSharedImage = uiStateValue.isSharedImage
@@ -471,16 +471,7 @@ class MainActivity: AppCompatActivity()
 				detVM.isSharedImage(true)
 				picVM.postUsedIntent(sharedValue)
 				saveToSharedPrefs(sharedValue, true)
-				lifecycleScope.launch(Dispatchers.IO) {
-					while(nav == null)
-					{
-						delay(100)
-						nav = navigation
-					}
-					runOnUiThread {
-						nav?.navigate(Screen.Details.route)
-					}
-				}
+				navToDetailsAfterNewIntent(nav)
 			}
 			else
 			{
@@ -488,18 +479,24 @@ class MainActivity: AppCompatActivity()
 				if(!oldString.isNullOrEmpty() && urls.contains(oldString) && oldString != usedIntentValue)
 				{
 					picVM.clickOnPicture(oldString, 0, 0)
-					lifecycleScope.launch(Dispatchers.IO) {
-						while(nav == null)
-						{
-							delay(100)
-							nav = navigation
-						}
-						runOnUiThread {
-							nav?.navigate(Screen.Details.route)
-						}
-					}
+					navToDetailsAfterNewIntent(nav)
 					picVM.postUsedIntent(oldString)
 				}
+			}
+		}
+	}
+
+	private fun navToDetailsAfterNewIntent(nav: NavHostController?)
+	{
+		var navv = nav
+		lifecycleScope.launch(Dispatchers.IO) {
+			while(navv == null)
+			{
+				delay(100)
+				navv = navigation
+			}
+			runOnUiThread {
+				navv?.navigate(Screen.Details.route)
 			}
 		}
 	}
