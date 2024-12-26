@@ -417,8 +417,6 @@ class MainActivity: AppCompatActivity()
 			val urls = picUrls ?: ""
 			val nav = navigation
 			val detVM = detailsViewModel
-			//val uiStateValue = detVM.uiState.value
-			//val isSharedImage = uiStateValue.isSharedImage
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
 			val picState = picVM.picturesUiState.value
 			picVM.removeUrlFromSavedUrls(picState.currentPicture)
