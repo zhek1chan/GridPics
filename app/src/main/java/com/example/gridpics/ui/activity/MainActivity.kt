@@ -439,6 +439,7 @@ class MainActivity: AppCompatActivity()
 					if(isSharedImage && uiStateValue.wasAddedAfterSharing != true)
 					{
 						picVM.putPreviousPictureCorrectly(usedIntentValue)
+						//нужно обновить список
 						urls = picVM.picturesUiState.value.picturesUrl
 					}
 
