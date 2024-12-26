@@ -445,9 +445,14 @@ class MainActivity: AppCompatActivity()
 						picVM.putPreviousPictureCorrectly(usedIntentValue)
 						urls = picVM.picturesUiState.value.picturesUrl
 					}
+
 					if(urls.contains(sharedValue))
 					{
 						picVM.urlWasAlreadyInSP(sharedValue, urls)
+					}
+					else
+					{
+						picVM.clearIndex()
 					}
 				}
 				detVM.changeAddedState(null)

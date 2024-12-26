@@ -18,7 +18,7 @@ class PicturesViewModel(
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, "", true))
 	var usedValueFromIntent = ""
 	private val errorsList: MutableList<String> = mutableListOf()
-	private var index = 0
+	private var index: Int? = null
 	var onPauseWasCalled = false
 	private var rememberSharedPictureOnFirstStart = ""
 	private var themeWasSetToBlack: Boolean? = null
@@ -172,7 +172,7 @@ class PicturesViewModel(
 		{
 			val list = state.value.picturesUrl.split("\n").toMutableList()
 			val index = index
-			if(index < list.size)
+			if(index != null && index < list.size)
 			{
 				list.add(index, url)
 			}
@@ -237,6 +237,11 @@ class PicturesViewModel(
 		index = list.indexOf(url)
 	}
 
+	fun clearIndex()
+	{
+		index = null
+	}
+
 	fun isValidUrl(url: String): Boolean
 	{
 		val urlPattern = Regex("^(https?|ftp)://([a-z0-9-]+\\.)+[a-z0-9]{2,6}(:[0-9]+)?(/\\S*)?$")
@@ -245,23 +250,26 @@ class PicturesViewModel(
 
 	fun putPreviousPictureCorrectly(oldPicture: String)
 	{
-		Log.d("remove", "we have put correctly")
-		val state = picturesUiState
-		val value = state.value
-		val list = value.picturesUrl.split("\n").toSet().toMutableList()
-		viewModelScope.launch {
-			if(list.contains(oldPicture))
-			{
-				list.remove(oldPicture)
+		val index = index
+		if(index != null)
+		{
+			Log.d("remove", "we have put correctly")
+			val state = picturesUiState
+			val value = state.value
+			val list = value.picturesUrl.split("\n").toSet().toMutableList()
+			viewModelScope.launch {
+				if(list.contains(oldPicture))
+				{
+					list.remove(oldPicture)
+				}
+				list.add(index, oldPicture)
+				if(list.contains("\n"))
+				{
+					list.remove("\n")
+				}
+				val newString = createNewString(list)
+				state.value = state.value.copy(picturesUrl = newString)
 			}
-			val index = index
-			list.add(index, oldPicture)
-			if(list.contains("\n"))
-			{
-				list.remove("\n")
-			}
-			val newString = createNewString(list)
-			state.value = state.value.copy(picturesUrl = newString)
 		}
 	}
 
@@ -295,9 +303,9 @@ class PicturesViewModel(
 	private fun removeUrlAndPostNewString(urls: String, url: String)
 	{
 		val state = picturesUiState
-		val newString = if(urls.startsWith("$url\n$url\n") && !isFirstImage)
+		val newString = if(urls.startsWith("$url\n$url\n") && (!isFirstImage))
 		{
-			//TODO() tut nado chinit
+			Log.d("worked", "worked")
 			removePrefix(urls, "$url\n$url\n")
 		}
 		else if(urls.startsWith("$url\n"))
