@@ -134,7 +134,7 @@ fun DetailsScreen(
 	}
 	val list = remember (picturesScreenState) { mutableStateOf<List<String>>(pictures) }
 	list.value =
-		if(!state.value.isSharedImage)
+		if(!value.isSharedImage)
 		{
 			pictures
 		}
