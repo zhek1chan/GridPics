@@ -60,10 +60,7 @@ class PicturesViewModel(
 		val state = picturesUiState
 		viewModelScope.launch {
 			val list = state.value.picturesUrl
-			if (list.contains(pic))
-			{
-				list.remove(pic)
-			}
+			list.toSet()
 			list.add(0, pic)
 			state.value = state.value.copy(picturesUrl = list)
 		}

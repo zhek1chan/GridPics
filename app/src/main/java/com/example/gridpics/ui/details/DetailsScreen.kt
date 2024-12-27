@@ -112,15 +112,12 @@ fun DetailsScreen(
 	postNewBitmap: (String) -> Unit,
 	saveCurrentPictureUrl: (String) -> Unit,
 	addPicture: (String) -> Unit,
-	saveToSharedPrefs: (MutableList<String>) -> Unit,
-	setImageSharedStateToFalse: () -> Unit,
 )
 {
 	val context = LocalContext.current
 	val valuePicUi = picturesScreenState.value
 	val currentPicture = valuePicUi.currentPicture
 	Log.d("Case shared", currentPicture)
-	val pictures = valuePicUi.picturesUrl
 	val value = state.value
 	val scrollIsEnabled = remember { mutableStateOf(true) }
 	BackHandler {
@@ -128,31 +125,17 @@ fun DetailsScreen(
 			changeBarsVisability = changeBarsVisability,
 			postUrl = postUrl,
 			navController = navController,
-			setImageSharedStateToFalse = setImageSharedStateToFalse
 		)
 	}
-	val list = remember(pictures) {
-		if(!state.value.isSharedImage)
-		{
-			pictures
-		}
-		else
-		{
-			listOf(currentPicture)
-		}
-	}
-	val index = list.indexOf(currentPicture)
-	val startPage = if(index > -1)
+	val isShared = value.isSharedImage
+	val list = remember { picturesScreenState.value.picturesUrl }
+	var startPage = list.indexOf(currentPicture)
+	if(isShared)
 	{
-		index
+		list.add(0, currentPicture)
+		list.toList().toSet().toMutableList()
+		startPage = 0
 	}
-	else
-	{
-		0
-	}
-	Log.d("index list", list.toString())
-	Log.d("index currentPic", currentPicture)
-	Log.d("index current", index.toString())
 	val pagerState = rememberPagerState(initialPage = startPage, initialPageOffsetFraction = 0f, pageCount = { list.size })
 	val currentPage = pagerState.currentPage
 	val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
@@ -181,8 +164,7 @@ fun DetailsScreen(
 				pagerState = pagerState,
 				postUrl = postUrl,
 				state = state,
-				changeBarsVisability = changeBarsVisability,
-				setImageSharedStateToFalse = setImageSharedStateToFalse
+				changeBarsVisability = changeBarsVisability
 			)
 		},
 		content = { padding ->
@@ -203,8 +185,6 @@ fun DetailsScreen(
 				scrollIsEnabled = scrollIsEnabled,
 				addPicture = addPicture,
 				isScreenInPortraitState = picturesScreenState,
-				saveToSharedPrefs = saveToSharedPrefs,
-				setImageSharedStateToFalse = setImageSharedStateToFalse
 			)
 		}
 	)
@@ -229,8 +209,6 @@ fun ShowDetails(
 	scrollIsEnabled: MutableState<Boolean>,
 	addPicture: (String) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
-	saveToSharedPrefs: (MutableList<String>) -> Unit,
-	setImageSharedStateToFalse: () -> Unit,
 )
 {
 	val topBarHeight = 64.dp
@@ -298,8 +276,7 @@ fun ShowDetails(
 								navigateToHome(
 									changeBarsVisability = changeBarsVisability,
 									postUrl = postUrl,
-									navController = navController,
-									setImageSharedStateToFalse = setImageSharedStateToFalse
+									navController = navController
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -320,8 +297,6 @@ fun ShowDetails(
 										scrollIsEnabled.value = true
 									}
 									addPicture(list[page])
-									setImageSharedStateToFalse()
-									saveToSharedPrefs(isScreenInPortraitState.value.picturesUrl)
 									navController.navigate(Screen.Details.route)
 								},
 								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
@@ -508,7 +483,6 @@ fun AppBar(
 	postUrl: (String, Bitmap?) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	changeBarsVisability: (Boolean) -> Unit,
-	setImageSharedStateToFalse: () -> Unit,
 )
 {
 	val navBack = remember { mutableStateOf(false) }
@@ -610,7 +584,6 @@ fun AppBar(
 			changeBarsVisability = changeBarsVisability,
 			postUrl = postUrl,
 			navController = nc,
-			setImageSharedStateToFalse = setImageSharedStateToFalse
 		)
 	}
 }
@@ -619,10 +592,8 @@ fun navigateToHome(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	navController: NavController,
-	setImageSharedStateToFalse: () -> Unit,
 )
 {
-	setImageSharedStateToFalse()
 	changeBarsVisability(true)
 	postUrl(DEFAULT_STRING_VALUE, null)
 	navController.navigate(Screen.Home.route) {

@@ -152,7 +152,10 @@ class MainActivity: AppCompatActivity()
 					postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
 					state = picState,
 					clearErrors = { picVM.clearErrors() },
-					postVisibleBarsState = { detVM.changeVisabilityState(true) },
+					postVisibleBarsState = {
+						detVM.changeVisabilityState(true)
+						detVM.isSharedImage(false)
+					},
 					currentPicture = { url, index, offset ->
 						picVM.clickOnPicture(url, index, offset)
 						detVM.isSharedImage(false)
@@ -196,12 +199,7 @@ class MainActivity: AppCompatActivity()
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
 					addPicture = { url ->
 						picVM.addPictureToUrls(url)
-					},
-					setImageSharedStateToFalse = {
 						detVM.isSharedImage(false)
-					},
-					saveToSharedPrefs = { urls ->
-						saveToSharedPrefs(picVM.convertFromListToString(urls))
 					}
 				)
 			}
