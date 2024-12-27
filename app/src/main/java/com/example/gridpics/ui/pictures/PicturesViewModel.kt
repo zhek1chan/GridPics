@@ -17,7 +17,6 @@ class PicturesViewModel(
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, "", true))
 	private val errorsList: MutableList<String> = mutableListOf()
-	private var onPauseWasCalled = false
 	private var isFirstImage = false
 	val themeState = mutableStateOf(ThemePick.FOLLOW_SYSTEM)
 
@@ -184,16 +183,6 @@ class PicturesViewModel(
 		}
 
 		state.value = state.value.copy(picturesUrl = newString)
-	}
-
-	fun postOnPauseWasCalled(wasCalled: Boolean)
-	{
-		onPauseWasCalled = wasCalled
-	}
-
-	fun getOnPauseWasCalled(): Boolean
-	{
-		return onPauseWasCalled
 	}
 
 	fun postThemePick(option: ThemePick)

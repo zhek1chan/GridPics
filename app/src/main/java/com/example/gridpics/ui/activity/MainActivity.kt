@@ -226,6 +226,17 @@ class MainActivity: AppCompatActivity()
 		super.onRestart()
 	}
 
+	override fun onStart()
+	{
+		if(mainNotificationService == null)
+		{
+			Log.d("service", "starting service from onResume()")
+			startMainService()
+		}
+		Log.d("lifecycle", "onStart()")
+		super.onStart()
+	}
+
 	override fun onResume()
 	{
 		val value = detailsViewModel.uiState.value.barsAreVisible
@@ -233,11 +244,6 @@ class MainActivity: AppCompatActivity()
 		{
 			changeBarsVisability(visible = false, fromDetailsScreen = false)
 			Log.d("bars", "change visability to false")
-		}
-		if(mainNotificationService == null)
-		{
-			Log.d("service", "starting service from onResume()")
-			startMainService()
 		}
 		Log.d("lifecycle", "onResume()")
 		super.onResume()
@@ -252,7 +258,6 @@ class MainActivity: AppCompatActivity()
 
 	override fun onPause()
 	{
-		picturesViewModel.postOnPauseWasCalled(true)
 		Log.d("lifecycle", "onPause()")
 		super.onPause()
 	}
@@ -347,7 +352,7 @@ class MainActivity: AppCompatActivity()
 					startForegroundService(serviceIntentLocal)
 					bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 				}
-				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) && !picturesViewModel.getOnPauseWasCalled())
+				else if(!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
 				{
 					requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), RESULT_SUCCESS)
 				}
