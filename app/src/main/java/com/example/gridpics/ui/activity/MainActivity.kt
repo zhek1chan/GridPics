@@ -402,8 +402,6 @@ class MainActivity: AppCompatActivity()
 			val nav = navigation
 			val detVM = detailsViewModel
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
-			val picState = picVM.picturesUiState.value
-			picVM.removeUrlFromSavedUrls(picState.currentPicture)
 			if(sharedValue.isNullOrEmpty())
 			{
 				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
