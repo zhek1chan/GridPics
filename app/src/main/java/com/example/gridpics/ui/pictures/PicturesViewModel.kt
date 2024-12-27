@@ -61,6 +61,7 @@ class PicturesViewModel(
 		viewModelScope.launch {
 			val list = state.value.picturesUrl
 			list.add(0, pic)
+			list.toSet()
 			state.value = state.value.copy(picturesUrl = list)
 		}
 	}

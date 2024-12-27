@@ -199,7 +199,12 @@ class MainActivity: AppCompatActivity()
 					addPicture = { url ->
 						picVM.addPictureToUrls(url)
 						detVM.isSharedImage(false)
-					}
+					},
+					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
+					saveToSharedPrefs = { urls ->
+						saveToSharedPrefs(picVM.convertFromListToString(urls))
+					},
+					setImageSharedStateToFalse = { detVM.isSharedImage(false) }
 				)
 			}
 		}
