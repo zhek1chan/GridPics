@@ -274,10 +274,12 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
+		val intent = intent
 		intent.replaceExtras(Bundle())
 		intent.action = ""
 		intent.data = null
 		intent.flags = 0
+		this.intent = intent
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}
@@ -402,7 +404,16 @@ class MainActivity: AppCompatActivity()
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
 			val picState = picVM.picturesUiState.value
 			picVM.removeUrlFromSavedUrls(picState.currentPicture)
-			if(!sharedValue.isNullOrEmpty())
+			if(sharedValue.isNullOrEmpty())
+			{
+				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
+				if(!oldString.isNullOrEmpty() && urls.contains(oldString))
+				{
+					picVM.clickOnPicture(oldString, 0, 0)
+					navToDetailsAfterNewIntent(nav)
+				}
+			}
+			else
 			{
 				if(urls.isNotEmpty())
 				{
@@ -419,15 +430,6 @@ class MainActivity: AppCompatActivity()
 				picVM.saveCurrentPictureUrl(sharedValue)
 				detVM.isSharedImage(true)
 				navToDetailsAfterNewIntent(nav)
-			}
-			else
-			{
-				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
-				if(!oldString.isNullOrEmpty() && urls.contains(oldString))
-				{
-					picVM.clickOnPicture(oldString, 0, 0)
-					navToDetailsAfterNewIntent(nav)
-				}
 			}
 		}
 	}
