@@ -322,9 +322,8 @@ fun ShowList(
 					saveToSharedPrefs(state.data)
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 				}
-				val value = remember(state) { state.data }
-				val list = remember(state) { value }
-				postSavedUrls(value)
+				val list = state.data
+				postSavedUrls(list)
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
@@ -339,7 +338,7 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postState = postState,
-							urls = value,
+							urls = list,
 							postSavedUrls = postSavedUrls,
 							lazyState = listState
 						)
@@ -348,7 +347,7 @@ fun ShowList(
 				LaunchedEffect(state) {
 					scope.launch {
 						delay(6000)
-						postState(true, value)
+						postState(true, list)
 					}
 				}
 			}
@@ -376,7 +375,7 @@ fun ShowList(
 					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
 					postSavedUrls(state.data)
 				}
-				val list = remember(state) { state.data }
+				val list = state.data
 				Log.d("Now state is", "Loaded")
 				LazyVerticalGrid(
 					state = listState,
@@ -409,15 +408,13 @@ fun ShowList(
 			saveToSharedPrefs(imagesUrlsSP)
 			postSavedUrls(imagesUrlsSP)
 		}
-		val items = remember(imagesUrlsSP) { imagesUrlsSP }
-		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			state = listState,
 			modifier = Modifier
 				.fillMaxSize(),
 			columns = GridCells.Fixed(count = calculateGridSpan())) {
-			Log.d("PicturesFragment", "$items")
-			items(items) {
+			Log.d("PicturesFragment", "$imagesUrlsSP")
+			items(imagesUrlsSP) {
 				itemNewsCard(
 					item = it,
 					navController = navController,
