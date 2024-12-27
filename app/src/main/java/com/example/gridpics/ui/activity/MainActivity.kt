@@ -198,7 +198,6 @@ class MainActivity: AppCompatActivity()
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
 					addPicture = { url ->
 						picVM.addPictureToUrls(url)
-						detVM.isSharedImage(false)
 					},
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
 					saveToSharedPrefs = { urls ->
