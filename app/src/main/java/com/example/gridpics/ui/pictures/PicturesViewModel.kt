@@ -60,7 +60,6 @@ class PicturesViewModel(
 		val state = picturesUiState
 		viewModelScope.launch {
 			val list = state.value.picturesUrl
-			list.toSet()
 			list.add(0, pic)
 			state.value = state.value.copy(picturesUrl = list)
 		}
@@ -70,7 +69,7 @@ class PicturesViewModel(
 	{
 		viewModelScope.launch {
 			val flow = picturesUiState
-			flow.value = flow.value.copy(picturesUrl = urls)
+			flow.value = flow.value.copy(picturesUrl = urls.toSet().toMutableList())
 		}
 	}
 

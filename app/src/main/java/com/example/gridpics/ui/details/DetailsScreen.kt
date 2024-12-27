@@ -128,12 +128,16 @@ fun DetailsScreen(
 		)
 	}
 	val isShared = value.isSharedImage
-	val list = remember { picturesScreenState.value.picturesUrl }
+	var list = picturesScreenState.value.picturesUrl.toSet().toList()
 	var startPage = list.indexOf(currentPicture)
 	if(isShared)
 	{
+		list = list.toMutableList()
+		if (list.contains(currentPicture)) {
+			list.drop(startPage)
+		}
 		list.add(0, currentPicture)
-		list.toList().toSet().toMutableList()
+		list.toSet()
 		startPage = 0
 	}
 	val pagerState = rememberPagerState(initialPage = startPage, initialPageOffsetFraction = 0f, pageCount = { list.size })
