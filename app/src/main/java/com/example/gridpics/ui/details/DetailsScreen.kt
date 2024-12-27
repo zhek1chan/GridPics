@@ -58,7 +58,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -157,7 +156,7 @@ fun DetailsScreen(
 	Log.d("index list", list.toString())
 	Log.d("index currentPic", currentPicture)
 	Log.d("index current", index.toString())
-	val pagerState = key(list) { rememberPagerState(initialPage = startPage, initialPageOffsetFraction = 0f, pageCount = { list.size }) }
+	val pagerState = rememberPagerState(initialPage = startPage, initialPageOffsetFraction = 0f, pageCount = { list.size })
 	val currentPage = pagerState.currentPage
 	val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 
@@ -327,6 +326,7 @@ fun ShowDetails(
 									}
 									postFalseToSharedImageState(list[page])
 									saveToSharedPrefs(isScreenInPortraitState.value.picturesUrl)
+									navController.navigate(Screen.Details.route)
 								},
 								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
 								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
