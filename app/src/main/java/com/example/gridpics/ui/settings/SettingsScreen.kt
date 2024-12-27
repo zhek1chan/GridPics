@@ -73,17 +73,17 @@ fun SettingsScreen(
 	changeTheme: (Int) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 	clearImageCache: () -> Unit,
-	postStartOfPager: () -> Unit
+	postStartOfPager: () -> Unit,
 )
 {
 	postStartOfPager()
-	val windowInsets = if(!isScreenInPortraitState.value.isPortraitOrientation)
+	val windowInsets = if(isScreenInPortraitState.value.isPortraitOrientation)
 	{
-		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
+		WindowInsets.statusBarsIgnoringVisibility
 	}
 	else
 	{
-		WindowInsets.statusBarsIgnoringVisibility
+		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
 	}
 	Scaffold(
 		contentWindowInsets = windowInsets,

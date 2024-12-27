@@ -105,13 +105,13 @@ fun PicturesScreen(
 		postPressOnBackButton()
 	}
 	val value = state.value
-	val windowInsets = if(!value.isPortraitOrientation)
+	val windowInsets = if(value.isPortraitOrientation)
 	{
-		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
+		WindowInsets.statusBarsIgnoringVisibility
 	}
 	else
 	{
-		WindowInsets.statusBarsIgnoringVisibility
+		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
 	}
 	Scaffold(
 		contentWindowInsets = windowInsets,

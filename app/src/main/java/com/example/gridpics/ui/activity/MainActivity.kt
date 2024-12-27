@@ -424,7 +424,8 @@ class MainActivity: AppCompatActivity()
 	{
 		if(nav == null)
 		{
-			if(job == null || job?.isActive == false)
+			val jobLocal = job
+			if(jobLocal == null || !jobLocal.isActive)
 			{
 				job = lifecycleScope.launch {
 					var navv = nav
