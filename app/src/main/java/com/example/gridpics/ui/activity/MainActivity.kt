@@ -90,7 +90,8 @@ class MainActivity: AppCompatActivity()
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
-		picVM.postSavedUrls(urls = picturesFromSP)
+		val listOfUrls = picVM.convertToListFromString(picturesFromSP)
+		picVM.postSavedUrls(urls = listOfUrls)
 		// Здесь мы получаем значение выбранной через настройки приложения темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
@@ -117,7 +118,7 @@ class MainActivity: AppCompatActivity()
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
 				navigation = navController
-				postValuesFromIntent(intent, picturesFromSP, picVM)
+				postValuesFromIntent(intent, listOfUrls, picVM)
 			}
 			ComposeTheme {
 				NavigationSetup(navController = navController)
@@ -163,7 +164,7 @@ class MainActivity: AppCompatActivity()
 							picVM.postSavedUrls(urls = urls)
 						}
 					},
-					saveToSharedPrefs = { urls -> saveToSharedPrefs(urls) }
+					saveToSharedPrefs = { urls -> saveToSharedPrefs(picVM.convertFromListToString(urls)) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
@@ -200,7 +201,7 @@ class MainActivity: AppCompatActivity()
 						detVM.isSharedImage(false)
 					},
 					saveToSharedPrefs = { urls ->
-						saveToSharedPrefs(urls)
+						saveToSharedPrefs(picVM.convertFromListToString(urls))
 					}
 				)
 			}
@@ -392,20 +393,19 @@ class MainActivity: AppCompatActivity()
 		postValuesFromIntent(intent, urls, picVM)
 	}
 
-	private fun postValuesFromIntent(intent: Intent?, picUrls: String?, picVM: PicturesViewModel)
+	private fun postValuesFromIntent(intent: Intent?, picUrls: MutableList<String>, picVM: PicturesViewModel)
 	{
 		//реализация фичи - поделиться картинкой в приложение
 		val action = intent?.action
 		if(intent != null && action == Intent.ACTION_SEND && TEXT_PLAIN == intent.type)
 		{
-			val urls = picUrls ?: ""
 			val nav = navigation
 			val detVM = detailsViewModel
 			val sharedValue = intent.getStringExtra(Intent.EXTRA_TEXT)
 			if(sharedValue.isNullOrEmpty())
 			{
 				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
-				if(!oldString.isNullOrEmpty() && urls.contains(oldString))
+				if(!oldString.isNullOrEmpty() && picUrls.contains(oldString))
 				{
 					picVM.clickOnPicture(oldString, 0, 0)
 					navToDetailsAfterNewIntent(nav)

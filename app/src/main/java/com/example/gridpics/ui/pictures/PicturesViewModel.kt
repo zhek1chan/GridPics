@@ -15,7 +15,7 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, "", true))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, "", true))
 	private val errorsList: MutableList<String> = mutableListOf()
 	val themeState = mutableStateOf(ThemePick.FOLLOW_SYSTEM)
 
@@ -29,7 +29,7 @@ class PicturesViewModel(
 				{
 					is Resource.Data ->
 						flow.value = flow.value.copy(
-							loadingState = PicturesState.SearchIsOk(urls.value)
+							loadingState = PicturesState.SearchIsOk(convertToListFromString(urls.value))
 						)
 					is Resource.ConnectionError ->
 						flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
@@ -40,7 +40,7 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postState(useLoadedState: Boolean, urls: String)
+	fun postState(useLoadedState: Boolean, urls: MutableList<String>)
 	{
 		val flow = picturesUiState
 		viewModelScope.launch {
@@ -60,24 +60,21 @@ class PicturesViewModel(
 		val state = picturesUiState
 		viewModelScope.launch {
 			Log.d("nka", "${pic.contains("\n")}")
-			val sendUrl = if(pic.contains("\n"))
+			val list = state.value.picturesUrl
+			if (list.contains(pic))
 			{
-				pic
+				list.remove(pic)
 			}
-			else
-			{
-				pic + "\n"
-			}
-			state.value = state.value.copy(picturesUrl = sendUrl + state.value.picturesUrl)
+			list.add(0, pic)
+			state.value = state.value.copy(picturesUrl = list)
 		}
 	}
 
-	fun postSavedUrls(urls: String?)
+	fun postSavedUrls(urls: MutableList<String>)
 	{
 		viewModelScope.launch {
 			val flow = picturesUiState
-			val notNullUrls = urls ?: ""
-			flow.value = flow.value.copy(picturesUrl = notNullUrls)
+			flow.value = flow.value.copy(picturesUrl = urls)
 		}
 	}
 
@@ -139,5 +136,28 @@ class PicturesViewModel(
 	fun postThemePick(option: ThemePick)
 	{
 		themeState.value = option
+	}
+
+	fun convertToListFromString(string: String?): MutableList<String>
+	{
+		return string?.split("\n")?.toSet()?.toMutableList() ?: mutableListOf()
+	}
+
+	fun convertFromListToString(list: MutableList<String>): String
+	{
+		var newString = ""
+		val size = list.size
+		for(i in 0 ..< size)
+		{
+			newString += if(i != size - 1)
+			{
+				list[i] + "\n"
+			}
+			else
+			{
+				list[i]
+			}
+		}
+		return newString
 	}
 }

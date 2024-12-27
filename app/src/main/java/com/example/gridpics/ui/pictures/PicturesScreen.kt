@@ -88,14 +88,14 @@ fun PicturesScreen(
 	postPressOnBackButton: () -> Unit,
 	checkOnErrorExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	postState: (Boolean, String) -> Unit,
+	postState: (Boolean, MutableList<String>) -> Unit,
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	postVisibleBarsState: () -> Unit,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (String) -> Unit,
-	saveToSharedPrefs: (String) -> Unit,
+	postSavedUrls: (MutableList<String>) -> Unit,
+	saveToSharedPrefs: (MutableList<String>) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -175,9 +175,9 @@ fun itemNewsCard(
 	addError: (String) -> Unit,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postState: (Boolean, String) -> Unit,
-	urls: String,
-	postSavedUrls: (String) -> Unit,
+	postState: (Boolean, MutableList<String>) -> Unit,
+	urls: MutableList<String>,
+	postSavedUrls: (MutableList<String>) -> Unit,
 	lazyState: LazyGridState,
 ): Boolean
 {
@@ -289,17 +289,17 @@ fun itemNewsCard(
 
 @Composable
 fun ShowList(
-	imagesUrlsSP: String?,
+	imagesUrlsSP: MutableList<String>?,
 	checkOnErrorExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	postState: (Boolean, String) -> Unit,
+	postState: (Boolean, MutableList<String>) -> Unit,
 	state: PicturesState,
 	clearErrors: () -> Unit,
 	navController: NavController,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (String) -> Unit,
-	saveToSharedPrefs: (String) -> Unit,
+	postSavedUrls: (MutableList<String>) -> Unit,
+	saveToSharedPrefs: (MutableList<String>) -> Unit,
 	offset: Int,
 	index: Int,
 )
@@ -323,7 +323,7 @@ fun ShowList(
 					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
 				}
 				val value = remember(state) { state.data }
-				val list = remember(state) { value.split("\n") }
+				val list = remember(state) { value }
 				postSavedUrls(value)
 				LazyVerticalGrid(
 					state = listState,
@@ -376,9 +376,8 @@ fun ShowList(
 					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
 					postSavedUrls(state.data)
 				}
-				val value = remember(state) { state.data }
+				val list = remember(state) { state.data }
 				Log.d("Now state is", "Loaded")
-				val list = remember(state) { (state.data).split("\n") }
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
@@ -393,7 +392,7 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							postState = postState,
-							urls = value,
+							urls = list,
 							postSavedUrls = postSavedUrls,
 							lazyState = listState
 						)
@@ -410,7 +409,7 @@ fun ShowList(
 			saveToSharedPrefs(imagesUrlsSP)
 			postSavedUrls(imagesUrlsSP)
 		}
-		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n").toSet().toList() }
+		val items = remember(imagesUrlsSP) { imagesUrlsSP }
 		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			state = listState,

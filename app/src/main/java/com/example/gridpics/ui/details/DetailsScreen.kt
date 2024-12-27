@@ -112,7 +112,7 @@ fun DetailsScreen(
 	postNewBitmap: (String) -> Unit,
 	saveCurrentPictureUrl: (String) -> Unit,
 	addPicture: (String) -> Unit,
-	saveToSharedPrefs: (String) -> Unit,
+	saveToSharedPrefs: (MutableList<String>) -> Unit,
 	setImageSharedStateToFalse: () -> Unit,
 )
 {
@@ -122,7 +122,6 @@ fun DetailsScreen(
 	Log.d("Case shared", currentPicture)
 	val pictures = valuePicUi.picturesUrl
 	val value = state.value
-	Log.d("pictures", pictures)
 	val scrollIsEnabled = remember { mutableStateOf(true) }
 	BackHandler {
 		navigateToHome(
@@ -135,7 +134,7 @@ fun DetailsScreen(
 	val list = remember(pictures) {
 		if(!state.value.isSharedImage)
 		{
-			pictures.split("\n").toSet().toList()
+			pictures
 		}
 		else
 		{
@@ -230,7 +229,7 @@ fun ShowDetails(
 	scrollIsEnabled: MutableState<Boolean>,
 	addPicture: (String) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
-	saveToSharedPrefs: (String) -> Unit,
+	saveToSharedPrefs: (MutableList<String>) -> Unit,
 	setImageSharedStateToFalse: () -> Unit,
 )
 {
