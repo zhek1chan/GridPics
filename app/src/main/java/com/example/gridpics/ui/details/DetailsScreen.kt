@@ -132,7 +132,8 @@ fun DetailsScreen(
 			setImageSharedStateToFalse = setImageSharedStateToFalse
 		)
 	}
-	val list =
+	val list = remember { mutableStateOf<List<String>>(pictures) }
+	list.value =
 		if(!state.value.isSharedImage)
 		{
 			pictures
@@ -141,7 +142,8 @@ fun DetailsScreen(
 		{
 			listOf(currentPicture)
 		}
-	val index = list.indexOf(currentPicture)
+	val currentList = list.value
+	val index = list.value.indexOf(currentPicture)
 	val startPage = if(index > -1)
 	{
 		index
@@ -153,12 +155,13 @@ fun DetailsScreen(
 	Log.d("index list", list.toString())
 	Log.d("index currentPic", currentPicture)
 	Log.d("index current", index.toString())
-	val pagerState = key(list.size) { rememberPagerState(initialPage = startPage, initialPageOffsetFraction = 0f, pageCount = { list.size }) }
+	val size = currentList.size
+	val pagerState = key(size) { rememberPagerState(initialPage = startPage, initialPageOffsetFraction = 0f, pageCount = { size }) }
 	val currentPage = pagerState.currentPage
 	val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 
 	LaunchedEffect(currentPage) {
-		val pic = list[currentPage]
+		val pic = list.value[currentPage]
 		saveCurrentPictureUrl(pic)
 		if(checkOnErrorExists(pic))
 		{
@@ -177,7 +180,7 @@ fun DetailsScreen(
 				isVisible = value.barsAreVisible,
 				context = context,
 				nc = navController,
-				list = list,
+				list = currentList,
 				pagerState = pagerState,
 				postUrl = postUrl,
 				state = state,
@@ -188,7 +191,7 @@ fun DetailsScreen(
 		content = { padding ->
 			ShowDetails(
 				navController = navController,
-				list = list,
+				list = currentList,
 				pagerState = pagerState,
 				context = context,
 				checkOnErrorExists = checkOnErrorExists,
