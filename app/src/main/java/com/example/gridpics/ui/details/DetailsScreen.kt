@@ -132,7 +132,7 @@ fun DetailsScreen(
 			setImageSharedStateToFalse = setImageSharedStateToFalse
 		)
 	}
-	val list = remember { mutableStateOf<List<String>>(pictures) }
+	val list = remember (picturesScreenState) { mutableStateOf<List<String>>(pictures) }
 	list.value =
 		if(!state.value.isSharedImage)
 		{
