@@ -17,7 +17,6 @@ class PicturesViewModel(
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, "", true))
 	private val errorsList: MutableList<String> = mutableListOf()
-	private var index: Int? = null
 	private var onPauseWasCalled = false
 	private var isFirstImage = false
 	val themeState = mutableStateOf(ThemePick.FOLLOW_SYSTEM)
@@ -148,12 +147,8 @@ class PicturesViewModel(
 	fun urlWasAlreadyInSP(url: String, urlsFromSP: String)
 	{
 		val list = urlsFromSP.split("\n")
-		index = list.indexOf(url)
-	}
-
-	fun clearIndex()
-	{
-		index = null
+		val localIndex = list.indexOf(url)
+		isFirstImage = localIndex == 0
 	}
 
 	fun isValidUrl(url: String): Boolean
@@ -162,29 +157,33 @@ class PicturesViewModel(
 		return urlPattern.matches(url)
 	}
 
+	fun clearFirstPageState()
+	{
+		isFirstImage = false
+	}
+
 	private fun removeUrlAndPostNewString(urls: String, url: String)
 	{
 		val state = picturesUiState
-		val newString = if(urls.startsWith("$url\n$url\n") && !isFirstImage && index != null)
+		val newString = if(urls.startsWith("$url\n$url\n") && !isFirstImage)
 		{
 			Log.d("worked", "worked")
 			removePrefix(urls, "$url\n$url\n")
 		}
-		else if(urls.startsWith("$url\n"))
+		else if(urls.startsWith("$url\n") && !isFirstImage)
 		{
 			removePrefix(urls, "$url\n")
 		}
-		else
+		else if(urls.contains("$url\n"))
 		{
 			removePrefix(urls, url)
 		}
+		else
+		{
+			urls
+		}
 
 		state.value = state.value.copy(picturesUrl = newString)
-	}
-
-	fun postIsFirstPage(firstPage: Boolean)
-	{
-		isFirstImage = firstPage
 	}
 
 	fun postOnPauseWasCalled(wasCalled: Boolean)

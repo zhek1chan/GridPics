@@ -201,8 +201,7 @@ class MainActivity: AppCompatActivity()
 					},
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(urls)
-					},
-					postIsFirstPage = { isFirstPage -> picVM.postIsFirstPage(isFirstPage) }
+					}
 				)
 			}
 		}
@@ -408,7 +407,7 @@ class MainActivity: AppCompatActivity()
 					}
 					else
 					{
-						picVM.clearIndex()
+						picVM.clearFirstPageState()
 					}
 				}
 				picVM.postSavedUrls(urls)
