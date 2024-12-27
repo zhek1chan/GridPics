@@ -413,7 +413,6 @@ class MainActivity: AppCompatActivity()
 			}
 			else
 			{
-				picVM.postSavedUrls(urls)
 				picVM.saveCurrentPictureUrl(sharedValue)
 				detVM.isSharedImage(true)
 				navToDetailsAfterNewIntent(nav)
