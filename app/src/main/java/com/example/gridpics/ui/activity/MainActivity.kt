@@ -196,7 +196,6 @@ class MainActivity: AppCompatActivity()
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
-					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
 					addPicture = { url ->
 						picVM.addPictureToUrls(url)
 						detVM.isSharedImage(false)
