@@ -195,10 +195,9 @@ class MainActivity: AppCompatActivity()
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) },
 					addPicture = { url ->
 						picVM.addPictureToUrls(url)
-						detVM.isSharedImage(false)
 					},
-					removeUrl = { url ->
-						picVM.removeUrlFromSavedUrls(url)
+					setImageSharedStateToFalse = {
+						detVM.isSharedImage(false)
 					},
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(urls)
@@ -414,17 +413,6 @@ class MainActivity: AppCompatActivity()
 			}
 			else
 			{
-				if(urls.isNotEmpty())
-				{
-					if(urls.contains(sharedValue))
-					{
-						picVM.urlWasAlreadyInSP(sharedValue, urls)
-					}
-					else
-					{
-						picVM.clearFirstPageState()
-					}
-				}
 				picVM.postSavedUrls(urls)
 				picVM.saveCurrentPictureUrl(sharedValue)
 				detVM.isSharedImage(true)

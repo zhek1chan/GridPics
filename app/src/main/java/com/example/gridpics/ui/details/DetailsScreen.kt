@@ -112,8 +112,8 @@ fun DetailsScreen(
 	postNewBitmap: (String) -> Unit,
 	saveCurrentPictureUrl: (String) -> Unit,
 	addPicture: (String) -> Unit,
-	removeUrl: (String) -> Unit,
 	saveToSharedPrefs: (String) -> Unit,
+	setImageSharedStateToFalse: () -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -126,12 +126,10 @@ fun DetailsScreen(
 	val scrollIsEnabled = remember { mutableStateOf(true) }
 	BackHandler {
 		navigateToHome(
-			isSharedImage = state.value.isSharedImage,
-			removeUrl = removeUrl,
-			currentPicture = currentPicture,
 			changeBarsVisability = changeBarsVisability,
 			postUrl = postUrl,
-			navController = navController
+			navController = navController,
+			setImageSharedStateToFalse = setImageSharedStateToFalse
 		)
 	}
 	val list = remember(pictures) {
@@ -184,8 +182,8 @@ fun DetailsScreen(
 				pagerState = pagerState,
 				postUrl = postUrl,
 				state = state,
-				removeUrl = removeUrl,
-				changeBarsVisability = changeBarsVisability
+				changeBarsVisability = changeBarsVisability,
+				setImageSharedStateToFalse = setImageSharedStateToFalse
 			)
 		},
 		content = { padding ->
@@ -194,7 +192,7 @@ fun DetailsScreen(
 				list = list,
 				pagerState = pagerState,
 				context = context,
-				checkIfExists = checkOnErrorExists,
+				checkOnErrorExists = checkOnErrorExists,
 				addError = addError,
 				removeSpecialError = removeError,
 				state = state,
@@ -204,10 +202,10 @@ fun DetailsScreen(
 				changeBarsVisability = changeBarsVisability,
 				postUrl = postUrl,
 				scrollIsEnabled = scrollIsEnabled,
-				postFalseToSharedImageState = addPicture,
-				removeUrl = removeUrl,
+				addPicture = addPicture,
 				isScreenInPortraitState = picturesScreenState,
 				saveToSharedPrefs = saveToSharedPrefs,
+				setImageSharedStateToFalse = setImageSharedStateToFalse
 			)
 		}
 	)
@@ -220,7 +218,7 @@ fun ShowDetails(
 	list: List<String>,
 	pagerState: PagerState,
 	context: Context,
-	checkIfExists: (String) -> Boolean,
+	checkOnErrorExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
@@ -230,10 +228,10 @@ fun ShowDetails(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	scrollIsEnabled: MutableState<Boolean>,
-	postFalseToSharedImageState: (String) -> Unit,
-	removeUrl: (String) -> Unit,
+	addPicture: (String) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 	saveToSharedPrefs: (String) -> Unit,
+	setImageSharedStateToFalse: () -> Unit,
 )
 {
 	val topBarHeight = 64.dp
@@ -250,7 +248,7 @@ fun ShowDetails(
 	) { page ->
 		val showButtonAdd = remember { mutableStateOf(true) }
 		Box(modifier = Modifier.fillMaxSize()) {
-			if(checkIfExists(list[page]))
+			if(checkOnErrorExists(list[page]))
 			{
 				showButtonAdd.value = false
 				ShowError(
@@ -299,12 +297,10 @@ fun ShowDetails(
 								.size(130.dp, 60.dp),
 							onClick = {
 								navigateToHome(
-									isSharedImage = isSharedImage,
-									removeUrl = removeUrl,
-									currentPicture = list[page],
 									changeBarsVisability = changeBarsVisability,
 									postUrl = postUrl,
-									navController = navController
+									navController = navController,
+									setImageSharedStateToFalse = setImageSharedStateToFalse
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -324,7 +320,8 @@ fun ShowDetails(
 									{
 										scrollIsEnabled.value = true
 									}
-									postFalseToSharedImageState(list[page])
+									addPicture(list[page])
+									setImageSharedStateToFalse()
 									saveToSharedPrefs(isScreenInPortraitState.value.picturesUrl)
 									navController.navigate(Screen.Details.route)
 								},
@@ -511,8 +508,8 @@ fun AppBar(
 	pagerState: PagerState,
 	postUrl: (String, Bitmap?) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
-	removeUrl: (String) -> Unit,
 	changeBarsVisability: (Boolean) -> Unit,
+	setImageSharedStateToFalse: () -> Unit,
 )
 {
 	val navBack = remember { mutableStateOf(false) }
@@ -611,29 +608,22 @@ fun AppBar(
 	{
 		navBack.value = false
 		navigateToHome(
-			isSharedImage = state.value.isSharedImage,
-			removeUrl = removeUrl,
-			currentPicture = currentPicture,
 			changeBarsVisability = changeBarsVisability,
 			postUrl = postUrl,
-			navController = nc
+			navController = nc,
+			setImageSharedStateToFalse = setImageSharedStateToFalse
 		)
 	}
 }
 
 fun navigateToHome(
-	isSharedImage: Boolean,
-	removeUrl: (String) -> Unit,
-	currentPicture: String,
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	navController: NavController,
+	setImageSharedStateToFalse: () -> Unit,
 )
 {
-	if(isSharedImage)
-	{
-		removeUrl(currentPicture)
-	}
+	setImageSharedStateToFalse()
 	changeBarsVisability(true)
 	postUrl(DEFAULT_STRING_VALUE, null)
 	navController.navigate(Screen.Home.route) {

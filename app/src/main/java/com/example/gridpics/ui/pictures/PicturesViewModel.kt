@@ -17,7 +17,6 @@ class PicturesViewModel(
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, "", true))
 	private val errorsList: MutableList<String> = mutableListOf()
-	private var isFirstImage = false
 	val themeState = mutableStateOf(ThemePick.FOLLOW_SYSTEM)
 
 	init
@@ -82,18 +81,6 @@ class PicturesViewModel(
 		}
 	}
 
-	fun removeUrlFromSavedUrls(url: String)
-	{
-		Log.d("remove", "removing url $url")
-		viewModelScope.launch {
-			val urls = picturesUiState.value.picturesUrl
-			removeUrlAndPostNewString(urls, url)
-		}
-	}
-
-	private fun removePrefix(str: String, prefix: String): String =
-		if(str.startsWith(prefix)) str.substring(prefix.length) else str
-
 	fun addError(url: String)
 	{
 		val list = errorsList
@@ -143,46 +130,10 @@ class PicturesViewModel(
 		}
 	}
 
-	fun urlWasAlreadyInSP(url: String, urlsFromSP: String)
-	{
-		val list = urlsFromSP.split("\n")
-		val localIndex = list.indexOf(url)
-		isFirstImage = localIndex == 0
-	}
-
 	fun isValidUrl(url: String): Boolean
 	{
 		val urlPattern = Regex("^(https?|ftp)://([a-z0-9-]+\\.)+[a-z0-9]{2,6}(:[0-9]+)?(/\\S*)?$")
 		return urlPattern.matches(url)
-	}
-
-	fun clearFirstPageState()
-	{
-		isFirstImage = false
-	}
-
-	private fun removeUrlAndPostNewString(urls: String, url: String)
-	{
-		val state = picturesUiState
-		val newString = if(urls.startsWith("$url\n$url\n") && !isFirstImage)
-		{
-			Log.d("worked", "worked")
-			removePrefix(urls, "$url\n$url\n")
-		}
-		else if(urls.startsWith("$url\n") && !isFirstImage)
-		{
-			removePrefix(urls, "$url\n")
-		}
-		else if(urls.contains("$url\n"))
-		{
-			removePrefix(urls, url)
-		}
-		else
-		{
-			urls
-		}
-
-		state.value = state.value.copy(picturesUrl = newString)
 	}
 
 	fun postThemePick(option: ThemePick)

@@ -148,7 +148,7 @@ fun PicturesScreen(
 					imagesUrlsSP = urls.ifEmpty {
 						null
 					},
-					checkIfExists = checkOnErrorExists,
+					checkOnErrorExists = checkOnErrorExists,
 					addError = addError,
 					postState = postState,
 					state = loadingState,
@@ -171,7 +171,7 @@ fun PicturesScreen(
 fun itemNewsCard(
 	item: String,
 	navController: NavController,
-	checkIfExists: (String) -> Boolean,
+	checkOnErrorExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
@@ -187,7 +187,7 @@ fun itemNewsCard(
 	val openAlertDialog = remember { mutableStateOf(false) }
 	val errorMessage = remember { mutableStateOf("") }
 	var placeholder = R.drawable.loading
-	if(checkIfExists(item))
+	if(checkOnErrorExists(item))
 	{
 		placeholder = R.drawable.error
 		isError = true
@@ -290,7 +290,7 @@ fun itemNewsCard(
 @Composable
 fun ShowList(
 	imagesUrlsSP: String?,
-	checkIfExists: (String) -> Boolean,
+	checkOnErrorExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	postState: (Boolean, String) -> Unit,
 	state: PicturesState,
@@ -334,7 +334,7 @@ fun ShowList(
 						itemNewsCard(
 							item = it,
 							navController = navController,
-							checkIfExists = checkIfExists,
+							checkOnErrorExists = checkOnErrorExists,
 							addError = addError,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
@@ -388,7 +388,7 @@ fun ShowList(
 						itemNewsCard(
 							item = it,
 							navController = navController,
-							checkIfExists = checkIfExists,
+							checkOnErrorExists = checkOnErrorExists,
 							addError = addError,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
@@ -422,7 +422,7 @@ fun ShowList(
 				itemNewsCard(
 					item = it,
 					navController = navController,
-					checkIfExists = checkIfExists,
+					checkOnErrorExists = checkOnErrorExists,
 					addError = addError,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
