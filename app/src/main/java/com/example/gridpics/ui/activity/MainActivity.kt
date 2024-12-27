@@ -38,7 +38,7 @@ import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -50,6 +50,7 @@ class MainActivity: AppCompatActivity()
 	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
 	private var navigation: NavHostController? = null
+	private var job: Job? = null
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -434,23 +435,25 @@ class MainActivity: AppCompatActivity()
 
 	private fun navToDetailsAfterNewIntent(nav: NavHostController?)
 	{
-		var navv = nav
-		if(navv == null)
+		if(nav == null)
 		{
-			lifecycleScope.launch(Dispatchers.IO) {
-				while(navv == null)
-				{
-					delay(100)
-					navv = navigation
-				}
-				runOnUiThread {
-					navv?.navigate(Screen.Details.route)
+			if(job == null || job?.isActive == false)
+			{
+				job = lifecycleScope.launch {
+					var navv = nav
+					while(navv == null)
+					{
+						delay(100)
+						navv = navigation
+					}
+					navv.navigate(Screen.Details.route)
+					job = null
 				}
 			}
 		}
 		else
 		{
-			navv?.navigate(Screen.Details.route)
+			nav.navigate(Screen.Details.route)
 		}
 	}
 
