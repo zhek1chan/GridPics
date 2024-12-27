@@ -59,7 +59,6 @@ class PicturesViewModel(
 	{
 		val state = picturesUiState
 		viewModelScope.launch {
-			Log.d("nka", "${pic.contains("\n")}")
 			val list = state.value.picturesUrl
 			if (list.contains(pic))
 			{
@@ -123,7 +122,7 @@ class PicturesViewModel(
 	{
 		viewModelScope.launch {
 			val state = picturesUiState
-			state.value = state.value.copy(currentPicture = url + "\n")
+			state.value = state.value.copy(currentPicture = url)
 		}
 	}
 
