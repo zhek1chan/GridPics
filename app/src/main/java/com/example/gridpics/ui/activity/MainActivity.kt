@@ -92,6 +92,7 @@ class MainActivity: AppCompatActivity()
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		val listOfUrls = picVM.convertToListFromString(picturesFromSP)
 		picVM.postSavedUrls(urls = listOfUrls)
+		detVM.firstSetOfListState(listOfUrls)
 		// Здесь мы получаем значение выбранной через настройки приложения темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
@@ -158,14 +159,13 @@ class MainActivity: AppCompatActivity()
 					},
 					currentPicture = { url, index, offset ->
 						picVM.clickOnPicture(url, index, offset)
+						detVM.postCurrentPicture(url)
 						detVM.isSharedImage(false)
 					},
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls ->
-						if(!detVM.uiState.value.isSharedImage)
-						{
-							picVM.postSavedUrls(urls = urls)
-						}
+						picVM.postSavedUrls(urls = urls)
+						detVM.firstSetOfListState(urls)
 					},
 					saveToSharedPrefs = { urls -> saveToSharedPrefs(picVM.convertFromListToString(urls)) }
 				)
@@ -173,7 +173,7 @@ class MainActivity: AppCompatActivity()
 			composable(BottomNavItem.Settings.route) {
 				SettingsScreen(
 					navController = navController,
-					option = picVM.themeState,
+					option = picVM.picturesUiState,
 					changeTheme = { int -> changeTheme(int) },
 					isScreenInPortraitState = picState,
 					clearImageCache = {
@@ -184,8 +184,6 @@ class MainActivity: AppCompatActivity()
 				)
 			}
 			composable(Screen.Details.route) {
-				val picsStateValue = picVM.picturesUiState.value
-				val listOfUrls = picsStateValue.picturesUrl
 				DetailsScreen(
 					navController = navController,
 					checkOnErrorExists = { str -> picVM.checkOnErrorExists(str) },
@@ -203,9 +201,11 @@ class MainActivity: AppCompatActivity()
 					},
 					saveToSharedPrefs = { urls -> saveToSharedPrefs(picVM.convertFromListToString(urls.toMutableList())) },
 					setImageSharedStateToFalse = { detVM.isSharedImage(false) },
-					getListOfUrls = { detVM.postList(listOfUrls, picsStateValue.currentPicture) },
 					picsUiState = picVM.picturesUiState,
-					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) }
+					setCurrentPictureUrl = { url ->
+						picVM.saveCurrentPictureUrl(url)
+						detVM.postCurrentPicture(url)
+					}
 				)
 			}
 		}
@@ -417,7 +417,9 @@ class MainActivity: AppCompatActivity()
 			else
 			{
 				picVM.saveCurrentPictureUrl(sharedValue)
+				detVM.postCurrentPicture(sharedValue)
 				detVM.isSharedImage(true)
+				detVM.postCorrectList()
 				navToDetailsAfterNewIntent(nav)
 			}
 		}

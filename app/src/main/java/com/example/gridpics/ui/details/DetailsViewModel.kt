@@ -20,7 +20,7 @@ class DetailsViewModel(
 	private val imageFlow =
 		MutableStateFlow<Pair<String, Bitmap?>>(Pair(DEFAULT_STRING_VALUE, null))
 	val uiState =
-		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf()))
+		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = ""))
 	private val job = Job()
 	fun observeUrlFlow() = imageFlow
 	fun postNewPic(url: String, bitmap: Bitmap?)
@@ -69,18 +69,33 @@ class DetailsViewModel(
 		}
 	}
 
-	fun postList(listOfUrls: MutableList<String>, url:String) {
-		if(uiState.value.isSharedImage)
-		{
-			createListForScreen(listOfUrls, url)
-		}
-		else
-		{
-			createListForScreen(listOfUrls, null)
+	fun firstSetOfListState(list: MutableList<String>) {
+		val state = uiState
+		viewModelScope.launch {
+			state.value = state.value.copy(picturesUrl = list)
 		}
 	}
 
-	private fun createListForScreen(list: MutableList<String>, url: String?)
+	fun postCurrentPicture(url: String) {
+		val state = uiState
+		viewModelScope.launch {
+			state.value = state.value.copy(currentPicture = url)
+		}
+	}
+
+	fun postCorrectList() {
+		val value = uiState.value
+		if(uiState.value.isSharedImage)
+		{
+			createListForScreen(value.picturesUrl, value.currentPicture)
+		}
+		else
+		{
+			createListForScreen(value.picturesUrl, null)
+		}
+	}
+
+	private fun createListForScreen(list: List<String>, url: String?)
 	{
 		val state = uiState
 		viewModelScope.launch {
@@ -97,7 +112,7 @@ class DetailsViewModel(
 				}
 				sendList.add(0, url)
 			} else {
-				sendList = list
+				sendList = list.toMutableList()
 			}
 			Log.d("check list", "$sendList")
 			state.value = state.value.copy(picturesUrl = sendList)

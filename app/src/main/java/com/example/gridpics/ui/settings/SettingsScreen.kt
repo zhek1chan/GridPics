@@ -69,7 +69,7 @@ import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 @Composable
 fun SettingsScreen(
 	navController: NavController,
-	option: MutableState<ThemePick>,
+	option: MutableState<PicturesScreenUiState>,
 	changeTheme: (Int) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 	clearImageCache: () -> Unit,
@@ -122,7 +122,7 @@ fun SettingsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsCompose(
-	option: MutableState<ThemePick>,
+	option: MutableState<PicturesScreenUiState>,
 	changeTheme: (Int) -> Unit,
 	clearImageCache: () -> Unit,
 )
@@ -144,7 +144,7 @@ fun SettingsCompose(
 				listOfThemeOptions.add(stringResource(R.string.dark_theme))
 				listOfThemeOptions.add(stringResource(R.string.synch_with_sys))
 			}
-			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option.value.intValue]) }
+			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option.value.themeState.intValue]) }
 			val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 			CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 				Column {

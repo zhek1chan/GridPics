@@ -15,9 +15,8 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, "", true))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, "", true, ThemePick.FOLLOW_SYSTEM))
 	private val errorsList: MutableList<String> = mutableListOf()
-	val themeState = mutableStateOf(ThemePick.FOLLOW_SYSTEM)
 
 	init
 	{
@@ -132,7 +131,10 @@ class PicturesViewModel(
 
 	fun postThemePick(option: ThemePick)
 	{
-		themeState.value = option
+		viewModelScope.launch {
+			val state = picturesUiState
+			state.value = state.value.copy(themeState = option)
+		}
 	}
 
 	fun convertToListFromString(string: String?): MutableList<String>

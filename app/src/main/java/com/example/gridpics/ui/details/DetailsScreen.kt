@@ -112,19 +112,15 @@ fun DetailsScreen(
 	addPicture: (String) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
 	setImageSharedStateToFalse: () -> Unit,
-	getListOfUrls: () -> Unit,
 	picsUiState: MutableState<PicturesScreenUiState>,
-	saveCurrentPictureUrl: (String) -> Unit,
+	setCurrentPictureUrl: (String) -> Unit,
 )
 {
-	LaunchedEffect(Unit) {
-		getListOfUrls()
-	}
+	val value = state.value
 	val context = LocalContext.current
 	val picsStateValue = picsUiState.value
 	val currentPicture = picsStateValue.currentPicture
 	val isScreenInPortrait = picsStateValue.isPortraitOrientation
-	val value = state.value
 	BackHandler {
 		navigateToHome(
 			changeBarsVisability = changeBarsVisability,
@@ -133,9 +129,8 @@ fun DetailsScreen(
 			setImageSharedStateToFalse = setImageSharedStateToFalse
 		)
 	}
-	val list = remember { value.picturesUrl }
+	val list = value.picturesUrl
 	Log.d("check", "$list")
-	val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
 	Scaffold(
 		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 		topBar = {
@@ -168,9 +163,9 @@ fun DetailsScreen(
 				isScreenInPortraitState = isScreenInPortrait,
 				saveToSharedPrefs = saveToSharedPrefs,
 				setImageSharedStateToFalse = setImageSharedStateToFalse,
-				pagerState = pagerState,
 				postNewBitmap = postNewBitmap,
-				saveCurrentPictureUrl = saveCurrentPictureUrl
+				setCurrentPictureUrl = setCurrentPictureUrl,
+				currentPicture = currentPicture
 			)
 		}
 	)
@@ -195,12 +190,12 @@ fun ShowDetails(
 	isScreenInPortraitState: Boolean,
 	saveToSharedPrefs: (List<String>) -> Unit,
 	setImageSharedStateToFalse: () -> Unit,
-	pagerState: PagerState,
 	postNewBitmap: (String) -> Unit,
-	saveCurrentPictureUrl: (String) -> Unit,
-
+	setCurrentPictureUrl: (String) -> Unit,
+	currentPicture: String,
 )
 {
+	val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
 	val isSharedImage = state.value.isSharedImage
 	val topBarHeight = 64.dp
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
@@ -212,10 +207,10 @@ fun ShowDetails(
 		pageSpacing = 10.dp
 	) { page ->
 		val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
-		val currentPage = pagerState.currentPage
-		LaunchedEffect(currentPage) {
-			val pic = list[currentPage]
-			saveCurrentPictureUrl(pic)
+		val realCurrentPage = pagerState.currentPage
+		LaunchedEffect(realCurrentPage) {
+			val pic = list[realCurrentPage]
+			setCurrentPictureUrl(pic)
 			if(checkOnErrorExists(pic))
 			{
 				Log.d("checkMa", "gruzim oshibku")
@@ -227,12 +222,12 @@ fun ShowDetails(
 			}
 		}
 		Box(modifier = Modifier.fillMaxSize()) {
-			if(checkOnErrorExists(list[page]))
+			val isError = checkOnErrorExists(list[page])
+			if(isError)
 			{
 				ShowError(
 					context = context,
-					list = list,
-					currentPage = page,
+					currentUrl = list[page],
 					pagerState = pagerState,
 					isValidUrl = isValidUrl
 				)
@@ -240,8 +235,7 @@ fun ShowDetails(
 			else
 			{
 				ShowAsynchImage(
-					list = list,
-					page = page,
+					img = list[page],
 					addError = addError,
 					removeSpecialError = removeSpecialError,
 					postPositiveState = postPositiveState,
@@ -250,10 +244,10 @@ fun ShowDetails(
 					context = context,
 					changeBarsVisability = changeBarsVisability,
 					postUrl = postUrl,
-					isScreenInPortraitState = isScreenInPortraitState
+					isScreenInPortraitState = isScreenInPortraitState,
+					setImageSharedStateToFalse = setImageSharedStateToFalse
 				)
 			}
-			val showButtonAdd = remember { mutableStateOf(true) }
 			if(isSharedImage)
 			{
 				val addString = stringResource(R.string.add)
@@ -284,7 +278,7 @@ fun ShowDetails(
 						) {
 							Text(text = cancelString, color = Color.Red)
 						}
-						if(showButtonAdd.value)
+						if(!isError)
 						{
 							Button(
 								modifier = Modifier
@@ -312,8 +306,7 @@ fun ShowDetails(
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowAsynchImage(
-	list: List<String>,
-	page: Int,
+	img: String,
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
 	postPositiveState: () -> Unit,
@@ -323,6 +316,7 @@ fun ShowAsynchImage(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	isScreenInPortraitState: Boolean,
+	setImageSharedStateToFalse: () -> Unit,
 )
 {
 	val scale = if(state.value.isMultiWindowed)
@@ -342,7 +336,6 @@ fun ShowAsynchImage(
 	}
 	val zoom = rememberZoomState(15f, Size.Zero)
 	var imageSize by remember { mutableStateOf(Size.Zero) }
-	val img = list[page]
 	val imgRequest = remember(img) {
 		ImageRequest.Builder(context)
 			.data(img)
@@ -362,10 +355,10 @@ fun ShowAsynchImage(
 		onSuccess = {
 			val resultImage = it.result.image
 			imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
-			removeSpecialError(list[page])
+			removeSpecialError(img)
 		},
 		onError = {
-			addError(list[page])
+			addError(img)
 		},
 		modifier = Modifier
 			.fillMaxSize()
@@ -391,9 +384,10 @@ fun ShowAsynchImage(
 						}
 						if(count.size >= 3)
 						{
-							countLastThree.add(count[count.lastIndex])
-							countLastThree.add(count[count.lastIndex - 1])
-							countLastThree.add(count[count.lastIndex - 2])
+							val lastIndex = count.lastIndex
+							countLastThree.add(count[lastIndex])
+							countLastThree.add(count[lastIndex - 1])
+							countLastThree.add(count[lastIndex - 2])
 						}
 						if(changes.any { !it.pressed })
 						{
@@ -401,8 +395,12 @@ fun ShowAsynchImage(
 							{
 								postUrl(DEFAULT_STRING_VALUE, null)
 								postPositiveState()
-								changeBarsVisability(true)
-								navController.navigate(Screen.Home.route)
+								navigateToHome(
+									changeBarsVisability = changeBarsVisability,
+									postUrl = postUrl,
+									navController = navController,
+									setImageSharedStateToFalse = setImageSharedStateToFalse
+								)
 							}
 						}
 						countLastThree.clear()
@@ -420,15 +418,14 @@ fun ShowAsynchImage(
 @Composable
 fun ShowError(
 	context: Context,
-	list: List<String>,
-	currentPage: Int,
+	currentUrl: String,
 	pagerState: PagerState,
 	isValidUrl: (String) -> Boolean,
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
 	val scope = rememberCoroutineScope()
-	val errorMessage = if(isValidUrl(list[currentPage]))
+	val errorMessage = if(isValidUrl(currentUrl))
 	{
 		HTTP_ERROR
 	}
@@ -453,13 +450,12 @@ fun ShowError(
 		)
 		if(errorMessage != linkIsNotValid)
 		{
-			val textButton = stringResource(R.string.reload_pic)
 			Button(
 				onClick =
 				{
-					Toast.makeText(context, textButton, Toast.LENGTH_LONG).show()
+					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
 					scope.launch {
-						pagerState.animateScrollToPage(currentPage)
+						pagerState.animateScrollToPage(pagerState.currentPage)
 					}
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
@@ -506,7 +502,7 @@ fun AppBar(
 				title = {
 					val width = if(sharedImgCase)
 					{
-						screenWidth - 0.dp
+						screenWidth
 					}
 					else
 					{
