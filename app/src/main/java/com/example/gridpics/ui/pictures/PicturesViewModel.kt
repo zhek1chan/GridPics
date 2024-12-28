@@ -32,7 +32,7 @@ class PicturesViewModel(
 						val urlsFromNet = convertToListFromString(urls.value)
 						val urlsToAdd = if(pictureUrls.isNotEmpty())
 						{
-							pictureUrls + urlsFromNet
+							(pictureUrls + urlsFromNet).distinct()
 						}
 						else
 						{

@@ -33,10 +33,7 @@ class ImagesRepositoryImpl(
 			{
 				is Resource.Data ->
 				{
-					with(response) {
-						val data = value
-						emit(Resource.Data(data))
-					}
+					emit(Resource.Data(response.value))
 					break
 				}
 				is Resource.NotFound ->

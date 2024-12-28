@@ -173,13 +173,11 @@ fun itemNewsCard(
 	isValidUrl: (String) -> Boolean,
 	postState: (Boolean, List<String>) -> Unit,
 	urls: List<String>,
-	postSavedUrls: (List<String>) -> Unit,
 	lazyState: LazyGridState,
 ): Boolean
 {
 	var isError by remember { mutableStateOf(false) }
 	val context = LocalContext.current
-	var isClicked by remember { mutableStateOf(false) }
 	val openAlertDialog = remember { mutableStateOf(false) }
 	val errorMessage = remember { mutableStateOf("") }
 	var placeholder = R.drawable.loading
@@ -213,7 +211,13 @@ fun itemNewsCard(
 			.clickable {
 				if(!isError)
 				{
-					isClicked = true
+					Log.d("current", item)
+					currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
+					navController.navigate(Screen.Details.route) {
+						popUpTo(Screen.Home.route) {
+							inclusive = true
+						}
+					}
 					openAlertDialog.value = false
 				}
 				else
@@ -234,18 +238,6 @@ fun itemNewsCard(
 			isError = false
 		}
 	)
-	if(isClicked)
-	{
-		Log.d("current", item)
-		postSavedUrls(urls)
-		currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
-		navController.navigate(Screen.Details.route) {
-			popUpTo(Screen.Home.route) {
-				inclusive = true
-			}
-		}
-		isClicked = false
-	}
 	when
 	{
 		openAlertDialog.value ->
@@ -332,7 +324,6 @@ fun ShowList(
 							isValidUrl = isValidUrl,
 							postState = postState,
 							urls = list,
-							postSavedUrls = postSavedUrls,
 							lazyState = listState
 						)
 					}
@@ -382,7 +373,6 @@ fun ShowList(
 							isValidUrl = isValidUrl,
 							postState = postState,
 							urls = list,
-							postSavedUrls = postSavedUrls,
 							lazyState = listState
 						)
 					}
@@ -413,7 +403,6 @@ fun ShowList(
 					isValidUrl = isValidUrl,
 					postState = postState,
 					urls = imagesUrlsSP,
-					postSavedUrls = postSavedUrls,
 					lazyState = listState
 				)
 			}

@@ -48,7 +48,6 @@ class MainActivity: AppCompatActivity()
 {
 	private val detailsViewModel by viewModel<DetailsViewModel>()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
-	private var themePick: Int = ThemePick.FOLLOW_SYSTEM.intValue
 	private var mainNotificationService: MainNotificationService? = null
 	private var navigation: NavHostController? = null
 	private var job: Job? = null
@@ -118,7 +117,6 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-		themePick = theme
 		setContent {
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
@@ -167,8 +165,10 @@ class MainActivity: AppCompatActivity()
 						picVM.postSavedUrls(urls = urls)
 						detVM.firstSetOfListState(urls)
 					},
-					saveToSharedPrefs = { urls -> saveToSharedPrefs(picVM.convertFromListToString(urls))
-					Log.d("fuafahfafafa", "pics")}
+					saveToSharedPrefs = { urls ->
+						saveToSharedPrefs(picVM.convertFromListToString(urls))
+						Log.d("fuafahfafafa", "pics")
+					}
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
@@ -283,7 +283,6 @@ class MainActivity: AppCompatActivity()
 		intent.action = ""
 		intent.data = null
 		intent.flags = 0
-		this.intent = intent
 		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}
