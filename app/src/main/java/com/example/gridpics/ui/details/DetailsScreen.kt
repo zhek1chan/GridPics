@@ -189,10 +189,13 @@ fun ShowDetails(
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
 	val list = state.value.picturesUrl
-	var initialPage = list.indexOf(currentPicture)
-	var size = list.size
-	if(list.isEmpty())
+	val initialPage: Int
+	val size: Int
+	if(list.indexOf(currentPicture) >= 0)
 	{
+		initialPage = list.indexOf(currentPicture)
+		size = list.size
+	} else {
 		initialPage = 0
 		size = 1
 	}
