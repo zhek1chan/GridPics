@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.domain.interactor.ImagesInteractor
-import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
@@ -18,7 +17,7 @@ class DetailsViewModel(
 ): ViewModel()
 {
 	private val imageFlow =
-		MutableStateFlow<Pair<String, Bitmap?>>(Pair(DEFAULT_STRING_VALUE, null))
+		MutableStateFlow<Pair<String, Bitmap?>?>(null)
 	val uiState =
 		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = ""))
 	private val job = Job()

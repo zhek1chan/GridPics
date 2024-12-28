@@ -58,9 +58,9 @@ class MainActivity: AppCompatActivity()
 			val binder = service as MainNotificationService.ServiceBinder
 			val mainService = binder.get()
 			val flowValue = detailsViewModel.observeUrlFlow().value
-			if(flowValue.first != DEFAULT_STRING_VALUE)
+			if(flowValue?.first != DEFAULT_STRING_VALUE)
 			{
-				mainService.putValues(flowValue)
+				flowValue?.let { mainService.putValues(it) }
 			}
 			mainNotificationService = mainService
 		}
@@ -112,7 +112,7 @@ class MainActivity: AppCompatActivity()
 					) == PackageManager.PERMISSION_GRANTED)
 				{
 					Log.d("service", "data $it")
-					mainNotificationService?.putValues(it)
+					it?.let { pair -> mainNotificationService?.putValues(pair) }
 				}
 			}
 		}
