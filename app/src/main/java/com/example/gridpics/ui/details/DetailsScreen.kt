@@ -110,7 +110,7 @@ fun DetailsScreen(
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
 	addPicture: (String) -> Unit,
-	setImageSharedState: () -> Unit,
+	setImageSharedState: (Boolean) -> Unit,
 	picsUiState: MutableState<PicturesScreenUiState>,
 	setCurrentPictureUrl: (String) -> Unit,
 )
@@ -177,7 +177,7 @@ fun ShowDetails(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	addPicture: (String) -> Unit,
-	setImageSharedState: () -> Unit,
+	setImageSharedState: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
 	setCurrentPictureUrl: (String) -> Unit,
 	currentPicture: String,
@@ -297,7 +297,7 @@ fun ShowDetails(
 											setImageSharedStateToFalse = setImageSharedState
 										)
 									}
-									setImageSharedState()
+									setImageSharedState(false)
 									addPicture(url)
 								},
 								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
@@ -325,7 +325,7 @@ fun ShowAsynchImage(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	isScreenInPortraitState: Boolean,
-	setImageSharedStateToFalse: () -> Unit,
+	setImageSharedStateToFalse: (Boolean) -> Unit,
 )
 {
 	val scale = if(state.value.isMultiWindowed)
@@ -482,7 +482,7 @@ fun AppBar(
 	postUrl: (String, Bitmap?) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	changeBarsVisability: (Boolean) -> Unit,
-	setImageSharedStateToFalse: () -> Unit,
+	setImageSharedStateToFalse: (Boolean) -> Unit,
 )
 {
 	val navBack = remember { mutableStateOf(false) }
@@ -592,12 +592,12 @@ fun navigateToHome(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	navController: NavController,
-	setImageSharedStateToFalse: () -> Unit,
+	setImageSharedStateToFalse: (Boolean) -> Unit,
 )
 {
 	changeBarsVisability(true)
 	postUrl(DEFAULT_STRING_VALUE, null)
-	setImageSharedStateToFalse()
+	setImageSharedStateToFalse(false)
 	navController.navigate(Screen.Home.route) {
 		popUpTo(navController.graph.findStartDestination().id)
 	}
