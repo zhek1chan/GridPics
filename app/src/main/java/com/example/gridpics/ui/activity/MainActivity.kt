@@ -201,18 +201,9 @@ class MainActivity: AppCompatActivity()
 						picVM.addPictureToUrls(url)
 						detVM.isSharedImage(false)
 					},
-					saveToSharedPrefs = { urls -> saveToSharedPrefs(picVM.convertFromListToString(urls)) },
+					saveToSharedPrefs = { urls -> saveToSharedPrefs(picVM.convertFromListToString(urls.toMutableList())) },
 					setImageSharedStateToFalse = { detVM.isSharedImage(false) },
-					getListOfUrls = {
-						if(detVM.uiState.value.isSharedImage)
-						{
-							detVM.createListForScreen(listOfUrls, picsStateValue.currentPicture)
-						}
-						else
-						{
-							detVM.createListForScreen(listOfUrls, null)
-						}
-					},
+					getListOfUrls = { detVM.postList(listOfUrls, picsStateValue.currentPicture) },
 					picsUiState = picVM.picturesUiState,
 					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) }
 				)

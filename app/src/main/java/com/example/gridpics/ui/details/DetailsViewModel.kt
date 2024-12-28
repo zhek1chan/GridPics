@@ -69,18 +69,38 @@ class DetailsViewModel(
 		}
 	}
 
-	fun createListForScreen(list: MutableList<String>, url: String?)
+	fun postList(listOfUrls: MutableList<String>, url:String) {
+		if(uiState.value.isSharedImage)
+		{
+			createListForScreen(listOfUrls, url)
+		}
+		else
+		{
+			createListForScreen(listOfUrls, null)
+		}
+	}
+
+	private fun createListForScreen(list: MutableList<String>, url: String?)
 	{
 		val state = uiState
 		viewModelScope.launch {
-			Log.d("case shared", "posted isShared state")
-			if(url != null && list[0] != url)
+			var sendList = mutableListOf<String>()
+			val size = list.size
+			if(url!=null)
 			{
-				list.add(0, url)
+				for(i in 0 ..< size)
+				{
+					if(list[i] != url)
+					{
+						sendList.add(list[i])
+					}
+				}
+				sendList.add(0, url)
+			} else {
+				sendList = list
 			}
-			val newList = list.distinct().toMutableList()
-			Log.d("check list", "$newList")
-			state.value = state.value.copy(picturesUrl = newList)
+			Log.d("check list", "$sendList")
+			state.value = state.value.copy(picturesUrl = sendList)
 		}
 	}
 }
