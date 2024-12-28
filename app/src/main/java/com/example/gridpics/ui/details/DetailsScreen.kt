@@ -195,8 +195,15 @@ fun ShowDetails(
 	currentPicture: String,
 )
 {
-	val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
+	var initialPage = list.indexOf(currentPicture)
+	var size = list.size
+	if(list.isEmpty()) {
+		initialPage = 0
+		size = 1
+	}
+	val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
 	val isSharedImage = state.value.isSharedImage
+	Log.d("checkCheck", "$isSharedImage")
 	val topBarHeight = 64.dp
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
 	HorizontalPager(
@@ -286,9 +293,16 @@ fun ShowDetails(
 									.padding(30.dp, 0.dp, 0.dp, 0.dp)
 									.size(130.dp, 60.dp),
 								onClick = {
-									addPicture(list[page])
-									setImageSharedStateToFalse()
 									saveToSharedPrefs(list)
+									if (pagerState.pageCount == 1) {
+										navigateToHome(
+											changeBarsVisability = changeBarsVisability,
+											postUrl = postUrl,
+											navController = navController,
+											setImageSharedStateToFalse = setImageSharedStateToFalse
+										)
+									}
+									addPicture(list[page])
 								},
 								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
 								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
@@ -588,9 +602,9 @@ fun navigateToHome(
 	setImageSharedStateToFalse: () -> Unit,
 )
 {
-	setImageSharedStateToFalse()
 	changeBarsVisability(true)
 	postUrl(DEFAULT_STRING_VALUE, null)
+	setImageSharedStateToFalse()
 	navController.navigate(Screen.Home.route) {
 		popUpTo(navController.graph.findStartDestination().id)
 	}

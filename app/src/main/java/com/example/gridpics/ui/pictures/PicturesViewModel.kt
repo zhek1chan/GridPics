@@ -9,6 +9,7 @@ import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class PicturesViewModel(
@@ -27,9 +28,13 @@ class PicturesViewModel(
 				when(urls)
 				{
 					is Resource.Data ->
+					{
+						val listOfUrls = convertToListFromString(urls.value)
 						flow.value = flow.value.copy(
-							loadingState = PicturesState.SearchIsOk(convertToListFromString(urls.value))
+							loadingState = PicturesState.SearchIsOk(listOfUrls),
+							picturesUrl = listOfUrls
 						)
+					}
 					is Resource.ConnectionError ->
 						flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
 					is Resource.NotFound ->
@@ -58,10 +63,13 @@ class PicturesViewModel(
 	{
 		val state = picturesUiState
 		viewModelScope.launch {
+			while (state.value.picturesUrl.isEmpty()) {
+				delay(50)
+			}
 			val list = state.value.picturesUrl
 			list.add(0, pic)
 			val newList = list.distinct().toMutableList()
-			Log.d("check list", "added this")
+			Log.d("checkCheck", "list $list")
 			state.value = state.value.copy(picturesUrl = newList)
 		}
 	}
@@ -86,7 +94,7 @@ class PicturesViewModel(
 	fun checkOnErrorExists(url: String): Boolean
 	{
 		val list = errorsList
-		return (list.isNotEmpty() && list.contains(url))
+		return list.contains(url)
 	}
 
 	fun removeSpecialError(url: String)

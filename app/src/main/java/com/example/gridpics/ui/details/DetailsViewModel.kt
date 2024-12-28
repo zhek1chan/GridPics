@@ -65,7 +65,7 @@ class DetailsViewModel(
 		val state = uiState
 		viewModelScope.launch {
 			state.value = state.value.copy(isSharedImage = isShared)
-			Log.d("case shared", "posted isShared state")
+			Log.d("case shared", "posted isShared state $isShared")
 		}
 	}
 

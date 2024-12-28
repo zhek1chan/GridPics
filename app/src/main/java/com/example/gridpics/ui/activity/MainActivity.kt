@@ -163,7 +163,6 @@ class MainActivity: AppCompatActivity()
 					currentPicture = { url, index, offset ->
 						picVM.clickOnPicture(index, offset)
 						detVM.postCurrentPicture(url)
-						detVM.isSharedImage(false)
 					},
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls ->
@@ -198,10 +197,7 @@ class MainActivity: AppCompatActivity()
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
-					addPicture = { url ->
-						picVM.addPictureToUrls(url)
-						detVM.isSharedImage(false)
-					},
+					addPicture = { url -> picVM.addPictureToUrls(url) },
 					saveToSharedPrefs = { urls -> saveToSharedPrefs(picVM.convertFromListToString(urls.toMutableList())) },
 					setImageSharedStateToFalse = { detVM.isSharedImage(false) },
 					picsUiState = picVM.picturesUiState,
@@ -418,8 +414,8 @@ class MainActivity: AppCompatActivity()
 			}
 			else
 			{
-				detVM.postCurrentPicture(sharedValue)
 				detVM.isSharedImage(true)
+				detVM.postCurrentPicture(sharedValue)
 				detVM.postCorrectList()
 				navToDetailsAfterNewIntent(nav)
 			}
