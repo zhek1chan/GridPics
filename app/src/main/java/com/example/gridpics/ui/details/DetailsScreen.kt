@@ -135,22 +135,7 @@ fun DetailsScreen(
 	}
 	val list = remember { value.picturesUrl }
 	Log.d("check", "$list")
-	val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 	val pagerState = rememberPagerState(initialPage = list.indexOf(currentPicture), initialPageOffsetFraction = 0f, pageCount = { list.size })
-	val currentPage = pagerState.currentPage
-	LaunchedEffect(currentPage) {
-		val pic = list[currentPage]
-		saveCurrentPictureUrl(pic)
-		if(checkOnErrorExists(pic))
-		{
-			Log.d("checkMa", "gruzim oshibku")
-			postUrl(pic, errorPicture)
-		}
-		else
-		{
-			postNewBitmap(pic)
-		}
-	}
 	Scaffold(
 		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 		topBar = {
