@@ -84,7 +84,6 @@ class MainActivity: AppCompatActivity()
 		installSplashScreen()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
-		val lifeCycScope = lifecycleScope
 		picVM.changeOrientation(resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
@@ -105,7 +104,7 @@ class MainActivity: AppCompatActivity()
 			statusBarStyle = SystemBarStyle.auto(whiteColor, blackColor),
 			navigationBarStyle = SystemBarStyle.auto(whiteColor, blackColor)
 		)
-		lifeCycScope.launch {
+		lifecycleScope.launch {
 			detVM.observeUrlFlow().collect {
 				if(ContextCompat.checkSelfPermission(
 						this@MainActivity,
