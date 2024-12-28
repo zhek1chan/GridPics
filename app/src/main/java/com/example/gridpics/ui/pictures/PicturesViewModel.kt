@@ -63,14 +63,22 @@ class PicturesViewModel(
 	{
 		val state = picturesUiState
 		viewModelScope.launch {
+			val sendList = mutableListOf<String>()
 			while (state.value.picturesUrl.isEmpty()) {
 				delay(50)
 			}
 			val list = state.value.picturesUrl
-			list.add(0, pic)
-			val newList = list.distinct().toMutableList()
+			val size = list.size
+			for(i in 0 ..< size)
+			{
+				if(list[i] != pic)
+				{
+					sendList.add(list[i])
+				}
+			}
+			sendList.add(0, pic)
 			Log.d("checkCheck", "list $list")
-			state.value = state.value.copy(picturesUrl = newList)
+			state.value = state.value.copy(picturesUrl = sendList)
 		}
 	}
 
