@@ -69,7 +69,7 @@ class DetailsViewModel(
 		}
 	}
 
-	fun firstSetOfListState(list: MutableList<String>) {
+	fun firstSetOfListState(list: List<String>) {
 		val state = uiState
 		viewModelScope.launch {
 			state.value = state.value.copy(picturesUrl = list)

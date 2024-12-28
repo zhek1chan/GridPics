@@ -194,12 +194,9 @@ class MainActivity: AppCompatActivity()
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
 					addPicture = { url -> picVM.addPictureToUrls(url) },
-					saveToSharedPrefs = { urls -> saveToSharedPrefs(picVM.convertFromListToString(urls.toMutableList())) },
-					setImageSharedStateToFalse = { detVM.isSharedImage(false) },
+					setImageSharedState = { detVM.isSharedImage(false) },
 					picsUiState = picVM.picturesUiState,
-					setCurrentPictureUrl = { url ->
-						detVM.postCurrentPicture(url)
-					}
+					setCurrentPictureUrl = { url ->	detVM.postCurrentPicture(url) }
 				)
 			}
 		}
@@ -307,7 +304,7 @@ class MainActivity: AppCompatActivity()
 		detailsViewModel.changeMultiWindowState(isInMultiWindowMode || isInPictureInPictureMode)
 		val orientation = newConfig.orientation
 		val picVM = picturesViewModel
-		picVM.changeOrientation(orientation != Configuration.ORIENTATION_LANDSCAPE)
+		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
 	}
 
 	private fun changeTheme(option: Int)
@@ -390,7 +387,7 @@ class MainActivity: AppCompatActivity()
 		postValuesFromIntent(intent, urls, picVM)
 	}
 
-	private fun postValuesFromIntent(intent: Intent?, picUrls: MutableList<String>, picVM: PicturesViewModel)
+	private fun postValuesFromIntent(intent: Intent?, picUrls: List<String>, picVM: PicturesViewModel)
 	{
 		//реализация фичи - поделиться картинкой в приложение
 		val action = intent?.action

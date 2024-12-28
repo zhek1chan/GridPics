@@ -88,14 +88,14 @@ fun PicturesScreen(
 	postPressOnBackButton: () -> Unit,
 	checkOnErrorExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	postState: (Boolean, MutableList<String>) -> Unit,
+	postState: (Boolean, List<String>) -> Unit,
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	postVisibleBarsState: () -> Unit,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (MutableList<String>) -> Unit,
-	saveToSharedPrefs: (MutableList<String>) -> Unit,
+	postSavedUrls: (List<String>) -> Unit,
+	saveToSharedPrefs: (List<String>) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -175,9 +175,9 @@ fun itemNewsCard(
 	addError: (String) -> Unit,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postState: (Boolean, MutableList<String>) -> Unit,
-	urls: MutableList<String>,
-	postSavedUrls: (MutableList<String>) -> Unit,
+	postState: (Boolean, List<String>) -> Unit,
+	urls: List<String>,
+	postSavedUrls: (List<String>) -> Unit,
 	lazyState: LazyGridState,
 ): Boolean
 {
@@ -289,17 +289,17 @@ fun itemNewsCard(
 
 @Composable
 fun ShowList(
-	imagesUrlsSP: MutableList<String>?,
+	imagesUrlsSP: List<String>?,
 	checkOnErrorExists: (String) -> Boolean,
 	addError: (String) -> Unit,
-	postState: (Boolean, MutableList<String>) -> Unit,
+	postState: (Boolean, List<String>) -> Unit,
 	state: PicturesState,
 	clearErrors: () -> Unit,
 	navController: NavController,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (MutableList<String>) -> Unit,
-	saveToSharedPrefs: (MutableList<String>) -> Unit,
+	postSavedUrls: (List<String>) -> Unit,
+	saveToSharedPrefs: (List<String>) -> Unit,
 	offset: Int,
 	index: Int,
 )
@@ -404,7 +404,7 @@ fun ShowList(
 	else
 	{
 		Log.d("Now state is", "Loaded from sp")
-		LaunchedEffect(Unit) {
+		LaunchedEffect(imagesUrlsSP) {
 			saveToSharedPrefs(imagesUrlsSP)
 			postSavedUrls(imagesUrlsSP)
 		}

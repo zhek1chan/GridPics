@@ -4,7 +4,7 @@ import com.example.gridpics.ui.settings.ThemePick
 
 data class PicturesScreenUiState(
 	val loadingState: PicturesState,
-	val picturesUrl: MutableList<String>,
+	val picturesUrl: List<String>,
 	val index: Int,
 	val offset: Int,
 	val isPortraitOrientation: Boolean,

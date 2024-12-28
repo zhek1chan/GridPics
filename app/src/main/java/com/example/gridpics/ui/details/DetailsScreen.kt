@@ -110,8 +110,7 @@ fun DetailsScreen(
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
 	addPicture: (String) -> Unit,
-	saveToSharedPrefs: (List<String>) -> Unit,
-	setImageSharedStateToFalse: () -> Unit,
+	setImageSharedState: () -> Unit,
 	picsUiState: MutableState<PicturesScreenUiState>,
 	setCurrentPictureUrl: (String) -> Unit,
 )
@@ -124,7 +123,7 @@ fun DetailsScreen(
 			changeBarsVisability = changeBarsVisability,
 			postUrl = postUrl,
 			navController = navController,
-			setImageSharedStateToFalse = setImageSharedStateToFalse
+			setImageSharedStateToFalse = setImageSharedState
 		)
 	}
 	Scaffold(
@@ -138,7 +137,7 @@ fun DetailsScreen(
 				postUrl = postUrl,
 				state = state,
 				changeBarsVisability = changeBarsVisability,
-				setImageSharedStateToFalse = setImageSharedStateToFalse
+				setImageSharedStateToFalse = setImageSharedState
 			)
 		},
 		content = { padding ->
@@ -154,12 +153,11 @@ fun DetailsScreen(
 				changeBarsVisability = changeBarsVisability,
 				postUrl = postUrl,
 				addPicture = addPicture,
-				picturesState = picsUiState,
-				saveToSharedPrefs = saveToSharedPrefs,
-				setImageSharedStateToFalse = setImageSharedStateToFalse,
+				setImageSharedState = setImageSharedState,
 				postNewBitmap = postNewBitmap,
 				setCurrentPictureUrl = setCurrentPictureUrl,
-				currentPicture = currentPicture
+				currentPicture = currentPicture,
+				picturesState = picsUiState
 			)
 		}
 	)
@@ -179,8 +177,7 @@ fun ShowDetails(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	addPicture: (String) -> Unit,
-	saveToSharedPrefs: (List<String>) -> Unit,
-	setImageSharedStateToFalse: () -> Unit,
+	setImageSharedState: () -> Unit,
 	postNewBitmap: (String) -> Unit,
 	setCurrentPictureUrl: (String) -> Unit,
 	currentPicture: String,
@@ -250,7 +247,7 @@ fun ShowDetails(
 					changeBarsVisability = changeBarsVisability,
 					postUrl = postUrl,
 					isScreenInPortraitState = isScreenInPortraitState,
-					setImageSharedStateToFalse = setImageSharedStateToFalse
+					setImageSharedStateToFalse = setImageSharedState
 				)
 			}
 			if(isSharedImage)
@@ -275,7 +272,7 @@ fun ShowDetails(
 									changeBarsVisability = changeBarsVisability,
 									postUrl = postUrl,
 									navController = navController,
-									setImageSharedStateToFalse = setImageSharedStateToFalse
+									setImageSharedStateToFalse = setImageSharedState
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -291,17 +288,16 @@ fun ShowDetails(
 									.padding(30.dp, 0.dp, 0.dp, 0.dp)
 									.size(130.dp, 60.dp),
 								onClick = {
-									saveToSharedPrefs(list)
 									if(pagerState.pageCount == 1)
 									{
 										navigateToHome(
 											changeBarsVisability = changeBarsVisability,
 											postUrl = postUrl,
 											navController = navController,
-											setImageSharedStateToFalse = setImageSharedStateToFalse
+											setImageSharedStateToFalse = setImageSharedState
 										)
 									}
-									setImageSharedStateToFalse()
+									setImageSharedState()
 									addPicture(url)
 								},
 								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),

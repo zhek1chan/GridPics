@@ -8,7 +8,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 val domainModule = module {
-	factory<ImagesInteractor> {
+	single<ImagesInteractor> {
 		ImagesInteractorImpl(repository = get(), context = androidContext())
 	}
 

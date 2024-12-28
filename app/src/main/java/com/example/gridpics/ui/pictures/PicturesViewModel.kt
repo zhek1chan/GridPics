@@ -44,7 +44,7 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postState(useLoadedState: Boolean, urls: MutableList<String>)
+	fun postState(useLoadedState: Boolean, urls: List<String>)
 	{
 		val flow = picturesUiState
 		viewModelScope.launch {
@@ -82,7 +82,7 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postSavedUrls(urls: MutableList<String>)
+	fun postSavedUrls(urls: List<String>)
 	{
 		viewModelScope.launch {
 			val flow = picturesUiState
@@ -150,7 +150,7 @@ class PicturesViewModel(
 		return string?.split("\n")?.toSet()?.toMutableList() ?: mutableListOf()
 	}
 
-	fun convertFromListToString(list: MutableList<String>): String
+	fun convertFromListToString(list: List<String>): String
 	{
 		var newString = ""
 		val size = list.size
