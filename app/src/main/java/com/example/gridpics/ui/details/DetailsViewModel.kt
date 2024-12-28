@@ -20,7 +20,7 @@ class DetailsViewModel(
 	private val imageFlow =
 		MutableStateFlow<Pair<String, Bitmap?>>(Pair(DEFAULT_STRING_VALUE, null))
 	val uiState =
-		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false))
+		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf()))
 	private val job = Job()
 	fun observeUrlFlow() = imageFlow
 	fun postNewPic(url: String, bitmap: Bitmap?)
@@ -66,6 +66,21 @@ class DetailsViewModel(
 		viewModelScope.launch {
 			state.value = state.value.copy(isSharedImage = isShared)
 			Log.d("case shared", "posted isShared state")
+		}
+	}
+
+	fun createListForScreen(list: MutableList<String>, url: String?)
+	{
+		val state = uiState
+		viewModelScope.launch {
+			Log.d("case shared", "posted isShared state")
+			if(url != null && list[0] != url)
+			{
+				list.add(0, url)
+			}
+			val newList = list.distinct().toMutableList()
+			Log.d("check list", "$list")
+			state.value = state.value.copy(picturesUrl = newList)
 		}
 	}
 }

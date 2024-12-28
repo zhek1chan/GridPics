@@ -184,6 +184,7 @@ class MainActivity: AppCompatActivity()
 				)
 			}
 			composable(Screen.Details.route) {
+				val picsStateValue = picVM.picturesUiState.value
 				DetailsScreen(
 					navController = navController,
 					checkOnErrorExists = { str -> picVM.checkOnErrorExists(str) },
@@ -192,14 +193,27 @@ class MainActivity: AppCompatActivity()
 					removeError = { str -> picVM.removeSpecialError(str) },
 					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
 					postVisibleBarsState = { detVM.changeVisabilityState(true) },
-					picturesScreenState = picState,
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
 					addPicture = { url ->
 						picVM.addPictureToUrls(url)
 						detVM.isSharedImage(false)
-					}
+					},
+					saveToSharedPrefs = { urls -> saveToSharedPrefs(picVM.convertFromListToString(urls)) },
+					setImageSharedStateToFalse = { detVM.isSharedImage(false) },
+					getListOfUrls = {
+						if(detVM.uiState.value.isSharedImage)
+						{
+							detVM.createListForScreen(picsStateValue.picturesUrl, picsStateValue.currentPicture)
+						}
+						else
+						{
+							detVM.createListForScreen(picsStateValue.picturesUrl, null)
+						}
+					},
+					picsUiState = picVM.picturesUiState,
+					saveCurrentPictureUrl = { url -> picVM.saveCurrentPictureUrl(url) }
 				)
 			}
 		}

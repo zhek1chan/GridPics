@@ -4,4 +4,5 @@ data class DetailsScreenUiState(
 	val isMultiWindowed: Boolean,
 	val barsAreVisible: Boolean,
 	val isSharedImage: Boolean,
+	val picturesUrl: MutableList<String>
 )
