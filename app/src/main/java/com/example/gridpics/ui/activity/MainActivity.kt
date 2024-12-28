@@ -204,7 +204,7 @@ class MainActivity: AppCompatActivity()
 						}
 						Log.d("fuafahfafafa", "details")
 					},
-					setImageSharedState = { isShared -> detVM.isSharedImage(false) },
+					setImageSharedState = { isShared -> detVM.isSharedImage(isShared) },
 					picsUiState = picVM.picturesUiState,
 					setCurrentPictureUrl = { url -> detVM.postCurrentPicture(url) }
 				)

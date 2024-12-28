@@ -53,16 +53,14 @@ class PicturesViewModel(
 
 	fun postState(useLoadedState: Boolean, urls: List<String>)
 	{
-		val flow = picturesUiState
-		viewModelScope.launch {
-			flow.value = if(useLoadedState)
-			{
-				flow.value.copy(loadingState = PicturesState.Loaded(urls))
-			}
-			else
-			{
-				flow.value.copy(loadingState = PicturesState.SearchIsOk(urls))
-			}
+		val state = picturesUiState
+		state.value = if(useLoadedState)
+		{
+			state.value.copy(loadingState = PicturesState.Loaded(urls))
+		}
+		else
+		{
+			state.value.copy(loadingState = PicturesState.SearchIsOk(urls))
 		}
 	}
 
@@ -86,10 +84,8 @@ class PicturesViewModel(
 
 	fun postSavedUrls(urls: List<String>)
 	{
-		viewModelScope.launch {
-			val flow = picturesUiState
-			flow.value = flow.value.copy(picturesUrl = urls.distinct())
-		}
+		val state = picturesUiState
+		state.value = state.value.copy(picturesUrl = urls.distinct())
 	}
 
 	fun addError(url: String)
@@ -141,10 +137,8 @@ class PicturesViewModel(
 
 	fun postThemePick(option: ThemePick)
 	{
-		viewModelScope.launch {
-			val state = picturesUiState
-			state.value = state.value.copy(themeState = option)
-		}
+		val state = picturesUiState
+		state.value = state.value.copy(themeState = option)
 	}
 
 	fun convertToListFromString(string: String?): List<String>

@@ -46,76 +46,70 @@ class DetailsViewModel(
 	fun changeMultiWindowState(isMultiWindowed: Boolean)
 	{
 		val uiState = uiState
-		viewModelScope.launch {
-			uiState.value = uiState.value.copy(isMultiWindowed = isMultiWindowed)
-		}
+		uiState.value = uiState.value.copy(isMultiWindowed = isMultiWindowed)
 	}
 
 	fun changeVisabilityState(visible: Boolean)
 	{
 		val state = uiState
-		viewModelScope.launch {
-			state.value = state.value.copy(barsAreVisible = visible)
-			Log.d("barsaaa", "bars are visible? = $visible")
-		}
+		state.value = state.value.copy(barsAreVisible = visible)
+		Log.d("barsaaa", "bars are visible? = $visible")
 	}
 
 	fun isSharedImage(isShared: Boolean)
 	{
 		val state = uiState
-		viewModelScope.launch {
-			state.value = state.value.copy(isSharedImage = isShared)
-			Log.d("case shared", "posted isShared state $isShared")
-		}
+		state.value = state.value.copy(isSharedImage = isShared)
+		Log.d("case shared", "posted isShared state $isShared")
 	}
 
-	fun firstSetOfListState(list: List<String>) {
+	fun firstSetOfListState(list: List<String>)
+	{
 		val state = uiState
-		viewModelScope.launch {
-			state.value = state.value.copy(picturesUrl = list)
-		}
+		state.value = state.value.copy(picturesUrl = list)
 	}
 
-	fun postCurrentPicture(url: String) {
+	fun postCurrentPicture(url: String)
+	{
 		val state = uiState
-		viewModelScope.launch {
-			state.value = state.value.copy(currentPicture = url)
-		}
+		state.value = state.value.copy(currentPicture = url)
 	}
 
-	fun postCorrectList() {
+	fun postCorrectList()
+	{
 		val value = uiState.value
+		val pictures = value.picturesUrl
 		if(value.isSharedImage)
 		{
-			createListForScreen(value.picturesUrl, value.currentPicture)
+			createListForScreen(pictures, value.currentPicture)
 		}
 		else
 		{
-			createListForScreen(value.picturesUrl, null)
+			createListForScreen(pictures, null)
 		}
 	}
 
 	private fun createListForScreen(list: List<String>, url: String?)
 	{
 		val state = uiState
-		viewModelScope.launch {
-			var sendList = mutableListOf<String>()
-			val size = list.size
-			if(url!=null)
+		var sendList = mutableListOf<String>()
+		val size = list.size
+		if(url != null)
+		{
+			for(i in 0 ..< size)
 			{
-				for(i in 0 ..< size)
+				if(list[i] != url)
 				{
-					if(list[i] != url)
-					{
-						sendList.add(list[i])
-					}
+					sendList.add(list[i])
 				}
-				sendList.add(0, url)
-			} else {
-				sendList = list.toMutableList()
 			}
-			Log.d("check list", "$sendList")
-			state.value = state.value.copy(picturesUrl = sendList)
+			sendList.add(0, url)
 		}
+		else
+		{
+			sendList = list.toMutableList()
+		}
+		Log.d("check list", "$sendList")
+		state.value = state.value.copy(picturesUrl = sendList)
 	}
 }
