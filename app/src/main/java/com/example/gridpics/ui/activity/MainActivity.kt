@@ -167,7 +167,6 @@ class MainActivity: AppCompatActivity()
 					},
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(picVM.convertFromListToString(urls))
-						Log.d("fuafahfafafa", "pics")
 					}
 				)
 			}
