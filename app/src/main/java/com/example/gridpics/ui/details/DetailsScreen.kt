@@ -119,7 +119,7 @@ fun DetailsScreen(
 	val value = state.value
 	val context = LocalContext.current
 	val picsStateValue = picsUiState.value
-	val currentPicture = picsStateValue.currentPicture
+	val currentPicture = value.currentPicture
 	val isScreenInPortrait = picsStateValue.isPortraitOrientation
 	BackHandler {
 		navigateToHome(

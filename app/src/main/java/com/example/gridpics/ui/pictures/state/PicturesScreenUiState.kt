@@ -7,7 +7,6 @@ data class PicturesScreenUiState(
 	val picturesUrl: MutableList<String>,
 	val index: Int,
 	val offset: Int,
-	val currentPicture: String,
 	val isPortraitOrientation: Boolean,
 	val themeState: ThemePick
 )

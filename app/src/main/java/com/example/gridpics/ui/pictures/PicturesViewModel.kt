@@ -15,7 +15,7 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, "", true, ThemePick.FOLLOW_SYSTEM))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM))
 	private val errorsList: MutableList<String> = mutableListOf()
 
 	init
@@ -103,24 +103,16 @@ class PicturesViewModel(
 		errorsList.clear()
 	}
 
-	fun clickOnPicture(url: String, index: Int, offset: Int)
+	fun clickOnPicture(index: Int, offset: Int)
 	{
 		val state = picturesUiState
-		state.value = state.value.copy(index = index, offset = offset, currentPicture = url)
+		state.value = state.value.copy(index = index, offset = offset)
 	}
 
 	fun changeOrientation(isPortrait: Boolean)
 	{
 		val state = picturesUiState
 		state.value = state.value.copy(isPortraitOrientation = isPortrait)
-	}
-
-	fun saveCurrentPictureUrl(url: String)
-	{
-		viewModelScope.launch {
-			val state = picturesUiState
-			state.value = state.value.copy(currentPicture = url)
-		}
 	}
 
 	fun isValidUrl(url: String): Boolean

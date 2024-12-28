@@ -158,7 +158,7 @@ class MainActivity: AppCompatActivity()
 						detVM.isSharedImage(false)
 					},
 					currentPicture = { url, index, offset ->
-						picVM.clickOnPicture(url, index, offset)
+						picVM.clickOnPicture(index, offset)
 						detVM.postCurrentPicture(url)
 						detVM.isSharedImage(false)
 					},
@@ -180,7 +180,7 @@ class MainActivity: AppCompatActivity()
 						saveToSharedPrefs("")
 						picVM.clearErrors()
 					},
-					postStartOfPager = { picVM.clickOnPicture("", 0, 0) }
+					postStartOfPager = { picVM.clickOnPicture(0, 0) }
 				)
 			}
 			composable(Screen.Details.route) {
@@ -203,7 +203,6 @@ class MainActivity: AppCompatActivity()
 					setImageSharedStateToFalse = { detVM.isSharedImage(false) },
 					picsUiState = picVM.picturesUiState,
 					setCurrentPictureUrl = { url ->
-						picVM.saveCurrentPictureUrl(url)
 						detVM.postCurrentPicture(url)
 					}
 				)
@@ -410,13 +409,12 @@ class MainActivity: AppCompatActivity()
 				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
 				if(!oldString.isNullOrEmpty() && picUrls.contains(oldString))
 				{
-					picVM.clickOnPicture(oldString, 0, 0)
+					picVM.clickOnPicture(0, 0)
 					navToDetailsAfterNewIntent(nav)
 				}
 			}
 			else
 			{
-				picVM.saveCurrentPictureUrl(sharedValue)
 				detVM.postCurrentPicture(sharedValue)
 				detVM.isSharedImage(true)
 				detVM.postCorrectList()
