@@ -156,10 +156,7 @@ class MainActivity: AppCompatActivity()
 					postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
 					state = picState,
 					clearErrors = { picVM.clearErrors() },
-					postVisibleBarsState = {
-						detVM.changeVisabilityState(true)
-						detVM.isSharedImage(false)
-					},
+					postVisibleBarsState = { detVM.changeVisabilityState(true) },
 					currentPicture = { url, index, offset ->
 						picVM.clickOnPicture(index, offset)
 						detVM.postCurrentPicture(url)
