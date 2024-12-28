@@ -45,7 +45,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,7 +78,6 @@ import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -145,9 +143,7 @@ fun PicturesScreen(
 				val offset = value.offset
 				val index = value.index
 				ShowList(
-					imagesUrlsSP = urls.ifEmpty {
-						null
-					},
+					imagesUrlsSP = urls,
 					checkOnErrorExists = checkOnErrorExists,
 					addError = addError,
 					postState = postState,
@@ -307,8 +303,6 @@ fun ShowList(
 	val context = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
-	val canChangeState = remember { mutableStateOf(false) }
-	val scope = rememberCoroutineScope()
 	val listState = rememberLazyGridState()
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
@@ -316,11 +310,10 @@ fun ShowList(
 		{
 			is PicturesState.SearchIsOk ->
 			{
-				val loadingString = stringResource(R.string.loading_has_been_started)
 				Log.d("Now state is", "Search Is Ok")
-				LaunchedEffect(state) {
+				LaunchedEffect(Unit) {
 					saveToSharedPrefs(state.data)
-					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
+					Toast.makeText(context, R.string.loading_has_been_started, Toast.LENGTH_SHORT).show()
 				}
 				val list = state.data
 				postSavedUrls(list)
@@ -345,10 +338,8 @@ fun ShowList(
 					}
 				}
 				LaunchedEffect(state) {
-					scope.launch {
-						delay(6000)
-						postState(true, list)
-					}
+					delay(6000)
+					postState(true, list)
 				}
 			}
 			is PicturesState.ConnectionError ->
@@ -370,9 +361,8 @@ fun ShowList(
 			is PicturesState.Loaded ->
 			{
 				Log.d("Now state is", "Loaded")
-				val loadingEnded = stringResource(R.string.loading_has_been_ended)
 				LaunchedEffect(Unit) {
-					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
+					Toast.makeText(context, R.string.loading_has_been_ended, Toast.LENGTH_SHORT).show()
 					postSavedUrls(state.data)
 				}
 				val list = state.data
@@ -397,14 +387,13 @@ fun ShowList(
 						)
 					}
 				}
-				canChangeState.value = true
 			}
 		}
 	}
 	else
 	{
 		Log.d("Now state is", "Loaded from sp")
-		LaunchedEffect(imagesUrlsSP) {
+		LaunchedEffect(Unit) {
 			saveToSharedPrefs(imagesUrlsSP)
 			postSavedUrls(imagesUrlsSP)
 		}
@@ -431,9 +420,7 @@ fun ShowList(
 		}
 	}
 	LaunchedEffect(Unit) {
-		scope.launch {
-			listState.scrollToItem(index, offset)
-		}
+		listState.scrollToItem(index, offset)
 	}
 }
 

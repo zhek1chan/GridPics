@@ -85,7 +85,7 @@ class DetailsViewModel(
 
 	fun postCorrectList() {
 		val value = uiState.value
-		if(uiState.value.isSharedImage)
+		if(value.isSharedImage)
 		{
 			createListForScreen(value.picturesUrl, value.currentPicture)
 		}

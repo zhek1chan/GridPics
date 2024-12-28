@@ -9,7 +9,6 @@ import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class PicturesViewModel(
@@ -29,10 +28,18 @@ class PicturesViewModel(
 				{
 					is Resource.Data ->
 					{
-						val listOfUrls = convertToListFromString(urls.value)
+						val pictureUrls = flow.value.picturesUrl
+						val urlsFromNet = convertToListFromString(urls.value)
+						val urlsToAdd = if(pictureUrls.isNotEmpty())
+						{
+							pictureUrls + urlsFromNet
+						}
+						else
+						{
+							urlsFromNet
+						}
 						flow.value = flow.value.copy(
-							loadingState = PicturesState.SearchIsOk(listOfUrls),
-							picturesUrl = listOfUrls
+							loadingState = PicturesState.SearchIsOk(urlsToAdd)
 						)
 					}
 					is Resource.ConnectionError ->
@@ -64,9 +71,6 @@ class PicturesViewModel(
 		val state = picturesUiState
 		viewModelScope.launch {
 			val sendList = mutableListOf<String>()
-			while (state.value.picturesUrl.isEmpty()) {
-				delay(50)
-			}
 			val list = state.value.picturesUrl
 			val size = list.size
 			for(i in 0 ..< size)
@@ -86,7 +90,7 @@ class PicturesViewModel(
 	{
 		viewModelScope.launch {
 			val flow = picturesUiState
-			flow.value = flow.value.copy(picturesUrl = urls.toSet().toMutableList())
+			flow.value = flow.value.copy(picturesUrl = urls.distinct())
 		}
 	}
 
@@ -145,9 +149,9 @@ class PicturesViewModel(
 		}
 	}
 
-	fun convertToListFromString(string: String?): MutableList<String>
+	fun convertToListFromString(string: String?): List<String>
 	{
-		return string?.split("\n")?.toSet()?.toMutableList() ?: mutableListOf()
+		return string?.split("\n")?.distinct() ?: listOf()
 	}
 
 	fun convertFromListToString(list: List<String>): String
@@ -166,5 +170,10 @@ class PicturesViewModel(
 			}
 		}
 		return newString
+	}
+
+	fun returnStringOfList(): String
+	{
+		return convertFromListToString(picturesUiState.value.picturesUrl)
 	}
 }

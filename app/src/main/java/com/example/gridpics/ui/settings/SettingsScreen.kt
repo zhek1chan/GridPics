@@ -37,6 +37,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
-import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
@@ -76,7 +76,9 @@ fun SettingsScreen(
 	postStartOfPager: () -> Unit,
 )
 {
-	postStartOfPager()
+	LaunchedEffect(Unit) {
+		postStartOfPager()
+	}
 	val windowInsets = if(isScreenInPortraitState.value.isPortraitOrientation)
 	{
 		WindowInsets.statusBarsIgnoringVisibility
@@ -250,17 +252,13 @@ fun SettingsCompose(
 			}
 			if(showDialog)
 			{
-				val textClear = stringResource(R.string.you_have_cleared_cache)
 				AlertDialogMain(
 					dialogText = null,
 					dialogTitle = stringResource(R.string.delete_all_question),
 					onConfirmation = {
-						val imageLoader = context.imageLoader
-						imageLoader.diskCache?.clear()
-						imageLoader.memoryCache?.clear()
 						clearImageCache()
 						showDialog = false
-						Toast.makeText(context, textClear, Toast.LENGTH_SHORT).show()
+						Toast.makeText(context, R.string.you_have_cleared_cache, Toast.LENGTH_SHORT).show()
 					},
 					onDismissRequest = { showDialog = false },
 					icon = Icons.Default.Delete,

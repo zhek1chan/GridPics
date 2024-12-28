@@ -69,11 +69,11 @@ class MainNotificationService: Service()
 		jobForCancelingNotification?.cancel()
 	}
 
-	private fun showNotification(builder: Builder, useSound: Boolean)
+	private fun showNotification(builder: Builder, launchServiceInBackground: Boolean)
 	{
 		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.notify(NOTIFICATION_ID, builder.build())
-		if(!useSound)
+		if(!launchServiceInBackground)
 		{
 			startForeground(NOTIFICATION_ID, builder.build())
 		}

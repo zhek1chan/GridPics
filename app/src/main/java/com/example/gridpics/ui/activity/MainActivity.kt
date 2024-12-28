@@ -29,6 +29,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
@@ -166,7 +167,8 @@ class MainActivity: AppCompatActivity()
 						picVM.postSavedUrls(urls = urls)
 						detVM.firstSetOfListState(urls)
 					},
-					saveToSharedPrefs = { urls -> saveToSharedPrefs(picVM.convertFromListToString(urls)) }
+					saveToSharedPrefs = { urls -> saveToSharedPrefs(picVM.convertFromListToString(urls))
+					Log.d("fuafahfafafa", "pics")}
 				)
 			}
 			composable(BottomNavItem.Settings.route) {
@@ -177,6 +179,9 @@ class MainActivity: AppCompatActivity()
 					isScreenInPortraitState = picState,
 					clearImageCache = {
 						saveToSharedPrefs("")
+						val imageLoader = this@MainActivity.imageLoader
+						imageLoader.diskCache?.clear()
+						imageLoader.memoryCache?.clear()
 						picVM.clearErrors()
 					},
 					postStartOfPager = { picVM.clickOnPicture(0, 0) }
@@ -193,10 +198,14 @@ class MainActivity: AppCompatActivity()
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
-					addPicture = { url -> picVM.addPictureToUrls(url) },
+					addPicture = { url ->
+						picVM.addPictureToUrls(url)
+						saveToSharedPrefs(picVM.returnStringOfList())
+						Log.d("fuafahfafafa", "details")
+					},
 					setImageSharedState = { detVM.isSharedImage(false) },
 					picsUiState = picVM.picturesUiState,
-					setCurrentPictureUrl = { url ->	detVM.postCurrentPicture(url) }
+					setCurrentPictureUrl = { url -> detVM.postCurrentPicture(url) }
 				)
 			}
 		}
@@ -442,6 +451,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun saveToSharedPrefs(picturesUrl: String)
 	{
+		Log.d("saved", "saved to sp all urls")
 		val sharedPreferencesPictures = this.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		val editorPictures = sharedPreferencesPictures.edit()
 		editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
