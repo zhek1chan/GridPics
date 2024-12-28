@@ -154,7 +154,7 @@ fun DetailsScreen(
 				changeBarsVisability = changeBarsVisability,
 				postUrl = postUrl,
 				addPicture = addPicture,
-				isScreenInPortraitState = picsUiState.value.isPortraitOrientation,
+				picturesState = picsUiState,
 				saveToSharedPrefs = saveToSharedPrefs,
 				setImageSharedStateToFalse = setImageSharedStateToFalse,
 				postNewBitmap = postNewBitmap,
@@ -179,18 +179,20 @@ fun ShowDetails(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
 	addPicture: (String) -> Unit,
-	isScreenInPortraitState: Boolean,
 	saveToSharedPrefs: (List<String>) -> Unit,
 	setImageSharedStateToFalse: () -> Unit,
 	postNewBitmap: (String) -> Unit,
 	setCurrentPictureUrl: (String) -> Unit,
 	currentPicture: String,
+	picturesState: MutableState<PicturesScreenUiState>,
 )
 {
+	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
 	val list = state.value.picturesUrl
 	var initialPage = list.indexOf(currentPicture)
 	var size = list.size
-	if(list.isEmpty()) {
+	if(list.isEmpty())
+	{
 		initialPage = 0
 		size = 1
 	}
@@ -287,7 +289,8 @@ fun ShowDetails(
 									.size(130.dp, 60.dp),
 								onClick = {
 									saveToSharedPrefs(list)
-									if (pagerState.pageCount == 1) {
+									if(pagerState.pageCount == 1)
+									{
 										navigateToHome(
 											changeBarsVisability = changeBarsVisability,
 											postUrl = postUrl,
