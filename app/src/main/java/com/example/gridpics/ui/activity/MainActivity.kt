@@ -92,7 +92,10 @@ class MainActivity: AppCompatActivity()
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
 		val listOfUrls = picVM.convertToListFromString(picturesFromSP)
 		picVM.postSavedUrls(urls = listOfUrls)
-		detVM.firstSetOfListState(listOfUrls)
+		if(detVM.uiState.value.picturesUrl.isEmpty())
+		{
+			detVM.firstSetOfListState(listOfUrls)
+		}
 		// Здесь мы получаем значение выбранной через настройки приложения темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
