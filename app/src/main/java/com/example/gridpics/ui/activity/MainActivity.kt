@@ -185,6 +185,7 @@ class MainActivity: AppCompatActivity()
 			}
 			composable(Screen.Details.route) {
 				val picsStateValue = picVM.picturesUiState.value
+				val listOfUrls = picsStateValue.picturesUrl
 				DetailsScreen(
 					navController = navController,
 					checkOnErrorExists = { str -> picVM.checkOnErrorExists(str) },
@@ -205,11 +206,11 @@ class MainActivity: AppCompatActivity()
 					getListOfUrls = {
 						if(detVM.uiState.value.isSharedImage)
 						{
-							detVM.createListForScreen(picsStateValue.picturesUrl, picsStateValue.currentPicture)
+							detVM.createListForScreen(listOfUrls, picsStateValue.currentPicture)
 						}
 						else
 						{
-							detVM.createListForScreen(picsStateValue.picturesUrl, null)
+							detVM.createListForScreen(listOfUrls, null)
 						}
 					},
 					picsUiState = picVM.picturesUiState,
