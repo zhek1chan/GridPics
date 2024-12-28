@@ -79,7 +79,7 @@ class DetailsViewModel(
 				list.add(0, url)
 			}
 			val newList = list.distinct().toMutableList()
-			Log.d("check list", "$list")
+			Log.d("check list", "$newList")
 			state.value = state.value.copy(picturesUrl = newList)
 		}
 	}

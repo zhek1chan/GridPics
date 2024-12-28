@@ -60,9 +60,9 @@ class PicturesViewModel(
 		val state = picturesUiState
 		viewModelScope.launch {
 			val list = state.value.picturesUrl
-			Log.d("check list", "added this")
 			list.add(0, pic)
 			val newList = list.distinct().toMutableList()
+			Log.d("check list", "added this")
 			state.value = state.value.copy(picturesUrl = newList)
 		}
 	}
