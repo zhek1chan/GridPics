@@ -105,7 +105,6 @@ fun DetailsScreen(
 	state: MutableState<DetailsScreenUiState>,
 	removeError: (String) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
-	postVisibleBarsState: () -> Unit,
 	isValidUrl: (String) -> Boolean,
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
@@ -118,9 +117,7 @@ fun DetailsScreen(
 {
 	val value = state.value
 	val context = LocalContext.current
-	val picsStateValue = picsUiState.value
 	val currentPicture = value.currentPicture
-	val isScreenInPortrait = picsStateValue.isPortraitOrientation
 	BackHandler {
 		navigateToHome(
 			changeBarsVisability = changeBarsVisability,
@@ -129,8 +126,6 @@ fun DetailsScreen(
 			setImageSharedStateToFalse = setImageSharedStateToFalse
 		)
 	}
-	val list = value.picturesUrl
-	Log.d("check", "$list")
 	Scaffold(
 		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 		topBar = {
@@ -148,19 +143,17 @@ fun DetailsScreen(
 		content = { padding ->
 			ShowDetails(
 				navController = navController,
-				list = list,
 				context = context,
 				checkOnErrorExists = checkOnErrorExists,
 				addError = addError,
 				removeSpecialError = removeError,
 				state = state,
-				postPositiveState = postVisibleBarsState,
 				isValidUrl = isValidUrl,
 				padding = padding,
 				changeBarsVisability = changeBarsVisability,
 				postUrl = postUrl,
 				addPicture = addPicture,
-				isScreenInPortraitState = isScreenInPortrait,
+				isScreenInPortraitState = picsUiState.value.isPortraitOrientation,
 				saveToSharedPrefs = saveToSharedPrefs,
 				setImageSharedStateToFalse = setImageSharedStateToFalse,
 				postNewBitmap = postNewBitmap,
@@ -175,13 +168,11 @@ fun DetailsScreen(
 @Composable
 fun ShowDetails(
 	navController: NavController,
-	list: List<String>,
 	context: Context,
 	checkOnErrorExists: (String) -> Boolean,
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
-	postPositiveState: () -> Unit,
 	isValidUrl: (String) -> Boolean,
 	padding: PaddingValues,
 	changeBarsVisability: (Boolean) -> Unit,
@@ -195,6 +186,7 @@ fun ShowDetails(
 	currentPicture: String,
 )
 {
+	val list = state.value.picturesUrl
 	var initialPage = list.indexOf(currentPicture)
 	var size = list.size
 	if(list.isEmpty()) {
@@ -229,12 +221,13 @@ fun ShowDetails(
 			}
 		}
 		Box(modifier = Modifier.fillMaxSize()) {
-			val isError = checkOnErrorExists(list[page])
+			val url = list[page]
+			val isError = checkOnErrorExists(url)
 			if(isError)
 			{
 				ShowError(
 					context = context,
-					currentUrl = list[page],
+					currentUrl = url,
 					pagerState = pagerState,
 					isValidUrl = isValidUrl
 				)
@@ -242,10 +235,9 @@ fun ShowDetails(
 			else
 			{
 				ShowAsynchImage(
-					img = list[page],
+					img = url,
 					addError = addError,
 					removeSpecialError = removeSpecialError,
-					postPositiveState = postPositiveState,
 					navController = navController,
 					state = state,
 					context = context,
@@ -302,7 +294,7 @@ fun ShowDetails(
 											setImageSharedStateToFalse = setImageSharedStateToFalse
 										)
 									}
-									addPicture(list[page])
+									addPicture(url)
 								},
 								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
 								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
@@ -323,7 +315,6 @@ fun ShowAsynchImage(
 	img: String,
 	addError: (String) -> Unit,
 	removeSpecialError: (String) -> Unit,
-	postPositiveState: () -> Unit,
 	navController: NavController,
 	state: MutableState<DetailsScreenUiState>,
 	context: Context,
@@ -407,8 +398,6 @@ fun ShowAsynchImage(
 						{
 							if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
 							{
-								postUrl(DEFAULT_STRING_VALUE, null)
-								postPositiveState()
 								navigateToHome(
 									changeBarsVisability = changeBarsVisability,
 									postUrl = postUrl,

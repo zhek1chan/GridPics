@@ -190,7 +190,6 @@ class MainActivity: AppCompatActivity()
 					state = detVM.uiState,
 					removeError = { str -> picVM.removeSpecialError(str) },
 					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
-					postVisibleBarsState = { detVM.changeVisabilityState(true) },
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
