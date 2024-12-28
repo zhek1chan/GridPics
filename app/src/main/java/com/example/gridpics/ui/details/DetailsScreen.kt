@@ -71,6 +71,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -275,7 +276,7 @@ fun ShowDetails(
 							border = BorderStroke(3.dp, Color.Red),
 							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
 						) {
-							Text(text = cancelString, color = Color.Red)
+							Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
 						}
 						if(!isError)
 						{
@@ -294,6 +295,7 @@ fun ShowDetails(
 											setImageSharedStateToFalse = setImageSharedStateToFalse
 										)
 									}
+									setImageSharedStateToFalse()
 									addPicture(url)
 								},
 								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
