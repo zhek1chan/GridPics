@@ -198,10 +198,9 @@ class MainActivity: AppCompatActivity()
 					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
 					postNewBitmap = { url -> detVM.postImageBitmap(url) },
 					addPicture = { url ->
-						lifecycleScope.launch {
-							picVM.addPictureToUrls(url)
-							saveToSharedPrefs(picVM.returnStringOfList())
-						}
+						picVM.addPictureToUrls(url)
+						saveToSharedPrefs(picVM.returnStringOfList())
+
 						Log.d("fuafahfafafa", "details")
 					},
 					setImageSharedState = { isShared -> detVM.isSharedImage(isShared) },
