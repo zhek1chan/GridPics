@@ -166,7 +166,8 @@ class MainActivity: AppCompatActivity()
 					},
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(picVM.convertFromListToString(urls))
-					}
+					},
+					postDefaultUrl = { detVM.postNewPic(DEFAULT_STRING_VALUE, null) }
 				)
 			}
 			composable(BottomNavItem.Settings.route) {

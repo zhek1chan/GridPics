@@ -94,6 +94,7 @@ fun PicturesScreen(
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (List<String>) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
+	postDefaultUrl: () -> Unit
 )
 {
 	LaunchedEffect(Unit) {
@@ -102,6 +103,7 @@ fun PicturesScreen(
 	BackHandler {
 		postPressOnBackButton()
 	}
+	postDefaultUrl()
 	val value = state.value
 	val windowInsets = if(value.isPortraitOrientation)
 	{
