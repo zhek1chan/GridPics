@@ -76,6 +76,7 @@ class DetailsViewModel(
 
 	fun postCorrectList()
 	{
+		Log.d("index list", "correct list was posted")
 		val value = uiState.value
 		val pictures = value.picturesUrl
 		if(value.isSharedImage)
@@ -108,7 +109,7 @@ class DetailsViewModel(
 		{
 			sendList = list.toMutableList()
 		}
-		Log.d("check list", "$sendList")
 		state.value = state.value.copy(picturesUrl = sendList)
+		Log.d("index list", "create list for screen was called")
 	}
 }

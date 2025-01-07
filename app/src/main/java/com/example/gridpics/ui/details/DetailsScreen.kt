@@ -185,7 +185,7 @@ fun ShowDetails(
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
-	val list = state.value.picturesUrl
+	var list = state.value.picturesUrl
 	val initialPage: Int
 	val size: Int
 	if(list.indexOf(currentPicture) >= 0)
@@ -193,9 +193,13 @@ fun ShowDetails(
 		initialPage = list.indexOf(currentPicture)
 		size = list.size
 	} else {
+		list = listOf(currentPicture)
 		initialPage = 0
 		size = 1
 	}
+	Log.d("index currentPage", currentPicture)
+	Log.d("index initialPage", "$initialPage")
+	Log.d("index size of list", "$size")
 	val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
 	val isSharedImage = state.value.isSharedImage
 	Log.d("checkCheck", "$isSharedImage")
