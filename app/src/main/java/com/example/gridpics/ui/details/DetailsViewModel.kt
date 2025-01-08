@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
-import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,14 +20,14 @@ class DetailsViewModel(
 		MutableStateFlow<Pair<String, Bitmap?>?>(null)
 	val uiState =
 		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = ""))
-	private var job = Job()
+	private val job = Job()
+	private var jobForScope: Job? = null
 	fun observeUrlFlow() = imageFlow
 	fun postNewPic(url: String, bitmap: Bitmap?)
 	{
-		viewModelScope.launch {
-			val jobButNotSteveJobs = job
-			jobButNotSteveJobs.cancelChildren()
-			job = this as CompletableJob
+		jobForScope?.cancel()
+		jobForScope = viewModelScope.launch {
+			job.cancelChildren()
 			imageFlow.emit(Pair(url, bitmap))
 		}
 	}
@@ -36,12 +35,14 @@ class DetailsViewModel(
 	fun postImageBitmap(url: String)
 	{
 		Log.d("Description posted", "desc was posted")
-		job.cancelChildren()
-		job = viewModelScope.launch {
+		jobForScope?.cancel()
+		jobForScope = viewModelScope.launch {
 			Log.d("description job is active", "${job.isActive}")
-			val bitmap = interactor.getPictureBitmap(url, job)
+			val jobButNotSteveJobs = job
+			jobButNotSteveJobs.cancelChildren()
+			val bitmap = interactor.getPictureBitmap(url, jobButNotSteveJobs)
 			imageFlow.emit(Pair(url, bitmap))
-		} as CompletableJob
+		}
 	}
 
 	fun changeMultiWindowState(isMultiWindowed: Boolean)
