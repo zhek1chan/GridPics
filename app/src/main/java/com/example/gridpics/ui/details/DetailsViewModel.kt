@@ -17,13 +17,13 @@ class DetailsViewModel(
 ): ViewModel()
 {
 	private val imageFlow =
-		MutableStateFlow<Pair<String, Bitmap?>?>(null)
+		MutableStateFlow<Pair<String?, Bitmap?>?>(null)
 	val uiState =
 		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = ""))
 	private val job = Job()
 	private var jobForScope: Job? = null
 	fun observeUrlFlow() = imageFlow
-	fun postNewPic(url: String, bitmap: Bitmap?)
+	fun postNewPic(url: String?, bitmap: Bitmap?)
 	{
 		jobForScope?.cancel()
 		jobForScope = viewModelScope.launch {

@@ -18,7 +18,6 @@ import androidx.core.app.NotificationCompat.Builder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.CHANNEL_NOTIFICATIONS_ID
-import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.SAVED_URL_FROM_SCREEN_DETAILS
 import com.example.gridpics.ui.activity.MainActivity.Companion.TEXT_PLAIN
@@ -97,12 +96,12 @@ class MainNotificationService: Service()
 		}
 	}
 
-	private fun createLogic(description: String, bitmap: Bitmap?, useSound: Boolean)
+	private fun createLogic(description: String?, bitmap: Bitmap?, useSound: Boolean)
 	{
 		val resultIntent = Intent(this@MainNotificationService, MainActivity::class.java)
 		if(bitmap != null)
 		{
-			Log.d("OldString put", description)
+			Log.d("OldString put", description.toString())
 			resultIntent.action = Intent.ACTION_SEND
 			resultIntent.addCategory(Intent.CATEGORY_DEFAULT)
 			resultIntent.setType(TEXT_PLAIN)
@@ -112,14 +111,7 @@ class MainNotificationService: Service()
 			PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 		val color = getColor(R.color.green)
 		val gridPics = this@MainNotificationService.getString(R.string.gridpics)
-		val defaultText = if(description == DEFAULT_STRING_VALUE)
-		{
-			this@MainNotificationService.getString(R.string.notification_content_text)
-		}
-		else
-		{
-			description
-		}
+		val defaultText = description ?: this@MainNotificationService.getString(R.string.notification_content_text)
 		val builder = Builder(this@MainNotificationService, CHANNEL_NOTIFICATIONS_ID)
 			.setContentIntent(resultPendingIntent)
 			.setAutoCancel(true)
@@ -129,7 +121,7 @@ class MainNotificationService: Service()
 			.setColor(color)
 			.setContentTitle(gridPics)
 			.setContentText(defaultText)
-		Log.d("description in service", description)
+		Log.d("description in service", description.toString())
 		if(bitmap != null)
 		{
 			builder.setLargeIcon(bitmap)
@@ -147,16 +139,16 @@ class MainNotificationService: Service()
 		}
 	}
 
-	fun putValues(valuesPair: Pair<String, Bitmap?>)
+	fun putValues(valuesPair: Pair<String?, Bitmap?>)
 	{
-		Log.d("url in service", valuesPair.first)
+		Log.d("url in service", valuesPair.first.toString())
 		createLogic(valuesPair.first, valuesPair.second, false)
 	}
 
 	private fun prepareNotification(useSound: Boolean)
 	{
 		createNotificationChannel()
-		createLogic(DEFAULT_STRING_VALUE, null, useSound)
+		createLogic(null, null, useSound)
 	}
 
 	inner class ServiceBinder: Binder()

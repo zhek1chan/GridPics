@@ -81,13 +81,11 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import coil3.compose.AsyncImage
-import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
-import com.example.gridpics.ui.activity.MainActivity.Companion.DEFAULT_STRING_VALUE
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.MainActivity.Companion.TEXT_PLAIN
 import com.example.gridpics.ui.activity.Screen
@@ -105,7 +103,7 @@ fun DetailsScreen(
 	addError: (String, String) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	removeError: (String) -> Unit,
-	postUrl: (String, Bitmap?) -> Unit,
+	postUrl: (String?, Bitmap?) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	changeBarsVisability: (Boolean) -> Unit,
 	postNewBitmap: (String) -> Unit,
@@ -206,7 +204,7 @@ fun ShowDetails(
 	isValidUrl: (String) -> Boolean,
 	padding: PaddingValues,
 	changeBarsVisability: (Boolean) -> Unit,
-	postUrl: (String, Bitmap?) -> Unit,
+	postUrl: (String?, Bitmap?) -> Unit,
 	addPicture: (String) -> Unit,
 	setImageSharedState: (Boolean) -> Unit,
 	picturesState: MutableState<PicturesScreenUiState>,
@@ -328,7 +326,7 @@ fun ShowAsynchImage(
 	state: MutableState<DetailsScreenUiState>,
 	context: Context,
 	changeBarsVisability: (Boolean) -> Unit,
-	postUrl: (String, Bitmap?) -> Unit,
+	postUrl: (String?, Bitmap?) -> Unit,
 	isScreenInPortraitState: Boolean,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 )
@@ -485,7 +483,7 @@ fun AppBar(
 	isVisible: Boolean,
 	context: Context, nc: NavController,
 	currentPicture: String,
-	postUrl: (String, Bitmap?) -> Unit,
+	postUrl: (String?, Bitmap?) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	changeBarsVisability: (Boolean) -> Unit,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
@@ -596,13 +594,13 @@ fun AppBar(
 
 fun navigateToHome(
 	changeBarsVisability: (Boolean) -> Unit,
-	postUrl: (String, Bitmap?) -> Unit,
+	postUrl: (String?, Bitmap?) -> Unit,
 	navController: NavController,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 )
 {
 	changeBarsVisability(true)
-	postUrl(DEFAULT_STRING_VALUE, null)
+	postUrl(null, null)
 	setImageSharedStateToFalse(false)
 	navController.navigate(Screen.Home.route) {
 		popUpTo(navController.graph.findStartDestination().id)

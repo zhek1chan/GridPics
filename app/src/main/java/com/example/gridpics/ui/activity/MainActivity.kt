@@ -58,9 +58,9 @@ class MainActivity: AppCompatActivity()
 			val binder = service as MainNotificationService.ServiceBinder
 			val mainService = binder.get()
 			val flowValue = detailsViewModel.observeUrlFlow().value
-			if(flowValue?.first != DEFAULT_STRING_VALUE)
+			if(flowValue?.first != null)
 			{
-				flowValue?.let { mainService.putValues(it) }
+				flowValue.let { mainService.putValues(it) }
 			}
 			mainNotificationService = mainService
 		}
@@ -464,7 +464,6 @@ class MainActivity: AppCompatActivity()
 		const val THEME_SHARED_PREFERENCE = "THEME_SHARED_PREFERENCE"
 		const val CHANNEL_NOTIFICATIONS_ID = "GRID_PICS_CHANEL_NOTIFICATIONS_ID"
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
-		const val DEFAULT_STRING_VALUE = "default"
 		const val HTTP_ERROR = "HTTP error: 404"
 		const val SAVED_URL_FROM_SCREEN_DETAILS = "SAVED_URL_FROM_SCREEN_DETAILS"
 	}
