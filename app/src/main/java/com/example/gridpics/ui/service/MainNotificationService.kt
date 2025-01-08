@@ -108,7 +108,6 @@ class MainNotificationService: Service()
 			resultIntent.setType(TEXT_PLAIN)
 			resultIntent.putExtra(SAVED_URL_FROM_SCREEN_DETAILS, description)
 		}
-		Log.d("intent URI", resultIntent.toUri(0))
 		val resultPendingIntent = PendingIntent.getActivity(this@MainNotificationService, 100, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 		val color = getColor(R.color.green)
@@ -130,19 +129,27 @@ class MainNotificationService: Service()
 			.setColor(color)
 			.setContentTitle(gridPics)
 			.setContentText(defaultText)
+		Log.d("description in service", description)
 		if(bitmap != null)
 		{
-			Log.d("description in service", description)
 			builder.setLargeIcon(bitmap)
 				.setStyle(NotificationCompat.BigPictureStyle()
 					.bigPicture(bitmap)
 					.bigLargeIcon(null as Icon?))
 		}
-		showNotification(builder, useSound)
+		if(description == defaultText)
+		{
+			showNotification(builder, true)
+		}
+		else
+		{
+			showNotification(builder, useSound)
+		}
 	}
 
 	fun putValues(valuesPair: Pair<String, Bitmap?>)
 	{
+		Log.d("url in service", valuesPair.first)
 		createLogic(valuesPair.first, valuesPair.second, false)
 	}
 

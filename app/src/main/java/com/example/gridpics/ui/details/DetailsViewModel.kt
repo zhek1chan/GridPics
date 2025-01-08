@@ -38,9 +38,8 @@ class DetailsViewModel(
 		jobForScope?.cancel()
 		jobForScope = viewModelScope.launch {
 			Log.d("description job is active", "${job.isActive}")
-			val jobButNotSteveJobs = job
-			jobButNotSteveJobs.cancelChildren()
-			val bitmap = interactor.getPictureBitmap(url, jobButNotSteveJobs)
+			job.cancelChildren()
+			val bitmap = interactor.getPictureBitmap(url, job)
 			imageFlow.emit(Pair(url, bitmap))
 		}
 	}

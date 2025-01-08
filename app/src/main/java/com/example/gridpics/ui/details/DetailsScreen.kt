@@ -126,6 +126,39 @@ fun DetailsScreen(
 			setImageSharedStateToFalse = setImageSharedState
 		)
 	}
+	var list = state.value.picturesUrl
+	val initialPage: Int
+	val size: Int
+	if(list.indexOf(currentPicture) >= 0)
+	{
+		initialPage = list.indexOf(currentPicture)
+		size = list.size
+	}
+	else
+	{
+		list = listOf(currentPicture)
+		initialPage = 0
+		size = 1
+	}
+	Log.d("index currentPage", currentPicture)
+	Log.d("index initialPage", "$initialPage")
+	Log.d("index size of list", "$size")
+	val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
+	val currentPage = pagerState.currentPage
+	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
+	LaunchedEffect(currentPage) {
+		val pic = list[currentPage]
+		setCurrentPictureUrl(pic)
+		if(getErrorMessageFromErrorsList(pic) != null)
+		{
+			Log.d("checkMa", "gruzim oshibku")
+			postUrl(pic, errorPicture)
+		}
+		else
+		{
+			postNewBitmap(pic)
+		}
+	}
 	Scaffold(
 		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 		topBar = {
@@ -154,10 +187,8 @@ fun DetailsScreen(
 				postUrl = postUrl,
 				addPicture = addPicture,
 				setImageSharedState = setImageSharedState,
-				postNewBitmap = postNewBitmap,
-				setCurrentPictureUrl = setCurrentPictureUrl,
-				currentPicture = currentPicture,
-				picturesState = picsUiState
+				picturesState = picsUiState,
+				pagerState = pagerState,
 			)
 		}
 	)
@@ -178,31 +209,11 @@ fun ShowDetails(
 	postUrl: (String, Bitmap?) -> Unit,
 	addPicture: (String) -> Unit,
 	setImageSharedState: (Boolean) -> Unit,
-	postNewBitmap: (String) -> Unit,
-	setCurrentPictureUrl: (String) -> Unit,
-	currentPicture: String,
 	picturesState: MutableState<PicturesScreenUiState>,
+	pagerState: PagerState,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
-	var list = state.value.picturesUrl
-	val initialPage: Int
-	val size: Int
-	if(list.indexOf(currentPicture) >= 0)
-	{
-		initialPage = list.indexOf(currentPicture)
-		size = list.size
-	}
-	else
-	{
-		list = listOf(currentPicture)
-		initialPage = 0
-		size = 1
-	}
-	Log.d("index currentPage", currentPicture)
-	Log.d("index initialPage", "$initialPage")
-	Log.d("index size of list", "$size")
-	val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
 	val isSharedImage = state.value.isSharedImage
 	Log.d("checkCheck", "$isSharedImage")
 	val topBarHeight = 64.dp
@@ -214,22 +225,8 @@ fun ShowDetails(
 		userScrollEnabled = !isSharedImage,
 		pageSpacing = 10.dp
 	) { page ->
-		val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
-		val url = list[page]
+		val url = state.value.picturesUrl[page]
 		val errorMessage = checkOnErrorExists(url)
-		LaunchedEffect(page) {
-			val pic = list[page]
-			setCurrentPictureUrl(pic)
-			if(errorMessage != null)
-			{
-				Log.d("checkMa", "gruzim oshibku")
-				postUrl(pic, errorPicture)
-			}
-			else
-			{
-				postNewBitmap(pic)
-			}
-		}
 		Log.d("checkUp", "is error $errorMessage")
 		Box(modifier = Modifier.fillMaxSize()) {
 			if(errorMessage != null)
