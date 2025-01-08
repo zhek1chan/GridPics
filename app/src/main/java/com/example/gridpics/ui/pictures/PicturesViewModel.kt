@@ -39,7 +39,8 @@ class PicturesViewModel(
 							urlsFromNet
 						}
 						flow.value = flow.value.copy(
-							loadingState = PicturesState.SearchIsOk(urlsToAdd)
+							loadingState = PicturesState.SearchIsOk(urlsToAdd),
+							picturesUrl = urlsToAdd
 						)
 					}
 					is Resource.ConnectionError ->
@@ -53,20 +54,22 @@ class PicturesViewModel(
 
 	fun addPictureToUrls(pic: String)
 	{
-		val state = picturesUiState
-		val sendList = mutableListOf<String>()
-		val list = state.value.picturesUrl
-		val size = list.size
-		for(i in 0 ..< size)
-		{
-			if(list[i] != pic)
+		viewModelScope.launch {
+			val state = picturesUiState
+			val sendList = mutableListOf<String>()
+			val list = state.value.picturesUrl
+			val size = list.size
+			for(i in 0 ..< size)
 			{
-				sendList.add(list[i])
+				if(list[i] != pic)
+				{
+					sendList.add(list[i])
+				}
 			}
+			sendList.add(0, pic)
+			Log.d("checkCheck", "list $list")
+			state.value = state.value.copy(picturesUrl = sendList)
 		}
-		sendList.add(0, pic)
-		Log.d("checkCheck", "list $list")
-		state.value = state.value.copy(picturesUrl = sendList)
 	}
 
 	fun postSavedUrls(urls: List<String>)

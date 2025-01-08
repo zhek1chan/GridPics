@@ -94,10 +94,10 @@ class DetailsViewModel(
 	private fun createListForScreen(list: List<String>, url: String?)
 	{
 		val state = uiState
-		var sendList = mutableListOf<String>()
 		val size = list.size
-		if(url != null)
+		val listForState = if(url != null)
 		{
+			val sendList = mutableListOf<String>()
 			for(i in 0 ..< size)
 			{
 				if(list[i] != url)
@@ -106,12 +106,13 @@ class DetailsViewModel(
 				}
 			}
 			sendList.add(0, url)
+			sendList
 		}
 		else
 		{
-			sendList = list.toMutableList()
+			list
 		}
-		state.value = state.value.copy(picturesUrl = sendList)
+		state.value = state.value.copy(picturesUrl = listForState)
 		Log.d("index list", "create list for screen was called")
 	}
 }

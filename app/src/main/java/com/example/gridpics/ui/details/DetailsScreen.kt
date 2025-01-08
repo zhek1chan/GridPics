@@ -357,7 +357,6 @@ fun ShowAsynchImage(
 			.error(R.drawable.loading)
 			.allowHardware(false)
 			.diskCacheKey(img)
-			.networkCachePolicy(CachePolicy.ENABLED)
 			.build()
 	}
 	val scope = rememberCoroutineScope()

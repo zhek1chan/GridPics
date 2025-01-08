@@ -64,7 +64,6 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
-import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.request.error
@@ -192,12 +191,9 @@ fun itemNewsCard(
 			.data(data)
 			.allowHardware(false)
 			.httpHeaders(headers)
-			.networkCachePolicy(CachePolicy.ENABLED)
-			.memoryCachePolicy(CachePolicy.ENABLED)
 			.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(4))
 			.interceptorCoroutineContext(Dispatchers.IO.limitedParallelism(4))
 			.coroutineContext(Dispatchers.IO.limitedParallelism(4))
-			.diskCachePolicy(CachePolicy.ENABLED)
 			.placeholder(placeholder)
 			.error(R.drawable.error)
 			.build()
@@ -207,7 +203,11 @@ fun itemNewsCard(
 		contentDescription = item,
 		modifier = Modifier
 			.clickable {
-				if(!isError)
+				if(isError)
+				{
+					openAlertDialog.value = true
+				}
+				else
 				{
 					Log.d("current", item)
 					currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
@@ -217,10 +217,6 @@ fun itemNewsCard(
 						}
 					}
 					openAlertDialog.value = false
-				}
-				else
-				{
-					openAlertDialog.value = true
 				}
 			}
 			.padding(10.dp)

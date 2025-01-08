@@ -2,9 +2,7 @@ package com.example.gridpics.data.repository
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.util.Log
 import coil3.ImageLoader
-import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.request.error
@@ -62,12 +60,9 @@ class ImagesRepositoryImpl(
 					.coroutineContext(coroutineContext + job)
 					.allowHardware(false)
 					.target {
-						Log.d("checkMa", "gruzim pic")
 						bitmap = it.toBitmap()
 					}
-					.diskCachePolicy(CachePolicy.ENABLED)
 					.diskCacheKey(url)
-					.memoryCachePolicy(CachePolicy.ENABLED)
 					.build()
 			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
 			while(bitmap == null)
