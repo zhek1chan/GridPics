@@ -77,16 +77,14 @@ import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PicturesScreen(
 	navController: NavController,
 	postPressOnBackButton: () -> Unit,
-	checkOnErrorExists: (String) -> Boolean,
-	addError: (String) -> Unit,
-	postState: (Boolean, List<String>) -> Unit,
+	getErrorMessageFromErrorsList: (String) -> String?,
+	addError: (String, String) -> Unit,
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
 	postVisibleBarsState: () -> Unit,
@@ -94,7 +92,7 @@ fun PicturesScreen(
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (List<String>) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
-	postDefaultUrl: () -> Unit
+	postDefaultUrl: () -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -146,9 +144,8 @@ fun PicturesScreen(
 				val index = value.index
 				ShowList(
 					imagesUrlsSP = urls,
-					checkOnErrorExists = checkOnErrorExists,
+					getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 					addError = addError,
-					postState = postState,
 					state = loadingState,
 					clearErrors = clearErrors,
 					navController = navController,
@@ -169,31 +166,32 @@ fun PicturesScreen(
 fun itemNewsCard(
 	item: String,
 	navController: NavController,
-	checkOnErrorExists: (String) -> Boolean,
-	addError: (String) -> Unit,
+	getErrorMessageFromErrorsList: (String) -> String?,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postState: (Boolean, List<String>) -> Unit,
-	urls: List<String>,
 	lazyState: LazyGridState,
-): Boolean
+): Pair<String, String>?
 {
 	var isError by remember { mutableStateOf(false) }
 	val context = LocalContext.current
 	val openAlertDialog = remember { mutableStateOf(false) }
 	val errorMessage = remember { mutableStateOf("") }
 	var placeholder = R.drawable.loading
-	if(checkOnErrorExists(item))
+	var data = item
+	val errorMessageFromErrorsList = getErrorMessageFromErrorsList(item)
+	if(errorMessageFromErrorsList != null)
 	{
+		data = ""
 		placeholder = R.drawable.error
 		isError = true
+		errorMessage.value = errorMessageFromErrorsList
 	}
 	val headers = NetworkHeaders.Builder()
 		.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
 		.build()
 	val imgRequest = remember(item) {
 		ImageRequest.Builder(context)
-			.data(item)
+			.data(data)
 			.allowHardware(false)
 			.httpHeaders(headers)
 			.networkCachePolicy(CachePolicy.ENABLED)
@@ -234,7 +232,6 @@ fun itemNewsCard(
 		onError = {
 			isError = true
 			errorMessage.value = it.result.throwable.message.toString()
-			addError(item)
 		},
 		onSuccess = {
 			isError = false
@@ -253,7 +250,6 @@ fun itemNewsCard(
 					{
 						openAlertDialog.value = false
 						println("Confirmation registered")
-						postState(false, urls)
 						Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
 					},
 					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
@@ -274,15 +270,22 @@ fun itemNewsCard(
 			}
 		}
 	}
-	return isError
+	val errorText = errorMessage.value
+	return if(isError)
+	{
+		Pair(item, errorText)
+	}
+	else
+	{
+		null
+	}
 }
 
 @Composable
 fun ShowList(
 	imagesUrlsSP: List<String>?,
-	checkOnErrorExists: (String) -> Boolean,
-	addError: (String) -> Unit,
-	postState: (Boolean, List<String>) -> Unit,
+	getErrorMessageFromErrorsList: (String) -> String?,
+	addError: (String, String) -> Unit,
 	state: PicturesState,
 	clearErrors: () -> Unit,
 	navController: NavController,
@@ -305,34 +308,30 @@ fun ShowList(
 			is PicturesState.SearchIsOk ->
 			{
 				Log.d("Now state is", "Search Is Ok")
-				LaunchedEffect(Unit) {
-					saveToSharedPrefs(state.data)
-					Toast.makeText(context, R.string.loading_has_been_started, Toast.LENGTH_SHORT).show()
-				}
 				val list = state.data
 				postSavedUrls(list)
+				LaunchedEffect(Unit) {
+					Toast.makeText(context, R.string.loading_has_been_started, Toast.LENGTH_SHORT).show()
+				}
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
 						.fillMaxSize(),
 					columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(items = list) {
-						itemNewsCard(
+						val itemsCard = itemNewsCard(
 							item = it,
 							navController = navController,
-							checkOnErrorExists = checkOnErrorExists,
-							addError = addError,
+							getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							postState = postState,
-							urls = list,
 							lazyState = listState
 						)
+						if(itemsCard != null)
+						{
+							addError(itemsCard.first, itemsCard.second)
+						}
 					}
-				}
-				LaunchedEffect(state) {
-					delay(6000)
-					postState(true, list)
 				}
 			}
 			is PicturesState.ConnectionError ->
@@ -351,35 +350,6 @@ fun ShowList(
 				}
 			}
 			is PicturesState.NothingFound -> Unit
-			is PicturesState.Loaded ->
-			{
-				Log.d("Now state is", "Loaded")
-				LaunchedEffect(Unit) {
-					Toast.makeText(context, R.string.loading_has_been_ended, Toast.LENGTH_SHORT).show()
-					postSavedUrls(state.data)
-				}
-				val list = state.data
-				Log.d("Now state is", "Loaded")
-				LazyVerticalGrid(
-					state = listState,
-					modifier = Modifier
-						.fillMaxSize(),
-					columns = GridCells.Fixed(count = calculateGridSpan())) {
-					items(items = list) {
-						itemNewsCard(
-							item = it,
-							navController = navController,
-							checkOnErrorExists = checkOnErrorExists,
-							addError = addError,
-							currentPicture = currentPicture,
-							isValidUrl = isValidUrl,
-							postState = postState,
-							urls = list,
-							lazyState = listState
-						)
-					}
-				}
-			}
 		}
 	}
 	else
@@ -395,18 +365,19 @@ fun ShowList(
 				.fillMaxSize(),
 			columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$imagesUrlsSP")
-			items(imagesUrlsSP) {
-				itemNewsCard(
+			items(items = imagesUrlsSP) {
+				val itemsCard = itemNewsCard(
 					item = it,
 					navController = navController,
-					checkOnErrorExists = checkOnErrorExists,
-					addError = addError,
+					getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
-					postState = postState,
-					urls = imagesUrlsSP,
 					lazyState = listState
 				)
+				if(itemsCard != null)
+				{
+					addError(itemsCard.first, itemsCard.second)
+				}
 			}
 		}
 	}

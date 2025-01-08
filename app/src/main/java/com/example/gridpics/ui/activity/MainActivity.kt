@@ -149,9 +149,8 @@ class MainActivity: AppCompatActivity()
 				PicturesScreen(
 					navController = navController,
 					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
-					checkOnErrorExists = { str -> picVM.checkOnErrorExists(str) },
-					addError = { str -> picVM.addError(str) },
-					postState = { useLoadedState, urls -> picVM.postState(useLoadedState, urls) },
+					getErrorMessageFromErrorsList = { str -> picVM.checkOnErrorExists(str) },
+					addError = { url, message -> picVM.addError(url, message) },
 					state = picState,
 					clearErrors = { picVM.clearErrors() },
 					postVisibleBarsState = { detVM.changeVisabilityState(true) },
@@ -189,8 +188,8 @@ class MainActivity: AppCompatActivity()
 			composable(Screen.Details.route) {
 				DetailsScreen(
 					navController = navController,
-					checkOnErrorExists = { str -> picVM.checkOnErrorExists(str) },
-					addError = { str -> picVM.addError(str) },
+					getErrorMessageFromErrorsList = { url -> picVM.checkOnErrorExists(url) },
+					addError = { url, message -> picVM.addError(url, message) },
 					state = detVM.uiState,
 					removeError = { str -> picVM.removeSpecialError(str) },
 					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
@@ -205,7 +204,7 @@ class MainActivity: AppCompatActivity()
 					},
 					setImageSharedState = { isShared -> detVM.isSharedImage(isShared) },
 					picsUiState = picVM.picturesUiState,
-					setCurrentPictureUrl = { url -> detVM.postCurrentPicture(url) }
+					setCurrentPictureUrl = { url -> detVM.postCurrentPicture(url) },
 				)
 			}
 		}

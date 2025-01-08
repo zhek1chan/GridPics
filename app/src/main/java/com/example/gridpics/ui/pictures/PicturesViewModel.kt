@@ -16,7 +16,7 @@ class PicturesViewModel(
 ): ViewModel()
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM))
-	private val errorsList: MutableList<String> = mutableListOf()
+	private val errorsMap: MutableMap<String, String> = mutableMapOf()
 
 	init
 	{
@@ -51,19 +51,6 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postState(useLoadedState: Boolean, urls: List<String>)
-	{
-		val state = picturesUiState
-		state.value = if(useLoadedState)
-		{
-			state.value.copy(loadingState = PicturesState.Loaded(urls))
-		}
-		else
-		{
-			state.value.copy(loadingState = PicturesState.SearchIsOk(urls))
-		}
-	}
-
 	fun addPictureToUrls(pic: String)
 	{
 		val state = picturesUiState
@@ -88,33 +75,40 @@ class PicturesViewModel(
 		state.value = state.value.copy(picturesUrl = urls.distinct())
 	}
 
-	fun addError(url: String)
+	fun addError(url: String, message: String)
 	{
-		val list = errorsList
-		if(!list.contains(url))
+		val map = errorsMap
+		if(!map.contains(url))
 		{
-			list.add(url)
+			map[url] = message
 		}
 	}
 
-	fun checkOnErrorExists(url: String): Boolean
+	fun checkOnErrorExists(url: String): String?
 	{
-		val list = errorsList
-		return list.contains(url)
+		val list = errorsMap
+		return if(list.contains(url))
+		{
+			list[url]
+		}
+		else
+		{
+			null
+		}
 	}
 
 	fun removeSpecialError(url: String)
 	{
-		val list = errorsList
-		if(list.contains(url))
+		val map = errorsMap
+		if(map.contains(url))
 		{
-			list.remove(url)
+			map.remove(url)
 		}
 	}
 
 	fun clearErrors()
 	{
-		errorsList.clear()
+		errorsMap.clear()
 	}
 
 	fun clickOnPicture(index: Int, offset: Int)

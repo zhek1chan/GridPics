@@ -101,8 +101,8 @@ import net.engawapg.lib.zoomable.zoomable
 @Composable
 fun DetailsScreen(
 	navController: NavController,
-	checkOnErrorExists: (String) -> Boolean,
-	addError: (String) -> Unit,
+	getErrorMessageFromErrorsList: (String) -> String?,
+	addError: (String, String) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	removeError: (String) -> Unit,
 	postUrl: (String, Bitmap?) -> Unit,
@@ -144,7 +144,7 @@ fun DetailsScreen(
 			ShowDetails(
 				navController = navController,
 				context = context,
-				checkOnErrorExists = checkOnErrorExists,
+				checkOnErrorExists = getErrorMessageFromErrorsList,
 				addError = addError,
 				removeSpecialError = removeError,
 				state = state,
@@ -168,8 +168,8 @@ fun DetailsScreen(
 fun ShowDetails(
 	navController: NavController,
 	context: Context,
-	checkOnErrorExists: (String) -> Boolean,
-	addError: (String) -> Unit,
+	checkOnErrorExists: (String) -> String?,
+	addError: (String, String) -> Unit,
 	removeSpecialError: (String) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	isValidUrl: (String) -> Boolean,
@@ -192,7 +192,9 @@ fun ShowDetails(
 	{
 		initialPage = list.indexOf(currentPicture)
 		size = list.size
-	} else {
+	}
+	else
+	{
 		list = listOf(currentPicture)
 		initialPage = 0
 		size = 1
@@ -213,11 +215,13 @@ fun ShowDetails(
 		pageSpacing = 10.dp
 	) { page ->
 		val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
+		val url = list[page]
 		val realCurrentPage = pagerState.currentPage
-		LaunchedEffect(realCurrentPage) {
+		val errorMessage = checkOnErrorExists(url)
+		LaunchedEffect(page) {
 			val pic = list[realCurrentPage]
 			setCurrentPictureUrl(pic)
-			if(checkOnErrorExists(pic))
+			if(errorMessage != null)
 			{
 				Log.d("checkMa", "gruzim oshibku")
 				postUrl(pic, errorPicture)
@@ -227,16 +231,16 @@ fun ShowDetails(
 				postNewBitmap(pic)
 			}
 		}
+		Log.d("checkUp", "is error $errorMessage")
 		Box(modifier = Modifier.fillMaxSize()) {
-			val url = list[page]
-			val isError = checkOnErrorExists(url)
-			if(isError)
+			if(errorMessage != null)
 			{
 				ShowError(
 					context = context,
 					currentUrl = url,
 					pagerState = pagerState,
-					isValidUrl = isValidUrl
+					isValidUrl = isValidUrl,
+					removeSpecialError = removeSpecialError
 				)
 			}
 			else
@@ -284,7 +288,7 @@ fun ShowDetails(
 						) {
 							Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
 						}
-						if(!isError)
+						if(errorMessage != null)
 						{
 							Button(
 								modifier = Modifier
@@ -321,7 +325,7 @@ fun ShowDetails(
 @Composable
 fun ShowAsynchImage(
 	img: String,
-	addError: (String) -> Unit,
+	addError: (String, String) -> Unit,
 	removeSpecialError: (String) -> Unit,
 	navController: NavController,
 	state: MutableState<DetailsScreenUiState>,
@@ -371,7 +375,7 @@ fun ShowAsynchImage(
 			removeSpecialError(img)
 		},
 		onError = {
-			addError(img)
+			addError(img, it.result.throwable.message.toString())
 		},
 		modifier = Modifier
 			.fillMaxSize()
@@ -432,6 +436,7 @@ fun ShowError(
 	currentUrl: String,
 	pagerState: PagerState,
 	isValidUrl: (String) -> Boolean,
+	removeSpecialError: (String) -> Unit,
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
@@ -466,6 +471,7 @@ fun ShowError(
 				{
 					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
 					scope.launch {
+						removeSpecialError(currentUrl)
 						pagerState.animateScrollToPage(pagerState.currentPage)
 					}
 				},
