@@ -216,10 +216,9 @@ fun ShowDetails(
 	) { page ->
 		val errorPicture = remember { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 		val url = list[page]
-		val realCurrentPage = pagerState.currentPage
 		val errorMessage = checkOnErrorExists(url)
 		LaunchedEffect(page) {
-			val pic = list[realCurrentPage]
+			val pic = list[page]
 			setCurrentPictureUrl(pic)
 			if(errorMessage != null)
 			{
