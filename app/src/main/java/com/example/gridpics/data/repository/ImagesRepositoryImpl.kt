@@ -58,7 +58,6 @@ class ImagesRepositoryImpl(
 					.data(url)
 					.placeholder(R.drawable.loading)
 					.error(R.drawable.error)
-					.allowHardware(false)
 					.target(
 						onSuccess = { result ->
 							continuation.resume(result.toBitmap())

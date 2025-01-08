@@ -65,7 +65,6 @@ import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import coil3.request.allowHardware
 import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
@@ -75,7 +74,6 @@ import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
-import kotlinx.coroutines.Dispatchers
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -160,7 +158,7 @@ fun PicturesScreen(
 
 @SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
-fun itemNewsCard(
+fun ItemsCard(
 	item: String,
 	navController: NavController,
 	getErrorMessageFromErrorsList: (String) -> String?,
@@ -184,17 +182,15 @@ fun itemNewsCard(
 		isError = true
 		errorMessage.value = errorMessageFromErrorsList
 	}
-	val headers = NetworkHeaders.Builder()
-		.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
-		.build()
+	val headers = remember(Unit) {
+		NetworkHeaders.Builder()
+			.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
+			.build()
+	}
 	val imgRequest = remember(item) {
 		ImageRequest.Builder(context)
 			.data(data)
-			.allowHardware(false)
 			.httpHeaders(headers)
-			.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(4))
-			.interceptorCoroutineContext(Dispatchers.IO.limitedParallelism(4))
-			.coroutineContext(Dispatchers.IO.limitedParallelism(4))
 			.placeholder(placeholder)
 			.error(R.drawable.error)
 			.build()
@@ -302,7 +298,7 @@ fun ShowList(
 						.fillMaxSize(),
 					columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(items = list) {
-						itemNewsCard(
+						ItemsCard(
 							item = it,
 							navController = navController,
 							getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
@@ -346,7 +342,7 @@ fun ShowList(
 			columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$imagesUrlsSP")
 			items(items = imagesUrlsSP) {
-				itemNewsCard(
+				ItemsCard(
 					item = it,
 					navController = navController,
 					getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,

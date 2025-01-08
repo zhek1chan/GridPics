@@ -82,7 +82,6 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
-import coil3.request.allowHardware
 import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
@@ -353,7 +352,6 @@ fun ShowAsynchImage(
 			.data(img)
 			.placeholder(R.drawable.loading)
 			.error(R.drawable.loading)
-			.allowHardware(false)
 			.diskCacheKey(img)
 			.build()
 	}
