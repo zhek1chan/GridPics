@@ -287,7 +287,7 @@ fun ShowDetails(
 						) {
 							Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
 						}
-						if(errorMessage != null)
+						if(errorMessage == null)
 						{
 							Button(
 								modifier = Modifier
