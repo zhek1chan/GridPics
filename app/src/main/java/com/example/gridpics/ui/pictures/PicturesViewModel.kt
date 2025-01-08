@@ -75,7 +75,7 @@ class PicturesViewModel(
 	fun postSavedUrls(urls: List<String>)
 	{
 		val state = picturesUiState
-		state.value = state.value.copy(picturesUrl = urls.distinct())
+		state.value = state.value.copy(picturesUrl = urls)
 	}
 
 	fun addError(url: String, message: String)

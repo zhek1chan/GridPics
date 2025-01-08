@@ -18,7 +18,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
 
 class ImagesRepositoryImpl(
 	private val networkClient: NetworkClient,
@@ -51,26 +53,29 @@ class ImagesRepositoryImpl(
 	override suspend fun getPictureBitmap(url: String, context: Context, job: Job): Bitmap?
 	{
 		return withContext(Dispatchers.IO + job) {
-			var bitmap: Bitmap? = null
-			val imgRequest =
-				ImageRequest.Builder(context)
+			suspendCancellableCoroutine { continuation ->
+				val imgRequest = ImageRequest.Builder(context)
 					.data(url)
 					.placeholder(R.drawable.loading)
 					.error(R.drawable.error)
-					.coroutineContext(coroutineContext + job)
 					.allowHardware(false)
-					.target {
-						bitmap = it.toBitmap()
-					}
+					.target(
+						onSuccess = { result ->
+							continuation.resume(result.toBitmap())
+						},
+						onError = { _ ->
+							continuation.resume(null)
+						}
+					)
 					.diskCacheKey(url)
 					.build()
-			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
-			while(bitmap == null)
-			{
-				delay(200)
-			}
+				val imageLoader = ImageLoader(context).newBuilder().build()
+				val request = imageLoader.enqueue(imgRequest)
 
-			return@withContext bitmap
+				continuation.invokeOnCancellation {
+					request.job.cancel()
+				}
+			}
 		}
 	}
 }

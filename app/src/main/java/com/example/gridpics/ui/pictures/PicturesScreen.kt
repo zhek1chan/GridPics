@@ -167,7 +167,8 @@ fun itemNewsCard(
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	lazyState: LazyGridState,
-): Pair<String, String>?
+	addError: (String, String) -> Unit,
+)
 {
 	var isError by remember { mutableStateOf(false) }
 	val context = LocalContext.current
@@ -225,53 +226,41 @@ fun itemNewsCard(
 		contentScale = ContentScale.Crop,
 		onError = {
 			isError = true
-			errorMessage.value = it.result.throwable.message.toString()
+			addError(item, it.result.throwable.message.toString())
 		},
 		onSuccess = {
 			isError = false
 		}
 	)
-	when
+	if(openAlertDialog.value)
 	{
-		openAlertDialog.value ->
+		if(isValidUrl(item))
 		{
-			if(isValidUrl(item))
-			{
-				val reloadString = stringResource(R.string.reload)
-				AlertDialogMain(
-					onDismissRequest = { openAlertDialog.value = false },
-					onConfirmation =
-					{
-						openAlertDialog.value = false
-						println("Confirmation registered")
-						Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
-					},
-					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
-					dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
-					icon = Icons.Default.Warning,
-					textButtonCancel = stringResource(R.string.cancel),
-					textButtonConfirm = stringResource(R.string.confirm))
-			}
-			else
-			{
-				AlertDialogSecondary(
-					onDismissRequest = { openAlertDialog.value = false },
-					onConfirmation =
-					{
-						openAlertDialog.value = false
-					},
-					dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
-			}
+			val reloadString = stringResource(R.string.reload)
+			AlertDialogMain(
+				onDismissRequest = { openAlertDialog.value = false },
+				onConfirmation =
+				{
+					openAlertDialog.value = false
+					println("Confirmation registered")
+					Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
+				},
+				dialogTitle = stringResource(R.string.error_ocurred_loading_img),
+				dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
+				icon = Icons.Default.Warning,
+				textButtonCancel = stringResource(R.string.cancel),
+				textButtonConfirm = stringResource(R.string.confirm))
 		}
-	}
-	val errorText = errorMessage.value
-	return if(isError)
-	{
-		Pair(item, errorText)
-	}
-	else
-	{
-		null
+		else
+		{
+			AlertDialogSecondary(
+				onDismissRequest = { openAlertDialog.value = false },
+				onConfirmation =
+				{
+					openAlertDialog.value = false
+				},
+				dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
+		}
 	}
 }
 
@@ -305,6 +294,7 @@ fun ShowList(
 				val list = state.data
 				LaunchedEffect(Unit) {
 					Toast.makeText(context, R.string.loading_has_been_started, Toast.LENGTH_SHORT).show()
+					saveToSharedPrefs(list)
 				}
 				LazyVerticalGrid(
 					state = listState,
@@ -312,21 +302,17 @@ fun ShowList(
 						.fillMaxSize(),
 					columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(items = list) {
-						val itemsCard = itemNewsCard(
+						itemNewsCard(
 							item = it,
 							navController = navController,
 							getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							lazyState = listState
+							lazyState = listState,
+							addError = addError
 						)
-						if(itemsCard != null)
-						{
-							addError(itemsCard.first, itemsCard.second)
-						}
 					}
 				}
-				saveToSharedPrefs(list)
 			}
 			is PicturesState.ConnectionError ->
 			{
@@ -360,18 +346,15 @@ fun ShowList(
 			columns = GridCells.Fixed(count = calculateGridSpan())) {
 			Log.d("PicturesFragment", "$imagesUrlsSP")
 			items(items = imagesUrlsSP) {
-				val itemsCard = itemNewsCard(
+				itemNewsCard(
 					item = it,
 					navController = navController,
 					getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
-					lazyState = listState
+					lazyState = listState,
+					addError = addError
 				)
-				if(itemsCard != null)
-				{
-					addError(itemsCard.first, itemsCard.second)
-				}
 			}
 		}
 	}
