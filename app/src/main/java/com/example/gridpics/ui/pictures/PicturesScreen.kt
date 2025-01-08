@@ -307,7 +307,6 @@ fun ShowList(
 			{
 				Log.d("Now state is", "Search Is Ok")
 				val list = state.data
-				postSavedUrls(list)
 				LaunchedEffect(Unit) {
 					Toast.makeText(context, R.string.loading_has_been_started, Toast.LENGTH_SHORT).show()
 				}
@@ -331,6 +330,7 @@ fun ShowList(
 						}
 					}
 				}
+				saveToSharedPrefs(list)
 			}
 			is PicturesState.ConnectionError ->
 			{

@@ -127,11 +127,10 @@ fun DetailsScreen(
 		)
 	}
 	var list = state.value.picturesUrl
-	val initialPage: Int
+	var initialPage = list.indexOf(currentPicture)
 	val size: Int
-	if(list.indexOf(currentPicture) >= 0)
+	if(initialPage >= 0)
 	{
-		initialPage = list.indexOf(currentPicture)
 		size = list.size
 	}
 	else
@@ -189,6 +188,7 @@ fun DetailsScreen(
 				setImageSharedState = setImageSharedState,
 				picturesState = picsUiState,
 				pagerState = pagerState,
+				list = list.toMutableList()
 			)
 		}
 	)
@@ -211,6 +211,7 @@ fun ShowDetails(
 	setImageSharedState: (Boolean) -> Unit,
 	picturesState: MutableState<PicturesScreenUiState>,
 	pagerState: PagerState,
+	list: MutableList<String>,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -225,7 +226,7 @@ fun ShowDetails(
 		userScrollEnabled = !isSharedImage,
 		pageSpacing = 10.dp
 	) { page ->
-		val url = state.value.picturesUrl[page]
+		val url = list[page]
 		val errorMessage = checkOnErrorExists(url)
 		Log.d("checkUp", "is error $errorMessage")
 		Box(modifier = Modifier.fillMaxSize()) {
