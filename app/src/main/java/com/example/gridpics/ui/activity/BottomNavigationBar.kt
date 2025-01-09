@@ -25,7 +25,7 @@ fun BottomNavigationBar(
 	navController: NavController,
 )
 {
-	val items = remember(navController) {
+	val items = remember {
 		listOf(
 			BottomNavItem.Home,
 			BottomNavItem.Settings
@@ -56,7 +56,6 @@ fun BottomNavigationBar(
 		visible = bottomBarState.value, enter = slideInVertically(initialOffsetY = { it }), exit = ExitTransition.None
 	) {
 		NavigationBar(windowInsets = WindowInsets.navigationBars, containerColor = MaterialTheme.colorScheme.background) {
-			val currentRoute = route
 			items.forEach { item ->
 				NavigationBarItem(
 					colors = NavigationBarItemColors(MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary, Color.Gray, MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary,
@@ -68,7 +67,7 @@ fun BottomNavigationBar(
 						)
 					},
 					label = { Text(text = stringResource(id = item.titleResId)) },
-					selected = currentRoute == item.route,
+					selected = route == item.route,
 					onClick = {
 						navController.navigate(item.route) {
 							// Pop up to the start destination of the graph to

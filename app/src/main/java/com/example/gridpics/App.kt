@@ -11,6 +11,7 @@ import coil3.request.allowHardware
 import com.example.gridpics.di.dataModule
 import com.example.gridpics.di.domainModule
 import com.example.gridpics.di.viewModelModule
+import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.context.startKoin
@@ -31,10 +32,13 @@ class App: Application(), KoinComponent, SingletonImageLoader.Factory
 
 		SingletonImageLoader.setSafe {
 			ImageLoader.Builder(this)
-				.allowHardware(true)
+				.allowHardware(false)
 				.networkCachePolicy(CachePolicy.ENABLED)
 				.memoryCachePolicy(CachePolicy.ENABLED)
 				.diskCachePolicy(CachePolicy.ENABLED)
+				.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(4))
+				.interceptorCoroutineContext(Dispatchers.IO.limitedParallelism(4))
+				.coroutineContext(Dispatchers.IO.limitedParallelism(4))
 				.diskCache {
 					DiskCache.Builder()
 						.directory(this.cacheDir.resolve("image_cache"))

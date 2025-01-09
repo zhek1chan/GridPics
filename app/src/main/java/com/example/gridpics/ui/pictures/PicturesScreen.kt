@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.pictures
 
 import android.annotation.SuppressLint
-import android.content.res.Configuration
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -45,7 +44,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,7 +52,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -65,9 +62,7 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
-import coil3.request.CachePolicy
 import coil3.request.ImageRequest
-import coil3.request.allowHardware
 import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
@@ -77,41 +72,37 @@ import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PicturesScreen(
 	navController: NavController,
 	postPressOnBackButton: () -> Unit,
-	checkIfExists: (String) -> Boolean,
-	addError: (String) -> Unit,
-	postState: (Boolean, String) -> Unit,
+	getErrorMessageFromErrorsList: (String) -> String?,
+	addError: (String, String) -> Unit,
 	state: MutableState<PicturesScreenUiState>,
 	clearErrors: () -> Unit,
-	postPositiveState: () -> Unit,
+	postVisibleBarsState: () -> Unit,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (String) -> Unit,
-	saveToSharedPrefs: (String) -> Unit,
+	postSavedUrls: (List<String>) -> Unit,
+	saveToSharedPrefs: (List<String>) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
-		postPositiveState()
+		postVisibleBarsState()
 	}
 	BackHandler {
 		postPressOnBackButton()
 	}
 	val value = state.value
-	val windowInsets = if(!value.isPortraitOrientation)
+	val windowInsets = if(value.isPortraitOrientation)
 	{
-		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
+		WindowInsets.statusBarsIgnoringVisibility
 	}
 	else
 	{
-		WindowInsets.statusBarsIgnoringVisibility
+		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
 	}
 	Scaffold(
 		contentWindowInsets = windowInsets,
@@ -145,12 +136,9 @@ fun PicturesScreen(
 				val offset = value.offset
 				val index = value.index
 				ShowList(
-					imagesUrlsSP = urls.ifEmpty {
-						null
-					},
-					checkIfExists = checkIfExists,
+					imagesUrlsSP = urls,
+					getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 					addError = addError,
-					postState = postState,
 					state = loadingState,
 					clearErrors = clearErrors,
 					navController = navController,
@@ -168,44 +156,39 @@ fun PicturesScreen(
 
 @SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
-fun itemNewsCard(
+fun ItemsCard(
 	item: String,
 	navController: NavController,
-	checkIfExists: (String) -> Boolean,
-	addError: (String) -> Unit,
+	getErrorMessageFromErrorsList: (String) -> String?,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postState: (Boolean, String) -> Unit,
-	urls: String,
-	postSavedUrls: (String) -> Unit,
 	lazyState: LazyGridState,
-): Boolean
+	addError: (String, String) -> Unit,
+)
 {
 	var isError by remember { mutableStateOf(false) }
 	val context = LocalContext.current
-	var isClicked by remember { mutableStateOf(false) }
 	val openAlertDialog = remember { mutableStateOf(false) }
 	val errorMessage = remember { mutableStateOf("") }
 	var placeholder = R.drawable.loading
-	if(checkIfExists(item))
+	var data = item
+	val errorMessageFromErrorsList = getErrorMessageFromErrorsList(item)
+	if(errorMessageFromErrorsList != null)
 	{
+		data = ""
 		placeholder = R.drawable.error
 		isError = true
+		errorMessage.value = errorMessageFromErrorsList
 	}
-	val headers = NetworkHeaders.Builder()
-		.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
-		.build()
+	val headers = remember {
+		NetworkHeaders.Builder()
+			.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
+			.build()
+	}
 	val imgRequest = remember(item) {
 		ImageRequest.Builder(context)
-			.data(item)
-			.allowHardware(false)
+			.data(data)
 			.httpHeaders(headers)
-			.networkCachePolicy(CachePolicy.ENABLED)
-			.memoryCachePolicy(CachePolicy.ENABLED)
-			.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(4))
-			.interceptorCoroutineContext(Dispatchers.IO.limitedParallelism(4))
-			.coroutineContext(Dispatchers.IO.limitedParallelism(4))
-			.diskCachePolicy(CachePolicy.ENABLED)
 			.placeholder(placeholder)
 			.error(R.drawable.error)
 			.build()
@@ -215,14 +198,20 @@ fun itemNewsCard(
 		contentDescription = item,
 		modifier = Modifier
 			.clickable {
-				if(!isError)
+				if(isError)
 				{
-					isClicked = true
-					openAlertDialog.value = false
+					openAlertDialog.value = true
 				}
 				else
 				{
-					openAlertDialog.value = true
+					Log.d("current", item)
+					currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
+					navController.navigate(Screen.Details.route) {
+						popUpTo(Screen.Home.route) {
+							inclusive = true
+						}
+					}
+					openAlertDialog.value = false
 				}
 			}
 			.padding(10.dp)
@@ -231,75 +220,56 @@ fun itemNewsCard(
 		contentScale = ContentScale.Crop,
 		onError = {
 			isError = true
-			errorMessage.value = it.result.throwable.message.toString()
-			addError(item)
+			addError(item, it.result.throwable.message.toString())
 		},
 		onSuccess = {
 			isError = false
 		}
 	)
-	if(isClicked)
+	if(openAlertDialog.value)
 	{
-		Log.d("current", item)
-		postSavedUrls(urls)
-		currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
-		navController.navigate(Screen.Details.route) {
-			popUpTo(Screen.Home.route) {
-				inclusive = true
-			}
-		}
-		isClicked = false
-	}
-	when
-	{
-		openAlertDialog.value ->
+		if(isValidUrl(item))
 		{
-			if(isValidUrl(item))
-			{
-				val reloadString = stringResource(R.string.reload)
-				AlertDialogMain(
-					onDismissRequest = { openAlertDialog.value = false },
-					onConfirmation =
-					{
-						openAlertDialog.value = false
-						println("Confirmation registered")
-						postState(false, urls)
-						Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
-					},
-					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
-					dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
-					icon = Icons.Default.Warning,
-					textButtonCancel = stringResource(R.string.cancel),
-					textButtonConfirm = stringResource(R.string.confirm))
-			}
-			else
-			{
-				AlertDialogSecondary(
-					onDismissRequest = { openAlertDialog.value = false },
-					onConfirmation =
-					{
-						openAlertDialog.value = false
-					},
-					dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
-			}
+			val reloadString = stringResource(R.string.reload)
+			AlertDialogMain(
+				onDismissRequest = { openAlertDialog.value = false },
+				onConfirmation =
+				{
+					openAlertDialog.value = false
+					println("Confirmation registered")
+					Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
+				},
+				dialogTitle = stringResource(R.string.error_ocurred_loading_img),
+				dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
+				icon = Icons.Default.Warning,
+				textButtonCancel = stringResource(R.string.cancel),
+				textButtonConfirm = stringResource(R.string.confirm))
+		}
+		else
+		{
+			AlertDialogSecondary(
+				onDismissRequest = { openAlertDialog.value = false },
+				onConfirmation =
+				{
+					openAlertDialog.value = false
+				},
+				dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
 		}
 	}
-	return isError
 }
 
 @Composable
 fun ShowList(
-	imagesUrlsSP: String?,
-	checkIfExists: (String) -> Boolean,
-	addError: (String) -> Unit,
-	postState: (Boolean, String) -> Unit,
+	imagesUrlsSP: List<String>?,
+	getErrorMessageFromErrorsList: (String) -> String?,
+	addError: (String, String) -> Unit,
 	state: PicturesState,
 	clearErrors: () -> Unit,
 	navController: NavController,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	postSavedUrls: (String) -> Unit,
-	saveToSharedPrefs: (String) -> Unit,
+	postSavedUrls: (List<String>) -> Unit,
+	saveToSharedPrefs: (List<String>) -> Unit,
 	offset: Int,
 	index: Int,
 )
@@ -307,8 +277,6 @@ fun ShowList(
 	val context = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
-	val canChangeState = remember { mutableStateOf(false) }
-	val scope = rememberCoroutineScope()
 	val listState = rememberLazyGridState()
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
@@ -316,39 +284,27 @@ fun ShowList(
 		{
 			is PicturesState.SearchIsOk ->
 			{
-				val loadingString = stringResource(R.string.loading_has_been_started)
 				Log.d("Now state is", "Search Is Ok")
-				LaunchedEffect(state) {
-					saveToSharedPrefs(state.data)
-					Toast.makeText(context, loadingString, Toast.LENGTH_SHORT).show()
+				val list = state.data
+				LaunchedEffect(Unit) {
+					Toast.makeText(context, R.string.loading_has_been_started, Toast.LENGTH_SHORT).show()
+					saveToSharedPrefs(list)
 				}
-				val value = remember(state) { state.data }
-				val list = remember(state) { value.split("\n") }
-				postSavedUrls(value)
 				LazyVerticalGrid(
 					state = listState,
 					modifier = Modifier
 						.fillMaxSize(),
 					columns = GridCells.Fixed(count = calculateGridSpan())) {
 					items(items = list) {
-						itemNewsCard(
+						ItemsCard(
 							item = it,
 							navController = navController,
-							checkIfExists = checkIfExists,
-							addError = addError,
+							getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
-							postState = postState,
-							urls = value,
-							postSavedUrls = postSavedUrls,
-							lazyState = listState
+							lazyState = listState,
+							addError = addError
 						)
-					}
-				}
-				LaunchedEffect(state) {
-					scope.launch {
-						delay(6000)
-						postState(true, value)
 					}
 				}
 			}
@@ -368,39 +324,6 @@ fun ShowList(
 				}
 			}
 			is PicturesState.NothingFound -> Unit
-			is PicturesState.Loaded ->
-			{
-				Log.d("Now state is", "Loaded")
-				val loadingEnded = stringResource(R.string.loading_has_been_ended)
-				LaunchedEffect(Unit) {
-					Toast.makeText(context, loadingEnded, Toast.LENGTH_SHORT).show()
-					postSavedUrls(state.data)
-				}
-				val value = remember(state) { state.data }
-				Log.d("Now state is", "Loaded")
-				val list = remember(state) { (state.data).split("\n") }
-				LazyVerticalGrid(
-					state = listState,
-					modifier = Modifier
-						.fillMaxSize(),
-					columns = GridCells.Fixed(count = calculateGridSpan())) {
-					items(items = list) {
-						itemNewsCard(
-							item = it,
-							navController = navController,
-							checkIfExists = checkIfExists,
-							addError = addError,
-							currentPicture = currentPicture,
-							isValidUrl = isValidUrl,
-							postState = postState,
-							urls = value,
-							postSavedUrls = postSavedUrls,
-							lazyState = listState
-						)
-					}
-				}
-				canChangeState.value = true
-			}
 		}
 	}
 	else
@@ -410,34 +333,27 @@ fun ShowList(
 			saveToSharedPrefs(imagesUrlsSP)
 			postSavedUrls(imagesUrlsSP)
 		}
-		val items = remember(imagesUrlsSP) { imagesUrlsSP.split("\n").toSet().toList() }
-		Log.d("item", items.toString())
 		LazyVerticalGrid(
 			state = listState,
 			modifier = Modifier
 				.fillMaxSize(),
 			columns = GridCells.Fixed(count = calculateGridSpan())) {
-			Log.d("PicturesFragment", "$items")
-			items(items) {
-				itemNewsCard(
+			Log.d("PicturesFragment", "$imagesUrlsSP")
+			items(items = imagesUrlsSP) {
+				ItemsCard(
 					item = it,
 					navController = navController,
-					checkIfExists = checkIfExists,
-					addError = addError,
+					getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
-					postState = postState,
-					urls = imagesUrlsSP,
-					postSavedUrls = postSavedUrls,
-					lazyState = listState
+					lazyState = listState,
+					addError = addError
 				)
 			}
 		}
 	}
 	LaunchedEffect(Unit) {
-		scope.launch {
-			listState.scrollToItem(index, offset)
-		}
+		listState.scrollToItem(index, offset)
 	}
 }
 
@@ -550,17 +466,8 @@ fun AlertDialogSecondary(
 @Composable
 private fun calculateGridSpan(): Int
 {
-	val resources = LocalContext.current.resources.displayMetrics
-	Log.d("HomeFragment", "Calculate span started")
-	val width = resources.widthPixels
-	val orientation = LocalConfiguration.current.orientation
-	val density = resources.density
-	return if(orientation == Configuration.ORIENTATION_PORTRAIT)
-	{
-		(width / density).toInt() / LENGTH_OF_PICTURE
-	}
-	else
-	{
-		(width / density).toInt() / LENGTH_OF_PICTURE
-	}
+	val displayMetrics = LocalContext.current.resources.displayMetrics
+	val width = displayMetrics.widthPixels
+	val density = displayMetrics.density
+	return (width / density).toInt() / LENGTH_OF_PICTURE
 }

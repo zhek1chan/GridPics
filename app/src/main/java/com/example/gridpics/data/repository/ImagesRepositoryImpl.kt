@@ -2,9 +2,7 @@ package com.example.gridpics.data.repository
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.util.Log
 import coil3.ImageLoader
-import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.request.error
@@ -20,7 +18,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
 
 class ImagesRepositoryImpl(
 	private val networkClient: NetworkClient,
@@ -33,10 +33,7 @@ class ImagesRepositoryImpl(
 			{
 				is Resource.Data ->
 				{
-					with(response) {
-						val data = value
-						emit(Resource.Data(data))
-					}
+					emit(Resource.Data(response.value))
 					break
 				}
 				is Resource.NotFound ->
@@ -56,29 +53,29 @@ class ImagesRepositoryImpl(
 	override suspend fun getPictureBitmap(url: String, context: Context, job: Job): Bitmap?
 	{
 		return withContext(Dispatchers.IO + job) {
-			var bitmap: Bitmap? = null
-			val imgRequest =
-				ImageRequest.Builder(context)
+			suspendCancellableCoroutine { continuation ->
+				val imgRequest = ImageRequest.Builder(context)
 					.data(url)
 					.placeholder(R.drawable.loading)
 					.error(R.drawable.error)
-					.coroutineContext(coroutineContext + job)
 					.allowHardware(false)
-					.target {
-						Log.d("checkMa", "gruzim pic")
-						bitmap = it.toBitmap()
-					}
-					.diskCachePolicy(CachePolicy.ENABLED)
+					.target(
+						onSuccess = { result ->
+							continuation.resume(result.toBitmap())
+						},
+						onError = { _ ->
+							continuation.resume(null)
+						}
+					)
 					.diskCacheKey(url)
-					.memoryCachePolicy(CachePolicy.ENABLED)
 					.build()
-			ImageLoader(context).newBuilder().build().enqueue(imgRequest)
-			while(bitmap == null)
-			{
-				delay(200)
-			}
+				val imageLoader = ImageLoader(context).newBuilder().build()
+				val request = imageLoader.enqueue(imgRequest)
 
-			return@withContext bitmap
+				continuation.invokeOnCancellation {
+					request.job.cancel()
+				}
+			}
 		}
 	}
 }

@@ -2,6 +2,7 @@ package com.example.gridpics.ui.settings
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
-import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
@@ -68,21 +69,23 @@ import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 @Composable
 fun SettingsScreen(
 	navController: NavController,
-	option: Int,
+	option: MutableState<PicturesScreenUiState>,
 	changeTheme: (Int) -> Unit,
 	isScreenInPortraitState: MutableState<PicturesScreenUiState>,
 	clearImageCache: () -> Unit,
-	postStartOfPager: () -> Unit
+	postStartOfPager: () -> Unit,
 )
 {
-	postStartOfPager()
-	val windowInsets = if(!isScreenInPortraitState.value.isPortraitOrientation)
+	LaunchedEffect(Unit) {
+		postStartOfPager()
+	}
+	val windowInsets = if(isScreenInPortraitState.value.isPortraitOrientation)
 	{
-		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
+		WindowInsets.statusBarsIgnoringVisibility
 	}
 	else
 	{
-		WindowInsets.statusBarsIgnoringVisibility
+		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
 	}
 	Scaffold(
 		contentWindowInsets = windowInsets,
@@ -121,11 +124,12 @@ fun SettingsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsCompose(
-	option: Int,
+	option: MutableState<PicturesScreenUiState>,
 	changeTheme: (Int) -> Unit,
 	clearImageCache: () -> Unit,
 )
 {
+	Log.d("option", "got option $option")
 	var showDialog by remember { mutableStateOf(false) }
 	val context = LocalContext.current
 	ConstraintLayout {
@@ -142,7 +146,7 @@ fun SettingsCompose(
 				listOfThemeOptions.add(stringResource(R.string.dark_theme))
 				listOfThemeOptions.add(stringResource(R.string.synch_with_sys))
 			}
-			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option]) }
+			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option.value.themeState.intValue]) }
 			val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 			CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 				Column {
@@ -155,6 +159,7 @@ fun SettingsCompose(
 								.clickable {
 									if(text != selectedOption)
 									{
+										Log.d("i clicked on", "selected option $selectedOption")
 										onOptionSelected(text)
 										saveThemeState(context, listOfThemeOptions.indexOf(text))
 										changeTheme(listOfThemeOptions.indexOf(text))
@@ -247,17 +252,13 @@ fun SettingsCompose(
 			}
 			if(showDialog)
 			{
-				val textClear = stringResource(R.string.you_have_cleared_cache)
 				AlertDialogMain(
 					dialogText = null,
 					dialogTitle = stringResource(R.string.delete_all_question),
 					onConfirmation = {
-						val imageLoader = context.imageLoader
-						imageLoader.diskCache?.clear()
-						imageLoader.memoryCache?.clear()
 						clearImageCache()
 						showDialog = false
-						Toast.makeText(context, textClear, Toast.LENGTH_SHORT).show()
+						Toast.makeText(context, R.string.you_have_cleared_cache, Toast.LENGTH_SHORT).show()
 					},
 					onDismissRequest = { showDialog = false },
 					icon = Icons.Default.Delete,
@@ -271,6 +272,7 @@ fun SettingsCompose(
 private fun saveThemeState(context: Context, chosenOption: Int)
 {
 	val editor = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
+	Log.d("option saved", "$chosenOption")
 	editor.putInt(THEME_SHARED_PREFERENCE, chosenOption)
 	editor.apply()
 }

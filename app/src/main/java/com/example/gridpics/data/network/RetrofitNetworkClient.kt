@@ -1,5 +1,6 @@
 package com.example.gridpics.data.network
 
+import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -10,7 +11,7 @@ import java.io.IOException
 import java.nio.charset.Charset
 
 class RetrofitNetworkClient(
-	private val context: Context,
+	private val context: Application,
 	private val api: Api,
 ): NetworkClient
 {

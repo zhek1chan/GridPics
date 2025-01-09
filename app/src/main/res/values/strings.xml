@@ -24,9 +24,7 @@
 	<string name="error_double_dot">"Ошибка: "</string>
 	<string name="question_retry_again">\nПопробовать загрузить повторно?</string>
 	<string name="loading_has_been_started">Началась загрузка</string>
-	<string name="loading_has_been_ended">Загрузка завершена</string>
 	<string name="cancel">Отменить</string>
 	<string name="confirm">Подтвердить</string>
-	<string name="intentPrefix">image/</string>
-	<string name="add">Добавить\nкартинку</string>
+	<string name="add">Добавить</string>
 </resources>

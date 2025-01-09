@@ -8,22 +8,15 @@ import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
-import kotlinx.coroutines.Dispatchers
+import com.example.gridpics.ui.settings.ThemePick
 import kotlinx.coroutines.launch
 
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(""), "", 0, 0, "", true))
-	var usedValueFromIntent = ""
-	private val errorsList: MutableList<String> = mutableListOf()
-	private var index: Int? = null
-	private var onPauseWasCalled = false
-	private var rememberSharedPictureOnFirstStart = ""
-	private var themeWasSetToBlack: Boolean? = null
-	private var wasChangedTheme = false
-	private var isFirstImage = false
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM))
+	private val errorsMap: MutableMap<String, String> = mutableMapOf()
 
 	init
 	{
@@ -34,9 +27,22 @@ class PicturesViewModel(
 				when(urls)
 				{
 					is Resource.Data ->
+					{
+						val pictureUrls = flow.value.picturesUrl
+						val urlsFromNet = convertToListFromString(urls.value)
+						val urlsToAdd = if(pictureUrls.isNotEmpty())
+						{
+							(pictureUrls + urlsFromNet).distinct()
+						}
+						else
+						{
+							urlsFromNet
+						}
 						flow.value = flow.value.copy(
-							loadingState = PicturesState.SearchIsOk(urls.value)
+							loadingState = PicturesState.SearchIsOk(urlsToAdd),
+							picturesUrl = urlsToAdd
 						)
+					}
 					is Resource.ConnectionError ->
 						flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
 					is Resource.NotFound ->
@@ -46,97 +52,72 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postState(useLoadedState: Boolean, urls: String)
+	fun addPictureToUrls(pic: String)
 	{
-		val flow = picturesUiState
 		viewModelScope.launch {
-			flow.value = if(useLoadedState)
+			val state = picturesUiState
+			val sendList = mutableListOf<String>()
+			val list = state.value.picturesUrl
+			val size = list.size
+			for(i in 0 ..< size)
 			{
-				flow.value.copy(loadingState = PicturesState.Loaded(urls))
-			}
-			else
-			{
-				flow.value.copy(loadingState = PicturesState.SearchIsOk(urls))
-			}
-		}
-	}
-
-	fun addPictureToState()
-	{
-		val rememberSharedPictureOnFirstStart = rememberSharedPictureOnFirstStart
-		val state = picturesUiState
-		if(rememberSharedPictureOnFirstStart.isNotEmpty() && state.value.loadingState is PicturesState.SearchIsOk)
-		{
-			if(state.value.loadingState is PicturesState.SearchIsOk)
-				viewModelScope.launch {
-					state.value = state.value.copy(picturesUrl = rememberSharedPictureOnFirstStart + (state.value.loadingState as PicturesState.SearchIsOk).data)
+				if(list[i] != pic)
+				{
+					sendList.add(list[i])
 				}
-		}
-	}
-
-	fun postSavedUrls(urls: String?, caseEmptySharedPreferenceOnFirstLaunch: Boolean)
-	{
-		viewModelScope.launch {
-			val flow = picturesUiState
-			val notNullUrls = urls ?: ""
-			if(caseEmptySharedPreferenceOnFirstLaunch)
-			{
-				rememberSharedPictureOnFirstStart = notNullUrls
 			}
-			else
-			{
-				rememberSharedPictureOnFirstStart = ""
-				flow.value = flow.value.copy(picturesUrl = notNullUrls)
-			}
+			sendList.add(0, pic)
+			Log.d("checkCheck", "list $list")
+			state.value = state.value.copy(picturesUrl = sendList)
 		}
 	}
 
-	fun removeUrlFromSavedUrls(url: String)
+	fun postSavedUrls(urls: List<String>)
 	{
-		Log.d("remove", "removing url $url")
-		viewModelScope.launch {
-			val urls = picturesUiState.value.picturesUrl
-			removeUrlAndPostNewString(urls, url)
-			rememberSharedPictureOnFirstStart = ""
-		}
+		val state = picturesUiState
+		state.value = state.value.copy(picturesUrl = urls)
 	}
 
-	private fun removePrefix(str: String, prefix: String): String =
-		if(str.startsWith(prefix)) str.substring(prefix.length) else str
-
-	fun addError(url: String)
+	fun addError(url: String, message: String)
 	{
-		val list = errorsList
-		if(!list.contains(url))
+		val map = errorsMap
+		if(!map.contains(url))
 		{
-			list.add(url)
+			map[url] = message
 		}
 	}
 
-	fun checkOnErrorExists(url: String): Boolean
+	fun checkOnErrorExists(url: String): String?
 	{
-		val list = errorsList
-		return (list.isNotEmpty() && list.contains(url))
+		val list = errorsMap
+		return if(list.contains(url))
+		{
+			list[url]
+		}
+		else
+		{
+			null
+		}
 	}
 
 	fun removeSpecialError(url: String)
 	{
-		val list = errorsList
-		if(list.contains(url))
+		val map = errorsMap
+		if(map.contains(url))
 		{
-			list.remove(url)
+			map.remove(url)
 		}
 	}
 
 	fun clearErrors()
 	{
-		errorsList.clear()
+		errorsMap.clear()
 	}
 
-	fun clickOnPicture(url: String, index: Int, offset: Int)
+	fun clickOnPicture(index: Int, offset: Int)
 	{
 		val state = picturesUiState
-		state.value = state.value.copy(index = index, offset = offset, currentPicture = url)
+		state.value = state.value.copy(index = index, offset = offset)
 	}
 
 	fun changeOrientation(isPortrait: Boolean)
@@ -145,147 +126,30 @@ class PicturesViewModel(
 		state.value = state.value.copy(isPortraitOrientation = isPortrait)
 	}
 
-	fun saveCurrentPictureUrl(url: String)
-	{
-		viewModelScope.launch {
-			val state = picturesUiState
-			state.value = state.value.copy(currentPicture = url + "\n")
-		}
-	}
-
-	fun postPicsFromThemeChange(url: String)
-	{
-		val state = picturesUiState
-		val list = state.value.picturesUrl.split("\n").toMutableList()
-		//Main поток не срабатывает в нужное время, использую IO
-		viewModelScope.launch(Dispatchers.IO) {
-			list.add(0, url)
-			val newString = createNewString(list)
-			state.value = state.value.copy(picturesUrl = newString)
-		}
-	}
-
-	fun restoreDeletedUrl()
-	{
-		val state = picturesUiState
-		val url = state.value.currentPicture
-		if(url.isNotEmpty())
-		{
-			val list = state.value.picturesUrl.split("\n").toMutableList()
-			val index = index
-			if(index != null && index < list.size)
-			{
-				list.add(index, url)
-			}
-
-			viewModelScope.launch {
-				val newString = createNewString(list)
-				state.value = state.value.copy(picturesUrl = newString)
-				Log.d("remove2", "added string ${newString.split("\n")[0]}")
-			}
-		}
-	}
-
-	fun themeWasSetToBlack(wasSet: Boolean)
-	{
-		when(themeWasSetToBlack)
-		{
-			null ->
-			{
-				postTheme(wasSet)
-				postChangedTheme(false)
-			}
-			wasSet ->
-			{
-				postChangedTheme(false)
-			}
-			else ->
-			{
-				postTheme(wasSet)
-				postChangedTheme(true)
-			}
-		}
-	}
-
-	private fun postTheme(darkTheme: Boolean)
-	{
-		themeWasSetToBlack = darkTheme
-	}
-
-	fun postChangedTheme(changed: Boolean)
-	{
-		wasChangedTheme = changed
-	}
-
-	fun getChangedThemeState(): Boolean
-	{
-		return wasChangedTheme
-	}
-
-	fun postUsedIntent(url: String)
-	{
-		usedValueFromIntent = url
-	}
-
-	fun getUsedIntentValue(): String
-	{
-		return usedValueFromIntent
-	}
-
-	fun urlWasAlreadyInSP(url: String, urlsFromSP: String)
-	{
-		val list = urlsFromSP.split("\n")
-		index = list.indexOf(url)
-	}
-
-	fun clearIndex()
-	{
-		index = null
-	}
-
 	fun isValidUrl(url: String): Boolean
 	{
 		val urlPattern = Regex("^(https?|ftp)://([a-z0-9-]+\\.)+[a-z0-9]{2,6}(:[0-9]+)?(/\\S*)?$")
 		return urlPattern.matches(url)
 	}
 
-	fun putPreviousPictureCorrectly(oldPicture: String)
+	fun postThemePick(option: ThemePick)
 	{
-		val index = index
-		if(index != null)
-		{
-			Log.d("remove", "we have put correctly")
-			val state = picturesUiState
-			val value = state.value
-			val list = value.picturesUrl.split("\n").toSet().toMutableList()
-			viewModelScope.launch {
-				if(list.contains(oldPicture))
-				{
-					list.remove(oldPicture)
-				}
-				list.add(index, oldPicture)
-				if(list.contains("\n"))
-				{
-					list.remove("\n")
-				}
-				val newString = createNewString(list)
-				state.value = state.value.copy(picturesUrl = newString)
-			}
-		}
+		val state = picturesUiState
+		state.value = state.value.copy(themeState = option)
 	}
 
-	fun clearUsedIntentValue()
+	fun convertToListFromString(string: String?): List<String>
 	{
-		usedValueFromIntent = ""
+		return string?.split("\n")?.distinct() ?: listOf()
 	}
 
-	private fun createNewString(list: MutableList<String>): String
+	fun convertFromListToString(list: List<String>): String
 	{
 		var newString = ""
 		val size = list.size
 		for(i in 0 ..< size)
 		{
-			newString += if(i != size)
+			newString += if(i != size - 1)
 			{
 				list[i] + "\n"
 			}
@@ -294,45 +158,11 @@ class PicturesViewModel(
 				list[i]
 			}
 		}
-		//fix problems with string
-		val withoutDoubleNewLines = newString.replace("\n\n", "\n")
-		val withoutNewLinesInStart = withoutDoubleNewLines.trimStart('\n')
-		val withoutTrailingNewLines = withoutNewLinesInStart.trimEnd('\n')
-		return withoutTrailingNewLines
+		return newString
 	}
 
-	private fun removeUrlAndPostNewString(urls: String, url: String)
+	fun returnStringOfList(): String
 	{
-		val state = picturesUiState
-		val newString = if(urls.startsWith("$url\n$url\n") && (!isFirstImage))
-		{
-			Log.d("worked", "worked")
-			removePrefix(urls, "$url\n$url\n")
-		}
-		else if(urls.startsWith("$url\n"))
-		{
-			removePrefix(urls, "$url\n")
-		}
-		else
-		{
-			removePrefix(urls, url)
-		}
-
-		state.value = state.value.copy(picturesUrl = newString)
-	}
-
-	fun postIsFirstPage(firstPage: Boolean)
-	{
-		isFirstImage = firstPage
-	}
-
-	fun postOnPauseWasCalled(wasCalled: Boolean)
-	{
-		onPauseWasCalled = wasCalled
-	}
-
-	fun getOnPauseWasCalled(): Boolean
-	{
-		return onPauseWasCalled
+		return convertFromListToString(picturesUiState.value.picturesUrl)
 	}
 }
