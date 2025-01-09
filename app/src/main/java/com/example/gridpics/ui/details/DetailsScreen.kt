@@ -398,6 +398,7 @@ fun ShowAsynchImage(
 							countLastThree.add(count[lastIndex - 1])
 							countLastThree.add(count[lastIndex - 2])
 						}
+						Log.d("check this", "check this")
 						if(changes.any { !it.pressed })
 						{
 							if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
