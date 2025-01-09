@@ -249,7 +249,8 @@ fun ShowDetails(
 					changeBarsVisability = changeBarsVisability,
 					postUrl = postUrl,
 					isScreenInPortraitState = isScreenInPortraitState,
-					setImageSharedStateToFalse = setImageSharedState
+					setImageSharedStateToFalse = setImageSharedState,
+					pagerState = pagerState
 				)
 			}
 			if(isSharedImage)
@@ -328,6 +329,7 @@ fun ShowAsynchImage(
 	postUrl: (String?, Bitmap?) -> Unit,
 	isScreenInPortraitState: Boolean,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
+	pagerState: PagerState,
 )
 {
 	val scale = if(state.value.isMultiWindowed)
@@ -368,6 +370,10 @@ fun ShowAsynchImage(
 		},
 		onError = {
 			addError(img, it.result.throwable.message.toString())
+			scope.launch {
+				pagerState.scrollToPage(pagerState.currentPage-1)
+				pagerState.scrollToPage(pagerState.currentPage+1)
+			}
 		},
 		modifier = Modifier
 			.fillMaxSize()
@@ -465,7 +471,8 @@ fun ShowError(
 					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
 					scope.launch {
 						removeSpecialError(currentUrl)
-						pagerState.animateScrollToPage(pagerState.currentPage)
+						pagerState.scrollToPage(pagerState.currentPage-1)
+						pagerState.scrollToPage(pagerState.currentPage+1)
 					}
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
