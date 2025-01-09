@@ -60,7 +60,7 @@ class MainActivity: AppCompatActivity()
 			val flowValue = detailsViewModel.observeUrlFlow().value
 			if(flowValue?.first != null)
 			{
-				flowValue.let { mainService.putValues(it) }
+				mainService.putValues(flowValue)
 			}
 			mainNotificationService = mainService
 		}
