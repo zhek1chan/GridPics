@@ -21,12 +21,10 @@ class DetailsViewModel(
 	val uiState =
 		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = ""))
 	private val job = Job()
-	private var jobForScope: Job? = null
 	fun observeUrlFlow() = imageFlow
 	fun postNewPic(url: String?, bitmap: Bitmap?)
 	{
-		jobForScope?.cancel()
-		jobForScope = viewModelScope.launch {
+		viewModelScope.launch {
 			job.cancelChildren()
 			imageFlow.emit(Pair(url, bitmap))
 		}
@@ -35,8 +33,7 @@ class DetailsViewModel(
 	fun postImageBitmap(url: String)
 	{
 		Log.d("Description posted", "desc was posted")
-		jobForScope?.cancel()
-		jobForScope = viewModelScope.launch {
+		viewModelScope.launch {
 			Log.d("description job is active", "${job.isActive}")
 			job.cancelChildren()
 			imageFlow.emit(Pair("Картика ещё грузится, нужно немного подождать", null))

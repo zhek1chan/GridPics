@@ -175,10 +175,10 @@ class MainActivity: AppCompatActivity()
 					changeTheme = { int -> changeTheme(int) },
 					isScreenInPortraitState = picState,
 					clearImageCache = {
-						saveToSharedPrefs("")
 						val imageLoader = this@MainActivity.imageLoader
 						imageLoader.diskCache?.clear()
 						imageLoader.memoryCache?.clear()
+						picVM.clearPicturesCache()
 						picVM.clearErrors()
 					},
 					postStartOfPager = { picVM.clickOnPicture(0, 0) }
