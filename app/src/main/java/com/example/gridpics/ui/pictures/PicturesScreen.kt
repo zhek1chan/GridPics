@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.pictures
 
 import android.annotation.SuppressLint
-import android.content.res.Configuration
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -53,7 +52,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -182,7 +180,7 @@ fun ItemsCard(
 		isError = true
 		errorMessage.value = errorMessageFromErrorsList
 	}
-	val headers = remember(Unit) {
+	val headers = remember {
 		NetworkHeaders.Builder()
 			.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
 			.build()
@@ -468,17 +466,8 @@ fun AlertDialogSecondary(
 @Composable
 private fun calculateGridSpan(): Int
 {
-	val resources = LocalContext.current.resources.displayMetrics
-	Log.d("HomeFragment", "Calculate span started")
-	val width = resources.widthPixels
-	val orientation = LocalConfiguration.current.orientation
-	val density = resources.density
-	return if(orientation == Configuration.ORIENTATION_PORTRAIT)
-	{
-		(width / density).toInt() / LENGTH_OF_PICTURE
-	}
-	else
-	{
-		(width / density).toInt() / LENGTH_OF_PICTURE
-	}
+	val displayMetrics = LocalContext.current.resources.displayMetrics
+	val width = displayMetrics.widthPixels
+	val density = displayMetrics.density
+	return (width / density).toInt() / LENGTH_OF_PICTURE
 }

@@ -355,7 +355,6 @@ fun ShowAsynchImage(
 			.diskCacheKey(img)
 			.build()
 	}
-	val scope = rememberCoroutineScope()
 
 	AsyncImage(
 		model = imgRequest,
@@ -418,7 +417,7 @@ fun ShowAsynchImage(
 			}
 	)
 
-	scope.launch {
+	LaunchedEffect(Unit) {
 		zoom.setContentSize(imageSize)
 	}
 }
@@ -463,8 +462,8 @@ fun ShowError(
 				onClick =
 				{
 					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
+					removeSpecialError(currentUrl)
 					scope.launch {
-						removeSpecialError(currentUrl)
 						pagerState.animateScrollToPage(pagerState.currentPage)
 					}
 				},
