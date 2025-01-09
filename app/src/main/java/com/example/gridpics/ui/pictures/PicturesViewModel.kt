@@ -72,6 +72,12 @@ class PicturesViewModel(
 		}
 	}
 
+	fun clearPicturesCache()
+	{
+		val state = picturesUiState
+		state.value = state.value.copy(picturesUrl = emptyList())
+	}
+
 	fun postSavedUrls(urls: List<String>)
 	{
 		val state = picturesUiState
