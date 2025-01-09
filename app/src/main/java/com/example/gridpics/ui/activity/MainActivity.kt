@@ -175,7 +175,6 @@ class MainActivity: AppCompatActivity()
 					changeTheme = { int -> changeTheme(int) },
 					isScreenInPortraitState = picState,
 					clearImageCache = {
-						saveToSharedPrefs("")
 						val imageLoader = this@MainActivity.imageLoader
 						imageLoader.diskCache?.clear()
 						imageLoader.memoryCache?.clear()
@@ -412,6 +411,10 @@ class MainActivity: AppCompatActivity()
 			}
 			else
 			{
+				if(detVM.uiState.value.isSharedImage)
+				{
+					detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
+				}
 				detVM.isSharedImage(true)
 				detVM.postCurrentPicture(sharedValue)
 				detVM.postCorrectList()
