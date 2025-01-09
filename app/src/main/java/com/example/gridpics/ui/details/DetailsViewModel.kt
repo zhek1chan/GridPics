@@ -39,6 +39,7 @@ class DetailsViewModel(
 		jobForScope = viewModelScope.launch {
 			Log.d("description job is active", "${job.isActive}")
 			job.cancelChildren()
+			imageFlow.emit(Pair("Картинка ещё грузится, пожалуйста подождите", null))
 			val bitmap = interactor.getPictureBitmap(url, job)
 			imageFlow.emit(Pair(url, bitmap))
 		}
