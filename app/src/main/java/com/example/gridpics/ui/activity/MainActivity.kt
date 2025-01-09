@@ -412,6 +412,10 @@ class MainActivity: AppCompatActivity()
 			}
 			else
 			{
+				if(detVM.uiState.value.isSharedImage)
+				{
+					detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
+				}
 				detVM.isSharedImage(true)
 				detVM.postCurrentPicture(sharedValue)
 				detVM.postCorrectList()
