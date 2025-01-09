@@ -350,13 +350,12 @@ fun ShowAsynchImage(
 	val imgRequest = remember(img) {
 		ImageRequest.Builder(context)
 			.data(img)
-			.placeholder(R.drawable.loading)
-			.error(R.drawable.loading)
+			.error(R.drawable.error)
+			.placeholder(R.drawable.loading_gif_for_details)
 			.diskCacheKey(img)
 			.build()
 	}
 	val scope = rememberCoroutineScope()
-
 	AsyncImage(
 		model = imgRequest,
 		contentDescription = null,
@@ -366,8 +365,12 @@ fun ShowAsynchImage(
 			imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
 			removeSpecialError(img)
 		},
+		onLoading = {
+
+		},
 		onError = {
 			addError(img, it.result.throwable.message.toString())
+			navController.navigate(Screen.Details.route)
 		},
 		modifier = Modifier
 			.fillMaxSize()
@@ -464,7 +467,7 @@ fun ShowError(
 					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
 					scope.launch {
 						removeSpecialError(currentUrl)
-						pagerState.animateScrollToPage(pagerState.currentPage)
+						pagerState.scrollToPage(pagerState.currentPage)
 					}
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
