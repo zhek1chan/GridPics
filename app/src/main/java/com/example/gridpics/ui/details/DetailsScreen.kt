@@ -249,8 +249,7 @@ fun ShowDetails(
 					changeBarsVisability = changeBarsVisability,
 					postUrl = postUrl,
 					isScreenInPortraitState = isScreenInPortraitState,
-					setImageSharedStateToFalse = setImageSharedState,
-					pagerState = pagerState
+					setImageSharedStateToFalse = setImageSharedState
 				)
 			}
 			if(isSharedImage)
@@ -329,7 +328,6 @@ fun ShowAsynchImage(
 	postUrl: (String?, Bitmap?) -> Unit,
 	isScreenInPortraitState: Boolean,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
-	pagerState: PagerState,
 )
 {
 	val scale = if(state.value.isMultiWindowed)
@@ -370,10 +368,6 @@ fun ShowAsynchImage(
 		},
 		onError = {
 			addError(img, it.result.throwable.message.toString())
-			scope.launch {
-				pagerState.scrollToPage(pagerState.currentPage-1)
-				pagerState.scrollToPage(pagerState.currentPage+1)
-			}
 		},
 		modifier = Modifier
 			.fillMaxSize()
@@ -404,7 +398,7 @@ fun ShowAsynchImage(
 							countLastThree.add(count[lastIndex - 1])
 							countLastThree.add(count[lastIndex - 2])
 						}
-						Log.d("check this", "check this")
+						//to swipe 2 or more fingers out
 						if(changes.any { !it.pressed })
 						{
 							if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
@@ -471,8 +465,7 @@ fun ShowError(
 					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
 					scope.launch {
 						removeSpecialError(currentUrl)
-						pagerState.scrollToPage(pagerState.currentPage-1)
-						pagerState.scrollToPage(pagerState.currentPage+1)
+						pagerState.animateScrollToPage(pagerState.currentPage)
 					}
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
