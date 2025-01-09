@@ -68,11 +68,12 @@ class MainNotificationService: Service()
 		jobForCancelingNotification?.cancel()
 	}
 
-	private fun showNotification(builder: Builder, launchServiceInBackground: Boolean)
+	private fun showNotification(builder: Builder, useSound: Boolean)
 	{
-		val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+		val notificationManager = this@MainNotificationService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+		notificationManager.cancel(NOTIFICATION_ID)
 		notificationManager.notify(NOTIFICATION_ID, builder.build())
-		if(!launchServiceInBackground)
+		if(!useSound)
 		{
 			startForeground(NOTIFICATION_ID, builder.build())
 		}
@@ -99,14 +100,14 @@ class MainNotificationService: Service()
 	private fun createLogic(description: String?, bitmap: Bitmap?, useSound: Boolean)
 	{
 		val resultIntent = Intent(this@MainNotificationService, MainActivity::class.java)
-		if(bitmap != null)
+		if(description != null)
 		{
-			Log.d("OldString put", description.toString())
 			resultIntent.action = Intent.ACTION_SEND
 			resultIntent.addCategory(Intent.CATEGORY_DEFAULT)
 			resultIntent.setType(TEXT_PLAIN)
 			resultIntent.putExtra(SAVED_URL_FROM_SCREEN_DETAILS, description)
 		}
+		Log.d("intent URI", resultIntent.toUri(0))
 		val resultPendingIntent = PendingIntent.getActivity(this@MainNotificationService, 100, resultIntent,
 			PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 		val color = getColor(R.color.green)
@@ -121,7 +122,6 @@ class MainNotificationService: Service()
 			.setColor(color)
 			.setContentTitle(gridPics)
 			.setContentText(defaultText)
-		Log.d("description in service", description.toString())
 		if(bitmap != null)
 		{
 			builder.setLargeIcon(bitmap)
@@ -129,19 +129,12 @@ class MainNotificationService: Service()
 					.bigPicture(bitmap)
 					.bigLargeIcon(null as Icon?))
 		}
-		if(description == defaultText)
-		{
-			showNotification(builder, true)
-		}
-		else
-		{
-			showNotification(builder, useSound)
-		}
+		Log.d("description in service", "${description.toString()} bitmap ${bitmap.toString()}")
+		showNotification(builder, useSound)
 	}
 
 	fun putValues(valuesPair: Pair<String?, Bitmap?>)
 	{
-		Log.d("url in service", valuesPair.first.toString())
 		createLogic(valuesPair.first, valuesPair.second, false)
 	}
 
