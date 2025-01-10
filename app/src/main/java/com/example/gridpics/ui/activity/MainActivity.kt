@@ -467,7 +467,7 @@ class MainActivity: AppCompatActivity()
 		intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
 		intent.type = "text/plain"
 		intent.putExtra(Intent.EXTRA_TEXT, getString(R.string.you_have_got_share_link_from_gridpics, text))
-		val components = arrayOf(ComponentName(applicationContext, MainActivity::class.java))
+		val components = arrayOf(ComponentName(this, MainActivity::class.java))
 		startActivity(Intent.createChooser(intent, null).putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS,components))
 	}
 
