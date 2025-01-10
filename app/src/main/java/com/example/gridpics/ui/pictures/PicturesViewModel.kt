@@ -103,7 +103,7 @@ class PicturesViewModel(
 	fun removeSpecialError(url: String)
 	{
 		val map = errorsMap
-		if(map.contains(url))
+		if(map.contains(checkOnErrorExists(url)))
 		{
 			map.remove(url)
 		}
