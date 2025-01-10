@@ -364,6 +364,7 @@ class MainActivity: AppCompatActivity()
 				}
 				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
+			picturesViewModel.listOfConnections.add(connectionLocal)
 		}
 	}
 
@@ -372,7 +373,19 @@ class MainActivity: AppCompatActivity()
 		if(mainNotificationService != null)
 		{
 			Log.d("service", "unBind was called in main")
-			unbindService(connection)
+			val connections = picturesViewModel.listOfConnections
+			for(i in 0 .. connections.lastIndex)
+			{
+				try
+				{
+					unbindService(connections[i])
+				}
+				catch(e: Exception)
+				{
+					Log.d("Error", "Connection was already dead")
+				}
+			}
+			connections.clear()
 			Log.d("service", "connection $connection")
 			mainNotificationService = null
 		}
