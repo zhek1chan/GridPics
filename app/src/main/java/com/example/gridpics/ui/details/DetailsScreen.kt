@@ -2,7 +2,6 @@ package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.util.Log
 import android.widget.Toast
@@ -76,7 +75,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.startActivity
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -86,7 +84,6 @@ import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
-import com.example.gridpics.ui.activity.MainActivity.Companion.TEXT_PLAIN
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
@@ -110,6 +107,7 @@ fun DetailsScreen(
 	setImageSharedState: (Boolean) -> Unit,
 	picsUiState: MutableState<PicturesScreenUiState>,
 	setCurrentPictureUrl: (String) -> Unit,
+	share: (String) -> Unit,
 )
 {
 	val value = state.value
@@ -166,7 +164,8 @@ fun DetailsScreen(
 				postUrl = postUrl,
 				state = state,
 				changeBarsVisability = changeBarsVisability,
-				setImageSharedStateToFalse = setImageSharedState
+				setImageSharedStateToFalse = setImageSharedState,
+				share = share
 			)
 		},
 		content = { padding ->
@@ -366,7 +365,6 @@ fun ShowAsynchImage(
 			removeSpecialError(img)
 		},
 		onLoading = {
-
 		},
 		onError = {
 			addError(img, it.result.throwable.message.toString())
@@ -488,6 +486,7 @@ fun AppBar(
 	state: MutableState<DetailsScreenUiState>,
 	changeBarsVisability: (Boolean) -> Unit,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
+	share: (String) -> Unit,
 )
 {
 	val navBack = remember { mutableStateOf(false) }
@@ -566,7 +565,7 @@ fun AppBar(
 							.height(64.dp)
 							.width(50.dp)
 							.clickable {
-								share(currentPicture, context, TEXT_PLAIN)
+								share(currentPicture)
 							}
 						) {
 							Icon(
@@ -606,15 +605,4 @@ fun navigateToHome(
 	navController.navigate(Screen.Home.route) {
 		popUpTo(navController.graph.findStartDestination().id)
 	}
-}
-
-fun share(text: String, context: Context, plain: String)
-{
-	val sendIntent = Intent(Intent.ACTION_SEND).apply {
-		putExtra(Intent.EXTRA_TEXT, text)
-		flags = Intent.FLAG_ACTIVITY_NEW_TASK
-		type = plain
-	}
-	val shareIntent = Intent.createChooser(sendIntent, null)
-	startActivity(context, shareIntent, null)
 }

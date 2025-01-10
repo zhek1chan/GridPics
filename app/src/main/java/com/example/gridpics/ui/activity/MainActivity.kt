@@ -84,6 +84,7 @@ class MainActivity: AppCompatActivity()
 		installSplashScreen()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
+
 		picVM.changeOrientation(resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
@@ -202,6 +203,7 @@ class MainActivity: AppCompatActivity()
 					setImageSharedState = { isShared -> detVM.isSharedImage(isShared) },
 					picsUiState = picVM.picturesUiState,
 					setCurrentPictureUrl = { url -> detVM.postCurrentPicture(url) },
+					share = { url -> share(url) }
 				)
 			}
 		}
@@ -455,6 +457,17 @@ class MainActivity: AppCompatActivity()
 		val editorPictures = sharedPreferencesPictures.edit()
 		editorPictures.putString(SHARED_PREFS_PICTURES, picturesUrl)
 		editorPictures.apply()
+	}
+
+	private fun share(text: String)
+	{
+		val intent = Intent()
+		intent.action = Intent.ACTION_SEND
+		intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+		intent.type = "text/plain"
+		intent.putExtra(Intent.EXTRA_TEXT, getString(R.string.you_have_got_share_link_from_gridpics, text))
+		val components = arrayOf(ComponentName(applicationContext, MainActivity::class.java))
+		startActivity(Intent.createChooser(intent, null).putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS,components))
 	}
 
 	companion object
