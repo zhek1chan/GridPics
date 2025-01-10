@@ -373,6 +373,7 @@ class MainActivity: AppCompatActivity()
 		{
 			Log.d("service", "unBind was called in main")
 			unbindService(connection)
+			Log.d("service", "connection $connection")
 			mainNotificationService = null
 		}
 	}

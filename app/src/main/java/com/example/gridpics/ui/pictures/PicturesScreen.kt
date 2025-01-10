@@ -35,6 +35,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -61,7 +62,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
+import coil3.compose.SubcomposeAsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
@@ -195,7 +196,7 @@ fun ItemsCard(
 			.error(R.drawable.error)
 			.build()
 	}
-	AsyncImage(
+	SubcomposeAsyncImage(
 		model = (imgRequest),
 		contentDescription = item,
 		modifier = Modifier
@@ -220,6 +221,11 @@ fun ItemsCard(
 			.size(100.dp)
 			.clip(RoundedCornerShape(8.dp)),
 		contentScale = ContentScale.Crop,
+		loading = {
+			Box(Modifier.fillMaxSize()) {
+				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+			}
+		},
 		onError = {
 			isError = true
 			addError(item, it.result.throwable.message.toString())
