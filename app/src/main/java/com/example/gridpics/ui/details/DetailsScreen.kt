@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalRippleConfiguration
@@ -77,11 +78,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import coil3.compose.AsyncImage
+import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.error
-import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
@@ -158,7 +157,6 @@ fun DetailsScreen(
 		topBar = {
 			AppBar(
 				isVisible = value.barsAreVisible,
-				context = context,
 				nc = navController,
 				currentPicture = currentPicture,
 				postUrl = postUrl,
@@ -233,7 +231,8 @@ fun ShowDetails(
 					currentUrl = url,
 					pagerState = pagerState,
 					isValidUrl = isValidUrl,
-					removeSpecialError = removeSpecialError
+					removeSpecialError = removeSpecialError,
+					isShared = isSharedImage
 				)
 			}
 			else
@@ -350,12 +349,11 @@ fun ShowAsynchImage(
 		ImageRequest.Builder(context)
 			.data(img)
 			.error(R.drawable.error)
-			.placeholder(R.drawable.loading_gif_for_details)
 			.diskCacheKey(img)
 			.build()
 	}
 	val scope = rememberCoroutineScope()
-	AsyncImage(
+	SubcomposeAsyncImage(
 		model = imgRequest,
 		contentDescription = null,
 		contentScale = scale,
@@ -364,7 +362,10 @@ fun ShowAsynchImage(
 			imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
 			removeSpecialError(img)
 		},
-		onLoading = {
+		loading = {
+			Box(Modifier.fillMaxSize()) {
+				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+			}
 		},
 		onError = {
 			addError(img, it.result.throwable.message.toString())
@@ -430,6 +431,7 @@ fun ShowError(
 	pagerState: PagerState,
 	isValidUrl: (String) -> Boolean,
 	removeSpecialError: (String) -> Unit,
+	isShared: Boolean,
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
@@ -464,7 +466,10 @@ fun ShowError(
 				{
 					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
 					scope.launch {
-						removeSpecialError(currentUrl)
+						if(!isShared)
+						{
+							removeSpecialError(currentUrl)
+						}
 						pagerState.scrollToPage(pagerState.currentPage)
 					}
 				},
@@ -480,8 +485,7 @@ fun ShowError(
 @Composable
 fun AppBar(
 	isVisible: Boolean,
-	context: Context, nc: NavController,
-	currentPicture: String,
+	nc: NavController, currentPicture: String,
 	postUrl: (String?, Bitmap?) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	changeBarsVisability: (Boolean) -> Unit,
@@ -602,7 +606,5 @@ fun navigateToHome(
 	changeBarsVisability(true)
 	postUrl(null, null)
 	setImageSharedStateToFalse(false)
-	navController.navigate(Screen.Home.route) {
-		popUpTo(navController.graph.findStartDestination().id)
-	}
+	navController.navigate(Screen.Home.route)
 }
