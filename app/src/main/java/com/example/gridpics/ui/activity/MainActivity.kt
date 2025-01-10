@@ -16,8 +16,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
@@ -138,12 +136,6 @@ class MainActivity: AppCompatActivity()
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
-			enterTransition = {
-				EnterTransition.None
-			},
-			exitTransition = {
-				ExitTransition.None
-			}
 		)
 		{
 			composable(BottomNavItem.Home.route) {
@@ -467,7 +459,7 @@ class MainActivity: AppCompatActivity()
 		intent.type = "text/plain"
 		intent.putExtra(Intent.EXTRA_TEXT, getString(R.string.you_have_got_share_link_from_gridpics, text))
 		val components = arrayOf(ComponentName(this, MainActivity::class.java))
-		startActivity(Intent.createChooser(intent, null).putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS,components))
+		startActivity(Intent.createChooser(intent, null).putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, components))
 	}
 
 	companion object
