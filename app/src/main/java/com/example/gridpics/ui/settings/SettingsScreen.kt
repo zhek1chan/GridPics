@@ -62,6 +62,7 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.activity.MainActivity.Companion.SHARED_PREFERENCE_GRIDPICS
 import com.example.gridpics.ui.activity.MainActivity.Companion.THEME_SHARED_PREFERENCE
+import com.example.gridpics.ui.activity.MainActivity.Companion.WAS_CHANGED
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 
@@ -274,5 +275,6 @@ private fun saveThemeState(context: Context, chosenOption: Int)
 	val editor = context.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
 	Log.d("option saved", "$chosenOption")
 	editor.putInt(THEME_SHARED_PREFERENCE, chosenOption)
+	editor.putBoolean(WAS_CHANGED, true)
 	editor.apply()
 }
