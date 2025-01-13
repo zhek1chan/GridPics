@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -18,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -48,7 +50,9 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var mainNotificationService: MainNotificationService? = null
 	private var navigation: NavHostController? = null
+	private var themePick: Int = 2
 	private var job: Job? = null
+	private var mutableIsThemeBlackState = mutableStateOf(false)
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -98,28 +102,10 @@ class MainActivity: AppCompatActivity()
 			detVM.firstSetOfListState(listOfUrls)
 		}
 		// Здесь мы получаем значение выбранной через настройки приложения темы раннее, чтобы приложение сразу её выставило
-		var theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
-		val wasChanged = sharedPreferences.getBoolean(WAS_CHANGED, false)
-		//проверяем была ли сменена тема ранее, чтобы не перезапускать лишний раз activity
-		if(wasChanged)
-		{
-			changeTheme(theme)
-		}
-		else
-		{
-			//если не было вызова onDestroy -> была некорректна сохранена тема приложения, будет установлено значение следования системной теме
-			if(!sharedPreferences.getBoolean(ON_DESTROY_WAS_CALLED, false))
-			{
-				theme = ThemePick.FOLLOW_SYSTEM.intValue
-			}
-			picVM.postThemePick(ThemePick.entries.find { it.intValue == theme }!!)
-		}
-		val blackColor = getColor(R.color.black)
-		val whiteColor = getColor(R.color.white)
-		enableEdgeToEdge(
-			statusBarStyle = SystemBarStyle.auto(whiteColor, blackColor),
-			navigationBarStyle = SystemBarStyle.auto(whiteColor, blackColor)
-		)
+		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
+		changeTheme(theme)
+		themePick = theme
+
 		lifecycleScope.launch {
 			detVM.observeUrlFlow().collect {
 				if(ContextCompat.checkSelfPermission(
@@ -138,7 +124,7 @@ class MainActivity: AppCompatActivity()
 				navigation = navController
 				postValuesFromIntent(intent, listOfUrls, picVM)
 			}
-			ComposeTheme {
+			ComposeTheme(isDarkTheme = mutableIsThemeBlackState.value) {
 				NavigationSetup(navController = navController)
 			}
 		}
@@ -240,10 +226,6 @@ class MainActivity: AppCompatActivity()
 
 	override fun onStart()
 	{
-		val editor = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
-		editor.putBoolean(WAS_CHANGED, false)
-		editor.putBoolean(ON_DESTROY_WAS_CALLED, false)
-		editor.apply()
 		if(mainNotificationService == null)
 		{
 			Log.d("service", "starting service from onResume()")
@@ -291,7 +273,6 @@ class MainActivity: AppCompatActivity()
 	override fun onDestroy()
 	{
 		val editor = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
-		editor.putBoolean(ON_DESTROY_WAS_CALLED, true)
 		editor.apply()
 		val intent = intent
 		intent.replaceExtras(Bundle())
@@ -328,30 +309,48 @@ class MainActivity: AppCompatActivity()
 		val orientation = newConfig.orientation
 		val picVM = picturesViewModel
 		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
+		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
+		if(themePick == followSysTheme)
+		{
+			Log.d("themka pomenyalas", "poshlo-poehalo")
+			changeTheme(followSysTheme)
+		}
 	}
 
 	private fun changeTheme(option: Int)
 	{
 		Log.d("debug theme option", "changed theme option: $option")
 		val picVM = picturesViewModel
+		var isDarkTheme = false
 		when(option)
 		{
 			ThemePick.LIGHT_THEME.intValue ->
 			{
 				picVM.postThemePick(ThemePick.LIGHT_THEME)
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+				isDarkTheme = false
 			}
 			ThemePick.DARK_THEME.intValue ->
 			{
 				picVM.postThemePick(ThemePick.DARK_THEME)
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+				isDarkTheme = true
 			}
 			ThemePick.FOLLOW_SYSTEM.intValue ->
 			{
 				picVM.postThemePick(ThemePick.FOLLOW_SYSTEM)
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+				isDarkTheme = isDarkThemeAfterSystemChangedTheme()
 			}
 		}
+		themePick = option
+		val blackColor = getColor(R.color.black)
+		val whiteColor = getColor(R.color.white)
+		mutableIsThemeBlackState.value = isDarkTheme
+		enableEdgeToEdge(
+			statusBarStyle = SystemBarStyle.auto(lightScrim = whiteColor, darkScrim = blackColor, detectDarkMode = { isDarkTheme }),
+			navigationBarStyle = SystemBarStyle.auto(lightScrim = whiteColor, darkScrim = blackColor, detectDarkMode = { isDarkTheme })
+		)
 	}
 
 	private fun startMainService()
@@ -501,10 +500,14 @@ class MainActivity: AppCompatActivity()
 		startActivity(Intent.createChooser(intent, null).putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, components))
 	}
 
+	private fun isDarkThemeAfterSystemChangedTheme(): Boolean
+	{
+		val uiModeManager = this.getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
+		return uiModeManager.nightMode == UiModeManager.MODE_NIGHT_YES
+	}
+
 	companion object
 	{
-		const val ON_DESTROY_WAS_CALLED = "ONDESTROY_WAS_CALLED"
-		const val WAS_CHANGED = "WAS_CHANGED"
 		const val RESULT_SUCCESS = 100
 		const val LENGTH_OF_PICTURE = 110
 		const val TEXT_PLAIN = "text/plain"
