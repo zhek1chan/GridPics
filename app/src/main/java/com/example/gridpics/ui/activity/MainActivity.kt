@@ -95,8 +95,22 @@ class MainActivity: AppCompatActivity()
 			detVM.firstSetOfListState(listOfUrls)
 		}
 		// Здесь мы получаем значение выбранной через настройки приложения темы раннее, чтобы приложение сразу её выставило
-		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
-		changeTheme(theme)
+		var theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
+		val wasChanged = sharedPreferences.getBoolean(WAS_CHANGED, false)
+		//проверяем была ли сменена тема ранее, чтобы не перезапускать лишний раз activity
+		if(wasChanged)
+		{
+			changeTheme(theme)
+		}
+		else
+		{
+			//если не было вызова onDestroy -> была некорректна сохранена тема приложения, будет установлено значение следования системной теме
+			if(!sharedPreferences.getBoolean(ON_DESTROY_WAS_CALLED, false))
+			{
+				theme = ThemePick.FOLLOW_SYSTEM.intValue
+			}
+			picVM.postThemePick(ThemePick.entries.find { it.intValue == theme }!!)
+		}
 		val blackColor = getColor(R.color.black)
 		val whiteColor = getColor(R.color.white)
 		enableEdgeToEdge(
@@ -222,6 +236,10 @@ class MainActivity: AppCompatActivity()
 
 	override fun onStart()
 	{
+		val editor = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
+		editor.putBoolean(WAS_CHANGED, false)
+		editor.putBoolean(ON_DESTROY_WAS_CALLED, false)
+		editor.apply()
 		if(mainNotificationService == null)
 		{
 			Log.d("service", "starting service from onResume()")
@@ -268,6 +286,9 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
+		val editor = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
+		editor.putBoolean(ON_DESTROY_WAS_CALLED, true)
+		editor.apply()
 		val intent = intent
 		intent.replaceExtras(Bundle())
 		intent.action = ""
@@ -478,6 +499,8 @@ class MainActivity: AppCompatActivity()
 
 	companion object
 	{
+		const val ON_DESTROY_WAS_CALLED = "ONDESTROY_WAS_CALLED"
+		const val WAS_CHANGED = "WAS_CHANGED"
 		const val RESULT_SUCCESS = 100
 		const val LENGTH_OF_PICTURE = 110
 		const val TEXT_PLAIN = "text/plain"
