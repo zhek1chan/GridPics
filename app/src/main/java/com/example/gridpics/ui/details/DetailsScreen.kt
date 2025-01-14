@@ -2,7 +2,6 @@ package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.util.Log
 import android.widget.Toast
@@ -44,6 +43,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalRippleConfiguration
@@ -76,17 +76,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.startActivity
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import coil3.compose.AsyncImage
+import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.error
-import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
-import com.example.gridpics.ui.activity.MainActivity.Companion.TEXT_PLAIN
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
@@ -110,6 +106,7 @@ fun DetailsScreen(
 	setImageSharedState: (Boolean) -> Unit,
 	picsUiState: MutableState<PicturesScreenUiState>,
 	setCurrentPictureUrl: (String) -> Unit,
+	share: (String) -> Unit,
 )
 {
 	val value = state.value
@@ -160,13 +157,13 @@ fun DetailsScreen(
 		topBar = {
 			AppBar(
 				isVisible = value.barsAreVisible,
-				context = context,
 				nc = navController,
 				currentPicture = currentPicture,
 				postUrl = postUrl,
 				state = state,
 				changeBarsVisability = changeBarsVisability,
-				setImageSharedStateToFalse = setImageSharedState
+				setImageSharedStateToFalse = setImageSharedState,
+				share = share
 			)
 		},
 		content = { padding ->
@@ -234,7 +231,8 @@ fun ShowDetails(
 					currentUrl = url,
 					pagerState = pagerState,
 					isValidUrl = isValidUrl,
-					removeSpecialError = removeSpecialError
+					removeSpecialError = removeSpecialError,
+					isShared = isSharedImage
 				)
 			}
 			else
@@ -350,13 +348,12 @@ fun ShowAsynchImage(
 	val imgRequest = remember(img) {
 		ImageRequest.Builder(context)
 			.data(img)
-			.placeholder(R.drawable.loading)
-			.error(R.drawable.loading)
+			.error(R.drawable.error)
 			.diskCacheKey(img)
 			.build()
 	}
-
-	AsyncImage(
+	val scope = rememberCoroutineScope()
+	SubcomposeAsyncImage(
 		model = imgRequest,
 		contentDescription = null,
 		contentScale = scale,
@@ -365,8 +362,14 @@ fun ShowAsynchImage(
 			imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
 			removeSpecialError(img)
 		},
+		loading = {
+			Box(Modifier.fillMaxSize()) {
+				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+			}
+		},
 		onError = {
 			addError(img, it.result.throwable.message.toString())
+			navController.navigate(Screen.Details.route)
 		},
 		modifier = Modifier
 			.fillMaxSize()
@@ -397,7 +400,6 @@ fun ShowAsynchImage(
 							countLastThree.add(count[lastIndex - 1])
 							countLastThree.add(count[lastIndex - 2])
 						}
-						//to swipe 2 or more fingers out
 						if(changes.any { !it.pressed })
 						{
 							if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
@@ -417,7 +419,7 @@ fun ShowAsynchImage(
 			}
 	)
 
-	LaunchedEffect(Unit) {
+	scope.launch {
 		zoom.setContentSize(imageSize)
 	}
 }
@@ -429,6 +431,7 @@ fun ShowError(
 	pagerState: PagerState,
 	isValidUrl: (String) -> Boolean,
 	removeSpecialError: (String) -> Unit,
+	isShared: Boolean,
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
@@ -462,9 +465,12 @@ fun ShowError(
 				onClick =
 				{
 					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
-					removeSpecialError(currentUrl)
 					scope.launch {
-						pagerState.animateScrollToPage(pagerState.currentPage)
+						if(!isShared)
+						{
+							removeSpecialError(currentUrl)
+						}
+						pagerState.scrollToPage(pagerState.currentPage)
 					}
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
@@ -479,12 +485,12 @@ fun ShowError(
 @Composable
 fun AppBar(
 	isVisible: Boolean,
-	context: Context, nc: NavController,
-	currentPicture: String,
+	nc: NavController, currentPicture: String,
 	postUrl: (String?, Bitmap?) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	changeBarsVisability: (Boolean) -> Unit,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
+	share: (String) -> Unit,
 )
 {
 	val navBack = remember { mutableStateOf(false) }
@@ -563,7 +569,7 @@ fun AppBar(
 							.height(64.dp)
 							.width(50.dp)
 							.clickable {
-								share(currentPicture, context, TEXT_PLAIN)
+								share(currentPicture)
 							}
 						) {
 							Icon(
@@ -600,18 +606,5 @@ fun navigateToHome(
 	changeBarsVisability(true)
 	postUrl(null, null)
 	setImageSharedStateToFalse(false)
-	navController.navigate(Screen.Home.route) {
-		popUpTo(navController.graph.findStartDestination().id)
-	}
-}
-
-fun share(text: String, context: Context, plain: String)
-{
-	val sendIntent = Intent(Intent.ACTION_SEND).apply {
-		putExtra(Intent.EXTRA_TEXT, text)
-		flags = Intent.FLAG_ACTIVITY_NEW_TASK
-		type = plain
-	}
-	val shareIntent = Intent.createChooser(sendIntent, null)
-	startActivity(context, shareIntent, null)
+	navController.navigate(Screen.Home.route)
 }

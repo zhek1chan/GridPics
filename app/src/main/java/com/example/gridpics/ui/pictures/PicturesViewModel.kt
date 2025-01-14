@@ -1,5 +1,6 @@
 package com.example.gridpics.ui.pictures
 
+import android.content.ServiceConnection
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel

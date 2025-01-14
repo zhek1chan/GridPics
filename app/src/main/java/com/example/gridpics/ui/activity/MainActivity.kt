@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -16,10 +17,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -50,19 +50,28 @@ class MainActivity: AppCompatActivity()
 	private val picturesViewModel by viewModel<PicturesViewModel>()
 	private var mainNotificationService: MainNotificationService? = null
 	private var navigation: NavHostController? = null
+	private var themePick: Int = 2
 	private var job: Job? = null
+	private var mutableIsThemeBlackState = mutableStateOf(false)
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
 		{
 			val binder = service as MainNotificationService.ServiceBinder
 			val mainService = binder.get()
-			val flowValue = detailsViewModel.observeUrlFlow().value
-			if(flowValue?.first != null)
+			if(this@MainActivity.isDestroyed)
 			{
-				mainService.putValues(flowValue)
+				unbindService(this)
 			}
-			mainNotificationService = mainService
+			else
+			{
+				val flowValue = detailsViewModel.observeUrlFlow().value
+				if(flowValue?.first != null)
+				{
+					flowValue.let { mainService.putValues(it) }
+				}
+				mainNotificationService = mainService
+			}
 		}
 
 		override fun onServiceDisconnected(arg0: ComponentName)
@@ -84,6 +93,7 @@ class MainActivity: AppCompatActivity()
 		installSplashScreen()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
+
 		picVM.changeOrientation(resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
@@ -98,12 +108,8 @@ class MainActivity: AppCompatActivity()
 		// Здесь мы получаем значение выбранной через настройки приложения темы раннее, чтобы приложение сразу её выставило
 		val theme = sharedPreferences.getInt(THEME_SHARED_PREFERENCE, ThemePick.FOLLOW_SYSTEM.intValue)
 		changeTheme(theme)
-		val blackColor = getColor(R.color.black)
-		val whiteColor = getColor(R.color.white)
-		enableEdgeToEdge(
-			statusBarStyle = SystemBarStyle.auto(whiteColor, blackColor),
-			navigationBarStyle = SystemBarStyle.auto(whiteColor, blackColor)
-		)
+		themePick = theme
+
 		lifecycleScope.launch {
 			detVM.observeUrlFlow().collect {
 				if(ContextCompat.checkSelfPermission(
@@ -122,7 +128,7 @@ class MainActivity: AppCompatActivity()
 				navigation = navController
 				postValuesFromIntent(intent, listOfUrls, picVM)
 			}
-			ComposeTheme {
+			ComposeTheme(isDarkTheme = mutableIsThemeBlackState.value) {
 				NavigationSetup(navController = navController)
 			}
 		}
@@ -137,12 +143,6 @@ class MainActivity: AppCompatActivity()
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
-			enterTransition = {
-				EnterTransition.None
-			},
-			exitTransition = {
-				ExitTransition.None
-			}
 		)
 		{
 			composable(BottomNavItem.Home.route) {
@@ -178,7 +178,6 @@ class MainActivity: AppCompatActivity()
 						val imageLoader = this@MainActivity.imageLoader
 						imageLoader.diskCache?.clear()
 						imageLoader.memoryCache?.clear()
-						picVM.clearPicturesCache()
 						picVM.clearErrors()
 					},
 					postStartOfPager = { picVM.clickOnPicture(0, 0) }
@@ -203,6 +202,7 @@ class MainActivity: AppCompatActivity()
 					setImageSharedState = { isShared -> detVM.isSharedImage(isShared) },
 					picsUiState = picVM.picturesUiState,
 					setCurrentPictureUrl = { url -> detVM.postCurrentPicture(url) },
+					share = { url -> share(url) }
 				)
 			}
 		}
@@ -275,6 +275,8 @@ class MainActivity: AppCompatActivity()
 
 	override fun onDestroy()
 	{
+		val editor = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE).edit()
+		editor.apply()
 		val intent = intent
 		intent.replaceExtras(Bundle())
 		intent.action = ""
@@ -310,30 +312,48 @@ class MainActivity: AppCompatActivity()
 		val orientation = newConfig.orientation
 		val picVM = picturesViewModel
 		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
+		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
+		if(themePick == followSysTheme)
+		{
+			Log.d("themka pomenyalas", "poshlo-poehalo")
+			changeTheme(followSysTheme)
+		}
 	}
 
 	private fun changeTheme(option: Int)
 	{
 		Log.d("theme option", "theme option: $option")
 		val picVM = picturesViewModel
+		var isDarkTheme = false
 		when(option)
 		{
 			ThemePick.LIGHT_THEME.intValue ->
 			{
 				picVM.postThemePick(ThemePick.LIGHT_THEME)
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+				isDarkTheme = false
 			}
 			ThemePick.DARK_THEME.intValue ->
 			{
 				picVM.postThemePick(ThemePick.DARK_THEME)
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+				isDarkTheme = true
 			}
 			ThemePick.FOLLOW_SYSTEM.intValue ->
 			{
 				picVM.postThemePick(ThemePick.FOLLOW_SYSTEM)
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+				isDarkTheme = isDarkThemeAfterSystemChangedTheme()
 			}
 		}
+		themePick = option
+		val blackColor = getColor(R.color.black)
+		val whiteColor = getColor(R.color.white)
+		mutableIsThemeBlackState.value = isDarkTheme
+		enableEdgeToEdge(
+			statusBarStyle = SystemBarStyle.auto(lightScrim = whiteColor, darkScrim = blackColor, detectDarkMode = { isDarkTheme }),
+			navigationBarStyle = SystemBarStyle.auto(lightScrim = whiteColor, darkScrim = blackColor, detectDarkMode = { isDarkTheme })
+		)
 	}
 
 	private fun startMainService()
@@ -380,6 +400,7 @@ class MainActivity: AppCompatActivity()
 		{
 			Log.d("service", "unBind was called in main")
 			unbindService(connection)
+			Log.d("service", "connection $connection")
 			mainNotificationService = null
 		}
 	}
@@ -412,6 +433,10 @@ class MainActivity: AppCompatActivity()
 			}
 			else
 			{
+				if(detVM.uiState.value.isSharedImage)
+				{
+					detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
+				}
 				detVM.isSharedImage(true)
 				detVM.postCurrentPicture(sharedValue)
 				detVM.postCorrectList()
@@ -454,6 +479,23 @@ class MainActivity: AppCompatActivity()
 		editorPictures.apply()
 	}
 
+	private fun share(text: String)
+	{
+		val intent = Intent()
+		intent.action = Intent.ACTION_SEND
+		intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+		intent.type = "text/plain"
+		intent.putExtra(Intent.EXTRA_TEXT, getString(R.string.you_have_got_share_link_from_gridpics, text))
+		val components = arrayOf(ComponentName(this, MainActivity::class.java))
+		startActivity(Intent.createChooser(intent, null).putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, components))
+	}
+
+	private fun isDarkThemeAfterSystemChangedTheme(): Boolean
+	{
+		val uiModeManager = this.getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
+		return uiModeManager.nightMode == UiModeManager.MODE_NIGHT_YES
+	}
+
 	companion object
 	{
 		const val RESULT_SUCCESS = 100
@@ -464,7 +506,7 @@ class MainActivity: AppCompatActivity()
 		const val THEME_SHARED_PREFERENCE = "THEME_SHARED_PREFERENCE"
 		const val CHANNEL_NOTIFICATIONS_ID = "GRID_PICS_CHANEL_NOTIFICATIONS_ID"
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
-		const val HTTP_ERROR = "HTTP error: 404"
+		const val HTTP_ERROR = "HTTP error: 404, or bad image"
 		const val SAVED_URL_FROM_SCREEN_DETAILS = "SAVED_URL_FROM_SCREEN_DETAILS"
 	}
 }
