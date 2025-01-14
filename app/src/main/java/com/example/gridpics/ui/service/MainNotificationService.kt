@@ -34,6 +34,7 @@ class MainNotificationService: Service()
 	override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
 	{
 		Log.d("service", "onStartCommand()")
+		Log.d("debug service", "onStartCommand() $this")
 		prepareNotification(false)
 		return START_NOT_STICKY
 	}
@@ -42,6 +43,7 @@ class MainNotificationService: Service()
 	{
 		prepareNotification(true)
 		Log.d("service", "onBind()")
+		Log.d("debug service", "onBind() $this")
 		return binder
 	}
 
@@ -65,6 +67,7 @@ class MainNotificationService: Service()
 	{
 		super.onRebind(intent)
 		Log.d("service", "onRebind()")
+		Log.d("debug service", "onRebind() $this")
 		jobForCancelingNotification?.cancel()
 	}
 
@@ -80,7 +83,7 @@ class MainNotificationService: Service()
 
 	override fun onUnbind(intent: Intent?): Boolean
 	{
-		Log.d("service", "onUnbind()")
+		Log.d("debug service", "onUnbind() $this")
 		stopNotificationCoroutine()
 		return true
 	}

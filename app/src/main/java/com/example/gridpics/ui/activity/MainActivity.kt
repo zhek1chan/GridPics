@@ -61,11 +61,14 @@ class MainActivity: AppCompatActivity()
 				flowValue.let { mainService.putValues(it) }
 			}
 			mainNotificationService = mainService
+			Log.d("debug lifecycle", "onServiceConnected() $mainService")
+			Log.d("debug lifecycle", "activity onServiceConnected() $this")
 		}
 
 		override fun onServiceDisconnected(arg0: ComponentName)
 		{
 			mainNotificationService = null
+			Log.d("debug lifecycle", "activity onServiceDisconnected() $this")
 		}
 
 		override fun onBindingDied(name: ComponentName?)
@@ -77,7 +80,7 @@ class MainActivity: AppCompatActivity()
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
-		Log.d("lifecycle", "onCreate()")
+		Log.d("debug lifecycle", "onCreate() $this")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		val picVM = picturesViewModel
@@ -216,7 +219,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
-		Log.d("lifecycle", "onRestart()")
+		Log.d("debug lifecycle", "onRestart() $this")
 		super.onRestart()
 	}
 
@@ -227,7 +230,7 @@ class MainActivity: AppCompatActivity()
 			Log.d("service", "starting service from onResume()")
 			startMainService()
 		}
-		Log.d("lifecycle", "onStart()")
+		Log.d("debug lifecycle", "onStart $this()")
 		super.onStart()
 	}
 
@@ -262,7 +265,7 @@ class MainActivity: AppCompatActivity()
 		{
 			unbindMainService()
 		}
-		Log.d("lifecycle", "onStop()")
+		Log.d("debug lifecycle", "onStop() $this")
 		super.onStop()
 	}
 
@@ -273,7 +276,7 @@ class MainActivity: AppCompatActivity()
 		intent.action = ""
 		intent.data = null
 		intent.flags = 0
-		Log.d("lifecycle", "onDestroy()")
+		Log.d("debug lifecycle", "onDestroy() $this")
 		super.onDestroy()
 	}
 
@@ -307,7 +310,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun changeTheme(option: Int)
 	{
-		Log.d("theme option", "theme option: $option")
+		Log.d("debug theme option", "changed theme option: $option")
 		val picVM = picturesViewModel
 		when(option)
 		{
