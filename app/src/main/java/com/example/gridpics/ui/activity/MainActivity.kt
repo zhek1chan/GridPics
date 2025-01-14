@@ -59,20 +59,24 @@ class MainActivity: AppCompatActivity()
 		{
 			val binder = service as MainNotificationService.ServiceBinder
 			val mainService = binder.get()
-			val flowValue = detailsViewModel.observeUrlFlow().value
-			if(flowValue?.first != null)
+			if(this@MainActivity.isDestroyed)
 			{
-				mainService.putValues(flowValue)
+				unbindService(this)
 			}
-			mainNotificationService = mainService
-			Log.d("debug lifecycle", "onServiceConnected() $mainService")
-			Log.d("debug lifecycle", "activity onServiceConnected() $this")
+			else
+			{
+				val flowValue = detailsViewModel.observeUrlFlow().value
+				if(flowValue?.first != null)
+				{
+					flowValue.let { mainService.putValues(it) }
+				}
+				mainNotificationService = mainService
+			}
 		}
 
 		override fun onServiceDisconnected(arg0: ComponentName)
 		{
 			mainNotificationService = null
-			Log.d("debug lifecycle", "activity onServiceDisconnected() $this")
 		}
 
 		override fun onBindingDied(name: ComponentName?)
@@ -84,7 +88,7 @@ class MainActivity: AppCompatActivity()
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
-		Log.d("debug lifecycle", "onCreate() $this")
+		Log.d("lifecycle", "onCreate()")
 		setTheme(R.style.Theme_GridPics)
 		installSplashScreen()
 		val picVM = picturesViewModel
@@ -174,7 +178,6 @@ class MainActivity: AppCompatActivity()
 						val imageLoader = this@MainActivity.imageLoader
 						imageLoader.diskCache?.clear()
 						imageLoader.memoryCache?.clear()
-						picVM.clearPicturesCache()
 						picVM.clearErrors()
 					},
 					postStartOfPager = { picVM.clickOnPicture(0, 0) }
@@ -220,7 +223,7 @@ class MainActivity: AppCompatActivity()
 
 	override fun onRestart()
 	{
-		Log.d("debug lifecycle", "onRestart() $this")
+		Log.d("lifecycle", "onRestart()")
 		super.onRestart()
 	}
 
@@ -231,7 +234,7 @@ class MainActivity: AppCompatActivity()
 			Log.d("service", "starting service from onResume()")
 			startMainService()
 		}
-		Log.d("debug lifecycle", "onStart $this()")
+		Log.d("lifecycle", "onStart()")
 		super.onStart()
 	}
 
@@ -266,7 +269,7 @@ class MainActivity: AppCompatActivity()
 		{
 			unbindMainService()
 		}
-		Log.d("debug lifecycle", "onStop() $this")
+		Log.d("lifecycle", "onStop()")
 		super.onStop()
 	}
 
@@ -279,7 +282,7 @@ class MainActivity: AppCompatActivity()
 		intent.action = ""
 		intent.data = null
 		intent.flags = 0
-		Log.d("debug lifecycle", "onDestroy() $this")
+		Log.d("lifecycle", "onDestroy()")
 		super.onDestroy()
 	}
 
@@ -319,7 +322,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun changeTheme(option: Int)
 	{
-		Log.d("debug theme option", "changed theme option: $option")
+		Log.d("theme option", "theme option: $option")
 		val picVM = picturesViewModel
 		var isDarkTheme = false
 		when(option)
@@ -388,7 +391,6 @@ class MainActivity: AppCompatActivity()
 				}
 				bindService(serviceIntentLocal, connectionLocal, Context.BIND_AUTO_CREATE)
 			}
-			picturesViewModel.listOfConnections.add(connectionLocal)
 		}
 	}
 
@@ -397,19 +399,7 @@ class MainActivity: AppCompatActivity()
 		if(mainNotificationService != null)
 		{
 			Log.d("service", "unBind was called in main")
-			val connections = picturesViewModel.listOfConnections
-			for(i in 0 .. connections.lastIndex)
-			{
-				try
-				{
-					unbindService(connections[i])
-				}
-				catch(e: Exception)
-				{
-					Log.d("Error", "Connection was already dead")
-				}
-			}
-			connections.clear()
+			unbindService(connection)
 			Log.d("service", "connection $connection")
 			mainNotificationService = null
 		}
