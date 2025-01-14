@@ -15,7 +15,7 @@ class PicturesViewModel(
 	private val interactor: ImagesInteractor,
 ): ViewModel()
 {
-	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM))
+	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM, emptyList()))
 	private val errorsMap: MutableMap<String, String> = mutableMapOf()
 
 	init
@@ -29,22 +29,20 @@ class PicturesViewModel(
 					is Resource.Data ->
 					{
 						val savedUrls = flow.value.picturesUrl
-						if(savedUrls.size <= 1)
+						val deletedUrls = flow.value.deletedUrls
+						val urlsFromNet = convertToListFromString(urls.value)
+						val urlsToAdd = if(savedUrls.isNotEmpty())
 						{
-							val urlsFromNet = convertToListFromString(urls.value)
-							val urlsToAdd = if(savedUrls.isNotEmpty())
-							{
-								(savedUrls + urlsFromNet).distinct()
-							}
-							else
-							{
-								urlsFromNet
-							}
-							flow.value = flow.value.copy(
-								loadingState = PicturesState.SearchIsOk(urlsToAdd),
-								picturesUrl = urlsToAdd
-							)
+							compareAndCombineLists((urlsFromNet + savedUrls).distinct(), deletedUrls)
 						}
+						else
+						{
+							compareAndCombineLists(urlsFromNet, deletedUrls)
+						}
+						flow.value = flow.value.copy(
+							loadingState = PicturesState.SearchIsOk(urlsToAdd),
+							picturesUrl = urlsToAdd
+						)
 					}
 					is Resource.ConnectionError ->
 						flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
@@ -167,5 +165,17 @@ class PicturesViewModel(
 	fun returnStringOfList(): String
 	{
 		return convertFromListToString(picturesUiState.value.picturesUrl)
+	}
+
+	fun postDeletedUrls(urls: List<String>)
+	{
+		val state = picturesUiState
+		state.value = state.value.copy(deletedUrls = urls)
+	}
+
+	private fun compareAndCombineLists(list1: List<String>, list2: List<String>): List<String>
+	{
+		val set2 = list2.toSet() // Преобразуем второй список в множество для быстрого поиска
+		return list1.filterNot { it in set2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
 	}
 }

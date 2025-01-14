@@ -108,23 +108,12 @@ fun DetailsScreen(
 	setCurrentPictureUrl: (String) -> Unit,
 	share: (String) -> Unit,
 	deleteCurrentPicture: (String) -> Unit,
-	postWasDeletedState: () -> Unit,
-	postWasSharedState:() -> Unit
+	postWasSharedState: () -> Unit,
 )
 {
 	val value = state.value
 	val context = LocalContext.current
 	val currentPicture = value.currentPicture
-	if(value.wasDeleted)
-	{
-		navigateToHome(
-			changeBarsVisability = changeBarsVisability,
-			postUrl = postUrl,
-			navController = navController,
-			setImageSharedStateToFalse = setImageSharedState
-		)
-		postWasDeletedState()
-	}
 	BackHandler {
 		navigateToHome(
 			changeBarsVisability = changeBarsVisability,
@@ -540,7 +529,7 @@ fun AppBar(
 	changeBarsVisability: (Boolean) -> Unit,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	share: (String) -> Unit,
-	postWasSharedState:() -> Unit
+	postWasSharedState: () -> Unit,
 )
 {
 	if(state.value.wasShared)

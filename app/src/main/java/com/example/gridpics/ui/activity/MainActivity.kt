@@ -100,8 +100,10 @@ class MainActivity: AppCompatActivity()
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
 		val picturesFromSP = sharedPreferences.getString(SHARED_PREFS_PICTURES, null)
+		val deletedPictures = picVM.convertToListFromString(sharedPreferences.getString(DELETED_LIST, null))
 		val listOfUrls = picVM.convertToListFromString(picturesFromSP)
 		picVM.postSavedUrls(urls = listOfUrls)
+		picVM.postDeletedUrls(urls = deletedPictures)
 		if(detVM.uiState.value.picturesUrl.isEmpty())
 		{
 			detVM.firstSetOfListState(listOfUrls)
@@ -206,10 +208,6 @@ class MainActivity: AppCompatActivity()
 					share = { url -> share(url) },
 					deleteCurrentPicture = { url ->
 						deletePicture(url)
-						detVM.postNewPic(null, null)
-					},
-					postWasDeletedState = {
-						detVM.setWasDeleted(false)
 						detVM.postNewPic(null, null)
 					},
 					postWasSharedState = { detVM.setWasShared(false) }
@@ -443,16 +441,17 @@ class MainActivity: AppCompatActivity()
 					{
 						Log.d("Test111", "SHARE")
 						picVM.clickOnPicture(0, 0)
-						navAfterNewIntent(nav)
 						detVM.setWasShared(true)
+						navAfterNewIntent(nav)
 					}
 					else if(needsToBeDeleted)
 					{
 						Log.d("Test111", "DELETE")
 						deletePicture(oldString)
 						detVM.setWasDeleted(true)
+						nav?.navigate(Screen.Home.route)
 					}
-					else if (!needsToBeShared)
+					else if(!needsToBeShared)
 					{
 						picVM.clickOnPicture(0, 0)
 						navAfterNewIntent(nav)
@@ -526,6 +525,11 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val urls = detVM.deleteCurrentPicture(url)
 		saveToSharedPrefs(picVM.convertFromListToString(urls))
+		val sharedPreferencesPictures = this.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
+		val stringOfUrls = sharedPreferencesPictures.getString(DELETED_LIST, "") + "\n" + url
+		val editorPictures = sharedPreferencesPictures.edit()
+		editorPictures.putString(DELETED_LIST, stringOfUrls)
+		editorPictures.apply()
 		picVM.postSavedUrls(urls)
 		imageLoader.diskCache?.remove(url)
 		Toast.makeText(this@MainActivity, getString(R.string.pic_was_deleted), Toast.LENGTH_SHORT).show()
@@ -544,6 +548,7 @@ class MainActivity: AppCompatActivity()
 		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337
 		const val SHOULD_WE_SHARE_THIS = "SHOULD_WE_SHARE_THIS"
+		const val DELETED_LIST = "DELETED_LIST"
 		const val SHOULD_WE_DELETE_THIS = "SHOULD_WE_DELETE_THIS"
 		const val SHARED_PREFS_PICTURES = "SHARED_PREFS_PICTURES"
 		const val THEME_SHARED_PREFERENCE = "THEME_SHARED_PREFERENCE"
