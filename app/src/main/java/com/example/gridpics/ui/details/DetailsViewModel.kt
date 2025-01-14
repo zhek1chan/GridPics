@@ -116,4 +116,14 @@ class DetailsViewModel(
 		state.value = state.value.copy(picturesUrl = listForState)
 		Log.d("index list", "create list for screen was called")
 	}
+
+	fun deleteCurrentPicture(url: String): List<String>
+	{
+		val state = uiState
+		val list = state.value.picturesUrl as MutableList
+		list.remove(url)
+		Log.d("test111", "$list")
+		state.value = state.value.copy(picturesUrl = list)
+		return list
+	}
 }

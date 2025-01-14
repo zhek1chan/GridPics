@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.pictures
 
-import android.content.ServiceConnection
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -29,20 +28,23 @@ class PicturesViewModel(
 				{
 					is Resource.Data ->
 					{
-						val pictureUrls = flow.value.picturesUrl
-						val urlsFromNet = convertToListFromString(urls.value)
-						val urlsToAdd = if(pictureUrls.isNotEmpty())
+						val savedUrls = flow.value.picturesUrl
+						if(savedUrls.size <= 1)
 						{
-							(pictureUrls + urlsFromNet).distinct()
+							val urlsFromNet = convertToListFromString(urls.value)
+							val urlsToAdd = if(savedUrls.isNotEmpty())
+							{
+								(savedUrls + urlsFromNet).distinct()
+							}
+							else
+							{
+								urlsFromNet
+							}
+							flow.value = flow.value.copy(
+								loadingState = PicturesState.SearchIsOk(urlsToAdd),
+								picturesUrl = urlsToAdd
+							)
 						}
-						else
-						{
-							urlsFromNet
-						}
-						flow.value = flow.value.copy(
-							loadingState = PicturesState.SearchIsOk(urlsToAdd),
-							picturesUrl = urlsToAdd
-						)
 					}
 					is Resource.ConnectionError ->
 						flow.value = flow.value.copy(loadingState = PicturesState.ConnectionError)
@@ -71,12 +73,6 @@ class PicturesViewModel(
 			Log.d("checkCheck", "list $list")
 			state.value = state.value.copy(picturesUrl = sendList)
 		}
-	}
-
-	fun clearPicturesCache()
-	{
-		val state = picturesUiState
-		state.value = state.value.copy(picturesUrl = emptyList())
 	}
 
 	fun postSavedUrls(urls: List<String>)

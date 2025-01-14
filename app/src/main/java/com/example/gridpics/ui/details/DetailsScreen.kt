@@ -107,6 +107,7 @@ fun DetailsScreen(
 	picsUiState: MutableState<PicturesScreenUiState>,
 	setCurrentPictureUrl: (String) -> Unit,
 	share: (String) -> Unit,
+	deleteCurrentPicture: (String) -> Unit
 )
 {
 	val value = state.value
@@ -182,7 +183,8 @@ fun DetailsScreen(
 				setImageSharedState = setImageSharedState,
 				picturesState = picsUiState,
 				pagerState = pagerState,
-				list = list.toMutableList()
+				list = list.toMutableList(),
+				deleteCurrentPicture = deleteCurrentPicture
 			)
 		}
 	)
@@ -206,6 +208,7 @@ fun ShowDetails(
 	picturesState: MutableState<PicturesScreenUiState>,
 	pagerState: PagerState,
 	list: MutableList<String>,
+	deleteCurrentPicture: (String) -> Unit
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -305,6 +308,36 @@ fun ShowDetails(
 							) {
 								Text(text = addString, color = MaterialTheme.colorScheme.primary)
 							}
+						}
+					}
+				}
+			} else {
+				val cancelString = stringResource(R.string.delete_picture)
+				Row(
+					modifier = Modifier
+						.height(80.dp)
+						.padding(0.dp, 0.dp, 0.dp, 0.dp)
+						.align(Alignment.BottomCenter)
+				) {
+					val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+					CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+						Button(
+							modifier = Modifier
+								.align(Alignment.CenterVertically)
+								.size(130.dp, 60.dp),
+							onClick = {
+								deleteCurrentPicture(url)
+								navigateToHome(
+									changeBarsVisability = changeBarsVisability,
+									postUrl = postUrl,
+									navController = navController,
+									setImageSharedStateToFalse =  setImageSharedState
+								)
+							},
+							border = BorderStroke(3.dp, Color.Red),
+							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+						) {
+							Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
 						}
 					}
 				}

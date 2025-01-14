@@ -28,4 +28,6 @@
 	<string name="confirm">Подтвердить</string>
 	<string name="add">Добавить</string>
 	<string name="you_have_got_share_link_from_gridpics">С вами поделились изображением %1$s из приложения GridPics</string>
+	<string name="delete_picture">Удалить</string>
+	<string name="pic_was_deleted">Картинка была удалена</string>
 </resources>

@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -202,7 +203,14 @@ class MainActivity: AppCompatActivity()
 					setImageSharedState = { isShared -> detVM.isSharedImage(isShared) },
 					picsUiState = picVM.picturesUiState,
 					setCurrentPictureUrl = { url -> detVM.postCurrentPicture(url) },
-					share = { url -> share(url) }
+					share = { url -> share(url) },
+					deleteCurrentPicture = { url ->
+						val urls = detVM.deleteCurrentPicture(url)
+						saveToSharedPrefs(picVM.convertFromListToString(urls))
+						picVM.postSavedUrls(urls)
+						imageLoader.diskCache?.remove(url)
+						Toast.makeText(this@MainActivity, getString(R.string.pic_was_deleted), Toast.LENGTH_SHORT).show()
+					}
 				)
 			}
 		}
