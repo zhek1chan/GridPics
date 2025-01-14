@@ -77,6 +77,7 @@ class MainNotificationService: Service()
 		notificationManager.notify(NOTIFICATION_ID, builder.build())
 		if(!launchServiceInBackground)
 		{
+			Log.d("started foreground", "true")
 			startForeground(NOTIFICATION_ID, builder.build())
 		}
 	}
