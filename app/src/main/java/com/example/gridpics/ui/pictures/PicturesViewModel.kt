@@ -18,7 +18,6 @@ class PicturesViewModel(
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM))
 	private val errorsMap: MutableMap<String, String> = mutableMapOf()
-	val listOfConnections = mutableListOf<ServiceConnection>()
 
 	init
 	{
