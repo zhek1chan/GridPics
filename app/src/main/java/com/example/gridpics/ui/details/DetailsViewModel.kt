@@ -19,14 +19,12 @@ class DetailsViewModel(
 	private val imageFlow =
 		MutableStateFlow<Pair<String?, Bitmap?>?>(null)
 	val uiState =
-		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = ""))
+		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = "", wasDeleted = false, wasShared = false))
 	private val job = Job()
-	private var jobForScope: Job? = null
 	fun observeUrlFlow() = imageFlow
 	fun postNewPic(url: String?, bitmap: Bitmap?)
 	{
-		jobForScope?.cancel()
-		jobForScope = viewModelScope.launch {
+		viewModelScope.launch {
 			job.cancelChildren()
 			imageFlow.emit(Pair(url, bitmap))
 		}
@@ -35,8 +33,7 @@ class DetailsViewModel(
 	fun postImageBitmap(url: String)
 	{
 		Log.d("Description posted", "desc was posted")
-		jobForScope?.cancel()
-		jobForScope = viewModelScope.launch {
+		viewModelScope.launch {
 			Log.d("description job is active", "${job.isActive}")
 			job.cancelChildren()
 			imageFlow.emit(Pair("Картинка ещё грузится, пожалуйста подождите", null))
@@ -117,13 +114,25 @@ class DetailsViewModel(
 		Log.d("index list", "create list for screen was called")
 	}
 
+	fun setWasDeleted(case: Boolean)
+	{
+		val state = uiState
+		state.value = state.value.copy(wasDeleted = case)
+	}
+
+	fun setWasShared(case: Boolean)
+	{
+		val state = uiState
+		state.value = state.value.copy(wasShared = case)
+	}
+
 	fun deleteCurrentPicture(url: String): List<String>
 	{
 		val state = uiState
 		val list = state.value.picturesUrl as MutableList
 		list.remove(url)
 		Log.d("test111", "$list")
-		state.value = state.value.copy(picturesUrl = list)
+		state.value = state.value.copy(picturesUrl = list, wasDeleted = true)
 		return list
 	}
 }

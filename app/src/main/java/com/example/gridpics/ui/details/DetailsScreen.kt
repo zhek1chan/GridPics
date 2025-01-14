@@ -107,12 +107,24 @@ fun DetailsScreen(
 	picsUiState: MutableState<PicturesScreenUiState>,
 	setCurrentPictureUrl: (String) -> Unit,
 	share: (String) -> Unit,
-	deleteCurrentPicture: (String) -> Unit
+	deleteCurrentPicture: (String) -> Unit,
+	postWasDeletedState: () -> Unit,
+	postWasSharedState:() -> Unit
 )
 {
 	val value = state.value
 	val context = LocalContext.current
 	val currentPicture = value.currentPicture
+	if(value.wasDeleted)
+	{
+		navigateToHome(
+			changeBarsVisability = changeBarsVisability,
+			postUrl = postUrl,
+			navController = navController,
+			setImageSharedStateToFalse = setImageSharedState
+		)
+		postWasDeletedState()
+	}
 	BackHandler {
 		navigateToHome(
 			changeBarsVisability = changeBarsVisability,
@@ -164,7 +176,8 @@ fun DetailsScreen(
 				state = state,
 				changeBarsVisability = changeBarsVisability,
 				setImageSharedStateToFalse = setImageSharedState,
-				share = share
+				share = share,
+				postWasSharedState = postWasSharedState
 			)
 		},
 		content = { padding ->
@@ -208,7 +221,7 @@ fun ShowDetails(
 	picturesState: MutableState<PicturesScreenUiState>,
 	pagerState: PagerState,
 	list: MutableList<String>,
-	deleteCurrentPicture: (String) -> Unit
+	deleteCurrentPicture: (String) -> Unit,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -311,7 +324,9 @@ fun ShowDetails(
 						}
 					}
 				}
-			} else {
+			}
+			else
+			{
 				val cancelString = stringResource(R.string.delete_picture)
 				Row(
 					modifier = Modifier
@@ -326,13 +341,13 @@ fun ShowDetails(
 								.align(Alignment.CenterVertically)
 								.size(130.dp, 60.dp),
 							onClick = {
-								deleteCurrentPicture(url)
 								navigateToHome(
 									changeBarsVisability = changeBarsVisability,
 									postUrl = postUrl,
 									navController = navController,
-									setImageSharedStateToFalse =  setImageSharedState
+									setImageSharedStateToFalse = setImageSharedState
 								)
+								deleteCurrentPicture(url)
 							},
 							border = BorderStroke(3.dp, Color.Red),
 							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
@@ -518,14 +533,21 @@ fun ShowError(
 @Composable
 fun AppBar(
 	isVisible: Boolean,
-	nc: NavController, currentPicture: String,
+	nc: NavController,
+	currentPicture: String,
 	postUrl: (String?, Bitmap?) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	changeBarsVisability: (Boolean) -> Unit,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	share: (String) -> Unit,
+	postWasSharedState:() -> Unit
 )
 {
+	if(state.value.wasShared)
+	{
+		share(currentPicture)
+		postWasSharedState()
+	}
 	val navBack = remember { mutableStateOf(false) }
 	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 	Log.d("shared pic url", currentPicture)
@@ -637,7 +659,7 @@ fun navigateToHome(
 )
 {
 	changeBarsVisability(true)
-	postUrl(null, null)
 	setImageSharedStateToFalse(false)
 	navController.navigate(Screen.Home.route)
+	postUrl(null, null)
 }

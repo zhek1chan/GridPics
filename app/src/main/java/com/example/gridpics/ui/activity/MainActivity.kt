@@ -205,12 +205,14 @@ class MainActivity: AppCompatActivity()
 					setCurrentPictureUrl = { url -> detVM.postCurrentPicture(url) },
 					share = { url -> share(url) },
 					deleteCurrentPicture = { url ->
-						val urls = detVM.deleteCurrentPicture(url)
-						saveToSharedPrefs(picVM.convertFromListToString(urls))
-						picVM.postSavedUrls(urls)
-						imageLoader.diskCache?.remove(url)
-						Toast.makeText(this@MainActivity, getString(R.string.pic_was_deleted), Toast.LENGTH_SHORT).show()
-					}
+						deletePicture(url)
+						detVM.postNewPic(null, null)
+					},
+					postWasDeletedState = {
+						detVM.setWasDeleted(false)
+						detVM.postNewPic(null, null)
+					},
+					postWasSharedState = { detVM.setWasShared(false) }
 				)
 			}
 		}
@@ -435,8 +437,26 @@ class MainActivity: AppCompatActivity()
 				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
 				if(!oldString.isNullOrEmpty() && picUrls.contains(oldString))
 				{
-					picVM.clickOnPicture(0, 0)
-					navToDetailsAfterNewIntent(nav)
+					val needsToBeDeleted = intent.getBooleanExtra(SHOULD_WE_DELETE_THIS, false)
+					val needsToBeShared = intent.getBooleanExtra(SHOULD_WE_SHARE_THIS, false)
+					if(needsToBeShared && needsToBeDeleted)
+					{
+						Log.d("Test111", "SHARE")
+						picVM.clickOnPicture(0, 0)
+						navAfterNewIntent(nav)
+						detVM.setWasShared(true)
+					}
+					else if(needsToBeDeleted)
+					{
+						Log.d("Test111", "DELETE")
+						deletePicture(oldString)
+						detVM.setWasDeleted(true)
+					}
+					else if (!needsToBeShared)
+					{
+						picVM.clickOnPicture(0, 0)
+						navAfterNewIntent(nav)
+					}
 				}
 			}
 			else
@@ -448,12 +468,12 @@ class MainActivity: AppCompatActivity()
 				detVM.isSharedImage(true)
 				detVM.postCurrentPicture(sharedValue)
 				detVM.postCorrectList()
-				navToDetailsAfterNewIntent(nav)
+				navAfterNewIntent(nav)
 			}
 		}
 	}
 
-	private fun navToDetailsAfterNewIntent(nav: NavHostController?)
+	private fun navAfterNewIntent(nav: NavHostController?)
 	{
 		if(nav == null)
 		{
@@ -468,6 +488,7 @@ class MainActivity: AppCompatActivity()
 						navv = navigation
 					}
 					navv.navigate(Screen.Details.route)
+
 					job = null
 				}
 			}
@@ -489,6 +510,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun share(text: String)
 	{
+		Log.d("Test111", "SHARE")
 		val intent = Intent()
 		intent.action = Intent.ACTION_SEND
 		intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -496,6 +518,17 @@ class MainActivity: AppCompatActivity()
 		intent.putExtra(Intent.EXTRA_TEXT, getString(R.string.you_have_got_share_link_from_gridpics, text))
 		val components = arrayOf(ComponentName(this, MainActivity::class.java))
 		startActivity(Intent.createChooser(intent, null).putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, components))
+	}
+
+	private fun deletePicture(url: String)
+	{
+		val detVM = detailsViewModel
+		val picVM = picturesViewModel
+		val urls = detVM.deleteCurrentPicture(url)
+		saveToSharedPrefs(picVM.convertFromListToString(urls))
+		picVM.postSavedUrls(urls)
+		imageLoader.diskCache?.remove(url)
+		Toast.makeText(this@MainActivity, getString(R.string.pic_was_deleted), Toast.LENGTH_SHORT).show()
 	}
 
 	private fun isDarkThemeAfterSystemChangedTheme(): Boolean
@@ -510,6 +543,8 @@ class MainActivity: AppCompatActivity()
 		const val LENGTH_OF_PICTURE = 110
 		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337
+		const val SHOULD_WE_SHARE_THIS = "SHOULD_WE_SHARE_THIS"
+		const val SHOULD_WE_DELETE_THIS = "SHOULD_WE_DELETE_THIS"
 		const val SHARED_PREFS_PICTURES = "SHARED_PREFS_PICTURES"
 		const val THEME_SHARED_PREFERENCE = "THEME_SHARED_PREFERENCE"
 		const val CHANNEL_NOTIFICATIONS_ID = "GRID_PICS_CHANEL_NOTIFICATIONS_ID"

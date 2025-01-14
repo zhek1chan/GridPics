@@ -20,6 +20,8 @@ import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.CHANNEL_NOTIFICATIONS_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.SAVED_URL_FROM_SCREEN_DETAILS
+import com.example.gridpics.ui.activity.MainActivity.Companion.SHOULD_WE_DELETE_THIS
+import com.example.gridpics.ui.activity.MainActivity.Companion.SHOULD_WE_SHARE_THIS
 import com.example.gridpics.ui.activity.MainActivity.Companion.TEXT_PLAIN
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -103,22 +105,10 @@ class MainNotificationService: Service()
 
 	private fun createLogic(description: String?, bitmap: Bitmap?, useSound: Boolean)
 	{
-		val resultIntent = Intent(this@MainNotificationService, MainActivity::class.java)
-		if(description != null)
-		{
-			resultIntent.action = Intent.ACTION_SEND
-			resultIntent.addCategory(Intent.CATEGORY_DEFAULT)
-			resultIntent.setType(TEXT_PLAIN)
-			resultIntent.putExtra(SAVED_URL_FROM_SCREEN_DETAILS, description)
-		}
-		Log.d("intent URI", resultIntent.toUri(0))
-		val resultPendingIntent = PendingIntent.getActivity(this@MainNotificationService, 100, resultIntent,
-			PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 		val color = getColor(R.color.green)
 		val gridPics = this@MainNotificationService.getString(R.string.gridpics)
 		val defaultText = description ?: this@MainNotificationService.getString(R.string.notification_content_text)
 		val builder = Builder(this@MainNotificationService, CHANNEL_NOTIFICATIONS_ID)
-			.setContentIntent(resultPendingIntent)
 			.setAutoCancel(true)
 			.setOngoing(true)
 			.setSilent(!useSound)
@@ -126,6 +116,24 @@ class MainNotificationService: Service()
 			.setColor(color)
 			.setContentTitle(gridPics)
 			.setContentText(defaultText)
+		if(description != null)
+		{
+			val resultIntent = Intent(this@MainNotificationService, MainActivity::class.java)
+			resultIntent.action = Intent.ACTION_SEND
+			resultIntent.addCategory(Intent.CATEGORY_DEFAULT)
+			resultIntent.setType(TEXT_PLAIN)
+			resultIntent.putExtra(SAVED_URL_FROM_SCREEN_DETAILS, description)
+			val resultPendingIntent = PendingIntent.getActivity(this@MainNotificationService, 100, resultIntent,
+				PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
+			resultIntent.putExtra(SHOULD_WE_DELETE_THIS, true)
+			val pendingIntent1 = PendingIntent.getActivity(this@MainNotificationService, 105, resultIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
+			resultIntent.putExtra(SHOULD_WE_SHARE_THIS, true)
+			val pendingIntent2 = PendingIntent.getActivity(this@MainNotificationService, 110, resultIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
+			builder
+				.setContentIntent(resultPendingIntent)
+				.addAction(R.drawable.ic_delete, this@MainNotificationService.getString(R.string.delete_picture), pendingIntent1)
+				.addAction(R.drawable.ic_share,  this@MainNotificationService.getString(R.string.share), pendingIntent2)
+		}
 		if(bitmap != null)
 		{
 			builder.setLargeIcon(bitmap)
