@@ -67,7 +67,7 @@ class MainActivity: AppCompatActivity()
 			else
 			{
 				val flowValue = detailsViewModel.observeUrlFlow().value
-				if(flowValue?.first != null)
+				if(flowValue.url != null)
 				{
 					flowValue.let { mainService.putValues(it) }
 				}
@@ -121,7 +121,7 @@ class MainActivity: AppCompatActivity()
 					) == PackageManager.PERMISSION_GRANTED)
 				{
 					Log.d("service", "data $it")
-					it?.let { pair -> mainNotificationService?.putValues(pair) }
+					mainNotificationService?.putValues(it)
 				}
 			}
 		}
@@ -518,6 +518,7 @@ class MainActivity: AppCompatActivity()
 	private fun deletePicture(url: String)
 	{
 		val picVM = picturesViewModel
+		val detailsViewModel = detailsViewModel
 		val urls = detailsViewModel.deleteCurrentPicture(url)
 		saveToSharedPrefs(picVM.convertFromListToString(urls))
 		val sharedPreferencesPictures = this.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
