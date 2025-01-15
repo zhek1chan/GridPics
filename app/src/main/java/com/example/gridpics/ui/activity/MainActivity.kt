@@ -446,7 +446,6 @@ class MainActivity: AppCompatActivity()
 					{
 						Log.d("Test111", "DELETE")
 						deletePicture(oldString)
-						detVM.setWasDeleted(true)
 						nav?.navigate(Screen.Home.route)
 					}
 					else

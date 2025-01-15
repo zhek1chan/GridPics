@@ -6,6 +6,5 @@ data class DetailsScreenUiState(
 	val isSharedImage: Boolean,
 	val picturesUrl: List<String>,
 	val currentPicture: String,
-	val wasDeleted: Boolean,
 	val wasShared: Boolean
 )

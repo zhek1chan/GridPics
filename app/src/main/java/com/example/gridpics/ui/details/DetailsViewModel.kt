@@ -19,7 +19,7 @@ class DetailsViewModel(
 	private val imageFlow =
 		MutableStateFlow<Pair<String?, Bitmap?>?>(null)
 	val uiState =
-		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = "", wasDeleted = false, wasShared = false))
+		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = "", wasShared = false))
 	private val job = Job()
 	fun observeUrlFlow() = imageFlow
 	fun postNewPic(url: String?, bitmap: Bitmap?)
@@ -114,12 +114,6 @@ class DetailsViewModel(
 		Log.d("index list", "create list for screen was called")
 	}
 
-	fun setWasDeleted(case: Boolean)
-	{
-		val state = uiState
-		state.value = state.value.copy(wasDeleted = case)
-	}
-
 	fun setWasShared(case: Boolean)
 	{
 		val state = uiState
@@ -132,7 +126,7 @@ class DetailsViewModel(
 		val list = state.value.picturesUrl as MutableList
 		list.remove(url)
 		Log.d("test111", "$list")
-		state.value = state.value.copy(picturesUrl = list, wasDeleted = true)
+		state.value = state.value.copy(picturesUrl = list)
 		return list
 	}
 }
