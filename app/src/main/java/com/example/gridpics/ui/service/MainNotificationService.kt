@@ -16,6 +16,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.Builder
 import com.example.gridpics.R
+import com.example.gridpics.domain.model.PicturesDataForNotification
 import com.example.gridpics.ui.activity.MainActivity
 import com.example.gridpics.ui.activity.MainActivity.Companion.CHANNEL_NOTIFICATIONS_ID
 import com.example.gridpics.ui.activity.MainActivity.Companion.NOTIFICATION_ID
@@ -103,7 +104,7 @@ class MainNotificationService: Service()
 		}
 	}
 
-	private fun createLogic(description: String?, bitmap: Bitmap?, useSound: Boolean)
+	private fun createLogic(description: String?, bitmap: Bitmap?, showButtons: Boolean, useSound: Boolean)
 	{
 		val color = getColor(R.color.green)
 		val gridPics = this@MainNotificationService.getString(R.string.gridpics)
@@ -127,7 +128,7 @@ class MainNotificationService: Service()
 				PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 			builder
 				.setContentIntent(resultPendingIntent)
-			if(!description.startsWith("Добавление - "))
+			if(showButtons)
 			{
 				resultIntent.putExtra(SHOULD_WE_DELETE_THIS, true)
 				val pendingIntent1 = PendingIntent.getActivity(this@MainNotificationService, 105, resultIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
@@ -149,15 +150,15 @@ class MainNotificationService: Service()
 		showNotification(builder, useSound)
 	}
 
-	fun putValues(valuesPair: Pair<String?, Bitmap?>)
+	fun putValues(values: PicturesDataForNotification)
 	{
-		createLogic(valuesPair.first, valuesPair.second, false)
+		createLogic(values.url, values.bitmap, values.showButtons, false)
 	}
 
 	private fun prepareNotification(useSound: Boolean)
 	{
 		createNotificationChannel()
-		createLogic(null, null, useSound)
+		createLogic(null, null, false, useSound)
 	}
 
 	inner class ServiceBinder: Binder()

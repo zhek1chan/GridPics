@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.domain.interactor.ImagesInteractor
+import com.example.gridpics.domain.model.PicturesDataForNotification
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
@@ -17,7 +18,7 @@ class DetailsViewModel(
 ): ViewModel()
 {
 	private val imageFlow =
-		MutableStateFlow<Pair<String?, Bitmap?>?>(null)
+		MutableStateFlow(PicturesDataForNotification(null,null,false))
 	val uiState =
 		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = "", wasShared = false))
 	private val job = Job()
@@ -26,7 +27,8 @@ class DetailsViewModel(
 	{
 		viewModelScope.launch {
 			job.cancelChildren()
-			imageFlow.emit(Pair(url, bitmap))
+			val showButtons = url != null
+			imageFlow.emit(PicturesDataForNotification(url, bitmap, showButtons))
 		}
 	}
 
@@ -36,15 +38,15 @@ class DetailsViewModel(
 		viewModelScope.launch {
 			Log.d("description job is active", "${job.isActive}")
 			job.cancelChildren()
-			imageFlow.emit(Pair("Картинка ещё грузится, пожалуйста подождите", null))
+			imageFlow.emit(PicturesDataForNotification("Картинка ещё грузится, пожалуйста подождите", null, false))
 			val bitmap = interactor.getPictureBitmap(url, job)
 			if(uiState.value.isSharedImage)
 			{
-				imageFlow.emit(Pair("Добавление - $url", bitmap))
+				imageFlow.emit(PicturesDataForNotification(url, bitmap, false))
 			}
 			else
 			{
-				imageFlow.emit(Pair(url, bitmap))
+				imageFlow.emit(PicturesDataForNotification(url, bitmap, true))
 			}
 		}
 	}
