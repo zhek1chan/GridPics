@@ -38,7 +38,14 @@ class DetailsViewModel(
 			job.cancelChildren()
 			imageFlow.emit(Pair("Картинка ещё грузится, пожалуйста подождите", null))
 			val bitmap = interactor.getPictureBitmap(url, job)
-			imageFlow.emit(Pair(url, bitmap))
+			if(uiState.value.isSharedImage)
+			{
+				imageFlow.emit(Pair("Добавление - $url", bitmap))
+			}
+			else
+			{
+				imageFlow.emit(Pair(url, bitmap))
+			}
 		}
 	}
 

@@ -125,14 +125,18 @@ class MainNotificationService: Service()
 			resultIntent.putExtra(SAVED_URL_FROM_SCREEN_DETAILS, description)
 			val resultPendingIntent = PendingIntent.getActivity(this@MainNotificationService, 100, resultIntent,
 				PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
-			resultIntent.putExtra(SHOULD_WE_DELETE_THIS, true)
-			val pendingIntent1 = PendingIntent.getActivity(this@MainNotificationService, 105, resultIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
-			resultIntent.putExtra(SHOULD_WE_SHARE_THIS, true)
-			val pendingIntent2 = PendingIntent.getActivity(this@MainNotificationService, 110, resultIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 			builder
 				.setContentIntent(resultPendingIntent)
-				.addAction(R.drawable.ic_delete, this@MainNotificationService.getString(R.string.delete_picture), pendingIntent1)
-				.addAction(R.drawable.ic_share,  this@MainNotificationService.getString(R.string.share), pendingIntent2)
+			if(!description.startsWith("Добавление - "))
+			{
+				resultIntent.putExtra(SHOULD_WE_DELETE_THIS, true)
+				val pendingIntent1 = PendingIntent.getActivity(this@MainNotificationService, 105, resultIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
+				resultIntent.putExtra(SHOULD_WE_SHARE_THIS, true)
+				val pendingIntent2 = PendingIntent.getActivity(this@MainNotificationService, 110, resultIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
+				builder
+					.addAction(R.drawable.ic_delete, this@MainNotificationService.getString(R.string.delete_picture), pendingIntent1)
+					.addAction(R.drawable.ic_share, this@MainNotificationService.getString(R.string.share), pendingIntent2)
+			}
 		}
 		if(bitmap != null)
 		{
