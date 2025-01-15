@@ -86,7 +86,6 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -142,7 +141,7 @@ fun DetailsScreen(
 	val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
 	val currentPage = pagerState.currentPage
 	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
-	val pleaseWaitString = remember(Unit) { context.getString(R.string.please_wait_the_pic_is_loading)}
+	val pleaseWaitString = remember(Unit) { context.getString(R.string.please_wait_the_pic_is_loading) }
 	LaunchedEffect(currentPage) {
 		val pic = list[currentPage]
 		setCurrentPictureUrl(pic)
@@ -477,7 +476,6 @@ fun ShowError(
 	{
 		linkIsNotValid
 	}
-	val scope = rememberCoroutineScope()
 	Column(
 		modifier = Modifier.fillMaxSize(),
 		verticalArrangement = Arrangement.Center,
@@ -499,11 +497,8 @@ fun ShowError(
 			Button(
 				onClick =
 				{
-					scope.launch {
-						Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
-						delay(500)
-						removeSpecialError(currentUrl)
-					}
+					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
+					removeSpecialError(currentUrl)
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
 			{
