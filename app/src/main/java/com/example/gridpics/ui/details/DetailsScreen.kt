@@ -235,7 +235,6 @@ fun ShowDetails(
 				ShowError(
 					context = context,
 					currentUrl = url,
-					pagerState = pagerState,
 					isValidUrl = isValidUrl,
 					removeSpecialError = removeSpecialError,
 					isShared = isSharedImage,
@@ -469,7 +468,6 @@ fun ShowAsynchImage(
 fun ShowError(
 	context: Context,
 	currentUrl: String,
-	pagerState: PagerState,
 	isValidUrl: (String) -> Boolean,
 	removeSpecialError: (String) -> Unit,
 	isShared: Boolean,
@@ -477,7 +475,6 @@ fun ShowError(
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
-	val scope = rememberCoroutineScope()
 	val errorMessage = if(isValidUrl(currentUrl))
 	{
 		HTTP_ERROR
@@ -508,14 +505,11 @@ fun ShowError(
 				{
 					updateButtonWasPressed.value = true
 					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
-					scope.launch {
-						if(!isShared)
-						{
-							removeSpecialError(currentUrl)
-						}
-						pagerState.scrollToPage(pagerState.currentPage)
-						updateButtonWasPressed.value = false
+					if(!isShared)
+					{
+						removeSpecialError(currentUrl)
 					}
+					updateButtonWasPressed.value = false
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
 			{
