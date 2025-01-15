@@ -86,6 +86,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -101,7 +102,7 @@ fun DetailsScreen(
 	postUrl: (String?, Bitmap?) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	changeBarsVisability: (Boolean) -> Unit,
-	postNewBitmap: (String) -> Unit,
+	postNewBitmap: (String, String) -> Unit,
 	addPicture: (String) -> Unit,
 	setImageSharedState: (Boolean) -> Unit,
 	picsUiState: MutableState<PicturesScreenUiState>,
@@ -141,6 +142,7 @@ fun DetailsScreen(
 	val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
 	val currentPage = pagerState.currentPage
 	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
+	val pleaseWaitString = remember(Unit) { context.getString(R.string.please_wait_the_pic_is_loading)}
 	LaunchedEffect(currentPage) {
 		val pic = list[currentPage]
 		setCurrentPictureUrl(pic)
@@ -151,7 +153,7 @@ fun DetailsScreen(
 		}
 		else
 		{
-			postNewBitmap(pic)
+			postNewBitmap(pic, pleaseWaitString)
 		}
 	}
 	Scaffold(
@@ -227,7 +229,6 @@ fun ShowDetails(
 	) { page ->
 		val url = list[page]
 		val errorMessage = checkOnErrorExists(url)
-		val updateButtonWasPressed = remember { mutableStateOf(false) }
 		Log.d("checkUp", "is error $errorMessage")
 		Box(modifier = Modifier.fillMaxSize()) {
 			if(errorMessage != null)
@@ -236,9 +237,7 @@ fun ShowDetails(
 					context = context,
 					currentUrl = url,
 					isValidUrl = isValidUrl,
-					removeSpecialError = removeSpecialError,
-					updateButtonWasPressed = updateButtonWasPressed
-				)
+					removeSpecialError = removeSpecialError)
 			}
 			else
 			{
@@ -467,7 +466,6 @@ fun ShowError(
 	currentUrl: String,
 	isValidUrl: (String) -> Boolean,
 	removeSpecialError: (String) -> Unit,
-	updateButtonWasPressed: MutableState<Boolean>,
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
@@ -479,6 +477,7 @@ fun ShowError(
 	{
 		linkIsNotValid
 	}
+	val scope = rememberCoroutineScope()
 	Column(
 		modifier = Modifier.fillMaxSize(),
 		verticalArrangement = Arrangement.Center,
@@ -496,12 +495,15 @@ fun ShowError(
 		)
 		if(errorMessage != linkIsNotValid)
 		{
+			Log.d("TEST111", "error")
 			Button(
 				onClick =
 				{
-					updateButtonWasPressed.value = true
-					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
-					removeSpecialError(currentUrl)
+					scope.launch {
+						Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
+						delay(500)
+						removeSpecialError(currentUrl)
+					}
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
 			{
