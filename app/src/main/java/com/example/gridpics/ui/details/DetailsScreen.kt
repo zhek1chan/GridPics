@@ -227,6 +227,7 @@ fun ShowDetails(
 	) { page ->
 		val url = list[page]
 		val errorMessage = checkOnErrorExists(url)
+		val updateButtonWasPressed = remember { mutableStateOf(false) }
 		Log.d("checkUp", "is error $errorMessage")
 		Box(modifier = Modifier.fillMaxSize()) {
 			if(errorMessage != null)
@@ -237,7 +238,8 @@ fun ShowDetails(
 					pagerState = pagerState,
 					isValidUrl = isValidUrl,
 					removeSpecialError = removeSpecialError,
-					isShared = isSharedImage
+					isShared = isSharedImage,
+					updateButtonWasPressed = updateButtonWasPressed
 				)
 			}
 			else
@@ -323,25 +325,27 @@ fun ShowDetails(
 						.padding(0.dp, 0.dp, 0.dp, 0.dp)
 						.align(Alignment.BottomCenter)
 				) {
-					val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-					CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-						Button(
-							modifier = Modifier
-								.align(Alignment.CenterVertically)
-								.size(130.dp, 60.dp),
-							onClick = {
-								navigateToHome(
-									changeBarsVisability = changeBarsVisability,
-									postUrl = postUrl,
-									navController = navController,
-									setImageSharedStateToFalse = setImageSharedState
-								)
-								deleteCurrentPicture(url)
-							},
-							border = BorderStroke(3.dp, Color.Red),
-							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
-						) {
-							Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
+					AnimatedVisibility(!updateButtonWasPressed.value) {
+						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+						CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+							Button(
+								modifier = Modifier
+									.align(Alignment.CenterVertically)
+									.size(130.dp, 60.dp),
+								onClick = {
+									navigateToHome(
+										changeBarsVisability = changeBarsVisability,
+										postUrl = postUrl,
+										navController = navController,
+										setImageSharedStateToFalse = setImageSharedState
+									)
+									deleteCurrentPicture(url)
+								},
+								border = BorderStroke(3.dp, Color.Red),
+								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+							) {
+								Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
+							}
 						}
 					}
 				}
@@ -469,6 +473,7 @@ fun ShowError(
 	isValidUrl: (String) -> Boolean,
 	removeSpecialError: (String) -> Unit,
 	isShared: Boolean,
+	updateButtonWasPressed: MutableState<Boolean>,
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
@@ -501,6 +506,7 @@ fun ShowError(
 			Button(
 				onClick =
 				{
+					updateButtonWasPressed.value = true
 					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
 					scope.launch {
 						if(!isShared)
@@ -508,6 +514,7 @@ fun ShowError(
 							removeSpecialError(currentUrl)
 						}
 						pagerState.scrollToPage(pagerState.currentPage)
+						updateButtonWasPressed.value = false
 					}
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
