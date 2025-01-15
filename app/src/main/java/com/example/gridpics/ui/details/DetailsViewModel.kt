@@ -18,7 +18,7 @@ class DetailsViewModel(
 ): ViewModel()
 {
 	private val imageFlow =
-		MutableStateFlow(PicturesDataForNotification(null,null,false))
+		MutableStateFlow(PicturesDataForNotification(null, null, false))
 	val uiState =
 		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = "", wasShared = false))
 	private val job = Job()
@@ -32,13 +32,13 @@ class DetailsViewModel(
 		}
 	}
 
-	fun postImageBitmap(url: String)
+	fun postImageBitmap(url: String, stringFromRes: String)
 	{
 		Log.d("Description posted", "desc was posted")
 		viewModelScope.launch {
 			Log.d("description job is active", "${job.isActive}")
 			job.cancelChildren()
-			imageFlow.emit(PicturesDataForNotification("Картинка ещё грузится, пожалуйста подождите", null, false))
+			imageFlow.emit(PicturesDataForNotification(stringFromRes, null, false))
 			val bitmap = interactor.getPictureBitmap(url, job)
 			if(uiState.value.isSharedImage)
 			{
