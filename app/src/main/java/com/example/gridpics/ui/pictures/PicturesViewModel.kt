@@ -175,7 +175,6 @@ class PicturesViewModel(
 
 	private fun compareAndCombineLists(list1: List<String>, list2: List<String>): List<String>
 	{
-		val set2 = list2.toSet() // Преобразуем второй список в множество для быстрого поиска
-		return list1.filterNot { it in set2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
+		return list1.filterNot { it in list2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
 	}
 }

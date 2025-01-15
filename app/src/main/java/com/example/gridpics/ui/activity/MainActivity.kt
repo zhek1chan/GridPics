@@ -408,7 +408,6 @@ class MainActivity: AppCompatActivity()
 		{
 			Log.d("service", "unBind was called in main")
 			unbindService(connection)
-			Log.d("service", "connection $connection")
 			mainNotificationService = null
 		}
 	}
@@ -435,23 +434,22 @@ class MainActivity: AppCompatActivity()
 				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
 				if(!oldString.isNullOrEmpty() && picUrls.contains(oldString))
 				{
-					val needsToBeDeleted = intent.getBooleanExtra(SHOULD_WE_DELETE_THIS, false)
 					val needsToBeShared = intent.getBooleanExtra(SHOULD_WE_SHARE_THIS, false)
-					if(needsToBeShared && needsToBeDeleted)
+					if(needsToBeShared)
 					{
 						Log.d("Test111", "SHARE")
 						picVM.clickOnPicture(0, 0)
 						detVM.setWasShared(true)
 						navAfterNewIntent(nav)
 					}
-					else if(needsToBeDeleted)
+					else if(intent.getBooleanExtra(SHOULD_WE_DELETE_THIS, false))
 					{
 						Log.d("Test111", "DELETE")
 						deletePicture(oldString)
 						detVM.setWasDeleted(true)
 						nav?.navigate(Screen.Home.route)
 					}
-					else if(!needsToBeShared)
+					else
 					{
 						picVM.clickOnPicture(0, 0)
 						navAfterNewIntent(nav)
@@ -509,7 +507,6 @@ class MainActivity: AppCompatActivity()
 
 	private fun share(text: String)
 	{
-		Log.d("Test111", "SHARE")
 		val intent = Intent()
 		intent.action = Intent.ACTION_SEND
 		intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -521,9 +518,8 @@ class MainActivity: AppCompatActivity()
 
 	private fun deletePicture(url: String)
 	{
-		val detVM = detailsViewModel
 		val picVM = picturesViewModel
-		val urls = detVM.deleteCurrentPicture(url)
+		val urls = detailsViewModel.deleteCurrentPicture(url)
 		saveToSharedPrefs(picVM.convertFromListToString(urls))
 		val sharedPreferencesPictures = this.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		val stringOfUrls = sharedPreferencesPictures.getString(DELETED_LIST, "") + "\n" + url
