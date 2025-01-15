@@ -18,9 +18,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -143,9 +150,39 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
+		var pivots by remember { mutableStateOf(picVM.getPivotsXandY()) }
+		Log.d("kukareku", "in main act $pivots")
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
+			enterTransition = {
+				scaleIn(
+					animationSpec = tween(1000),
+					initialScale = 0.3f,
+					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust based on the desired zoom point
+				)
+			},
+			exitTransition = {
+				scaleOut(
+					animationSpec = tween(1000),
+					targetScale = 0.2f,
+					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Match the entry point
+				)
+			},
+			popEnterTransition = {
+				scaleIn(
+					animationSpec = tween(1000),
+					initialScale = 0.3f,
+					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust as necessary
+				)
+			},
+			popExitTransition = {
+				scaleOut(
+					animationSpec = tween(1000),
+					targetScale = 0.2f,
+					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Match the entry point
+				)
+			}
 		)
 		{
 			composable(BottomNavItem.Home.route) {
@@ -168,6 +205,11 @@ class MainActivity: AppCompatActivity()
 					},
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(picVM.convertFromListToString(urls))
+					},
+					postPivotsXandY = { pairOfPivots ->
+						picVM.postPivotsXandY(pairOfPivots)
+						pivots = pairOfPivots
+						Log.d("kukareku", "lol")
 					}
 				)
 			}
@@ -464,6 +506,7 @@ class MainActivity: AppCompatActivity()
 				detVM.isSharedImage(true)
 				detVM.postCurrentPicture(sharedValue)
 				detVM.postCorrectList()
+				picVM.clickOnPicture(0, 0)
 				navAfterNewIntent(nav)
 			}
 		}

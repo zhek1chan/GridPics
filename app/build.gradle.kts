@@ -91,7 +91,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.ui.tooling)
     implementation(libs.coil.network.okhttp)
-    //zoomable
+    //zoomable && compose
     implementation(libs.zoomable)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.ui.v100)

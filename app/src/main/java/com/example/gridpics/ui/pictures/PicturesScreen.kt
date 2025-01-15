@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.pictures
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -49,10 +50,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -88,6 +92,7 @@ fun PicturesScreen(
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (List<String>) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
+	postPivotsXandY: (Pair<Float, Float>) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -148,7 +153,8 @@ fun PicturesScreen(
 					postSavedUrls = postSavedUrls,
 					saveToSharedPrefs = saveToSharedPrefs,
 					offset = offset,
-					index = index
+					index = index,
+					postPivotsXandY = postPivotsXandY
 				)
 			}
 		}
@@ -165,6 +171,7 @@ fun ItemsCard(
 	isValidUrl: (String) -> Boolean,
 	lazyState: LazyGridState,
 	addError: (String, String) -> Unit,
+	postPivotsXandY: (Pair<Float, Float>) -> Unit,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -194,10 +201,15 @@ fun ItemsCard(
 			.error(R.drawable.error)
 			.build()
 	}
+	var clickPosition by remember { mutableStateOf(Offset.Zero) }
 	SubcomposeAsyncImage(
 		model = (imgRequest),
 		contentDescription = item,
 		modifier = Modifier
+			.onGloballyPositioned {
+				val pos = it.positionInWindow()
+				clickPosition = Offset(pos.x, pos.y)
+			}
 			.clickable {
 				if(isError)
 				{
@@ -207,11 +219,9 @@ fun ItemsCard(
 				{
 					Log.d("current", item)
 					currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
-					navController.navigate(Screen.Details.route) {
-						popUpTo(Screen.Home.route) {
-							inclusive = true
-						}
-					}
+					getPivotXandY(clickPosition.x, clickPosition.y, postPivotsXandY, context)
+					Log.d("kukareku", "x ${clickPosition.x} y ${clickPosition.y}")
+					navController.navigate(Screen.Details.route)
 					openAlertDialog.value = false
 				}
 			}
@@ -278,6 +288,7 @@ fun ShowList(
 	saveToSharedPrefs: (List<String>) -> Unit,
 	offset: Int,
 	index: Int,
+	postPivotsXandY: (Pair<Float, Float>) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -309,7 +320,8 @@ fun ShowList(
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							lazyState = listState,
-							addError = addError
+							addError = addError,
+							postPivotsXandY = postPivotsXandY
 						)
 					}
 				}
@@ -353,7 +365,8 @@ fun ShowList(
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					lazyState = listState,
-					addError = addError
+					addError = addError,
+					postPivotsXandY = postPivotsXandY
 				)
 			}
 		}
@@ -467,6 +480,17 @@ fun AlertDialogSecondary(
 			Text(stringResource(R.string.okey))
 		}
 	})
+}
+
+fun getPivotXandY(x: Float, y: Float, postPivotsXandY: (Pair<Float, Float>) -> Unit, context: Context)
+{
+	val displayMetrics = context.resources.displayMetrics
+	val width = displayMetrics.widthPixels
+	val height = displayMetrics.heightPixels
+	// Перевод в pivotFraction (для анимации)
+	val pivotX = x / width
+	val pivotY = y / height
+	postPivotsXandY(Pair(pivotX, pivotY))
 }
 
 @Composable

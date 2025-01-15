@@ -17,6 +17,7 @@ class PicturesViewModel(
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM, emptyList()))
 	private val errorsMap: MutableMap<String, String> = mutableMapOf()
+	private var pairOfPivotsXandY = Pair(0.1f, 0.1f)
 
 	init
 	{
@@ -33,7 +34,7 @@ class PicturesViewModel(
 						val urlsFromNet = convertToListFromString(urls.value)
 						val urlsToAdd = if(savedUrls.isNotEmpty())
 						{
-							compareAndCombineLists((urlsFromNet + savedUrls).distinct(), deletedUrls)
+							compareAndCombineLists(savedUrls, deletedUrls)
 						}
 						else
 						{
@@ -173,8 +174,19 @@ class PicturesViewModel(
 		state.value = state.value.copy(deletedUrls = urls)
 	}
 
+	fun postPivotsXandY(pairOfPivots: Pair<Float, Float>)
+	{
+		pairOfPivotsXandY = pairOfPivots
+	}
+
+	fun getPivotsXandY(): Pair<Float, Float>
+	{
+		return pairOfPivotsXandY
+	}
+
 	private fun compareAndCombineLists(list1: List<String>, list2: List<String>): List<String>
 	{
-		return list1.filterNot { it in list2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
+		val set2 = list2.toSet() // Преобразуем второй список в множество для быстрого поиска
+		return list1.filterNot { it in set2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
 	}
 }
