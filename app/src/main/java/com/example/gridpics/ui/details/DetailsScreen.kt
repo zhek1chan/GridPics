@@ -141,7 +141,7 @@ fun DetailsScreen(
 	val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
 	val currentPage = pagerState.currentPage
 	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
-	val pleaseWaitString = remember(Unit) { context.getString(R.string.please_wait_the_pic_is_loading) }
+	val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
 	LaunchedEffect(currentPage) {
 		val pic = list[currentPage]
 		setCurrentPictureUrl(pic)
