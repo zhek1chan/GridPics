@@ -82,6 +82,13 @@ fun BottomNavigationBar(
 							launchSingleTop = true
 							// Restore state when re-selecting a previously selected item
 							restoreState = true
+
+							anim {
+								enter = 0
+								exit = 0
+								popEnter = 0
+								popExit = 0
+							}
 						}
 					}
 				)

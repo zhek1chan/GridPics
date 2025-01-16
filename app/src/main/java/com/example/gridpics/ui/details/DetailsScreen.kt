@@ -112,10 +112,22 @@ fun DetailsScreen(
 	postWasSharedState: () -> Unit,
 )
 {
+	val color = MaterialTheme.colorScheme.background
+	val backgroundColor = remember { mutableStateOf(color) }
 	val animationIsRunning = remember { mutableStateOf(true) }
 	LaunchedEffect(Unit) {
-		delay(500)
+		delay(100)
 		animationIsRunning.value = false
+	}
+	LaunchedEffect(animationIsRunning.value) {
+		if(animationIsRunning.value)
+		{
+			backgroundColor.value = color.copy(0.0001f)
+		}
+		else
+		{
+			backgroundColor.value = color
+		}
 	}
 	val value = state.value
 	val context = LocalContext.current
@@ -163,6 +175,7 @@ fun DetailsScreen(
 		}
 	}
 	Scaffold(
+		containerColor = backgroundColor.value,
 		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 		topBar = {
 			AppBar(
@@ -239,7 +252,9 @@ fun ShowDetails(
 		val url = list[page]
 		val errorMessage = checkOnErrorExists(url)
 		Log.d("checkUp", "is error $errorMessage")
-		Box(modifier = Modifier.fillMaxSize()) {
+		Box(modifier = Modifier
+			.fillMaxSize()
+			.background(Color.Transparent)) {
 			if(errorMessage != null)
 			{
 				ShowError(
@@ -515,8 +530,8 @@ fun ShowError(
 			Button(
 				onClick =
 				{
-						Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
-						removeSpecialError(currentUrl)
+					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
+					removeSpecialError(currentUrl)
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
 			{

@@ -18,6 +18,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -157,21 +159,21 @@ class MainActivity: AppCompatActivity()
 			startDestination = BottomNavItem.Home.route,
 			enterTransition = {
 				scaleIn(
-					animationSpec = tween(1000),
-					initialScale = 0.3f,
+					animationSpec = tween(500),
+					initialScale = 0.8f,
 					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust based on the desired zoom point
 				)
 			},
 			exitTransition = {
 				scaleOut(
-					animationSpec = tween(1000),
-					targetScale = 0.1f,
+					animationSpec = tween(400),
+					targetScale = 0.8f,
 					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Match the entry point
 				)
 			},
 			popEnterTransition = {
 				scaleIn(
-					animationSpec = tween(1000),
+					animationSpec = tween(1),
 					initialScale = 0.3f,
 					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust as necessary
 				)
@@ -179,7 +181,7 @@ class MainActivity: AppCompatActivity()
 			popExitTransition = {
 				scaleOut(
 					animationSpec = tween(1000),
-					targetScale = 0.2f,
+					targetScale = 0.3f,
 					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Match the entry point
 				)
 			}
@@ -213,7 +215,13 @@ class MainActivity: AppCompatActivity()
 					}
 				)
 			}
-			composable(BottomNavItem.Settings.route) {
+			composable(
+				BottomNavItem.Settings.route,
+				enterTransition = { EnterTransition.None },
+				exitTransition = { ExitTransition.None },
+				popExitTransition = { ExitTransition.None},
+				popEnterTransition = { EnterTransition.None }
+			) {
 				SettingsScreen(
 					navController = navController,
 					option = picVM.picturesUiState,

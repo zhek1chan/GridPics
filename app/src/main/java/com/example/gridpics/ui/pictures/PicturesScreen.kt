@@ -3,6 +3,7 @@ package com.example.gridpics.ui.pictures
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import android.util.TypedValue
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -202,12 +203,17 @@ fun ItemsCard(
 			.build()
 	}
 	var clickPosition by remember { mutableStateOf(Offset.Zero) }
+	val numOfGrids = calculateGridSpan()
+	val sizeOfPick = remember { mutableStateOf(Pair(0, 0)) }
 	SubcomposeAsyncImage(
 		model = (imgRequest),
 		contentDescription = item,
 		modifier = Modifier
 			.onGloballyPositioned {
+				val size = it.size
+				sizeOfPick.value = Pair(size.width, size.height)
 				val pos = it.positionInWindow()
+				Log.d("size", "size: heitght ${it.size.height},  width ${it.size.width}")
 				clickPosition = Offset(pos.x, pos.y)
 			}
 			.clickable {
@@ -219,7 +225,8 @@ fun ItemsCard(
 				{
 					Log.d("current", item)
 					currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
-					getPivotXandY(clickPosition.x, clickPosition.y, postPivotsXandY, context)
+					val size = sizeOfPick.value
+					getPivotXandY(clickPosition.x, clickPosition.y, postPivotsXandY, context, numOfGrids, size.first, size.second)
 					Log.d("kukareku", "x ${clickPosition.x} y ${clickPosition.y}")
 					navController.navigate(Screen.Details.route)
 					openAlertDialog.value = false
@@ -482,30 +489,51 @@ fun AlertDialogSecondary(
 	})
 }
 
-fun getPivotXandY(x: Float, y: Float, postPivotsXandY: (Pair<Float, Float>) -> Unit, context: Context)
+fun getPivotXandY(x: Float, y: Float, postPivotsXandY: (Pair<Float, Float>) -> Unit, context: Context, numOfGrids: Int, picWidth: Int, picLength: Int)
 {
+	//сработает только для вертикальной ориентации
 	val displayMetrics = context.resources.displayMetrics
 	val width = displayMetrics.widthPixels
 	val height = displayMetrics.heightPixels
-	//размер изображения = 100 пикселям, далее идёт рассчёт центра нажатой картинки с использованием данного числа
-	val newX = if(x <= 100f)
+	val density = displayMetrics.density
+	Log.d("calc", "picSize $picLength * $picWidth")
+	val newX = if(x < picLength)
 	{
-		50f // переместит в середину, если картинка из первого ряда
+		x + 0
 	}
-	else if(x > 100f && x <= width.toFloat()/2) // если картинка находится не в первом ряду и до половины экрана, то прибавляем 100 к оси абсцисс
+	else
 	{
-		x + 100f
-	} else {
-		x + 300f // если картинка находится в последних рядах, после середины экрана, то прибавляем 300 к оси абсцисс
+		x + 110 * ((x / picLength))
 	}
-	val newY = if (y <= height/2) {
-		y - 100 //если выше середины экрана то вычитаем 100  по оси ординат
-	} else {
-		y + 100 //если ниже середины экрана то прибавляем 100  по оси ординат
+	val newY = if(y < picWidth)
+	{
+		y
 	}
+	else
+	{
+		y + 100
+	}
+	//:todo надо добавить учёт вырезов экрана
+	Log.d("calc", "width of screen \n $width")
+	Log.d("calc", "(x / pl)) \n x=$x \n ${((x / picLength))}")
+	Log.d("calc", "numOfGrids \n $numOfGrids")
+	/*
+	/*val newX = if (((x)/110 < ceil(numOfGrids / 2.0))) {
+		x
+	} else if((x+355)/110 == ceil(numOfGrids / 2.0).toFloat()) {
+		x + 355/2
+	} else if ((x+355)/110 > ceil(numOfGrids / 2.0)){
+		x + 355/2
+	} else {
+		x + 355/2
+	}*/
+	val currentGrid = ceil(x / 355)
+	val newX = x - 355 / 2
+	val newY = y + 360 / 2
+	*/
 	// Перевод в pivotFraction
-	val pivotX = newX / width
-	val pivotY = newY / height
+	val pivotX = newX.toInt().dpToPx(context) / width / density
+	val pivotY = newY.toInt().dpToPx(context) / height / density
 	postPivotsXandY(Pair(pivotX, pivotY))
 }
 
@@ -516,4 +544,13 @@ private fun calculateGridSpan(): Int
 	val width = displayMetrics.widthPixels
 	val density = displayMetrics.density
 	return (width / density).toInt() / LENGTH_OF_PICTURE
+}
+
+fun Int.dpToPx(context: Context): Float
+{
+	return TypedValue.applyDimension(
+		TypedValue.COMPLEX_UNIT_DIP,
+		this.toFloat(),
+		context.resources.displayMetrics
+	)
 }
