@@ -165,7 +165,7 @@ class MainActivity: AppCompatActivity()
 			exitTransition = {
 				scaleOut(
 					animationSpec = tween(1000),
-					targetScale = 0.2f,
+					targetScale = 0.1f,
 					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Match the entry point
 				)
 			},

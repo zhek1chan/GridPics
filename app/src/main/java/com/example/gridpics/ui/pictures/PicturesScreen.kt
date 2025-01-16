@@ -487,9 +487,25 @@ fun getPivotXandY(x: Float, y: Float, postPivotsXandY: (Pair<Float, Float>) -> U
 	val displayMetrics = context.resources.displayMetrics
 	val width = displayMetrics.widthPixels
 	val height = displayMetrics.heightPixels
-	// Перевод в pivotFraction (для анимации)
-	val pivotX = x / width
-	val pivotY = y / height
+	//размер изображения = 100 пикселям, далее идёт рассчёт центра нажатой картинки с использованием данного числа
+	val newX = if(x <= 100f)
+	{
+		50f // переместит в середину, если картинка из первого ряда
+	}
+	else if(x > 100f && x <= width.toFloat()/2) // если картинка находится не в первом ряду и до половины экрана, то прибавляем 100 к оси абсцисс
+	{
+		x + 100f
+	} else {
+		x + 300f // если картинка находится в последних рядах, после середины экрана, то прибавляем 300 к оси абсцисс
+	}
+	val newY = if (y <= height/2) {
+		y - 100 //если выше середины экрана то вычитаем 100  по оси ординат
+	} else {
+		y + 100 //если ниже середины экрана то прибавляем 100  по оси ординат
+	}
+	// Перевод в pivotFraction
+	val pivotX = newX / width
+	val pivotY = newY / height
 	postPivotsXandY(Pair(pivotX, pivotY))
 }
 
