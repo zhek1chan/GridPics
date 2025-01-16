@@ -21,14 +21,17 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -63,6 +66,7 @@ class MainActivity: AppCompatActivity()
 	private var themePick: Int = 2
 	private var job: Job? = null
 	private var mutableIsThemeBlackState = mutableStateOf(false)
+	private var targetScaleForExit = mutableFloatStateOf(0.35f)
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -103,8 +107,17 @@ class MainActivity: AppCompatActivity()
 		installSplashScreen()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
-
-		picVM.changeOrientation(resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
+		val orientation = resources.configuration.orientation
+		if(orientation == Configuration.ORIENTATION_PORTRAIT)
+		{
+			picVM.changeOrientation(isPortrait = true)
+			targetScaleForExit.floatValue = 0.35f
+		}
+		else
+		{
+			picVM.changeOrientation(isPortrait = false)
+			targetScaleForExit.floatValue = 0.4f
+		}
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
@@ -152,6 +165,7 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
+		val floatValue = targetScaleForExit.floatValue
 		var pivots by remember { mutableStateOf(picVM.getPivotsXandY()) }
 		Log.d("kukareku", "in main act $pivots")
 		NavHost(
@@ -160,34 +174,37 @@ class MainActivity: AppCompatActivity()
 			enterTransition = {
 				scaleIn(
 					animationSpec = tween(500),
-					initialScale = 0.8f,
+					initialScale = 0.3f,
 					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust based on the desired zoom point
-				)
+				) + expandVertically(expandFrom = Alignment.Top) { 20 }
 			},
 			exitTransition = {
 				scaleOut(
-					animationSpec = tween(400),
-					targetScale = 0.8f,
+					animationSpec = tween(1000),
+					targetScale = 0.9999999f,
 					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Match the entry point
 				)
 			},
 			popEnterTransition = {
 				scaleIn(
-					animationSpec = tween(1),
+					animationSpec = tween(500),
 					initialScale = 0.3f,
 					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust as necessary
-				)
+				) + expandVertically(expandFrom = Alignment.Top) { 20 }
 			},
 			popExitTransition = {
 				scaleOut(
 					animationSpec = tween(1000),
-					targetScale = 0.3f,
+					targetScale = floatValue,
 					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Match the entry point
 				)
 			}
 		)
 		{
-			composable(BottomNavItem.Home.route) {
+			composable(BottomNavItem.Home.route,
+				enterTransition = { EnterTransition.None },
+				popEnterTransition = { EnterTransition.None }
+			) {
 				PicturesScreen(
 					navController = navController,
 					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
@@ -219,7 +236,7 @@ class MainActivity: AppCompatActivity()
 				BottomNavItem.Settings.route,
 				enterTransition = { EnterTransition.None },
 				exitTransition = { ExitTransition.None },
-				popExitTransition = { ExitTransition.None},
+				popExitTransition = { ExitTransition.None },
 				popEnterTransition = { EnterTransition.None }
 			) {
 				SettingsScreen(
@@ -260,7 +277,8 @@ class MainActivity: AppCompatActivity()
 						deletePicture(url)
 						detVM.postNewPic(null, null)
 					},
-					postWasSharedState = { detVM.setWasSharedFromNotification(false) }
+					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
+					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
 				)
 			}
 		}

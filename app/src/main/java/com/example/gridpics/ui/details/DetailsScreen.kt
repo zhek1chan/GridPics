@@ -112,13 +112,14 @@ fun DetailsScreen(
 	share: (String) -> Unit,
 	deleteCurrentPicture: (String) -> Unit,
 	postWasSharedState: () -> Unit,
+	setFalseToWasDeletedFromNotification: () -> Unit,
 )
 {
 	val color = MaterialTheme.colorScheme.background
 	val backgroundColor = remember { mutableStateOf(color) }
 	val animationIsRunning = remember { mutableStateOf(true) }
 	LaunchedEffect(Unit) {
-		delay(100)
+		delay(400)
 		animationIsRunning.value = false
 	}
 	LaunchedEffect(animationIsRunning.value) {
@@ -226,7 +227,8 @@ fun DetailsScreen(
 				list = list.toMutableList(),
 				deleteCurrentPicture = deleteCurrentPicture,
 				animationIsRunning = animationIsRunning,
-				firstOpenedPage = firstOpenedPage
+				firstOpenedPage = firstOpenedPage,
+				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification
 			)
 		}
 	)
@@ -253,6 +255,7 @@ fun ShowDetails(
 	deleteCurrentPicture: (String) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	firstOpenedPage: MutableState<String>,
+	setFalseToWasDeletedFromNotification: () -> Unit,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -407,7 +410,10 @@ fun ShowDetails(
 							)
 							deleteCurrentPicture(url)
 						},
-						onDismissRequest = { openDialog.value = false },
+						onDismissRequest = {
+							openDialog.value = false
+							setFalseToWasDeletedFromNotification()
+						},
 						icon = Icons.Default.Delete,
 						textButtonCancel = stringResource(R.string.cancel),
 						textButtonConfirm = stringResource(R.string.confirm))

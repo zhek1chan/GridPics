@@ -96,7 +96,7 @@ fun PicturesScreen(
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (List<String>) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
-	postPivotsXandY: (Pair<Float, Float>) -> Unit,
+	postPivotsXandY: (Pair<Float, Float>) -> Unit
 )
 {
 	LaunchedEffect(Unit) {
@@ -176,8 +176,7 @@ fun ItemsCard(
 	isValidUrl: (String) -> Boolean,
 	lazyState: LazyGridState,
 	addError: (String, String) -> Unit,
-	postPivotsXandY: (Pair<Float, Float>) -> Unit,
-	canWeClickAgain: MutableState<Boolean>,
+	postPivotsXandY: (Pair<Float, Float>) -> Unit
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -229,7 +228,7 @@ fun ItemsCard(
 				Log.d("size", "size: heitght ${it.size.height},  width ${it.size.width}")
 				clickPosition = Offset(pos.x, pos.y)
 			}
-			.clickable(enabled = canWeClickAgain.value) {
+			.clickable {
 				if(isError)
 				{
 					openAlertDialog.value = true
@@ -253,7 +252,6 @@ fun ItemsCard(
 						rightCutoutSize = rightCutoutSizeInPx
 					)
 					Log.d("kukareku", "x ${clickPosition.x} y ${clickPosition.y}")
-					canWeClickAgain.value = false
 					navController.navigate(Screen.Details.route)
 					openAlertDialog.value = false
 				}
@@ -261,7 +259,7 @@ fun ItemsCard(
 			.padding(10.dp)
 			.size(100.dp)
 			.clip(RoundedCornerShape(8.dp)),
-		contentScale = ContentScale.Crop,
+		contentScale = ContentScale.FillBounds,
 		loading = {
 			Box(Modifier.fillMaxSize()) {
 				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -321,14 +319,13 @@ fun ShowList(
 	saveToSharedPrefs: (List<String>) -> Unit,
 	offset: Int,
 	index: Int,
-	postPivotsXandY: (Pair<Float, Float>) -> Unit,
+	postPivotsXandY: (Pair<Float, Float>) -> Unit
 )
 {
 	val context = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
 	val listState = rememberLazyGridState()
-	val canWeClickAgain = remember { mutableStateOf(true) }
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
 		when(state)
@@ -355,8 +352,7 @@ fun ShowList(
 							isValidUrl = isValidUrl,
 							lazyState = listState,
 							addError = addError,
-							postPivotsXandY = postPivotsXandY,
-							canWeClickAgain = canWeClickAgain
+							postPivotsXandY = postPivotsXandY
 						)
 					}
 				}
@@ -401,8 +397,7 @@ fun ShowList(
 					isValidUrl = isValidUrl,
 					lazyState = listState,
 					addError = addError,
-					postPivotsXandY = postPivotsXandY,
-					canWeClickAgain = canWeClickAgain
+					postPivotsXandY = postPivotsXandY
 				)
 			}
 		}
@@ -532,7 +527,6 @@ fun getPivotXandY(
 	rightCutoutSize: Float,
 )
 {
-	//сработает только для вертикальной ориентации
 	val displayMetrics = context.resources.displayMetrics
 	val width = displayMetrics.widthPixels
 	val height = displayMetrics.heightPixels
@@ -551,12 +545,12 @@ fun getPivotXandY(
 	}
 	else
 	{
-		70
+		80
 	}
 	Log.d("calc", "picSize $picLength * $picWidth")
 	val newX = if(x < picLength)
 	{
-		x - leftCutoutSize - rightCutoutSize
+		x + 50 - leftCutoutSize - rightCutoutSize
 	}
 	else
 	{
