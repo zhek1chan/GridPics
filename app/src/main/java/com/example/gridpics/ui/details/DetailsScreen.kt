@@ -39,6 +39,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.Button
@@ -85,6 +86,7 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
+import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -138,10 +140,11 @@ fun DetailsScreen(
 			postUrl = postUrl,
 			navController = navController,
 			setImageSharedStateToFalse = setImageSharedState,
-			animationIsRunning = animationIsRunning
+			animationIsRunning = animationIsRunning,
+			wasDeleted = false
 		)
 	}
-	var list = state.value.picturesUrl
+	var list = remember(state.value.isSharedImage) { state.value.picturesUrl }
 	var initialPage = list.indexOf(currentPicture)
 	val size: Int
 	if(initialPage >= 0)
@@ -162,16 +165,26 @@ fun DetailsScreen(
 	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 	val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
 	LaunchedEffect(currentPage) {
-		val pic = list[currentPage]
-		setCurrentPictureUrl(pic)
-		if(getErrorMessageFromErrorsList(pic) != null)
+		val pic = if(list.size >= currentPage)
 		{
-			Log.d("checkMa", "gruzim oshibku")
-			postUrl(pic, errorPicture)
+			list[currentPage]
 		}
 		else
 		{
-			postNewBitmap(pic, pleaseWaitString)
+			""
+		}
+		if(pic.isNotEmpty())
+		{
+			setCurrentPictureUrl(pic)
+			if(getErrorMessageFromErrorsList(pic) != null)
+			{
+				Log.d("checkMa", "gruzim oshibku")
+				postUrl(pic, errorPicture)
+			}
+			else
+			{
+				postNewBitmap(pic, pleaseWaitString)
+			}
 		}
 	}
 	Scaffold(
@@ -302,7 +315,8 @@ fun ShowDetails(
 									postUrl = postUrl,
 									navController = navController,
 									setImageSharedStateToFalse = setImageSharedState,
-									animationIsRunning = animationIsRunning
+									animationIsRunning = animationIsRunning,
+									wasDeleted = false
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -325,7 +339,8 @@ fun ShowDetails(
 											postUrl = postUrl,
 											navController = navController,
 											setImageSharedStateToFalse = setImageSharedState,
-											animationIsRunning = animationIsRunning
+											animationIsRunning = animationIsRunning,
+											wasDeleted = false
 										)
 									}
 									setImageSharedState(false)
@@ -342,6 +357,7 @@ fun ShowDetails(
 			}
 			else
 			{
+				val openDialog = remember { mutableStateOf(state.value.wasDeletedFromNotification) }
 				val cancelString = stringResource(R.string.delete_picture)
 				Row(
 					modifier = Modifier
@@ -357,14 +373,7 @@ fun ShowDetails(
 									.align(Alignment.CenterVertically)
 									.size(130.dp, 60.dp),
 								onClick = {
-									navigateToHome(
-										changeBarsVisability = changeBarsVisability,
-										postUrl = postUrl,
-										navController = navController,
-										setImageSharedStateToFalse = setImageSharedState,
-										animationIsRunning = animationIsRunning
-									)
-									deleteCurrentPicture(url)
+									openDialog.value = true
 								},
 								border = BorderStroke(3.dp, Color.Red),
 								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
@@ -373,6 +382,26 @@ fun ShowDetails(
 							}
 						}
 					}
+				}
+				AnimatedVisibility(openDialog.value) {
+					AlertDialogMain(
+						dialogText = null,
+						dialogTitle = stringResource(R.string.do_you_really_want_to_delete_it),
+						onConfirmation = {
+							navigateToHome(
+								changeBarsVisability = changeBarsVisability,
+								postUrl = postUrl,
+								navController = navController,
+								setImageSharedStateToFalse = setImageSharedState,
+								animationIsRunning = animationIsRunning,
+								wasDeleted = true
+							)
+							deleteCurrentPicture(url)
+						},
+						onDismissRequest = { openDialog.value = false },
+						icon = Icons.Default.Delete,
+						textButtonCancel = stringResource(R.string.cancel),
+						textButtonConfirm = stringResource(R.string.confirm))
 				}
 			}
 		}
@@ -476,7 +505,8 @@ fun ShowAsynchImage(
 									postUrl = postUrl,
 									navController = navController,
 									setImageSharedStateToFalse = setImageSharedStateToFalse,
-									animationIsRunning = animationIsRunning
+									animationIsRunning = animationIsRunning,
+									wasDeleted = false
 								)
 							}
 						}
@@ -556,7 +586,7 @@ fun AppBar(
 	animationIsRunning: MutableState<Boolean>,
 )
 {
-	if(state.value.wasShared)
+	if(state.value.wasSharedFromNotification)
 	{
 		share(currentPicture)
 		postWasSharedState()
@@ -662,7 +692,8 @@ fun AppBar(
 			postUrl = postUrl,
 			navController = nc,
 			setImageSharedStateToFalse = setImageSharedStateToFalse,
-			animationIsRunning = animationIsRunning
+			animationIsRunning = animationIsRunning,
+			wasDeleted = false
 		)
 	}
 }
@@ -674,11 +705,19 @@ fun navigateToHome(
 	navController: NavController,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
+	wasDeleted: Boolean,
 )
 {
 	animationIsRunning.value = true
 	changeBarsVisability(true)
 	setImageSharedStateToFalse(false)
-	navController.navigateUp()
+	if(wasDeleted)
+	{
+		navController.navigate(Screen.Home.route)
+	}
+	else
+	{
+		navController.navigateUp()
+	}
 	postUrl(null, null)
 }

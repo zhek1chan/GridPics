@@ -260,7 +260,7 @@ class MainActivity: AppCompatActivity()
 						deletePicture(url)
 						detVM.postNewPic(null, null)
 					},
-					postWasSharedState = { detVM.setWasShared(false) }
+					postWasSharedState = { detVM.setWasSharedFromNotification(false) }
 				)
 			}
 		}
@@ -489,14 +489,14 @@ class MainActivity: AppCompatActivity()
 					{
 						Log.d("Test111", "SHARE")
 						picVM.clickOnPicture(0, 0)
-						detVM.setWasShared(true)
+						detVM.setWasSharedFromNotification(true)
 						navAfterNewIntent(nav)
 					}
 					else if(intent.getBooleanExtra(SHOULD_WE_DELETE_THIS, false))
 					{
 						Log.d("Test111", "DELETE")
-						deletePicture(oldString)
-						nav?.navigate(Screen.Home.route)
+						detVM.setWasDeletedFromNotification(true)
+						navAfterNewIntent(nav)
 					}
 					else
 					{
@@ -578,6 +578,7 @@ class MainActivity: AppCompatActivity()
 		editorPictures.putString(DELETED_LIST, stringOfUrls)
 		editorPictures.apply()
 		picVM.postSavedUrls(urls)
+		detailsViewModel.setWasDeletedFromNotification(false)
 		imageLoader.diskCache?.remove(url)
 		Toast.makeText(this@MainActivity, getString(R.string.pic_was_deleted), Toast.LENGTH_SHORT).show()
 	}
