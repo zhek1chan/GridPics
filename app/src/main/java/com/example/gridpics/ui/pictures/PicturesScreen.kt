@@ -177,6 +177,7 @@ fun ItemsCard(
 	lazyState: LazyGridState,
 	addError: (String, String) -> Unit,
 	postPivotsXandY: (Pair<Float, Float>) -> Unit,
+	canWeClickAgain: MutableState<Boolean>,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -228,7 +229,7 @@ fun ItemsCard(
 				Log.d("size", "size: heitght ${it.size.height},  width ${it.size.width}")
 				clickPosition = Offset(pos.x, pos.y)
 			}
-			.clickable {
+			.clickable(enabled = canWeClickAgain.value) {
 				if(isError)
 				{
 					openAlertDialog.value = true
@@ -252,6 +253,7 @@ fun ItemsCard(
 						rightCutoutSize = rightCutoutSizeInPx
 					)
 					Log.d("kukareku", "x ${clickPosition.x} y ${clickPosition.y}")
+					canWeClickAgain.value = false
 					navController.navigate(Screen.Details.route)
 					openAlertDialog.value = false
 				}
@@ -326,6 +328,7 @@ fun ShowList(
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
 	val listState = rememberLazyGridState()
+	val canWeClickAgain = remember { mutableStateOf(true) }
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
 		when(state)
@@ -352,7 +355,8 @@ fun ShowList(
 							isValidUrl = isValidUrl,
 							lazyState = listState,
 							addError = addError,
-							postPivotsXandY = postPivotsXandY
+							postPivotsXandY = postPivotsXandY,
+							canWeClickAgain = canWeClickAgain
 						)
 					}
 				}
@@ -397,7 +401,8 @@ fun ShowList(
 					isValidUrl = isValidUrl,
 					lazyState = listState,
 					addError = addError,
-					postPivotsXandY = postPivotsXandY
+					postPivotsXandY = postPivotsXandY,
+					canWeClickAgain = canWeClickAgain
 				)
 			}
 		}

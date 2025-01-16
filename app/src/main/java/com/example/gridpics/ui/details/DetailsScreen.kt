@@ -132,18 +132,9 @@ fun DetailsScreen(
 		}
 	}
 	val value = state.value
+	val firstOpenedPage = remember(Unit) { mutableStateOf(value.currentPicture) }
 	val context = LocalContext.current
 	val currentPicture = value.currentPicture
-	BackHandler {
-		navigateToHome(
-			changeBarsVisability = changeBarsVisability,
-			postUrl = postUrl,
-			navController = navController,
-			setImageSharedStateToFalse = setImageSharedState,
-			animationIsRunning = animationIsRunning,
-			wasDeleted = false
-		)
-	}
 	var list = remember(state.value.isSharedImage) { state.value.picturesUrl }
 	var initialPage = list.indexOf(currentPicture)
 	val size: Int
@@ -164,6 +155,17 @@ fun DetailsScreen(
 	val currentPage = pagerState.currentPage
 	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 	val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
+	BackHandler {
+		navigateToHome(
+			changeBarsVisability = changeBarsVisability,
+			postUrl = postUrl,
+			navController = navController,
+			setImageSharedStateToFalse = setImageSharedState,
+			animationIsRunning = animationIsRunning,
+			wasDeleted = false,
+			currentPictureIsWhatUserOpened = checkIfThisPictureIsTheOneWhichWeOpened(firstOpenedPage.value, list[currentPage])
+		)
+	}
 	LaunchedEffect(currentPage) {
 		val pic = if(list.size >= currentPage)
 		{
@@ -201,7 +203,8 @@ fun DetailsScreen(
 				setImageSharedStateToFalse = setImageSharedState,
 				share = share,
 				postWasSharedState = postWasSharedState,
-				animationIsRunning = animationIsRunning
+				animationIsRunning = animationIsRunning,
+				firstOpenedPage = firstOpenedPage
 			)
 		},
 		content = { padding ->
@@ -222,7 +225,8 @@ fun DetailsScreen(
 				pagerState = pagerState,
 				list = list.toMutableList(),
 				deleteCurrentPicture = deleteCurrentPicture,
-				animationIsRunning = animationIsRunning
+				animationIsRunning = animationIsRunning,
+				firstOpenedPage = firstOpenedPage
 			)
 		}
 	)
@@ -248,6 +252,7 @@ fun ShowDetails(
 	list: MutableList<String>,
 	deleteCurrentPicture: (String) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
+	firstOpenedPage: MutableState<String>,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -289,7 +294,8 @@ fun ShowDetails(
 					postUrl = postUrl,
 					isScreenInPortraitState = isScreenInPortraitState,
 					setImageSharedStateToFalse = setImageSharedState,
-					animationIsRunning = animationIsRunning
+					animationIsRunning = animationIsRunning,
+					firstOpenedPage = firstOpenedPage
 				)
 			}
 			if(isSharedImage)
@@ -316,7 +322,8 @@ fun ShowDetails(
 									navController = navController,
 									setImageSharedStateToFalse = setImageSharedState,
 									animationIsRunning = animationIsRunning,
-									wasDeleted = false
+									wasDeleted = false,
+									currentPictureIsWhatUserOpened = checkIfThisPictureIsTheOneWhichWeOpened(firstOpenedPage.value, list[page])
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -340,7 +347,8 @@ fun ShowDetails(
 											navController = navController,
 											setImageSharedStateToFalse = setImageSharedState,
 											animationIsRunning = animationIsRunning,
-											wasDeleted = false
+											wasDeleted = false,
+											currentPictureIsWhatUserOpened = checkIfThisPictureIsTheOneWhichWeOpened(firstOpenedPage.value, list[page])
 										)
 									}
 									setImageSharedState(false)
@@ -394,7 +402,8 @@ fun ShowDetails(
 								navController = navController,
 								setImageSharedStateToFalse = setImageSharedState,
 								animationIsRunning = animationIsRunning,
-								wasDeleted = true
+								wasDeleted = true,
+								currentPictureIsWhatUserOpened = checkIfThisPictureIsTheOneWhichWeOpened(firstOpenedPage.value, list[page])
 							)
 							deleteCurrentPicture(url)
 						},
@@ -422,6 +431,7 @@ fun ShowAsynchImage(
 	isScreenInPortraitState: Boolean,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
+	firstOpenedPage: MutableState<String>,
 )
 {
 	val scale = if(state.value.isMultiWindowed)
@@ -506,7 +516,8 @@ fun ShowAsynchImage(
 									navController = navController,
 									setImageSharedStateToFalse = setImageSharedStateToFalse,
 									animationIsRunning = animationIsRunning,
-									wasDeleted = false
+									wasDeleted = false,
+									currentPictureIsWhatUserOpened = checkIfThisPictureIsTheOneWhichWeOpened(firstOpenedPage.value, img)
 								)
 							}
 						}
@@ -584,6 +595,7 @@ fun AppBar(
 	share: (String) -> Unit,
 	postWasSharedState: () -> Unit,
 	animationIsRunning: MutableState<Boolean>,
+	firstOpenedPage: MutableState<String>,
 )
 {
 	if(state.value.wasSharedFromNotification)
@@ -693,9 +705,18 @@ fun AppBar(
 			navController = nc,
 			setImageSharedStateToFalse = setImageSharedStateToFalse,
 			animationIsRunning = animationIsRunning,
-			wasDeleted = false
+			wasDeleted = false,
+			currentPictureIsWhatUserOpened = checkIfThisPictureIsTheOneWhichWeOpened(firstOpenedPage.value, state.value.currentPicture)
 		)
 	}
+}
+
+fun checkIfThisPictureIsTheOneWhichWeOpened(
+	currentPicture: String,
+	pictureInPager: String,
+): Boolean
+{
+	return currentPicture == pictureInPager
 }
 
 @SuppressLint("RestrictedApi")
@@ -706,12 +727,13 @@ fun navigateToHome(
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	wasDeleted: Boolean,
+	currentPictureIsWhatUserOpened: Boolean,
 )
 {
 	animationIsRunning.value = true
 	changeBarsVisability(true)
 	setImageSharedStateToFalse(false)
-	if(wasDeleted)
+	if(wasDeleted || !currentPictureIsWhatUserOpened)
 	{
 		navController.navigate(Screen.Home.route)
 	}
