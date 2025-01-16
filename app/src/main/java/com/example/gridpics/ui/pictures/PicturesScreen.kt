@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -59,6 +61,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -162,6 +165,7 @@ fun PicturesScreen(
 	)
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
 fun ItemsCard(
@@ -205,6 +209,14 @@ fun ItemsCard(
 	var clickPosition by remember { mutableStateOf(Offset.Zero) }
 	val numOfGrids = calculateGridSpan()
 	val sizeOfPick = remember { mutableStateOf(Pair(0, 0)) }
+	val sysBarsInsetsToPaddingValues = WindowInsets.systemBarsIgnoringVisibility.asPaddingValues()
+	val cutoutInsetsToPaddingValues = WindowInsets.displayCutout.asPaddingValues()
+	val direction = LocalLayoutDirection.current
+	val statusBarHeightInPx = remember(WindowInsets) { sysBarsInsetsToPaddingValues.calculateTopPadding().value.toInt().dpToPx(context) }
+	val navBarHeightInPx = remember(WindowInsets) { sysBarsInsetsToPaddingValues.calculateBottomPadding().value.toInt().dpToPx(context) }
+	val leftCutoutSizeInPx = remember(WindowInsets) { cutoutInsetsToPaddingValues.calculateLeftPadding(direction).value.toInt().dpToPx(context) }
+	val rightCutoutSizeInPx = remember(WindowInsets) { cutoutInsetsToPaddingValues.calculateRightPadding(direction).value.toInt().dpToPx(context) }
+	Log.d("check bars", "$statusBarHeightInPx , $navBarHeightInPx, $leftCutoutSizeInPx, $rightCutoutSizeInPx")
 	SubcomposeAsyncImage(
 		model = (imgRequest),
 		contentDescription = item,
@@ -226,7 +238,19 @@ fun ItemsCard(
 					Log.d("current", item)
 					currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
 					val size = sizeOfPick.value
-					getPivotXandY(clickPosition.x, clickPosition.y, postPivotsXandY, context, numOfGrids, size.first, size.second)
+					getPivotXandY(
+						x = clickPosition.x,
+						y = clickPosition.y,
+						postPivotsXandY = postPivotsXandY,
+						context = context,
+						numOfGrids = numOfGrids,
+						picWidth = size.first,
+						picLength = size.second,
+						statusBarHeight = statusBarHeightInPx,
+						navBarHeight = navBarHeightInPx,
+						leftCutoutSize = leftCutoutSizeInPx,
+						rightCutoutSize = rightCutoutSizeInPx
+					)
 					Log.d("kukareku", "x ${clickPosition.x} y ${clickPosition.y}")
 					navController.navigate(Screen.Details.route)
 					openAlertDialog.value = false
@@ -489,48 +513,61 @@ fun AlertDialogSecondary(
 	})
 }
 
-fun getPivotXandY(x: Float, y: Float, postPivotsXandY: (Pair<Float, Float>) -> Unit, context: Context, numOfGrids: Int, picWidth: Int, picLength: Int)
+fun getPivotXandY(
+	x: Float,
+	y: Float,
+	postPivotsXandY: (Pair<Float, Float>) -> Unit,
+	context: Context,
+	numOfGrids: Int,
+	picWidth: Int,
+	picLength: Int,
+	statusBarHeight: Float,
+	navBarHeight: Float,
+	leftCutoutSize: Float,
+	rightCutoutSize: Float,
+)
 {
 	//сработает только для вертикальной ориентации
 	val displayMetrics = context.resources.displayMetrics
 	val width = displayMetrics.widthPixels
 	val height = displayMetrics.heightPixels
 	val density = displayMetrics.density
+	val numToAddForY = if(width <= height)
+	{
+		70
+	}
+	else
+	{
+		200
+	}
+	val numToAddForX = if(width <= height)
+	{
+		110
+	}
+	else
+	{
+		70
+	}
 	Log.d("calc", "picSize $picLength * $picWidth")
 	val newX = if(x < picLength)
 	{
-		x + 0
+		x - leftCutoutSize - rightCutoutSize
 	}
 	else
 	{
-		x + 110 * ((x / picLength))
+		x + numToAddForX * ((x / picLength)) - leftCutoutSize - rightCutoutSize
 	}
 	val newY = if(y < picWidth)
 	{
-		y
+		y + numToAddForY - statusBarHeight - navBarHeight
 	}
 	else
 	{
-		y + 100
+		y + (numToAddForY * ((y / picWidth)) - statusBarHeight - navBarHeight)
 	}
-	//:todo надо добавить учёт вырезов экрана
 	Log.d("calc", "width of screen \n $width")
 	Log.d("calc", "(x / pl)) \n x=$x \n ${((x / picLength))}")
 	Log.d("calc", "numOfGrids \n $numOfGrids")
-	/*
-	/*val newX = if (((x)/110 < ceil(numOfGrids / 2.0))) {
-		x
-	} else if((x+355)/110 == ceil(numOfGrids / 2.0).toFloat()) {
-		x + 355/2
-	} else if ((x+355)/110 > ceil(numOfGrids / 2.0)){
-		x + 355/2
-	} else {
-		x + 355/2
-	}*/
-	val currentGrid = ceil(x / 355)
-	val newX = x - 355 / 2
-	val newY = y + 360 / 2
-	*/
 	// Перевод в pivotFraction
 	val pivotX = newX.toInt().dpToPx(context) / width / density
 	val pivotY = newY.toInt().dpToPx(context) / height / density
