@@ -10,6 +10,7 @@ import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
 import kotlinx.coroutines.launch
+import kotlin.math.ceil
 
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
@@ -18,6 +19,14 @@ class PicturesViewModel(
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM, emptyList()))
 	private val errorsMap: MutableMap<String, String> = mutableMapOf()
 	private var pairOfPivotsXandY = Pair(0.1f, 0.1f)
+	private var gridQuantity = 0
+	private var screenWidth = 0
+	private var screenHeight = 0
+	private var densityOfScreen = 0f
+	private var topBarPadding = 0
+	private var leftInsets = 0
+	private var picHeight = 0
+	private var picWidth = 0
 
 	init
 	{
@@ -125,6 +134,18 @@ class PicturesViewModel(
 	fun changeOrientation(isPortrait: Boolean)
 	{
 		val state = picturesUiState
+		if(isPortrait)
+		{
+			val k = screenWidth
+			screenWidth = screenHeight
+			screenHeight = k
+		}
+		else
+		{
+			val k = screenHeight
+			screenHeight = screenWidth
+			screenWidth = k
+		}
 		state.value = state.value.copy(isPortraitOrientation = isPortrait)
 	}
 
@@ -174,7 +195,7 @@ class PicturesViewModel(
 		state.value = state.value.copy(deletedUrls = urls)
 	}
 
-	fun postPivotsXandY(pairOfPivots: Pair<Float, Float>)
+	private fun postPivotsXandY(pairOfPivots: Pair<Float, Float>)
 	{
 		pairOfPivotsXandY = pairOfPivots
 	}
@@ -186,7 +207,68 @@ class PicturesViewModel(
 
 	private fun compareAndCombineLists(list1: List<String>, list2: List<String>): List<String>
 	{
-		val set2 = list2.toSet() // Преобразуем второй список в множество для быстрого поиска
-		return list1.filterNot { it in set2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
+		return list1.filterNot { it in list2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
+	}
+
+	fun postGridCountAndParamsOfScreen(cutoutInsetsOfScreen: Int, topBarSize: Int)
+	{
+		leftInsets = cutoutInsetsOfScreen + 26
+		Log.d("calculator1", "left insets $leftInsets")
+		topBarPadding = topBarSize + 60
+		Log.d("calculator1", "status bar insets $topBarPadding")
+	}
+
+	fun postPicParams(height: Int, width: Int){
+		picWidth = width
+		picHeight = height
+		Log.d("AHAHA","AHAHA")
+	}
+
+	fun postParamsOfScreen(gridNum: Int, width: Int, height: Int, density: Float)
+	{
+		gridQuantity = gridNum
+		screenHeight = height
+		screenWidth = width
+		densityOfScreen = density
+	}
+
+	fun updateGridSpan(newSpan: Int)
+	{
+		Log.d("calculator1", "updated grid num")
+		gridQuantity = newSpan
+	}
+
+	fun calculatePosition(url: String)
+	{
+		val list = picturesUiState.value.picturesUrl
+		val gridQuantity = gridQuantity
+		val index = list.indexOf(url) + 1
+		//вычисляем позицию в формате таблицы
+		var column: Int
+		val line: Float = ceil(index.toFloat() / gridQuantity.toFloat())
+		column = index % gridQuantity
+		if(column == 0)
+		{
+			column = gridQuantity
+		}
+		Log.d("calculator0", "line = $line, column = $column")
+		calculatePixelPosition(line.toInt(), column, leftInsets, topBarPadding)
+	}
+
+	private fun calculatePixelPosition(
+		line: Int,
+		column: Int,
+		leftPadding: Int,
+		topPadding: Int,
+	)
+	{
+		// Преобразуем dp в пиксели
+		// Вычисляем координаты левого верхнего угла ячейки в пикселях
+		Log.d("AHAHA", "${((picWidth + 20) * column)/screenWidth.toFloat()}")
+		val x = ((picWidth + 10) * column)/screenWidth.toFloat()
+		val y = ((-topPadding + line.toFloat() * 110) * densityOfScreen) / screenHeight.toFloat()
+		//по идее нужно разделить значения на размеры экрана
+		Log.d("AHAHA 222", "x = $x, y = $y")
+		postPivotsXandY(Pair(x, y))
 	}
 }

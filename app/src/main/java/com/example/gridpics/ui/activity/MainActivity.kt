@@ -27,7 +27,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,6 +51,7 @@ import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -66,7 +66,6 @@ class MainActivity: AppCompatActivity()
 	private var themePick: Int = 2
 	private var job: Job? = null
 	private var mutableIsThemeBlackState = mutableStateOf(false)
-	private var targetScaleForExit = mutableFloatStateOf(0.35f)
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -107,16 +106,15 @@ class MainActivity: AppCompatActivity()
 		installSplashScreen()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
+		val resources = resources
 		val orientation = resources.configuration.orientation
 		if(orientation == Configuration.ORIENTATION_PORTRAIT)
 		{
 			picVM.changeOrientation(isPortrait = true)
-			targetScaleForExit.floatValue = 0.35f
 		}
 		else
 		{
 			picVM.changeOrientation(isPortrait = false)
-			targetScaleForExit.floatValue = 0.4f
 		}
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
@@ -147,6 +145,12 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
+		val displayMetrics = resources.displayMetrics
+		val width = displayMetrics.widthPixels
+		val height = displayMetrics.heightPixels
+		val density = displayMetrics.density
+		picVM.postParamsOfScreen(calculateGridSpan(), width, height, density)
+
 		setContent {
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
@@ -165,38 +169,36 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
-		val floatValue = targetScaleForExit.floatValue
 		var pivots by remember { mutableStateOf(picVM.getPivotsXandY()) }
-		Log.d("kukareku", "in main act $pivots")
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
+			popEnterTransition = {
+				scaleIn(
+					animationSpec = tween(1500),
+					initialScale = 0.55f,
+					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust as necessary
+				)
+			},
+			popExitTransition = {
+				scaleOut(
+					animationSpec = tween(1500),
+					targetScale = 0.55f,
+					transformOrigin = TransformOrigin(pivots.first, pivots.second)
+				)
+			},
 			enterTransition = {
 				scaleIn(
-					animationSpec = tween(500),
-					initialScale = 0.3f,
-					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust based on the desired zoom point
+					animationSpec = tween(1500),
+					initialScale = 0.55f,
+					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust as necessary
 				) + expandVertically(expandFrom = Alignment.Top) { 20 }
 			},
 			exitTransition = {
 				scaleOut(
-					animationSpec = tween(1000),
-					targetScale = 0.9999999f,
-					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Match the entry point
-				)
-			},
-			popEnterTransition = {
-				scaleIn(
 					animationSpec = tween(500),
-					initialScale = 0.3f,
-					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust as necessary
-				) + expandVertically(expandFrom = Alignment.Top) { 20 }
-			},
-			popExitTransition = {
-				scaleOut(
-					animationSpec = tween(1000),
-					targetScale = floatValue,
-					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Match the entry point
+					targetScale = 1f,
+					transformOrigin = TransformOrigin(pivots.first, pivots.second)
 				)
 			}
 		)
@@ -214,8 +216,12 @@ class MainActivity: AppCompatActivity()
 					clearErrors = { picVM.clearErrors() },
 					postVisibleBarsState = { detVM.changeVisabilityState(true) },
 					currentPicture = { url, index, offset ->
-						picVM.clickOnPicture(index, offset)
-						detVM.postCurrentPicture(url)
+						lifecycleScope.launch(Dispatchers.IO) {
+							picVM.clickOnPicture(index, offset)
+							picVM.calculatePosition(url)
+							detVM.postCurrentPicture(url)
+							pivots = picVM.getPivotsXandY()
+						}
 					},
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls ->
@@ -225,11 +231,11 @@ class MainActivity: AppCompatActivity()
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(picVM.convertFromListToString(urls))
 					},
-					postPivotsXandY = { pairOfPivots ->
-						picVM.postPivotsXandY(pairOfPivots)
-						pivots = pairOfPivots
-						Log.d("kukareku", "lol")
-					}
+					postInsetsParamsToViewModel = { leftCutout, topBarSize ->
+						picVM.postGridCountAndParamsOfScreen(leftCutout, topBarSize)
+					},
+					calculateGridSpan = { calculateGridSpan() },
+					postPicParams = { height, width-> picVM.postPicParams(height, width) }
 				)
 			}
 			composable(
@@ -267,11 +273,14 @@ class MainActivity: AppCompatActivity()
 					addPicture = { url ->
 						picVM.addPictureToUrls(url)
 						saveToSharedPrefs(picVM.returnStringOfList())
-						Log.d("fuafahfafafa", "details")
 					},
 					setImageSharedState = { isShared -> detVM.isSharedImage(isShared) },
 					picsUiState = picVM.picturesUiState,
-					setCurrentPictureUrl = { url -> detVM.postCurrentPicture(url) },
+					setCurrentPictureUrl = { url ->
+						//picVM.calculatePosition(url)
+						detVM.postCurrentPicture(url)
+						//pivots = picVM.getPivotsXandY()
+					},
 					share = { url -> share(url) },
 					deleteCurrentPicture = { url ->
 						deletePicture(url)
@@ -279,6 +288,9 @@ class MainActivity: AppCompatActivity()
 					},
 					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
+					postInsetsParamsToViewModel = { leftCutout, topBarSize ->
+						picVM.postGridCountAndParamsOfScreen(leftCutout, topBarSize)
+					}
 				)
 			}
 		}
@@ -388,6 +400,7 @@ class MainActivity: AppCompatActivity()
 		val orientation = newConfig.orientation
 		val picVM = picturesViewModel
 		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
+		picVM.updateGridSpan(calculateGridSpan())
 		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
 		if(themePick == followSysTheme)
 		{
@@ -605,6 +618,14 @@ class MainActivity: AppCompatActivity()
 	{
 		val uiModeManager = this.getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
 		return uiModeManager.nightMode == UiModeManager.MODE_NIGHT_YES
+	}
+
+	private fun calculateGridSpan(): Int
+	{
+		val displayMetrics = this.resources.displayMetrics
+		val width = displayMetrics.widthPixels
+		val density = displayMetrics.density
+		return (width / density).toInt() / LENGTH_OF_PICTURE
 	}
 
 	companion object
