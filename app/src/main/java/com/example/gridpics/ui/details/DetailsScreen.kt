@@ -74,11 +74,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -118,7 +116,6 @@ fun DetailsScreen(
 	deleteCurrentPicture: (String) -> Unit,
 	postWasSharedState: () -> Unit,
 	setFalseToWasDeletedFromNotification: () -> Unit,
-	postInsetsParamsToViewModel: (Int, Int) -> Unit,
 	setInitialPage: (Int) -> Unit,
 )
 {
@@ -142,17 +139,6 @@ fun DetailsScreen(
 		}
 	}
 	val value = state.value
-	val statusBars = WindowInsets.statusBarsIgnoringVisibility
-	val cutouts = WindowInsets.displayCutout
-	var cutoutsToPaddingLeft = 16
-	if(LocalLayoutDirection.current == LayoutDirection.Ltr)
-	{
-		cutoutsToPaddingLeft = cutouts.asPaddingValues().calculateLeftPadding(LocalLayoutDirection.current).value.toInt()
-	}
-	postInsetsParamsToViewModel(
-		cutoutsToPaddingLeft,
-		statusBars.asPaddingValues().calculateTopPadding().value.toInt(),
-	)
 	val context = LocalContext.current
 	val currentPicture = value.currentPicture
 	var list = remember(state.value.isSharedImage) { state.value.picturesUrl }

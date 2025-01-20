@@ -216,14 +216,11 @@ class MainActivity: AppCompatActivity()
 					clearErrors = { picVM.clearErrors() },
 					postVisibleBarsState = { detVM.changeVisabilityState(true) },
 					currentPicture = { url, index, offset ->
-						lifecycleScope.launch {
-							picVM.clickOnPicture(index, offset)
-							picVM.calculatePosition(url)
-							detVM.postCurrentPicture(url)
-							pivots.value = picVM.getPivotsXandY()
-							navController.navigate(Screen.Details.route)
-							Log.d("AHAHA", "new pivots $pivots")
-						}
+						picVM.clickOnPicture(index, offset)
+						picVM.calculatePosition(url)
+						detVM.postCurrentPicture(url)
+						pivots.value = picVM.getPivotsXandY()
+						navController.navigate(Screen.Details.route)
 					},
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls ->
@@ -233,11 +230,7 @@ class MainActivity: AppCompatActivity()
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(picVM.convertFromListToString(urls))
 					},
-					postInsetsParamsToViewModel = { leftCutout, topBarSize ->
-						picVM.postGridCountAndParamsOfScreen(leftCutout, topBarSize)
-					},
 					calculateGridSpan = { calculateGridSpan() },
-					postPicParams = { height, width -> picVM.postPicParams(height, width) },
 					postGridSize = { sizeInPx -> picVM.postGridSize(sizeInPx) }
 				)
 			}
@@ -291,9 +284,6 @@ class MainActivity: AppCompatActivity()
 					},
 					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
-					postInsetsParamsToViewModel = { leftCutout, topBarSize ->
-						picVM.postGridCountAndParamsOfScreen(leftCutout, topBarSize)
-					},
 					setInitialPage = { page -> picVM.postInitialPage(page) }
 				)
 			}

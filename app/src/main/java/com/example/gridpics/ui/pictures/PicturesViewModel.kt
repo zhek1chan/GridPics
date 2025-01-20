@@ -23,10 +23,6 @@ class PicturesViewModel(
 	private var screenWidth = 0
 	private var screenHeight = 0
 	private var densityOfScreen = 0f
-	private var topBarPadding = 0
-	private var leftInsets = 0
-	private var picHeight = 0
-	private var picWidth = 0
 	private var initialPage = 0
 	private var sizeOfGridInPixels = 0
 
@@ -212,20 +208,6 @@ class PicturesViewModel(
 		return list1.filterNot { it in list2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
 	}
 
-	fun postGridCountAndParamsOfScreen(cutoutInsetsOfScreen: Int, topBarSize: Int)
-	{
-		leftInsets = cutoutInsetsOfScreen + 26
-		Log.d("calculator1", "left insets $leftInsets")
-		topBarPadding = topBarSize + 60
-		Log.d("calculator1", "status bar insets $topBarPadding")
-	}
-
-	fun postPicParams(height: Int, width: Int)
-	{
-		picWidth = width
-		picHeight = height
-	}
-
 	fun postParamsOfScreen(gridNum: Int, width: Int, height: Int, density: Float)
 	{
 		gridQuantity = gridNum
@@ -253,7 +235,6 @@ class PicturesViewModel(
 		{
 			column = gridQuantity
 		}
-		Log.d("calculator0", "line = $line, column = $column")
 		calculatePixelPosition(line.toInt(), column)
 	}
 
@@ -288,8 +269,7 @@ class PicturesViewModel(
 		{
 			(line + 1) * 1.25f
 		}
-		//по идее нужно разделить значения на размеры экрана
-		Log.d("AHAHA 222", "x = $x, y = $y")
+		Log.d("teleport pic to this offset", "x = $x, y = $y")
 		postPivotsXandY(Pair(x, y))
 	}
 
@@ -298,25 +278,33 @@ class PicturesViewModel(
 		val pics = picturesUiState.value.picturesUrl
 		val gridQuantity = gridQuantity
 		val numOfVisibleLines = (sizeOfGridInPixels / densityOfScreen / 110).toInt()
-		Log.d("AHAHA 777", "numOfVisibleLines = $numOfVisibleLines")
 		var numOfLastLines = pics.size / gridQuantity - numOfVisibleLines
 		if(pics.size % gridQuantity != 0)
 		{
 			numOfLastLines += 1
 		}
-		Log.d("AHAHA 777", "numOfLastLines = $numOfLastLines")
 		val index = pics.indexOf(url)
-		Log.d("AHAHA 777", "index = $index")
 		if(initialPage != index)
 		{
 			if((index + 1) / gridQuantity >= numOfVisibleLines)
 			{
-				val line = ((index + 1) / gridQuantity) - numOfVisibleLines + 1
-				Log.d("AHAHA 777", "line = $line")
-				calculatePixelPosition(line, index % gridQuantity+1)
+				val cof = ((index + 1) / gridQuantity / numOfVisibleLines)
+				val currRealLine = if(cof <= 1)
+				{
+					(index + 1) / gridQuantity - (numOfVisibleLines + 1)
+				}
+				else
+				{
+					(index + 1) / gridQuantity - numOfVisibleLines * cof
+				}
+				val line = currRealLine
+				clickOnPicture(pics.indexOf(url), 0)
+				Log.d("Calc check", "line = $line")
+				calculatePixelPosition(line, index % gridQuantity + 1)
 			}
 			else if(index > gridQuantity)
 			{
+				Log.d("Calc check", "another type 1")
 				var column = 0
 				for(i in 0 ..< gridQuantity)
 				{
@@ -330,7 +318,7 @@ class PicturesViewModel(
 			}
 			else
 			{
-				Log.d("AHAHA 777", "line = 0")
+				Log.d("Calc check", "another type 2")
 				calculatePixelPosition(0, index + 1)
 			}
 		}

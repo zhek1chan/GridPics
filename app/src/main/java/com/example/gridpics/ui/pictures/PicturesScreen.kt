@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
@@ -62,7 +61,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -92,10 +90,8 @@ fun PicturesScreen(
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (List<String>) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
-	postInsetsParamsToViewModel: (Int, Int) -> Unit,
 	calculateGridSpan: () -> Int,
-	postPicParams: (Int, Int) -> Unit,
-	postGridSize: (Int) -> Unit
+	postGridSize: (Int) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -116,10 +112,6 @@ fun PicturesScreen(
 	{
 		cutouts.union(statusBars)
 	}
-	postInsetsParamsToViewModel(
-		windowInsets.asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr).value.toInt(),
-		windowInsets.asPaddingValues().calculateTopPadding().value.toInt(),
-	)
 	Scaffold(
 		contentWindowInsets = windowInsets,
 		topBar = {
@@ -164,7 +156,6 @@ fun PicturesScreen(
 					offset = offset,
 					index = index,
 					calculateGridSpan = calculatedGridSpan,
-					postPicParams = postPicParams,
 					postGridSize = postGridSize
 				)
 			}
@@ -307,8 +298,7 @@ fun ShowList(
 	offset: Int,
 	index: Int,
 	calculateGridSpan: Int,
-	postPicParams: (Int, Int) -> Unit,
-	postGridSize: (Int) -> Unit
+	postGridSize: (Int) -> Unit,
 )
 {
 	val widthInPx = remember(Unit) { mutableIntStateOf(0) }
@@ -394,7 +384,6 @@ fun ShowList(
 		}
 	}
 	LaunchedEffect(Unit) {
-		postPicParams(widthInPx.intValue, heightInPx.intValue)
 		listState.scrollToItem(index, offset)
 		postGridSize(listState.layoutInfo.viewportEndOffset)
 	}
