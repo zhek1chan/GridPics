@@ -62,6 +62,7 @@ class MainActivity: AppCompatActivity()
 	private var navigation: NavHostController? = null
 	private var themePick: Int = 2
 	private var job: Job? = null
+	private var pairOfCof = Pair(4f, 12f)
 	private var mutableIsThemeBlackState = mutableStateOf(false)
 	private val connection = object: ServiceConnection
 	{
@@ -167,9 +168,10 @@ class MainActivity: AppCompatActivity()
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
 		val pivots = remember { mutableStateOf(picVM.getPivotsXandY()) }
-		Log.d("AHAHA 333", "xyeta kakayato")
-		Log.d("AHAHA 333", "new pivots $pivots")
+		Log.d("test 333", "new pivots $pivots")
+		val pairOfCof = pairOfCof
 		val pValue = pivots.value
+		Log.d("exit test", "$pairOfCof")
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
@@ -177,7 +179,7 @@ class MainActivity: AppCompatActivity()
 				scaleIn(
 					animationSpec = tween(500),
 					initialScale = 0.75f,
-					transformOrigin = TransformOrigin(pValue.first, pValue.second) // Adjust as necessary
+					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			},
 			popExitTransition = {
@@ -189,9 +191,12 @@ class MainActivity: AppCompatActivity()
 			},
 			enterTransition = {
 				scaleIn(
-					animationSpec = tween(500),
-					initialScale = 0.75f,
-					transformOrigin = TransformOrigin(pValue.first, pValue.second) // Adjust as necessary
+					animationSpec = tween(300),
+					initialScale = 0.4f,
+					transformOrigin = TransformOrigin(
+						pValue.first / pairOfCof.first,
+						pValue.second / pairOfCof.second
+					)
 				) + expandVertically(expandFrom = Alignment.Top) { 20 }
 			},
 			exitTransition = {
@@ -204,7 +209,13 @@ class MainActivity: AppCompatActivity()
 		)
 		{
 			composable(BottomNavItem.Home.route,
-				enterTransition = { EnterTransition.None },
+				enterTransition = {
+					scaleIn(
+						animationSpec = tween(400),
+						initialScale = 0.75f,
+						transformOrigin = TransformOrigin(pValue.first, pValue.second)
+					)
+				},
 				popEnterTransition = { EnterTransition.None }
 			) {
 				PicturesScreen(
@@ -618,6 +629,12 @@ class MainActivity: AppCompatActivity()
 	{
 		val displayMetrics = this.resources.displayMetrics
 		val width = displayMetrics.widthPixels
+		val height = displayMetrics.heightPixels
+		pairOfCof = if (width > height) {
+			Pair(12f, 4f)
+		} else {
+			Pair(4f, 12f)
+		}
 		val density = displayMetrics.density
 		return (width / density).toInt() / LENGTH_OF_PICTURE
 	}

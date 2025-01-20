@@ -124,7 +124,7 @@ fun DetailsScreen(
 	val animationIsRunning = remember { mutableStateOf(true) }
 	val thisIsEnterAnimation = remember { mutableStateOf(true) }
 	LaunchedEffect(Unit) {
-		delay(500)
+		delay(350)
 		animationIsRunning.value = false
 		thisIsEnterAnimation.value = false
 	}

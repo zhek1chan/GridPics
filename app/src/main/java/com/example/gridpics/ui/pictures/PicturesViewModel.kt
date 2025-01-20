@@ -249,18 +249,19 @@ class PicturesViewModel(
 		Log.d("Calc check", "${densityOfScreen / 2 - 0.05}")
 		val screenWidth = screenWidth
 		val screenHeight = screenHeight
-		//todo: надо понять как берётся кооф по y, сделать динамическое значение
-		var x = if(screenWidth > screenHeight)
+		val x = if ((screenWidth > screenHeight) && (column == 1))
 		{
-			2.5f * (column - 1) + 0.05f
-		}
-		else
+			Log.d("calc", "fsbfusbfsmfsmlf;sfs")
+			1f
+		} else if (screenWidth > screenHeight) {
+			2.5f * (column - 1) + 1.0f
+		} else if (column == 1) {
+			0.00f
+		} else if (column == 2) {
+			2.5f
+		} else
 		{
-			column * 1.5f
-		}
-		if(column == 1)
-		{
-			x = 0.00f
+			column * 1.8f
 		}
 		val numOfVisibleLines = (sizeOfGridInPixels / densityOfScreen / 110).toInt()
 		var k = 0
@@ -293,50 +294,57 @@ class PicturesViewModel(
 			line
 		}
 		val firstVisibleIndex = value.index
+		picturesUiState.value = value.copy(index = firstVisibleIndex, offset = 0)
 		val indexOfClickedPic = value.picturesUrl.indexOf(urlForCalculation)
+		Log.d("Calc", "seichas nLine = $nLine")
 		if(nLine == 0 || line * gridQuantity >= value.picturesUrl.size)
 		{
 			nLine = line - numOfVisibleLines * (maxK - 1)
 		}
-		if((firstVisibleIndex < indexOfClickedPic) && (indexOfClickedPic - firstVisibleIndex > 2) && useReCalc)
+		if ((firstVisibleIndex < indexOfClickedPic) && (indexOfClickedPic - firstVisibleIndex > 2) && useReCalc && maxK != 0)
 		{
 			Log.d("Calc check", "indexOfClickedPic - firstVisibleIndex / gridQuantity")
-			Log.d("Calc check", "$indexOfClickedPic - $firstVisibleIndex / $gridQuantity")
+			Log.d("Calc2 check", "($indexOfClickedPic - $firstVisibleIndex )/ $gridQuantity")
 			val nY = ((indexOfClickedPic - firstVisibleIndex) / gridQuantity)
-			Log.d("Calc check", "$nLine - $nY - 1")
+			nLine -= 1
 			if(nY == 1)
 			{
-				nLine = 2
-			}
-			//todo: тут что-то не чистое
-			else if(nY < nLine)
+				Log.d("Calc2", "$nLine = 1")
+				nLine = 1
+			} else if (nY < nLine && (nY + 1) != nLine && nLine - nY > 2)
 			{
-				nLine = nLine - nY + 1
+				Log.d("Calc2", "$nLine - $nY + 1")
+				nLine = nLine - nY - 1
 			}
 			else
 			{
-				nLine += 1
+				Log.d("Calc2", "$nLine")
+				nLine = nY
 			}
 			Log.d("Calc check", "nLine recalculated")
-		}
-		else if((firstVisibleIndex < indexOfClickedPic) && useReCalc)
-		{
+		} else if (maxK != 0) {
+			nLine = 0
+		} else {
 			nLine -= 1
 		}
-		val y = if(nLine == 1)
+
+		val y = if (nLine == 0)
 		{
 			0.4f
 		}
 		else if(screenWidth > screenHeight)
 		{
+			Log.d("Calc check", "screenWidth > screenHeight")
 			(nLine) * 1.5f
+		} else if (nLine == 1) {
+			2.2f
 		}
 		else
 		{
-			(nLine + 1) * 1.25f
+			(nLine + 1) * 1.4f
 		}
-		Log.d("Calc check", "we have got line = $nLine")
-		Log.d("teleport pic to this offset", "x = $x, y = $y")
+		Log.d("Calc2 check", "we have got line = $nLine")
+		Log.d("calc check", "x = $x, y = $y")
 		postPivotsXandY(Pair(x, y))
 	}
 
@@ -346,44 +354,32 @@ class PicturesViewModel(
 		val gridQuantity = gridQuantity
 		val numOfVisibleLines = (sizeOfGridInPixels / densityOfScreen / 110).toInt()
 		var numOfLastLines = pics.size / gridQuantity - numOfVisibleLines
-		if(pics.size % gridQuantity != 0)
-		{
+		val index = pics.indexOf(url)
+		if (pics.size % gridQuantity != 0) {
 			numOfLastLines += 1
 		}
-		val index = pics.indexOf(url)
-		if(initialPage != index)
-		{
-			if((index + 1) / gridQuantity >= numOfVisibleLines)
-			{
+		if (initialPage != index) {
+			if ((index + 1) / gridQuantity >= numOfVisibleLines) {
 				val cof = ((index + 1) / gridQuantity / numOfVisibleLines)
-				val currRealLine = if(cof <= 1)
-				{
+				val currRealLine = if (cof <= 1) {
 					(index + 1) / gridQuantity - (numOfVisibleLines + 1)
-				}
-				else
-				{
+				} else {
 					(index + 1) / gridQuantity - numOfVisibleLines * cof
 				}
 				clickOnPicture(pics.indexOf(url) + 1, 0)
 				Log.d("Calc check", "line = $currRealLine")
 				calculatePixelPosition(currRealLine, index % gridQuantity + 1, false)
-			}
-			else if(index > gridQuantity)
-			{
+			} else if (index > gridQuantity) {
 				Log.d("Calc check", "another type 1")
 				var column = 0
-				for(i in 0 ..< gridQuantity)
-				{
-					if(index % gridQuantity == i)
-					{
+				for (i in 0..<gridQuantity) {
+					if (index % gridQuantity == i) {
 						clickOnPicture(pics.indexOf(url) - gridQuantity + 1 + i, 0)
 						column = i + 1
 					}
 				}
 				calculatePixelPosition(0, column, false)
-			}
-			else
-			{
+			} else {
 				Log.d("Calc check", "another type 2")
 				calculatePixelPosition(0, index + 1, false)
 			}
