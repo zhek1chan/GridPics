@@ -26,10 +26,8 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.core.content.ContextCompat
@@ -51,7 +49,6 @@ import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -169,36 +166,39 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
-		var pivots by remember { mutableStateOf(picVM.getPivotsXandY()) }
+		val pivots = remember { mutableStateOf(picVM.getPivotsXandY()) }
+		Log.d("AHAHA 333", "xyeta kakayato")
+		Log.d("AHAHA 333", "new pivots $pivots")
+		val pValue = pivots.value
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
 			popEnterTransition = {
 				scaleIn(
-					animationSpec = tween(1500),
-					initialScale = 0.55f,
-					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust as necessary
+					animationSpec = tween(500),
+					initialScale = 0.75f,
+					transformOrigin = TransformOrigin(pValue.first, pValue.second) // Adjust as necessary
 				)
 			},
 			popExitTransition = {
 				scaleOut(
-					animationSpec = tween(1500),
-					targetScale = 0.55f,
-					transformOrigin = TransformOrigin(pivots.first, pivots.second)
+					animationSpec = tween(500),
+					targetScale = 0.75f,
+					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			},
 			enterTransition = {
 				scaleIn(
-					animationSpec = tween(1500),
-					initialScale = 0.55f,
-					transformOrigin = TransformOrigin(pivots.first, pivots.second) // Adjust as necessary
+					animationSpec = tween(500),
+					initialScale = 0.75f,
+					transformOrigin = TransformOrigin(pValue.first, pValue.second) // Adjust as necessary
 				) + expandVertically(expandFrom = Alignment.Top) { 20 }
 			},
 			exitTransition = {
 				scaleOut(
 					animationSpec = tween(500),
 					targetScale = 1f,
-					transformOrigin = TransformOrigin(pivots.first, pivots.second)
+					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			}
 		)
@@ -216,11 +216,13 @@ class MainActivity: AppCompatActivity()
 					clearErrors = { picVM.clearErrors() },
 					postVisibleBarsState = { detVM.changeVisabilityState(true) },
 					currentPicture = { url, index, offset ->
-						lifecycleScope.launch(Dispatchers.IO) {
+						lifecycleScope.launch {
 							picVM.clickOnPicture(index, offset)
 							picVM.calculatePosition(url)
 							detVM.postCurrentPicture(url)
-							pivots = picVM.getPivotsXandY()
+							pivots.value = picVM.getPivotsXandY()
+							navController.navigate(Screen.Details.route)
+							Log.d("AHAHA", "new pivots $pivots")
 						}
 					},
 					isValidUrl = { url -> picVM.isValidUrl(url) },
@@ -235,7 +237,8 @@ class MainActivity: AppCompatActivity()
 						picVM.postGridCountAndParamsOfScreen(leftCutout, topBarSize)
 					},
 					calculateGridSpan = { calculateGridSpan() },
-					postPicParams = { height, width-> picVM.postPicParams(height, width) }
+					postPicParams = { height, width -> picVM.postPicParams(height, width) },
+					postGridSize = { sizeInPx -> picVM.postGridSize(sizeInPx) }
 				)
 			}
 			composable(
@@ -277,9 +280,9 @@ class MainActivity: AppCompatActivity()
 					setImageSharedState = { isShared -> detVM.isSharedImage(isShared) },
 					picsUiState = picVM.picturesUiState,
 					setCurrentPictureUrl = { url ->
-						//picVM.calculatePosition(url)
+						picVM.calculateListPosition(url)
 						detVM.postCurrentPicture(url)
-						//pivots = picVM.getPivotsXandY()
+						pivots.value = picVM.getPivotsXandY()
 					},
 					share = { url -> share(url) },
 					deleteCurrentPicture = { url ->
@@ -290,7 +293,8 @@ class MainActivity: AppCompatActivity()
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
 					postInsetsParamsToViewModel = { leftCutout, topBarSize ->
 						picVM.postGridCountAndParamsOfScreen(leftCutout, topBarSize)
-					}
+					},
+					setInitialPage = { page -> picVM.postInitialPage(page) }
 				)
 			}
 		}

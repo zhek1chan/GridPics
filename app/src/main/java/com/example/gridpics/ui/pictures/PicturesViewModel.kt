@@ -27,6 +27,8 @@ class PicturesViewModel(
 	private var leftInsets = 0
 	private var picHeight = 0
 	private var picWidth = 0
+	private var initialPage = 0
+	private var sizeOfGridInPixels = 0
 
 	init
 	{
@@ -218,10 +220,10 @@ class PicturesViewModel(
 		Log.d("calculator1", "status bar insets $topBarPadding")
 	}
 
-	fun postPicParams(height: Int, width: Int){
+	fun postPicParams(height: Int, width: Int)
+	{
 		picWidth = width
 		picHeight = height
-		Log.d("AHAHA","AHAHA")
 	}
 
 	fun postParamsOfScreen(gridNum: Int, width: Int, height: Int, density: Float)
@@ -252,23 +254,95 @@ class PicturesViewModel(
 			column = gridQuantity
 		}
 		Log.d("calculator0", "line = $line, column = $column")
-		calculatePixelPosition(line.toInt(), column, leftInsets, topBarPadding)
+		calculatePixelPosition(line.toInt(), column)
 	}
 
 	private fun calculatePixelPosition(
 		line: Int,
 		column: Int,
-		leftPadding: Int,
-		topPadding: Int,
 	)
 	{
-		// Преобразуем dp в пиксели
-		// Вычисляем координаты левого верхнего угла ячейки в пикселях
-		Log.d("AHAHA", "${((picWidth + 20) * column)/screenWidth.toFloat()}")
-		val x = ((picWidth + 10) * column)/screenWidth.toFloat()
-		val y = ((-topPadding + line.toFloat() * 110) * densityOfScreen) / screenHeight.toFloat()
+		val screenWidth = screenWidth
+		val screenHeight = screenHeight
+		var x = if(screenWidth > screenHeight)
+		{
+			2.5f * (column - 1) + 0.05f
+		}
+		else
+		{
+			column * 1.5f
+		}
+		if(column == 1)
+		{
+			x = 0.00f
+		}
+		val y = if(line == 1)
+		{
+			0.4f
+		}
+		else if(screenWidth > screenHeight)
+		{
+			(line) * 1.5f
+		}
+		else
+		{
+			(line + 1) * 1.25f
+		}
 		//по идее нужно разделить значения на размеры экрана
 		Log.d("AHAHA 222", "x = $x, y = $y")
 		postPivotsXandY(Pair(x, y))
+	}
+
+	fun calculateListPosition(url: String)
+	{
+		val pics = picturesUiState.value.picturesUrl
+		val gridQuantity = gridQuantity
+		val numOfVisibleLines = (sizeOfGridInPixels / densityOfScreen / 110).toInt()
+		Log.d("AHAHA 777", "numOfVisibleLines = $numOfVisibleLines")
+		var numOfLastLines = pics.size / gridQuantity - numOfVisibleLines
+		if(pics.size % gridQuantity != 0)
+		{
+			numOfLastLines += 1
+		}
+		Log.d("AHAHA 777", "numOfLastLines = $numOfLastLines")
+		val index = pics.indexOf(url)
+		Log.d("AHAHA 777", "index = $index")
+		if(initialPage != index)
+		{
+			if((index + 1) / gridQuantity >= numOfVisibleLines)
+			{
+				val line = ((index + 1) / gridQuantity) - numOfVisibleLines + 1
+				Log.d("AHAHA 777", "line = $line")
+				calculatePixelPosition(line, index % gridQuantity+1)
+			}
+			else if(index > gridQuantity)
+			{
+				var column = 0
+				for(i in 0 ..< gridQuantity)
+				{
+					if(index % gridQuantity == i)
+					{
+						clickOnPicture(pics.indexOf(url) - gridQuantity + 1 + i, 0)
+						column = i + 1
+					}
+				}
+				calculatePixelPosition(0, column)
+			}
+			else
+			{
+				Log.d("AHAHA 777", "line = 0")
+				calculatePixelPosition(0, index + 1)
+			}
+		}
+	}
+
+	fun postInitialPage(page: Int)
+	{
+		initialPage = page
+	}
+
+	fun postGridSize(sizeInPx: Int)
+	{
+		sizeOfGridInPixels = sizeInPx
 	}
 }

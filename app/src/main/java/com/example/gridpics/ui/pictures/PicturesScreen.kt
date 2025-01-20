@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,7 +74,6 @@ import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
-import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
@@ -95,6 +95,7 @@ fun PicturesScreen(
 	postInsetsParamsToViewModel: (Int, Int) -> Unit,
 	calculateGridSpan: () -> Int,
 	postPicParams: (Int, Int) -> Unit,
+	postGridSize: (Int) -> Unit
 )
 {
 	LaunchedEffect(Unit) {
@@ -156,7 +157,6 @@ fun PicturesScreen(
 					addError = addError,
 					state = loadingState,
 					clearErrors = clearErrors,
-					navController = navController,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					postSavedUrls = postSavedUrls,
@@ -164,7 +164,8 @@ fun PicturesScreen(
 					offset = offset,
 					index = index,
 					calculateGridSpan = calculatedGridSpan,
-					postPicParams = postPicParams
+					postPicParams = postPicParams,
+					postGridSize = postGridSize
 				)
 			}
 		}
@@ -175,7 +176,6 @@ fun PicturesScreen(
 @Composable
 fun ItemsCard(
 	item: String,
-	navController: NavController,
 	getErrorMessageFromErrorsList: (String) -> String?,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
@@ -226,68 +226,69 @@ fun ItemsCard(
 			}
 		}
 	}
-	SubcomposeAsyncImage(
-		model = (imgRequest),
-		contentDescription = item,
-		modifier = modifier.value
-			.clickable {
-				if(isError)
-				{
-					openAlertDialog.value = true
+	Box(modifier = Modifier.aspectRatio(1f)) {
+		SubcomposeAsyncImage(
+			model = (imgRequest),
+			contentDescription = item,
+			modifier = modifier.value
+				.clickable {
+					if(isError)
+					{
+						openAlertDialog.value = true
+					}
+					else
+					{
+						Log.d("current", item)
+						currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
+						openAlertDialog.value = false
+					}
 				}
-				else
-				{
-					Log.d("current", item)
-					currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
-					navController.navigate(Screen.Details.route)
-					openAlertDialog.value = false
+				.padding(10.dp)
+				.size(100.dp)
+				.clip(RoundedCornerShape(8.dp)),
+			contentScale = ContentScale.FillBounds,
+			loading = {
+				Box(Modifier.fillMaxSize()) {
+					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 				}
+			},
+			onError = {
+				isError = true
+				addError(item, it.result.throwable.message.toString())
+			},
+			onSuccess = {
+				isError = false
 			}
-			.padding(5.dp)
-			.size(100.dp)
-			.clip(RoundedCornerShape(8.dp)),
-		contentScale = ContentScale.FillBounds,
-		loading = {
-			Box(Modifier.fillMaxSize()) {
-				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+		)
+		if(openAlertDialog.value)
+		{
+			if(isValidUrl(item))
+			{
+				val reloadString = stringResource(R.string.reload)
+				AlertDialogMain(
+					onDismissRequest = { openAlertDialog.value = false },
+					onConfirmation =
+					{
+						openAlertDialog.value = false
+						println("Confirmation registered")
+						Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
+					},
+					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
+					dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
+					icon = Icons.Default.Warning,
+					textButtonCancel = stringResource(R.string.cancel),
+					textButtonConfirm = stringResource(R.string.confirm))
 			}
-		},
-		onError = {
-			isError = true
-			addError(item, it.result.throwable.message.toString())
-		},
-		onSuccess = {
-			isError = false
-		}
-	)
-	if(openAlertDialog.value)
-	{
-		if(isValidUrl(item))
-		{
-			val reloadString = stringResource(R.string.reload)
-			AlertDialogMain(
-				onDismissRequest = { openAlertDialog.value = false },
-				onConfirmation =
-				{
-					openAlertDialog.value = false
-					println("Confirmation registered")
-					Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
-				},
-				dialogTitle = stringResource(R.string.error_ocurred_loading_img),
-				dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
-				icon = Icons.Default.Warning,
-				textButtonCancel = stringResource(R.string.cancel),
-				textButtonConfirm = stringResource(R.string.confirm))
-		}
-		else
-		{
-			AlertDialogSecondary(
-				onDismissRequest = { openAlertDialog.value = false },
-				onConfirmation =
-				{
-					openAlertDialog.value = false
-				},
-				dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
+			else
+			{
+				AlertDialogSecondary(
+					onDismissRequest = { openAlertDialog.value = false },
+					onConfirmation =
+					{
+						openAlertDialog.value = false
+					},
+					dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
+			}
 		}
 	}
 }
@@ -299,7 +300,6 @@ fun ShowList(
 	addError: (String, String) -> Unit,
 	state: PicturesState,
 	clearErrors: () -> Unit,
-	navController: NavController,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (List<String>) -> Unit,
@@ -308,6 +308,7 @@ fun ShowList(
 	index: Int,
 	calculateGridSpan: Int,
 	postPicParams: (Int, Int) -> Unit,
+	postGridSize: (Int) -> Unit
 )
 {
 	val widthInPx = remember(Unit) { mutableIntStateOf(0) }
@@ -336,7 +337,6 @@ fun ShowList(
 					items(items = list) {
 						ItemsCard(
 							item = it,
-							navController = navController,
 							getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
@@ -382,7 +382,6 @@ fun ShowList(
 			items(items = imagesUrlsSP) {
 				ItemsCard(
 					item = it,
-					navController = navController,
 					getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
@@ -397,6 +396,7 @@ fun ShowList(
 	LaunchedEffect(Unit) {
 		postPicParams(widthInPx.intValue, heightInPx.intValue)
 		listState.scrollToItem(index, offset)
+		postGridSize(listState.layoutInfo.viewportEndOffset)
 	}
 }
 

@@ -101,4 +101,6 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     implementation(libs.androidx.paging.compose)
     implementation(libs.transformations)
+    //anim
+    implementation(libs.orbital)
 }

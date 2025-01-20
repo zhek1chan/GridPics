@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -118,6 +119,7 @@ fun DetailsScreen(
 	postWasSharedState: () -> Unit,
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	postInsetsParamsToViewModel: (Int, Int) -> Unit,
+	setInitialPage: (Int) -> Unit,
 )
 {
 	val color = MaterialTheme.colorScheme.background
@@ -166,87 +168,101 @@ fun DetailsScreen(
 		initialPage = 0
 		size = 1
 	}
-	Log.d("index currentPage", currentPicture)
-	Log.d("index initialPage", "$initialPage")
-	Log.d("index size of list", "$size")
-	val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
-	val currentPage = pagerState.currentPage
-	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
-	val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
-	BackHandler {
-		navigateToHome(
-			changeBarsVisability = changeBarsVisability,
-			postUrl = postUrl,
-			navController = navController,
-			setImageSharedStateToFalse = setImageSharedState,
-			animationIsRunning = animationIsRunning,
-			wasDeleted = false
-		)
-	}
-	LaunchedEffect(currentPage) {
-		val pic = if(list.size >= currentPage)
+	val mod = remember(animationIsRunning.value) { mutableStateOf(Modifier.fillMaxSize()) }
+	Box(modifier = mod.value) {
+		if(animationIsRunning.value && !thisIsEnterAnimation.value)
 		{
-			list[currentPage]
+			mod.value = Modifier
+				.width(200.dp)
+				.height(300.dp)
 		}
 		else
 		{
-			""
+			mod.value = Modifier.fillMaxSize()
 		}
-		if(pic.isNotEmpty())
-		{
-			setCurrentPictureUrl(pic)
-			if(getErrorMessageFromErrorsList(pic) != null)
+		Log.d("index currentPage", currentPicture)
+		Log.d("index initialPage", "$initialPage")
+		setInitialPage(initialPage)
+		Log.d("index size of list", "$size")
+		val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
+		val currentPage = pagerState.currentPage
+		val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
+		val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
+		BackHandler {
+			navigateToHome(
+				changeBarsVisability = changeBarsVisability,
+				postUrl = postUrl,
+				navController = navController,
+				setImageSharedStateToFalse = setImageSharedState,
+				animationIsRunning = animationIsRunning,
+				wasDeleted = false
+			)
+		}
+		LaunchedEffect(currentPage) {
+			val pic = if(list.size >= currentPage)
 			{
-				Log.d("checkMa", "gruzim oshibku")
-				postUrl(pic, errorPicture)
+				list[currentPage]
 			}
 			else
 			{
-				postNewBitmap(pic, pleaseWaitString)
+				""
+			}
+			if(pic.isNotEmpty())
+			{
+				setCurrentPictureUrl(pic)
+				if(getErrorMessageFromErrorsList(pic) != null)
+				{
+					Log.d("checkMa", "gruzim oshibku")
+					postUrl(pic, errorPicture)
+				}
+				else
+				{
+					postNewBitmap(pic, pleaseWaitString)
+				}
 			}
 		}
+		Scaffold(
+			containerColor = backgroundColor.value,
+			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
+			topBar = {
+				AppBar(
+					isVisible = value.barsAreVisible,
+					nc = navController,
+					currentPicture = currentPicture,
+					postUrl = postUrl,
+					state = state,
+					changeBarsVisability = changeBarsVisability,
+					setImageSharedStateToFalse = setImageSharedState,
+					share = share,
+					postWasSharedState = postWasSharedState,
+					animationIsRunning = animationIsRunning
+				)
+			},
+			content = { padding ->
+				ShowDetails(
+					navController = navController,
+					context = context,
+					checkOnErrorExists = getErrorMessageFromErrorsList,
+					addError = addError,
+					removeSpecialError = removeError,
+					state = state,
+					isValidUrl = isValidUrl,
+					padding = padding,
+					changeBarsVisability = changeBarsVisability,
+					postUrl = postUrl,
+					addPicture = addPicture,
+					setImageSharedState = setImageSharedState,
+					picturesState = picsUiState,
+					pagerState = pagerState,
+					list = list.toMutableList(),
+					deleteCurrentPicture = deleteCurrentPicture,
+					animationIsRunning = animationIsRunning,
+					setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
+					thisIsEnterAnimation = thisIsEnterAnimation
+				)
+			}
+		)
 	}
-	Scaffold(
-		containerColor = backgroundColor.value,
-		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
-		topBar = {
-			AppBar(
-				isVisible = value.barsAreVisible,
-				nc = navController,
-				currentPicture = currentPicture,
-				postUrl = postUrl,
-				state = state,
-				changeBarsVisability = changeBarsVisability,
-				setImageSharedStateToFalse = setImageSharedState,
-				share = share,
-				postWasSharedState = postWasSharedState,
-				animationIsRunning = animationIsRunning
-			)
-		},
-		content = { padding ->
-			ShowDetails(
-				navController = navController,
-				context = context,
-				checkOnErrorExists = getErrorMessageFromErrorsList,
-				addError = addError,
-				removeSpecialError = removeError,
-				state = state,
-				isValidUrl = isValidUrl,
-				padding = padding,
-				changeBarsVisability = changeBarsVisability,
-				postUrl = postUrl,
-				addPicture = addPicture,
-				setImageSharedState = setImageSharedState,
-				picturesState = picsUiState,
-				pagerState = pagerState,
-				list = list.toMutableList(),
-				deleteCurrentPicture = deleteCurrentPicture,
-				animationIsRunning = animationIsRunning,
-				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
-				thisIsEnterAnimation = thisIsEnterAnimation
-			)
-		}
-	)
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -453,7 +469,11 @@ fun ShowAsynchImage(
 )
 {
 	Box(Modifier.fillMaxSize()) {
-		var scale = if(state.value.isMultiWindowed)
+		val scale = if(animationIsRunning.value && !thisIsEnterAnimation.value)
+		{
+			ContentScale.FillBounds
+		}
+		else if(state.value.isMultiWindowed)
 		{
 			ContentScale.Fit
 		}
@@ -480,12 +500,10 @@ fun ShowAsynchImage(
 		val mod = remember(animationIsRunning.value) { mutableStateOf(Modifier.fillMaxSize()) }
 		if(animationIsRunning.value && !thisIsEnterAnimation.value)
 		{
-			//:todo Align creates strange position it need to be solved
 			mod.value = Modifier
-				.size(200.dp)
+				.aspectRatio(1f)
 				.clip(RoundedCornerShape(8.dp))
 				.align(Alignment.Center)
-			scale = ContentScale.FillBounds
 		}
 		else
 		{
@@ -511,6 +529,7 @@ fun ShowAsynchImage(
 				navController.navigate(Screen.Details.route)
 			},
 			modifier = mod.value
+				.align(Alignment.TopStart)
 				.zoomable(
 					zoomState = zoom,
 					enableOneFingerZoom = false,
