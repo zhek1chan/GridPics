@@ -82,6 +82,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
+import androidx.navigation.navOptions
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.error
@@ -117,19 +118,22 @@ fun DetailsScreen(
 	postWasSharedState: () -> Unit,
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	setInitialPage: (Int) -> Unit,
-	animationIsRunning: MutableState<Boolean>,
+	animationHasBeenStarted: MutableState<Boolean>,
+	postPivot:() -> Unit
 )
 {
 	val color = MaterialTheme.colorScheme.background
 	val backgroundColor = remember { mutableStateOf(color) }
+	val isError = remember { mutableStateOf(false) }
+	val animationIsRunningLocal = remember(false) { mutableStateOf(true) }
 	val thisIsEnterAnimation = remember { mutableStateOf(true) }
-	LaunchedEffect(Unit) {
+	LaunchedEffect(false) {
 		delay(400)
-		animationIsRunning.value = false
+		animationIsRunningLocal.value = false
 		thisIsEnterAnimation.value = false
 	}
-	LaunchedEffect(animationIsRunning.value) {
-		if(animationIsRunning.value)
+	LaunchedEffect(animationIsRunningLocal.value) {
+		if(animationIsRunningLocal.value)
 		{
 			backgroundColor.value = color.copy(0.0001f)
 		}
@@ -154,9 +158,9 @@ fun DetailsScreen(
 		initialPage = 0
 		size = 1
 	}
-	val mod = remember(animationIsRunning.value) { mutableStateOf(Modifier.fillMaxSize()) }
+	val mod = remember(animationIsRunningLocal.value) { mutableStateOf(Modifier.fillMaxSize()) }
 	Box(modifier = mod.value) {
-		if(animationIsRunning.value && !thisIsEnterAnimation.value)
+		if(animationIsRunningLocal.value && !thisIsEnterAnimation.value)
 		{
 			mod.value = Modifier
 				.width(200.dp)
@@ -175,14 +179,22 @@ fun DetailsScreen(
 		val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 		val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
 		BackHandler {
-			navigateToHome(
-				changeBarsVisability = changeBarsVisability,
-				postUrl = postUrl,
-				navController = navController,
-				setImageSharedStateToFalse = setImageSharedState,
-				animationIsRunning = animationIsRunning,
-				wasDeleted = false
-			)
+			if(!animationIsRunningLocal.value)
+			{
+				Log.d("activated", "activated")
+				navigateToHome(
+					changeBarsVisability = changeBarsVisability,
+					postUrl = postUrl,
+					navController = navController,
+					setImageSharedStateToFalse = setImageSharedState,
+					animationIsRunning = animationIsRunningLocal,
+					wasDeleted = false,
+					animationHasBeenStarted = animationHasBeenStarted,
+					isError = isError,
+					postPivot = postPivot,
+					state = state
+				)
+			}
 		}
 		LaunchedEffect(currentPage) {
 			val pic = if(list.size >= currentPage)
@@ -221,7 +233,10 @@ fun DetailsScreen(
 					setImageSharedStateToFalse = setImageSharedState,
 					share = share,
 					postWasSharedState = postWasSharedState,
-					animationIsRunning = animationIsRunning
+					animationIsRunning = animationIsRunningLocal,
+					animationHasBeenStarted = animationHasBeenStarted,
+					isError = isError,
+					postPivot = postPivot
 				)
 			},
 			content = { padding ->
@@ -242,9 +257,12 @@ fun DetailsScreen(
 					pagerState = pagerState,
 					list = list.toMutableList(),
 					deleteCurrentPicture = deleteCurrentPicture,
-					animationIsRunning = animationIsRunning,
+					animationIsRunning = animationIsRunningLocal,
 					setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
-					thisIsEnterAnimation = thisIsEnterAnimation
+					thisIsEnterAnimation = thisIsEnterAnimation,
+					animationHasBeenStarted = animationHasBeenStarted,
+					isError = isError,
+					postPivot = postPivot
 				)
 			}
 		)
@@ -273,6 +291,9 @@ fun ShowDetails(
 	animationIsRunning: MutableState<Boolean>,
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	thisIsEnterAnimation: MutableState<Boolean>,
+	animationHasBeenStarted: MutableState<Boolean>,
+	isError: MutableState<Boolean>,
+	postPivot:() -> Unit
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -284,7 +305,7 @@ fun ShowDetails(
 		state = pagerState,
 		pageSize = PageSize.Fill,
 		contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
-		userScrollEnabled = !isSharedImage,
+		userScrollEnabled = !isSharedImage && !animationIsRunning.value,
 		pageSpacing = 10.dp
 	) { page ->
 		val url = list[page]
@@ -295,6 +316,7 @@ fun ShowDetails(
 			.background(Color.Transparent)) {
 			if(errorMessage != null)
 			{
+				isError.value = true
 				ShowError(
 					context = context,
 					currentUrl = url,
@@ -303,6 +325,7 @@ fun ShowDetails(
 			}
 			else
 			{
+				isError.value = false
 				ShowAsynchImage(
 					img = url,
 					addError = addError,
@@ -315,7 +338,10 @@ fun ShowDetails(
 					isScreenInPortraitState = isScreenInPortraitState,
 					setImageSharedStateToFalse = setImageSharedState,
 					animationIsRunning = animationIsRunning,
-					thisIsEnterAnimation = thisIsEnterAnimation
+					thisIsEnterAnimation = thisIsEnterAnimation,
+					animationHasBeenStarted = animationHasBeenStarted,
+					isError = isError,
+					postPivot = postPivot
 				)
 			}
 			if(isSharedImage)
@@ -342,7 +368,11 @@ fun ShowDetails(
 									navController = navController,
 									setImageSharedStateToFalse = setImageSharedState,
 									animationIsRunning = animationIsRunning,
-									wasDeleted = false
+									wasDeleted = false,
+									animationHasBeenStarted = animationHasBeenStarted,
+									isError = isError,
+									postPivot = postPivot,
+									state = state
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -366,7 +396,11 @@ fun ShowDetails(
 											navController = navController,
 											setImageSharedStateToFalse = setImageSharedState,
 											animationIsRunning = animationIsRunning,
-											wasDeleted = false
+											wasDeleted = false,
+											animationHasBeenStarted = animationHasBeenStarted,
+											isError = isError,
+											postPivot = postPivot,
+											state = state
 										)
 									}
 									setImageSharedState(false)
@@ -420,7 +454,11 @@ fun ShowDetails(
 								navController = navController,
 								setImageSharedStateToFalse = setImageSharedState,
 								animationIsRunning = animationIsRunning,
-								wasDeleted = true
+								wasDeleted = true,
+								animationHasBeenStarted = animationHasBeenStarted,
+								isError = isError,
+								postPivot = postPivot,
+								state = state
 							)
 							deleteCurrentPicture(url)
 						},
@@ -452,6 +490,9 @@ fun ShowAsynchImage(
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	thisIsEnterAnimation: MutableState<Boolean>,
+	animationHasBeenStarted: MutableState<Boolean>,
+	isError: MutableState<Boolean>,
+	postPivot:() -> Unit
 )
 {
 	Box(Modifier.fillMaxSize()) {
@@ -490,6 +531,10 @@ fun ShowAsynchImage(
 				.aspectRatio(1f)
 				.clip(RoundedCornerShape(8.dp))
 				.align(Alignment.Center)
+		}
+		else if(animationIsRunning.value && thisIsEnterAnimation.value)
+		{
+			mod.value = Modifier.fillMaxSize()
 		}
 		else
 		{
@@ -532,7 +577,11 @@ fun ShowAsynchImage(
 										navController = navController,
 										setImageSharedStateToFalse = setImageSharedStateToFalse,
 										animationIsRunning = animationIsRunning,
-										wasDeleted = false
+										wasDeleted = false,
+										animationHasBeenStarted = animationHasBeenStarted,
+										isError = isError,
+										postPivot = postPivot,
+										state = state
 									)
 								}
 							}
@@ -588,6 +637,7 @@ fun ShowError(
 	{
 		linkIsNotValid
 	}
+	val scope = rememberCoroutineScope()
 	Column(
 		modifier = Modifier.fillMaxSize(),
 		verticalArrangement = Arrangement.Center,
@@ -610,7 +660,10 @@ fun ShowError(
 				onClick =
 				{
 					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
-					removeSpecialError(currentUrl)
+					scope.launch {
+						delay(500)
+						removeSpecialError(currentUrl)
+					}
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
 			{
@@ -633,6 +686,9 @@ fun AppBar(
 	share: (String) -> Unit,
 	postWasSharedState: () -> Unit,
 	animationIsRunning: MutableState<Boolean>,
+	animationHasBeenStarted: MutableState<Boolean>,
+	isError: MutableState<Boolean>,
+	postPivot:() -> Unit
 )
 {
 	if(state.value.wasSharedFromNotification)
@@ -742,7 +798,11 @@ fun AppBar(
 			navController = nc,
 			setImageSharedStateToFalse = setImageSharedStateToFalse,
 			animationIsRunning = animationIsRunning,
-			wasDeleted = false
+			wasDeleted = false,
+			animationHasBeenStarted = animationHasBeenStarted,
+			isError = isError,
+			postPivot = postPivot,
+			state = state
 		)
 	}
 }
@@ -755,17 +815,32 @@ fun navigateToHome(
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	wasDeleted: Boolean,
+	animationHasBeenStarted: MutableState<Boolean>,
+	isError: MutableState<Boolean>,
+	postPivot:() -> Unit,
+	state: MutableState<DetailsScreenUiState>
 )
 {
 	animationIsRunning.value = true
+	animationHasBeenStarted.value = false
 	changeBarsVisability(true)
-	setImageSharedStateToFalse(false)
-	if(wasDeleted)
+	if(wasDeleted || isError.value || state.value.isSharedImage)
 	{
-		navController.navigate(Screen.Home.route)
+		postPivot()
+		setImageSharedStateToFalse(false)
+		navController.navigate(Screen.Home.route,
+			navOptions = navOptions {
+				anim {
+					enter = 0
+					exit = 0
+					popEnter = 0
+					popExit = 0
+				}
+			})
 	}
 	else
 	{
+		setImageSharedStateToFalse(false)
 		navController.navigateUp()
 	}
 	postUrl(null, null)

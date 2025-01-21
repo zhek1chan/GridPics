@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -220,12 +219,12 @@ fun ItemsCard(
 			}
 		}
 	}
-	Box(modifier = Modifier.aspectRatio(1f)) {
+	Box(modifier = Modifier.aspectRatio(1f).padding(10.dp)) {
 		SubcomposeAsyncImage(
 			model = (imgRequest),
 			contentDescription = item,
 			modifier = modifier.value
-				.clickable(animationIsRunning.value) {
+				.clickable(!animationIsRunning.value) {
 					if(isError)
 					{
 						openAlertDialog.value = true
@@ -238,8 +237,7 @@ fun ItemsCard(
 						openAlertDialog.value = false
 					}
 				}
-				.padding(10.dp)
-				.size(100.dp)
+				.fillMaxSize()
 				.clip(RoundedCornerShape(8.dp)),
 			contentScale = ContentScale.FillBounds,
 			loading = {

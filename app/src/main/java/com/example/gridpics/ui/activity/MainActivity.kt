@@ -26,6 +26,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -64,6 +65,8 @@ class MainActivity: AppCompatActivity()
 	private var job: Job? = null
 	private var pairOfCof = Pair(4f, 12f)
 	private var mutableIsThemeBlackState = mutableStateOf(false)
+	private var cofConnectedWithOrientation = mutableFloatStateOf(0f)
+	private var animationIsRunning = mutableStateOf(false)
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -171,7 +174,19 @@ class MainActivity: AppCompatActivity()
 		Log.d("test 333", "new pivots $pivots")
 		val pairOfCof = pairOfCof
 		val pValue = pivots.value
-		val animationIsRunning = remember { mutableStateOf(true) }
+		val enterTrans = if(pivots.value != Pair(12345f, 12345f))
+		{
+			scaleIn(
+				animationSpec = tween(400),
+				initialScale = 0.75f,
+				transformOrigin = TransformOrigin(pValue.first, pValue.second)
+			)
+		}
+		else
+		{
+			EnterTransition.None
+		}
+
 		Log.d("exit test", "$pairOfCof")
 		NavHost(
 			navController = navController,
@@ -179,14 +194,14 @@ class MainActivity: AppCompatActivity()
 			popEnterTransition = {
 				scaleIn(
 					animationSpec = tween(500),
-					initialScale = 0.75f,
+					initialScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			},
 			popExitTransition = {
 				scaleOut(
 					animationSpec = tween(500),
-					targetScale = 0.75f,
+					targetScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			},
@@ -211,14 +226,11 @@ class MainActivity: AppCompatActivity()
 		{
 			composable(BottomNavItem.Home.route,
 				enterTransition = {
-					scaleIn(
-						animationSpec = tween(400),
-						initialScale = 0.75f,
-						transformOrigin = TransformOrigin(pValue.first, pValue.second)
-					)
+					enterTrans
 				},
 				popEnterTransition = { EnterTransition.None }
 			) {
+				detVM.postNewPic(null, null)
 				PicturesScreen(
 					navController = navController,
 					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
@@ -281,6 +293,7 @@ class MainActivity: AppCompatActivity()
 					postNewBitmap = { url, strLoadingFromResources -> detVM.postImageBitmap(url, strLoadingFromResources) },
 					addPicture = { url ->
 						picVM.addPictureToUrls(url)
+						picVM.clickOnPicture(0, 0)
 						saveToSharedPrefs(picVM.returnStringOfList())
 					},
 					setImageSharedState = { isShared -> detVM.isSharedImage(isShared) },
@@ -298,7 +311,8 @@ class MainActivity: AppCompatActivity()
 					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
 					setInitialPage = { page -> picVM.postInitialPage(page) },
-					animationIsRunning = animationIsRunning
+					animationHasBeenStarted = animationIsRunning,
+					postPivot = { pivots.value = Pair(12345f, 12345f) }
 				)
 			}
 		}
@@ -633,10 +647,15 @@ class MainActivity: AppCompatActivity()
 		val displayMetrics = this.resources.displayMetrics
 		val width = displayMetrics.widthPixels
 		val height = displayMetrics.heightPixels
-		pairOfCof = if (width > height) {
-			Pair(12f, 4f)
-		} else {
-			Pair(4f, 12f)
+		pairOfCof = if(width > height)
+		{
+			cofConnectedWithOrientation.floatValue = 0.62f
+			Pair(10.52f, 2.84f)
+		}
+		else
+		{
+			cofConnectedWithOrientation.floatValue = 0.72f
+			Pair(3.84f, 11.52f)
 		}
 		val density = displayMetrics.density
 		return (width / density).toInt() / LENGTH_OF_PICTURE

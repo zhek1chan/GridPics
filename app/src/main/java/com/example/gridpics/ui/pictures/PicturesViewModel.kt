@@ -127,7 +127,16 @@ class PicturesViewModel(
 	fun clickOnPicture(index: Int, offset: Int)
 	{
 		val state = picturesUiState
-		state.value = state.value.copy(index = index, offset = offset)
+		val nIndex = if(index >= 0)
+		{
+			index
+		}
+		else
+		{
+			0
+		}
+		Log.d("checkIndex", "$nIndex")
+		state.value = state.value.copy(index = nIndex, offset = offset)
 	}
 
 	fun changeOrientation(isPortrait: Boolean)
@@ -250,14 +259,17 @@ class PicturesViewModel(
 		val screenWidth = screenWidth
 		val screenHeight = screenHeight
 		val gridQuantity = gridQuantity
-		val x = if((screenWidth > screenHeight) && (column == 1))
+		val x = if((screenWidth > screenHeight) && (column == 0))
 		{
-			Log.d("calc", "fsbfusbfsmfsmlf;sfs")
+			0f
+		}
+		else if((screenWidth > screenHeight) && (column == 1))
+		{
 			1f
 		}
 		else if(screenWidth > screenHeight)
 		{
-			2.5f * (column - 1) + 1.0f
+			1.5f * (column - 1) + 1.0f
 		}
 		else if(column == 1)
 		{
@@ -265,11 +277,15 @@ class PicturesViewModel(
 		}
 		else if(column == 2)
 		{
-			2.5f
+			2.4f
+		}
+		else if(column == 3)
+		{
+			4.8f
 		}
 		else
 		{
-			column * 1.8f
+			column * 1.7f
 		}
 		val numOfVisibleLines = (sizeOfGridInPixels / densityOfScreen / 110).toInt()
 		var k = 0
@@ -304,29 +320,47 @@ class PicturesViewModel(
 		val firstVisibleIndex = value.index
 		if(useReCalc)
 		{
-			picturesUiState.value = value.copy(index = firstVisibleIndex, offset = 0)
+			clickOnPicture(firstVisibleIndex, 0)
 		}
 		val indexOfClickedPic = value.picturesUrl.indexOf(urlForCalculation)
 		if(nLine == 0 || line * gridQuantity >= value.picturesUrl.size)
 		{
-			nLine = line - numOfVisibleLines * (maxK - 1)
+			nLine = line - (numOfVisibleLines - 1) * (maxK - 1)
+			if(value.picturesUrl.size - indexOfClickedPic <= 3)
+			{
+				Log.d("calccalc", "clicked on last")
+				clickOnPicture(value.picturesUrl.size - 1, 0)
+			}
 		}
+		Log.d("CalcCalcСalc", "firstVisibleIndex = $firstVisibleIndex , maxK = $maxK")
 		if((firstVisibleIndex < indexOfClickedPic) && (indexOfClickedPic - firstVisibleIndex > 2) && useReCalc && maxK != 0)
 		{
+			Log.d("qazwsx", "line in range ${line in value.picturesUrl.size / gridQuantity - numOfVisibleLines - 1 .. value.picturesUrl.size / gridQuantity}")
 			val nY = ((indexOfClickedPic - firstVisibleIndex) / gridQuantity)
 			nLine -= 1
 			nLine = if(nY == 1)
 			{
+				Log.d("qazwsx", "nLine = 1")
 				1
 			}
-			else if(nY < nLine && (nY + 1) != nLine && nLine - nY > 2)
-			{
-				nLine - nY - 1
-			}
-			else
+			else if(nY < nLine && (nY + 1) != nLine && nLine - nY > 2 && line !in value.picturesUrl.size / gridQuantity - numOfVisibleLines - 1 .. value.picturesUrl.size / gridQuantity)
 			{
 				nY
 			}
+			else if((nY < nLine && (nY + 1) != nLine && nLine - nY > 2 && line in value.picturesUrl.size / gridQuantity - numOfVisibleLines - 1 .. value.picturesUrl.size / gridQuantity))
+			{
+				Log.d("qazwsx", "sidim s bobrim za stolom")
+				nLine - 5
+			}
+			else
+			{
+				Log.d("qazwsx", "nLine = nY")
+				nY
+			}
+		}
+		else if(useReCalc && maxK != 0)
+		{
+			nLine = 0
 		}
 		else if(firstVisibleIndex != 0 && maxK == 0 && useReCalc)
 		{
@@ -340,47 +374,66 @@ class PicturesViewModel(
 				nLine = ceil(((indexOfClickedPic - firstVisibleIndex) / gridQuantity).toDouble()).toInt()
 			}
 		}
-		else if(maxK != 0 && !useReCalc)
+		else if(maxK != 0)
 		{
+			Log.d("CalcCalcСalc", "Srabotalo nLine = 0 v1")
 			nLine = 0
-		}
-		else if(maxK == 0 && !useReCalc && indexOfClickedPic - firstVisibleIndex <= 2)
-		{
-			nLine = 0
-			picturesUiState.value = value.copy(index = indexOfClickedPic, offset = 0)
-		}
-		else if(maxK == 0 && !useReCalc && indexOfClickedPic - firstVisibleIndex > 2)
-		{
-			nLine = 0
+			clickOnPicture(indexOfClickedPic, 0)
 		}
 		else if(!useReCalc && indexOfClickedPic - firstVisibleIndex <= 2)
 		{
+			Log.d("CalcCalcСalc", "Srabotalo nLine = 0 v2")
 			nLine = 0
+			clickOnPicture(indexOfClickedPic, 0)
 		}
 		else if(!useReCalc && indexOfClickedPic - firstVisibleIndex > 2)
 		{
+			Log.d("CalcCalcСalc", "Srabotalo nLine = 0 v3")
+			nLine = 0
+			clickOnPicture(indexOfClickedPic, 0)
+		}
+		else if(!useReCalc && indexOfClickedPic - firstVisibleIndex > 2)
+		{
+			Log.d("CalcCalcСalc", "Srabotalo nLine = 1")
 			nLine = 1
+			clickOnPicture(indexOfClickedPic, 0)
 		}
 		else if(useReCalc)
 		{
+			Log.d("CalcCalcСalc", "nLine - 1")
 			nLine -= 1
 		}
-		val y = if(nLine == 0)
+		Log.d("CalcCalc", "numOfVisibleLines = $numOfVisibleLines")
+		if(nLine == numOfVisibleLines - 1)
+		{
+			clickOnPicture(firstVisibleIndex + 3, 0)
+			nLine -= 1
+		}
+		val y = if(screenWidth > screenHeight && nLine <= 0)
 		{
 			0.4f
 		}
 		else if(screenWidth > screenHeight)
 		{
-			nLine * 1.5f
+			(nLine) * 1.4f
 		}
-		else if(nLine == 1)
+		else if(nLine == 0 && screenWidth < screenHeight)
 		{
-			2.2f
+			0.4f
+		}
+		else if(nLine == 1 && screenWidth < screenHeight)
+		{
+			2.1f
+		}
+		else if(nLine == 2 && screenWidth < screenHeight)
+		{
+			3.7f
 		}
 		else
 		{
 			(nLine + 1) * 1.4f
 		}
+		Log.d("CalcCalcСalc", "calculated line = $nLine")
 		postPivotsXandY(Pair(x, y))
 	}
 
@@ -392,6 +445,7 @@ class PicturesViewModel(
 		val numOfVisibleLines = (sizeOfGridInPixels / densityOfScreen / 110).toInt()
 		var numOfLastLines = pics.size / gridQuantity - numOfVisibleLines
 		val index = pics.indexOf(url)
+		urlForCalculation = url
 		if(pics.size % gridQuantity != 0)
 		{
 			numOfLastLines += 1
@@ -399,7 +453,8 @@ class PicturesViewModel(
 		if(initialPage != index)
 		{
 			val line = ceil(((pics.indexOf(url)) / gridQuantity).toDouble())
-			if((line+numOfVisibleLines-1) * gridQuantity >= pics.size)
+			Log.d("CalcCalc", "line = $line, size = ${pics.size}")
+			if((line + numOfVisibleLines - 1) * gridQuantity >= pics.size)
 			{
 				Log.d("CalcCalc", "line = $line, size = ${pics.size}")
 				var k: Int
@@ -416,11 +471,20 @@ class PicturesViewModel(
 						break
 					}
 				}
-				val endOfLines = line.toInt() - numOfVisibleLines * (maxK - 1)
-				calculatePixelPosition(endOfLines+1, index % gridQuantity + 1, true)
+				val endOfLines = if(line.toInt() - numOfVisibleLines * (maxK - 1) > numOfVisibleLines)
+				{
+					line.toInt() - numOfVisibleLines * (maxK)
+				}
+				else
+				{
+					line.toInt() - numOfVisibleLines * (maxK - 1)
+				}
+				Log.d("CalcCalc", "line1 = ${endOfLines + 1}, size = ${pics.size}")
+				calculatePixelPosition(endOfLines + 1, index % gridQuantity + 1, true)
 			}
 			else if((index + 1) / gridQuantity >= numOfVisibleLines)
 			{
+				Log.d("CalcCalc", "v2 line = $line, size = ${pics.size}")
 				val cof = ((index + 1) / gridQuantity / numOfVisibleLines)
 				val currRealLine = if(cof <= 1)
 				{
@@ -435,6 +499,7 @@ class PicturesViewModel(
 			}
 			else if(index > gridQuantity)
 			{
+				Log.d("CalcCalc", "v3 line = $line, size = ${pics.size}")
 				Log.d("Calc check", "another type 1")
 				var column = 0
 				for(i in 0 ..< gridQuantity)
@@ -446,12 +511,12 @@ class PicturesViewModel(
 					}
 				}
 				calculatePixelPosition(0, column, false)
-				picturesUiState.value = value.copy(index = pics.indexOf(url), offset = 0)
+				clickOnPicture(index = pics.indexOf(url), offset = 0)
 			}
 			else
 			{
 				calculatePixelPosition(0, index + 1, false)
-				picturesUiState.value = value.copy(index = pics.indexOf(url), offset = 0)
+				clickOnPicture(index = pics.indexOf(url), offset = 0)
 			}
 		}
 	}
