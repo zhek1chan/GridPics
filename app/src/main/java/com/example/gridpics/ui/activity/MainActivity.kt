@@ -171,6 +171,7 @@ class MainActivity: AppCompatActivity()
 		Log.d("test 333", "new pivots $pivots")
 		val pairOfCof = pairOfCof
 		val pValue = pivots.value
+		val animationIsRunning = remember { mutableStateOf(true) }
 		Log.d("exit test", "$pairOfCof")
 		NavHost(
 			navController = navController,
@@ -242,7 +243,8 @@ class MainActivity: AppCompatActivity()
 						saveToSharedPrefs(picVM.convertFromListToString(urls))
 					},
 					calculateGridSpan = { calculateGridSpan() },
-					postGridSize = { sizeInPx -> picVM.postGridSize(sizeInPx) }
+					postGridSize = { sizeInPx -> picVM.postGridSize(sizeInPx) },
+					animationIsRunning = animationIsRunning
 				)
 			}
 			composable(
@@ -295,7 +297,8 @@ class MainActivity: AppCompatActivity()
 					},
 					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
-					setInitialPage = { page -> picVM.postInitialPage(page) }
+					setInitialPage = { page -> picVM.postInitialPage(page) },
+					animationIsRunning = animationIsRunning
 				)
 			}
 		}

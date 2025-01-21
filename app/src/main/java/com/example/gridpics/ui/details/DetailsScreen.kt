@@ -117,14 +117,14 @@ fun DetailsScreen(
 	postWasSharedState: () -> Unit,
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	setInitialPage: (Int) -> Unit,
+	animationIsRunning: MutableState<Boolean>,
 )
 {
 	val color = MaterialTheme.colorScheme.background
 	val backgroundColor = remember { mutableStateOf(color) }
-	val animationIsRunning = remember { mutableStateOf(true) }
 	val thisIsEnterAnimation = remember { mutableStateOf(true) }
 	LaunchedEffect(Unit) {
-		delay(350)
+		delay(400)
 		animationIsRunning.value = false
 		thisIsEnterAnimation.value = false
 	}
@@ -493,29 +493,8 @@ fun ShowAsynchImage(
 		}
 		else
 		{
-			mod.value = Modifier.fillMaxSize()
-		}
-		val scope = rememberCoroutineScope()
-		SubcomposeAsyncImage(
-			model = imgRequest,
-			contentDescription = null,
-			contentScale = scale,
-			onSuccess = {
-				val resultImage = it.result.image
-				imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
-				removeSpecialError(img)
-			},
-			loading = {
-				Box(Modifier.fillMaxSize()) {
-					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-				}
-			},
-			onError = {
-				addError(img, it.result.throwable.message.toString())
-				navController.navigate(Screen.Details.route)
-			},
-			modifier = mod.value
-				.align(Alignment.TopStart)
+			mod.value = Modifier
+				.fillMaxSize()
 				.zoomable(
 					zoomState = zoom,
 					enableOneFingerZoom = false,
@@ -562,6 +541,28 @@ fun ShowAsynchImage(
 						}
 					}
 				}
+		}
+		val scope = rememberCoroutineScope()
+		SubcomposeAsyncImage(
+			model = imgRequest,
+			contentDescription = null,
+			contentScale = scale,
+			onSuccess = {
+				val resultImage = it.result.image
+				imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
+				removeSpecialError(img)
+			},
+			loading = {
+				Box(Modifier.fillMaxSize()) {
+					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+				}
+			},
+			onError = {
+				addError(img, it.result.throwable.message.toString())
+				navController.navigate(Screen.Details.route)
+			},
+			modifier = mod.value
+				.align(Alignment.TopStart)
 		)
 
 		scope.launch {

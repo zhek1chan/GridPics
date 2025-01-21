@@ -92,6 +92,7 @@ fun PicturesScreen(
 	saveToSharedPrefs: (List<String>) -> Unit,
 	calculateGridSpan: () -> Int,
 	postGridSize: (Int) -> Unit,
+	animationIsRunning: MutableState<Boolean>
 )
 {
 	LaunchedEffect(Unit) {
@@ -156,7 +157,8 @@ fun PicturesScreen(
 					offset = offset,
 					index = index,
 					calculateGridSpan = calculatedGridSpan,
-					postGridSize = postGridSize
+					postGridSize = postGridSize,
+					animationIsRunning = animationIsRunning
 				)
 			}
 		}
@@ -174,6 +176,7 @@ fun ItemsCard(
 	addError: (String, String) -> Unit,
 	width: MutableIntState,
 	height: MutableIntState,
+	animationIsRunning: MutableState<Boolean>
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -222,7 +225,7 @@ fun ItemsCard(
 			model = (imgRequest),
 			contentDescription = item,
 			modifier = modifier.value
-				.clickable {
+				.clickable(animationIsRunning.value) {
 					if(isError)
 					{
 						openAlertDialog.value = true
@@ -231,6 +234,7 @@ fun ItemsCard(
 					{
 						Log.d("current", item)
 						currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
+						animationIsRunning.value = true
 						openAlertDialog.value = false
 					}
 				}
@@ -299,6 +303,7 @@ fun ShowList(
 	index: Int,
 	calculateGridSpan: Int,
 	postGridSize: (Int) -> Unit,
+	animationIsRunning: MutableState<Boolean>
 )
 {
 	val widthInPx = remember(Unit) { mutableIntStateOf(0) }
@@ -333,7 +338,8 @@ fun ShowList(
 							lazyState = listState,
 							addError = addError,
 							width = widthInPx,
-							height = heightInPx
+							height = heightInPx,
+							animationIsRunning = animationIsRunning
 						)
 					}
 				}
@@ -378,7 +384,8 @@ fun ShowList(
 					lazyState = listState,
 					addError = addError,
 					width = widthInPx,
-					height = heightInPx
+					height = heightInPx,
+					animationIsRunning = animationIsRunning
 				)
 			}
 		}

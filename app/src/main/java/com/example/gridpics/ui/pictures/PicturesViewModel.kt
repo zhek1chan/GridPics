@@ -307,33 +307,26 @@ class PicturesViewModel(
 			picturesUiState.value = value.copy(index = firstVisibleIndex, offset = 0)
 		}
 		val indexOfClickedPic = value.picturesUrl.indexOf(urlForCalculation)
-		Log.d("Calc check", "seichas nLine = $nLine")
 		if(nLine == 0 || line * gridQuantity >= value.picturesUrl.size)
 		{
 			nLine = line - numOfVisibleLines * (maxK - 1)
 		}
 		if((firstVisibleIndex < indexOfClickedPic) && (indexOfClickedPic - firstVisibleIndex > 2) && useReCalc && maxK != 0)
 		{
-			Log.d("Calc check", "indexOfClickedPic - firstVisibleIndex / gridQuantity")
-			Log.d("Calc2 check", "($indexOfClickedPic - $firstVisibleIndex )/ $gridQuantity")
 			val nY = ((indexOfClickedPic - firstVisibleIndex) / gridQuantity)
 			nLine -= 1
-			if(nY == 1)
+			nLine = if(nY == 1)
 			{
-				Log.d("Calc2", "$nLine = 1")
-				nLine = 1
+				1
 			}
 			else if(nY < nLine && (nY + 1) != nLine && nLine - nY > 2)
 			{
-				Log.d("Calc2", "$nLine - $nY + 1")
-				nLine = nLine - nY - 1
+				nLine - nY - 1
 			}
 			else
 			{
-				Log.d("Calc2", "$nLine")
-				nLine = nY
+				nY
 			}
-			Log.d("Calc check", "nLine recalculated")
 		}
 		else if(firstVisibleIndex != 0 && maxK == 0 && useReCalc)
 		{
@@ -343,41 +336,33 @@ class PicturesViewModel(
 			}
 			else if(indexOfClickedPic - firstVisibleIndex > 2)
 			{
-				Log.d("Calc check", "ceilka ($indexOfClickedPic - $firstVisibleIndex) / 3")
 				ceil(((indexOfClickedPic - firstVisibleIndex) / gridQuantity).toDouble()).toInt()
 				nLine = ceil(((indexOfClickedPic - firstVisibleIndex) / gridQuantity).toDouble()).toInt()
 			}
-			Log.d("Calc check", "sisim s bobrom za stolom")
 		}
 		else if(maxK != 0 && !useReCalc)
 		{
-			Log.d("Calc check", "nLine = 0")
 			nLine = 0
 		}
 		else if(maxK == 0 && !useReCalc && indexOfClickedPic - firstVisibleIndex <= 2)
 		{
-			Log.d("Calc check slide", "nLine = 0!!!")
 			nLine = 0
 			picturesUiState.value = value.copy(index = indexOfClickedPic, offset = 0)
 		}
 		else if(maxK == 0 && !useReCalc && indexOfClickedPic - firstVisibleIndex > 2)
 		{
-			Log.d("Calc check slide", "nLine = 0!!!")
 			nLine = 0
 		}
 		else if(!useReCalc && indexOfClickedPic - firstVisibleIndex <= 2)
 		{
-			Log.d("Calc check slide", "nLine = 0")
 			nLine = 0
 		}
 		else if(!useReCalc && indexOfClickedPic - firstVisibleIndex > 2)
 		{
-			Log.d("Calc check slide", "nLine = 1")
 			nLine = 1
 		}
 		else if(useReCalc)
 		{
-			Log.d("Calc check", "nLine -= 1")
 			nLine -= 1
 		}
 		val y = if(nLine == 0)
@@ -386,8 +371,7 @@ class PicturesViewModel(
 		}
 		else if(screenWidth > screenHeight)
 		{
-			Log.d("Calc check", "screenWidth > screenHeight")
-			(nLine) * 1.5f
+			nLine * 1.5f
 		}
 		else if(nLine == 1)
 		{
@@ -397,8 +381,6 @@ class PicturesViewModel(
 		{
 			(nLine + 1) * 1.4f
 		}
-		Log.d("Calc2 check", "we have got line = $nLine")
-		Log.d("calc check", "x = $x, y = $y")
 		postPivotsXandY(Pair(x, y))
 	}
 
@@ -436,7 +418,6 @@ class PicturesViewModel(
 				}
 				val endOfLines = line.toInt() - numOfVisibleLines * (maxK - 1)
 				calculatePixelPosition(endOfLines+1, index % gridQuantity + 1, true)
-				Log.d("CalcCalc", "endOfLines = $endOfLines, size = ${pics.size}")
 			}
 			else if((index + 1) / gridQuantity >= numOfVisibleLines)
 			{
@@ -450,7 +431,6 @@ class PicturesViewModel(
 					(index + 1) / gridQuantity - numOfVisibleLines * cof
 				}
 				clickOnPicture(pics.indexOf(url) + 1, 0)
-				Log.d("CalcCalc", "line = $currRealLine")
 				calculatePixelPosition(currRealLine, index % gridQuantity + 1, false)
 			}
 			else if(index > gridQuantity)
@@ -470,7 +450,6 @@ class PicturesViewModel(
 			}
 			else
 			{
-				Log.d("Calc check", "another type 2")
 				calculatePixelPosition(0, index + 1, false)
 				picturesUiState.value = value.copy(index = pics.indexOf(url), offset = 0)
 			}
