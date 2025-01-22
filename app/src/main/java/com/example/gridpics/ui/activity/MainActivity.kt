@@ -226,10 +226,10 @@ class MainActivity: AppCompatActivity()
 			scaleOut(
 				animationSpec = tween(5500),
 				targetScale = cofConnectedWithOrientation.floatValue,
-				transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
+				transformOrigin = TransformOrigin(pValue.first, pValue.second / pairOfCof.second)
 			)
 		}
-
+		Log.d("che za bred", "${pValue.first * 0.47f}, ${pValue.second / 2.4f}")
 		Log.d("exit test", "$pairOfCof")
 		NavHost(
 			navController = navController,
@@ -245,7 +245,7 @@ class MainActivity: AppCompatActivity()
 				scaleOut(
 					animationSpec = tween(5500),
 					targetScale = cofConnectedWithOrientation.floatValue,
-					transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
+					transformOrigin = TransformOrigin(pValue.first /pairOfCof.first, pValue.second / 2.4f)
 				)
 			},
 			enterTransition = {
@@ -707,13 +707,13 @@ class MainActivity: AppCompatActivity()
 		pairOfCof = if(width > height)
 		{
 			cofConnectedWithOrientation.floatValue = 0.6f
-			cofConnectedWithOrientationForExit.floatValue = 0.1f
-			Pair(10f, 1f)
+			cofConnectedWithOrientationForExit.floatValue = 0.35f
+			Pair(10.52f, 2.84f)
 		}
 		else
 		{
 			cofConnectedWithOrientation.floatValue = 0.33f
-			cofConnectedWithOrientationForExit.floatValue = 0.3f
+			cofConnectedWithOrientationForExit.floatValue = 0.31f
 			Pair(3.84f, 6.5f)
 		}
 		val density = displayMetrics.density

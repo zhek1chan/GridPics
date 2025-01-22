@@ -260,17 +260,11 @@ class PicturesViewModel(
 		val screenWidth = screenWidth
 		val screenHeight = screenHeight
 		val gridQuantity = gridQuantity
-		val x = if((screenWidth > screenHeight) && (column == 0))
+		val x = if (screenWidth > screenHeight && column == 1)
 		{
-			0.3f
-		}
-		else if((screenWidth > screenHeight) && (column == 1))
-		{
-			1.3f
-		}
-		else if(screenWidth > screenHeight)
-		{
-			3.5f * (column - 1) + 1.3f
+			-1.3f
+		} else if (screenWidth > screenHeight) {
+			2.3f * (column - 1) - 1.9f
 		}
 		else if(column == 1)
 		{
@@ -415,11 +409,11 @@ class PicturesViewModel(
 		}
 		val y = if(screenWidth > screenHeight && nLine <= 0)
 		{
-			0.8f
+			0.77f
 		}
 		else if(screenWidth > screenHeight)
 		{
-			(nLine) * 3.4f
+			(nLine) * 2.09f
 		}
 		else if(nLine == 0 && screenWidth < screenHeight)
 		{

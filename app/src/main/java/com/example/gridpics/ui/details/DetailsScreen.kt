@@ -127,7 +127,6 @@ fun DetailsScreen(
 {
 	val color = MaterialTheme.colorScheme.background
 	val backgroundColor = remember { mutableStateOf(color) }
-	val isError = remember { mutableStateOf(false) }
 	val animationIsRunningLocal = remember(false) { mutableStateOf(true) }
 	val thisIsEnterAnimation = remember { mutableStateOf(true) }
 	LaunchedEffect(false) {
@@ -212,7 +211,6 @@ fun DetailsScreen(
 					animationIsRunning = animationIsRunningLocal,
 					wasDeleted = false,
 					animationHasBeenStarted = animationHasBeenStarted,
-					isError = isError,
 					postPivot = postPivot,
 					state = state,
 					checkOnErrorExists = getErrorMessageFromErrorsList
@@ -230,7 +228,6 @@ fun DetailsScreen(
 			}
 			if(pic.isNotEmpty())
 			{
-				isError.value = getErrorMessageFromErrorsList(currentPicture) == null
 				setCurrentPictureUrl(pic)
 				if(getErrorMessageFromErrorsList(pic) != null)
 				{
@@ -259,7 +256,6 @@ fun DetailsScreen(
 					postWasSharedState = postWasSharedState,
 					animationIsRunning = animationIsRunningLocal,
 					animationHasBeenStarted = animationHasBeenStarted,
-					isError = isError,
 					postPivot = postPivot,
 					checkOnErrorExists = getErrorMessageFromErrorsList
 				)
@@ -286,7 +282,6 @@ fun DetailsScreen(
 					setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
 					thisIsEnterAnimation = thisIsEnterAnimation,
 					animationHasBeenStarted = animationHasBeenStarted,
-					isError = isError,
 					postPivot = postPivot
 				)
 			}
@@ -317,7 +312,6 @@ fun ShowDetails(
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	thisIsEnterAnimation: MutableState<Boolean>,
 	animationHasBeenStarted: MutableState<Boolean>,
-	isError: MutableState<Boolean>,
 	postPivot: () -> Unit,
 )
 {
@@ -363,7 +357,6 @@ fun ShowDetails(
 					animationIsRunning = animationIsRunning,
 					thisIsEnterAnimation = thisIsEnterAnimation,
 					animationHasBeenStarted = animationHasBeenStarted,
-					isError = isError,
 					postPivot = postPivot,
 					checkOnErrorExists = checkOnErrorExists
 				)
@@ -394,7 +387,6 @@ fun ShowDetails(
 									animationIsRunning = animationIsRunning,
 									wasDeleted = false,
 									animationHasBeenStarted = animationHasBeenStarted,
-									isError = isError,
 									postPivot = postPivot,
 									state = state,
 									checkOnErrorExists = checkOnErrorExists
@@ -423,7 +415,6 @@ fun ShowDetails(
 											animationIsRunning = animationIsRunning,
 											wasDeleted = false,
 											animationHasBeenStarted = animationHasBeenStarted,
-											isError = isError,
 											postPivot = postPivot,
 											state = state,
 											checkOnErrorExists = checkOnErrorExists
@@ -482,7 +473,6 @@ fun ShowDetails(
 								animationIsRunning = animationIsRunning,
 								wasDeleted = true,
 								animationHasBeenStarted = animationHasBeenStarted,
-								isError = isError,
 								postPivot = postPivot,
 								state = state,
 								checkOnErrorExists = checkOnErrorExists
@@ -518,7 +508,6 @@ fun ShowAsynchImage(
 	animationIsRunning: MutableState<Boolean>,
 	thisIsEnterAnimation: MutableState<Boolean>,
 	animationHasBeenStarted: MutableState<Boolean>,
-	isError: MutableState<Boolean>,
 	postPivot: () -> Unit,
 	checkOnErrorExists: (String) -> String?,
 )
@@ -612,7 +601,6 @@ fun ShowAsynchImage(
 										animationIsRunning = animationIsRunning,
 										wasDeleted = false,
 										animationHasBeenStarted = animationHasBeenStarted,
-										isError = isError,
 										postPivot = postPivot,
 										state = state,
 										checkOnErrorExists = checkOnErrorExists
@@ -721,7 +709,6 @@ fun AppBar(
 	postWasSharedState: () -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	animationHasBeenStarted: MutableState<Boolean>,
-	isError: MutableState<Boolean>,
 	postPivot: () -> Unit,
 	checkOnErrorExists: (String) -> String?,
 )
@@ -835,7 +822,6 @@ fun AppBar(
 			animationIsRunning = animationIsRunning,
 			wasDeleted = false,
 			animationHasBeenStarted = animationHasBeenStarted,
-			isError = isError,
 			postPivot = postPivot,
 			state = state,
 			checkOnErrorExists = checkOnErrorExists
@@ -852,7 +838,6 @@ fun navigateToHome(
 	animationIsRunning: MutableState<Boolean>,
 	wasDeleted: Boolean,
 	animationHasBeenStarted: MutableState<Boolean>,
-	isError: MutableState<Boolean>,
 	postPivot: () -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	checkOnErrorExists: (String) -> String?,
@@ -861,7 +846,7 @@ fun navigateToHome(
 	animationIsRunning.value = true
 	animationHasBeenStarted.value = true
 	changeBarsVisability(true)
-	if(wasDeleted || isError.value || state.value.isSharedImage || checkOnErrorExists(state.value.currentPicture) != null)
+	if(wasDeleted || state.value.isSharedImage || checkOnErrorExists(state.value.currentPicture) != null)
 	{
 		postPivot()
 		setImageSharedStateToFalse(false)
