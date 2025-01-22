@@ -74,6 +74,7 @@ import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -175,7 +176,7 @@ fun ItemsCard(
 	addError: (String, String) -> Unit,
 	width: MutableIntState,
 	height: MutableIntState,
-	animationIsRunning: MutableState<Boolean>
+	animationIsRunning: MutableState<Boolean>,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -219,7 +220,9 @@ fun ItemsCard(
 			}
 		}
 	}
-	Box(modifier = Modifier.aspectRatio(1f).padding(10.dp)) {
+	Box(modifier = Modifier
+		.aspectRatio(1f)
+		.padding(10.dp)) {
 		SubcomposeAsyncImage(
 			model = (imgRequest),
 			contentDescription = item,
@@ -239,7 +242,7 @@ fun ItemsCard(
 				}
 				.fillMaxSize()
 				.clip(RoundedCornerShape(8.dp)),
-			contentScale = ContentScale.FillBounds,
+			contentScale = ContentScale.Crop,
 			loading = {
 				Box(Modifier.fillMaxSize()) {
 					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -301,7 +304,7 @@ fun ShowList(
 	index: Int,
 	calculateGridSpan: Int,
 	postGridSize: (Int) -> Unit,
-	animationIsRunning: MutableState<Boolean>
+	animationIsRunning: MutableState<Boolean>,
 )
 {
 	val widthInPx = remember(Unit) { mutableIntStateOf(0) }
@@ -324,6 +327,7 @@ fun ShowList(
 				}
 				LazyVerticalGrid(
 					state = listState,
+					userScrollEnabled = !animationIsRunning.value,
 					modifier = Modifier
 						.fillMaxSize(),
 					columns = GridCells.Fixed(count = calculateGridSpan)) {
@@ -369,6 +373,7 @@ fun ShowList(
 		}
 		LazyVerticalGrid(
 			state = listState,
+			userScrollEnabled = !animationIsRunning.value,
 			modifier = Modifier
 				.fillMaxSize(),
 			columns = GridCells.Fixed(count = calculateGridSpan)) {
@@ -391,6 +396,8 @@ fun ShowList(
 	LaunchedEffect(Unit) {
 		listState.scrollToItem(index, offset)
 		postGridSize(listState.layoutInfo.viewportEndOffset)
+		delay(5500)
+		animationIsRunning.value = false
 	}
 }
 

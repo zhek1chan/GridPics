@@ -63,9 +63,11 @@ class MainActivity: AppCompatActivity()
 	private var navigation: NavHostController? = null
 	private var themePick: Int = 2
 	private var job: Job? = null
-	private var pairOfCof = Pair(4f, 12f)
+	private var pairOfCof = Pair(4f, 10f)
 	private var mutableIsThemeBlackState = mutableStateOf(false)
 	private var cofConnectedWithOrientation = mutableFloatStateOf(0f)
+	private var cofConnectedWithOrientationForExit = mutableFloatStateOf(0f)
+	private var isSharedImage = mutableStateOf(false)
 	private var animationIsRunning = mutableStateOf(false)
 	private val connection = object: ServiceConnection
 	{
@@ -173,6 +175,8 @@ class MainActivity: AppCompatActivity()
 		val pivots = remember { mutableStateOf(picVM.getPivotsXandY()) }
 		Log.d("test 333", "new pivots $pivots")
 		val pairOfCof = pairOfCof
+		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
+		val isSharedImage = isSharedImage
 		val pValue = pivots.value
 		val enterTrans = if(pivots.value != Pair(12345f, 12345f))
 		{
@@ -186,6 +190,45 @@ class MainActivity: AppCompatActivity()
 		{
 			EnterTransition.None
 		}
+		val enterTransForDetails = if(isSharedImage.value)
+		{
+			EnterTransition.None
+		}
+		else
+		{
+			scaleIn(
+				animationSpec = tween(5500),
+				initialScale = cofConnectedWithOrientationForExit.floatValue,
+				transformOrigin = TransformOrigin(
+					pValue.first / pairOfCof.first + 0.05f,
+					pValue.second / pairOfCof.second
+				)
+			) + expandVertically(expandFrom = Alignment.Top) { 20 }
+		}
+		val exitTransitionForDetails = if(isSharedImage.value)
+		{
+			ExitTransition.None
+		}
+		else
+		{
+			scaleOut(
+				animationSpec = tween(5500),
+				targetScale = cofConnectedWithOrientation.floatValue,
+				transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
+			)
+		}
+		val popExitTransitionForDetails = if(isSharedImage.value)
+		{
+			ExitTransition.None
+		}
+		else
+		{
+			scaleOut(
+				animationSpec = tween(5500),
+				targetScale = cofConnectedWithOrientation.floatValue,
+				transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
+			)
+		}
 
 		Log.d("exit test", "$pairOfCof")
 		NavHost(
@@ -193,22 +236,22 @@ class MainActivity: AppCompatActivity()
 			startDestination = BottomNavItem.Home.route,
 			popEnterTransition = {
 				scaleIn(
-					animationSpec = tween(500),
+					animationSpec = tween(5500),
 					initialScale = cofConnectedWithOrientation.floatValue,
-					transformOrigin = TransformOrigin(pValue.first, pValue.second)
+					transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
 				)
 			},
 			popExitTransition = {
 				scaleOut(
-					animationSpec = tween(500),
+					animationSpec = tween(5500),
 					targetScale = cofConnectedWithOrientation.floatValue,
-					transformOrigin = TransformOrigin(pValue.first, pValue.second)
+					transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
 				)
 			},
 			enterTransition = {
 				scaleIn(
-					animationSpec = tween(300),
-					initialScale = 0.4f,
+					animationSpec = tween(5400),
+					initialScale = cofConnectedWithOrientationForExit.floatValue,
 					transformOrigin = TransformOrigin(
 						pValue.first / pairOfCof.first,
 						pValue.second / pairOfCof.second
@@ -217,17 +260,19 @@ class MainActivity: AppCompatActivity()
 			},
 			exitTransition = {
 				scaleOut(
-					animationSpec = tween(500),
-					targetScale = 1f,
-					transformOrigin = TransformOrigin(pValue.first, pValue.second)
+					animationSpec = tween(5400),
+					targetScale = cofConnectedWithOrientation.floatValue,
+					transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
 				)
 			}
 		)
 		{
-			composable(BottomNavItem.Home.route,
+			composable(
+				route = BottomNavItem.Home.route,
 				enterTransition = {
 					enterTrans
 				},
+				exitTransition = { ExitTransition.None },
 				popEnterTransition = { EnterTransition.None }
 			) {
 				detVM.postNewPic(null, null)
@@ -260,7 +305,7 @@ class MainActivity: AppCompatActivity()
 				)
 			}
 			composable(
-				BottomNavItem.Settings.route,
+				route = BottomNavItem.Settings.route,
 				enterTransition = { EnterTransition.None },
 				exitTransition = { ExitTransition.None },
 				popExitTransition = { ExitTransition.None },
@@ -280,7 +325,13 @@ class MainActivity: AppCompatActivity()
 					postStartOfPager = { picVM.clickOnPicture(0, 0) }
 				)
 			}
-			composable(Screen.Details.route) {
+			composable(
+				route = Screen.Details.route,
+				enterTransition = { enterTransForDetails },
+				exitTransition = { exitTransitionForDetails },
+				popExitTransition = { popExitTransitionForDetails },
+				popEnterTransition = { EnterTransition.None }
+			) {
 				DetailsScreen(
 					navController = navController,
 					getErrorMessageFromErrorsList = { url -> picVM.checkOnErrorExists(url) },
@@ -296,7 +347,10 @@ class MainActivity: AppCompatActivity()
 						picVM.clickOnPicture(0, 0)
 						saveToSharedPrefs(picVM.returnStringOfList())
 					},
-					setImageSharedState = { isShared -> detVM.isSharedImage(isShared) },
+					setImageSharedState = { isShared ->
+						detVM.isSharedImage(isShared)
+						isSharedImage.value = isShared
+					},
 					picsUiState = picVM.picturesUiState,
 					setCurrentPictureUrl = { url ->
 						picVM.calculateListPosition(url)
@@ -565,6 +619,7 @@ class MainActivity: AppCompatActivity()
 					detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
 				}
 				detVM.isSharedImage(true)
+				isSharedImage.value = true
 				detVM.postCurrentPicture(sharedValue)
 				detVM.postCorrectList()
 				picVM.clickOnPicture(0, 0)
@@ -647,15 +702,19 @@ class MainActivity: AppCompatActivity()
 		val displayMetrics = this.resources.displayMetrics
 		val width = displayMetrics.widthPixels
 		val height = displayMetrics.heightPixels
+		val cofConnectedWithOrientation = cofConnectedWithOrientation
+		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
 		pairOfCof = if(width > height)
 		{
-			cofConnectedWithOrientation.floatValue = 0.62f
-			Pair(10.52f, 2.84f)
+			cofConnectedWithOrientation.floatValue = 0.6f
+			cofConnectedWithOrientationForExit.floatValue = 0.1f
+			Pair(10f, 1f)
 		}
 		else
 		{
-			cofConnectedWithOrientation.floatValue = 0.72f
-			Pair(3.84f, 11.52f)
+			cofConnectedWithOrientation.floatValue = 0.33f
+			cofConnectedWithOrientationForExit.floatValue = 0.3f
+			Pair(3.84f, 6.5f)
 		}
 		val density = displayMetrics.density
 		return (width / density).toInt() / LENGTH_OF_PICTURE

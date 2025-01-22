@@ -2,6 +2,7 @@ package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.util.Log
 import android.widget.Toast
@@ -67,6 +68,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -97,6 +99,7 @@ import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailsScreen(
@@ -119,7 +122,7 @@ fun DetailsScreen(
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	setInitialPage: (Int) -> Unit,
 	animationHasBeenStarted: MutableState<Boolean>,
-	postPivot:() -> Unit
+	postPivot: () -> Unit,
 )
 {
 	val color = MaterialTheme.colorScheme.background
@@ -128,9 +131,18 @@ fun DetailsScreen(
 	val animationIsRunningLocal = remember(false) { mutableStateOf(true) }
 	val thisIsEnterAnimation = remember { mutableStateOf(true) }
 	LaunchedEffect(false) {
-		delay(400)
-		animationIsRunningLocal.value = false
-		thisIsEnterAnimation.value = false
+		if(state.value.isSharedImage)
+		{
+			animationIsRunningLocal.value = false
+			thisIsEnterAnimation.value = false
+		}
+		else
+		{
+			delay(5500)
+			animationIsRunningLocal.value = false
+			animationHasBeenStarted.value = false
+			thisIsEnterAnimation.value = false
+		}
 	}
 	LaunchedEffect(animationIsRunningLocal.value) {
 		if(animationIsRunningLocal.value)
@@ -147,6 +159,7 @@ fun DetailsScreen(
 	val currentPicture = value.currentPicture
 	var list = remember(state.value.isSharedImage) { state.value.picturesUrl }
 	var initialPage = list.indexOf(currentPicture)
+	val orientation = LocalConfiguration.current.orientation
 	val size: Int
 	if(initialPage >= 0)
 	{
@@ -162,9 +175,18 @@ fun DetailsScreen(
 	Box(modifier = mod.value) {
 		if(animationIsRunningLocal.value && !thisIsEnterAnimation.value)
 		{
-			mod.value = Modifier
-				.width(200.dp)
-				.height(300.dp)
+			if(orientation == Configuration.ORIENTATION_PORTRAIT)
+			{
+				mod.value = Modifier
+					.width(400.dp)
+					.height(500.dp)
+			}
+			else
+			{
+				mod.value = Modifier
+					.width(200.dp)
+					.height(300.dp)
+			}
 		}
 		else
 		{
@@ -192,7 +214,8 @@ fun DetailsScreen(
 					animationHasBeenStarted = animationHasBeenStarted,
 					isError = isError,
 					postPivot = postPivot,
-					state = state
+					state = state,
+					checkOnErrorExists = getErrorMessageFromErrorsList
 				)
 			}
 		}
@@ -207,6 +230,7 @@ fun DetailsScreen(
 			}
 			if(pic.isNotEmpty())
 			{
+				isError.value = getErrorMessageFromErrorsList(currentPicture) == null
 				setCurrentPictureUrl(pic)
 				if(getErrorMessageFromErrorsList(pic) != null)
 				{
@@ -236,7 +260,8 @@ fun DetailsScreen(
 					animationIsRunning = animationIsRunningLocal,
 					animationHasBeenStarted = animationHasBeenStarted,
 					isError = isError,
-					postPivot = postPivot
+					postPivot = postPivot,
+					checkOnErrorExists = getErrorMessageFromErrorsList
 				)
 			},
 			content = { padding ->
@@ -293,7 +318,7 @@ fun ShowDetails(
 	thisIsEnterAnimation: MutableState<Boolean>,
 	animationHasBeenStarted: MutableState<Boolean>,
 	isError: MutableState<Boolean>,
-	postPivot:() -> Unit
+	postPivot: () -> Unit,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -316,7 +341,6 @@ fun ShowDetails(
 			.background(Color.Transparent)) {
 			if(errorMessage != null)
 			{
-				isError.value = true
 				ShowError(
 					context = context,
 					currentUrl = url,
@@ -325,7 +349,6 @@ fun ShowDetails(
 			}
 			else
 			{
-				isError.value = false
 				ShowAsynchImage(
 					img = url,
 					addError = addError,
@@ -341,7 +364,8 @@ fun ShowDetails(
 					thisIsEnterAnimation = thisIsEnterAnimation,
 					animationHasBeenStarted = animationHasBeenStarted,
 					isError = isError,
-					postPivot = postPivot
+					postPivot = postPivot,
+					checkOnErrorExists = checkOnErrorExists
 				)
 			}
 			if(isSharedImage)
@@ -372,7 +396,8 @@ fun ShowDetails(
 									animationHasBeenStarted = animationHasBeenStarted,
 									isError = isError,
 									postPivot = postPivot,
-									state = state
+									state = state,
+									checkOnErrorExists = checkOnErrorExists
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -400,7 +425,8 @@ fun ShowDetails(
 											animationHasBeenStarted = animationHasBeenStarted,
 											isError = isError,
 											postPivot = postPivot,
-											state = state
+											state = state,
+											checkOnErrorExists = checkOnErrorExists
 										)
 									}
 									setImageSharedState(false)
@@ -458,7 +484,8 @@ fun ShowDetails(
 								animationHasBeenStarted = animationHasBeenStarted,
 								isError = isError,
 								postPivot = postPivot,
-								state = state
+								state = state,
+								checkOnErrorExists = checkOnErrorExists
 							)
 							deleteCurrentPicture(url)
 						},
@@ -492,13 +519,14 @@ fun ShowAsynchImage(
 	thisIsEnterAnimation: MutableState<Boolean>,
 	animationHasBeenStarted: MutableState<Boolean>,
 	isError: MutableState<Boolean>,
-	postPivot:() -> Unit
+	postPivot: () -> Unit,
+	checkOnErrorExists: (String) -> String?,
 )
 {
 	Box(Modifier.fillMaxSize()) {
-		val scale = if(animationIsRunning.value && !thisIsEnterAnimation.value)
+		val scale = if(animationIsRunning.value)
 		{
-			ContentScale.FillBounds
+			ContentScale.FillWidth
 		}
 		else if(state.value.isMultiWindowed)
 		{
@@ -530,11 +558,16 @@ fun ShowAsynchImage(
 			mod.value = Modifier
 				.aspectRatio(1f)
 				.clip(RoundedCornerShape(8.dp))
+				.alpha(0.5f)
 				.align(Alignment.Center)
 		}
 		else if(animationIsRunning.value && thisIsEnterAnimation.value)
 		{
-			mod.value = Modifier.fillMaxSize()
+			mod.value = Modifier
+				.aspectRatio(1f)
+				.align(Alignment.Center)
+				.alpha(0.5f)
+				.clip(RoundedCornerShape(8.dp))
 		}
 		else
 		{
@@ -581,7 +614,8 @@ fun ShowAsynchImage(
 										animationHasBeenStarted = animationHasBeenStarted,
 										isError = isError,
 										postPivot = postPivot,
-										state = state
+										state = state,
+										checkOnErrorExists = checkOnErrorExists
 									)
 								}
 							}
@@ -688,7 +722,8 @@ fun AppBar(
 	animationIsRunning: MutableState<Boolean>,
 	animationHasBeenStarted: MutableState<Boolean>,
 	isError: MutableState<Boolean>,
-	postPivot:() -> Unit
+	postPivot: () -> Unit,
+	checkOnErrorExists: (String) -> String?,
 )
 {
 	if(state.value.wasSharedFromNotification)
@@ -802,7 +837,8 @@ fun AppBar(
 			animationHasBeenStarted = animationHasBeenStarted,
 			isError = isError,
 			postPivot = postPivot,
-			state = state
+			state = state,
+			checkOnErrorExists = checkOnErrorExists
 		)
 	}
 }
@@ -817,14 +853,15 @@ fun navigateToHome(
 	wasDeleted: Boolean,
 	animationHasBeenStarted: MutableState<Boolean>,
 	isError: MutableState<Boolean>,
-	postPivot:() -> Unit,
-	state: MutableState<DetailsScreenUiState>
+	postPivot: () -> Unit,
+	state: MutableState<DetailsScreenUiState>,
+	checkOnErrorExists: (String) -> String?,
 )
 {
 	animationIsRunning.value = true
-	animationHasBeenStarted.value = false
+	animationHasBeenStarted.value = true
 	changeBarsVisability(true)
-	if(wasDeleted || isError.value || state.value.isSharedImage)
+	if(wasDeleted || isError.value || state.value.isSharedImage || checkOnErrorExists(state.value.currentPicture) != null)
 	{
 		postPivot()
 		setImageSharedStateToFalse(false)

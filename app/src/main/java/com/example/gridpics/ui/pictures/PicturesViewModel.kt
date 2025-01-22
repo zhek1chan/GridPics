@@ -246,6 +246,7 @@ class PicturesViewModel(
 		{
 			column = gridQuantity
 		}
+		Log.d("column", "$column")
 		calculatePixelPosition(line.toInt(), column, true)
 	}
 
@@ -261,27 +262,27 @@ class PicturesViewModel(
 		val gridQuantity = gridQuantity
 		val x = if((screenWidth > screenHeight) && (column == 0))
 		{
-			0f
+			0.3f
 		}
 		else if((screenWidth > screenHeight) && (column == 1))
 		{
-			1f
+			1.3f
 		}
 		else if(screenWidth > screenHeight)
 		{
-			1.5f * (column - 1) + 1.0f
+			3.5f * (column - 1) + 1.3f
 		}
 		else if(column == 1)
 		{
-			0.00f
+			0.02f
 		}
 		else if(column == 2)
 		{
-			2.4f
+			1.1f
 		}
 		else if(column == 3)
 		{
-			4.8f
+			2.2f
 		}
 		else
 		{
@@ -409,29 +410,32 @@ class PicturesViewModel(
 			clickOnPicture(firstVisibleIndex + 3, 0)
 			nLine -= 1
 		}
+		if (line == 99999999 && !useReCalc){
+			nLine = 4
+		}
 		val y = if(screenWidth > screenHeight && nLine <= 0)
 		{
-			0.4f
+			0.8f
 		}
 		else if(screenWidth > screenHeight)
 		{
-			(nLine) * 1.4f
+			(nLine) * 3.4f
 		}
 		else if(nLine == 0 && screenWidth < screenHeight)
 		{
-			0.4f
+			0.6f
 		}
 		else if(nLine == 1 && screenWidth < screenHeight)
 		{
-			2.1f
+			1.53f
 		}
 		else if(nLine == 2 && screenWidth < screenHeight)
 		{
-			3.7f
+			2.55f
 		}
 		else
 		{
-			(nLine + 1) * 1.4f
+			(nLine + 1) * 0.9f
 		}
 		Log.d("CalcCalcСalc", "calculated line = $nLine")
 		postPivotsXandY(Pair(x, y))
@@ -453,6 +457,8 @@ class PicturesViewModel(
 		if(initialPage != index)
 		{
 			val line = ceil(((pics.indexOf(url)) / gridQuantity).toDouble())
+			val maxLine = ceil(((pics.size - 1) / gridQuantity).toDouble())
+			Log.d("CalcCalc", "maxLine = $maxLine, line = $line")
 			Log.d("CalcCalc", "line = $line, size = ${pics.size}")
 			if((line + numOfVisibleLines - 1) * gridQuantity >= pics.size)
 			{
@@ -480,7 +486,15 @@ class PicturesViewModel(
 					line.toInt() - numOfVisibleLines * (maxK - 1)
 				}
 				Log.d("CalcCalc", "line1 = ${endOfLines + 1}, size = ${pics.size}")
-				calculatePixelPosition(endOfLines + 1, index % gridQuantity + 1, true)
+				if(line == maxLine)
+				{
+					Log.d("CalcCalc", "britney spyrs")
+					calculatePixelPosition(99999999, index % gridQuantity + 1, false)
+				}
+				else
+				{
+					calculatePixelPosition(endOfLines + 1, index % gridQuantity + 1, true)
+				}
 			}
 			else if((index + 1) / gridQuantity >= numOfVisibleLines)
 			{

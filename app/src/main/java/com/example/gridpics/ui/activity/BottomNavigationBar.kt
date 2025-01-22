@@ -57,7 +57,7 @@ fun BottomNavigationBar(
 			// Hide BottomBar and TopBar
 			bottomBarState.value = true
 			scope.launch {
-				delay(400)
+				delay(5500)
 				bottomBarState.value = false
 			}
 		}
