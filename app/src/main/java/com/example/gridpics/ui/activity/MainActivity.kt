@@ -180,6 +180,7 @@ class MainActivity: AppCompatActivity()
 		Log.d("test 333", "new pivots $pivots")
 		val pairOfCof = pairOfCof
 		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
+		val cofConnectedWithOrientation = cofConnectedWithOrientation
 		val isSharedImage = isSharedImage
 		var pValue = pivots.value
 		val isImageToShareOrDelete = isImageToShareOrDelete
