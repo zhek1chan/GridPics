@@ -396,7 +396,7 @@ fun ShowList(
 	LaunchedEffect(Unit) {
 		listState.scrollToItem(index, offset)
 		postGridSize(listState.layoutInfo.viewportEndOffset)
-		delay(5500)
+		delay(1500)
 		animationIsRunning.value = false
 	}
 }

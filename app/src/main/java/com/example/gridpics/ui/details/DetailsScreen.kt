@@ -2,7 +2,6 @@ package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.util.Log
 import android.widget.Toast
@@ -137,7 +136,7 @@ fun DetailsScreen(
 		}
 		else
 		{
-			delay(5500)
+			delay(1500)
 			animationIsRunningLocal.value = false
 			animationHasBeenStarted.value = false
 			thisIsEnterAnimation.value = false
@@ -158,7 +157,6 @@ fun DetailsScreen(
 	val currentPicture = value.currentPicture
 	var list = remember(state.value.isSharedImage) { state.value.picturesUrl }
 	var initialPage = list.indexOf(currentPicture)
-	val orientation = LocalConfiguration.current.orientation
 	val size: Int
 	if(initialPage >= 0)
 	{
@@ -170,27 +168,7 @@ fun DetailsScreen(
 		initialPage = 0
 		size = 1
 	}
-	val mod = remember(animationIsRunningLocal.value) { mutableStateOf(Modifier.fillMaxSize()) }
-	Box(modifier = mod.value) {
-		if(animationIsRunningLocal.value && !thisIsEnterAnimation.value)
-		{
-			if(orientation == Configuration.ORIENTATION_PORTRAIT)
-			{
-				mod.value = Modifier
-					.width(400.dp)
-					.height(500.dp)
-			}
-			else
-			{
-				mod.value = Modifier
-					.width(200.dp)
-					.height(300.dp)
-			}
-		}
-		else
-		{
-			mod.value = Modifier.fillMaxSize()
-		}
+	Box(modifier = Modifier.fillMaxSize()) {
 		Log.d("index currentPage", currentPicture)
 		Log.d("index initialPage", "$initialPage")
 		setInitialPage(initialPage)
@@ -850,6 +828,7 @@ fun navigateToHome(
 	{
 		postPivot()
 		setImageSharedStateToFalse(false)
+		animationHasBeenStarted.value = false
 		navController.navigate(Screen.Home.route,
 			navOptions = navOptions {
 				anim {

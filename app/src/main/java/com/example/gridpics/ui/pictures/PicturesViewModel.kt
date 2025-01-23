@@ -270,7 +270,7 @@ class PicturesViewModel(
 		}
 		else if(column == 1)
 		{
-			0.02f
+			0f
 		}
 		else if(column == 2)
 		{

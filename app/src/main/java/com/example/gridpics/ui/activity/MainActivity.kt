@@ -70,6 +70,7 @@ class MainActivity: AppCompatActivity()
 	private var cofConnectedWithOrientation = mutableFloatStateOf(0f)
 	private var cofConnectedWithOrientationForExit = mutableFloatStateOf(0f)
 	private var isSharedImage = mutableStateOf(false)
+	private var isImageToShareOrDelete = mutableStateOf(false)
 	private var animationIsRunning = mutableStateOf(false)
 	private val connection = object: ServiceConnection
 	{
@@ -181,6 +182,7 @@ class MainActivity: AppCompatActivity()
 		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
 		val isSharedImage = isSharedImage
 		var pValue = pivots.value
+		val isImageToShareOrDelete = isImageToShareOrDelete
 		val enterTrans = if(pivots.value != Pair(12345f, 12345f))
 		{
 			scaleIn(
@@ -193,17 +195,32 @@ class MainActivity: AppCompatActivity()
 		{
 			EnterTransition.None
 		}
-		val enterTransForDetails = if(isSharedImage.value)
+		val enterTransForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
 		{
 			EnterTransition.None
 		}
 		else
 		{
 			scaleIn(
-				animationSpec = tween(5500),
-				initialScale = cofConnectedWithOrientationForExit.floatValue,
+				animationSpec = tween(1400),
+				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(
-					pValue.first / pairOfCof.first + 0.05f,
+					pValue.first / pairOfCof.first,
+					pValue.second / pairOfCof.second
+				)
+			) + expandVertically(expandFrom = Alignment.Top) { 20 }
+		}
+		val popEnterTransition = if(isSharedImage.value || isImageToShareOrDelete.value)
+		{
+			EnterTransition.None
+		}
+		else
+		{
+			scaleIn(
+				animationSpec = tween(1400),
+				initialScale = cofConnectedWithOrientation.floatValue,
+				transformOrigin = TransformOrigin(
+					pValue.first / pairOfCof.first,
 					pValue.second / pairOfCof.second
 				)
 			) + expandVertically(expandFrom = Alignment.Top) { 20 }
@@ -215,74 +232,69 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleOut(
-				animationSpec = tween(5500),
+				animationSpec = tween(1500),
 				targetScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
 			)
 		}
 		val isExit = remember { mutableStateOf(false) }
-		val popExitTransitionForDetails = if(isSharedImage.value)
+		val popExitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
 		{
 			ExitTransition.None
 		}
 		else
 		{
-			var yForExit = if(pValue.second == 4.6f)
-			{
-				pValue.second - 0.19f
-			}
-			else if(pValue.second > 4.6f)
-			{
-				pValue.second - 0.4f
-			}
-			else if(pValue.second == 0.3f)
-			{
-				pValue.second + 0.43f
-			}
-			else if(pValue.second == 1.6f)
-			{
-				pValue.second + 0.36f
-			}
-			else
-			{
-				pValue.second
-			}
+			var yForExit = pValue.second
 			if(isExit.value)
 			{
-				if(cofConnectedWithOrientation.floatValue == 0.6f && yForExit < 2.09f)
+				if(cofConnectedWithOrientation.floatValue == 0.4f && yForExit < 2.09f)
 				{
-					yForExit -= 0.43f
+					yForExit -= 0f
 				}
-				else if(cofConnectedWithOrientation.floatValue == 0.6f && yForExit >= 2.09f)
+				else if(cofConnectedWithOrientation.floatValue == 0.4f && yForExit >= 2.09f)
 				{
-					yForExit -= 0.8f
+					yForExit -= 0f
 				}
-				if(pValue.first > -2f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 0.39f)
+				if(pValue.first > -2f && cofConnectedWithOrientation.floatValue == 0.4f && pValue.first < 0.39f)
 				{
-					pValue = Pair(0.455555f, pValue.second)
+					pValue = Pair(pValue.first + 0.4f, pValue.second)
 				}
-				else if(pValue.first > 4f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 7f)
+				else if(
+					pValue.first > 0.39f && cofConnectedWithOrientation.floatValue == 0.4f && pValue.first < 4f
+				)
 				{
-					pValue = Pair(pValue.first - 1.2f, pValue.second)
+					pValue = Pair(pValue.first + 0.9f, pValue.second)
 				}
-				else if(pValue.first > 7f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 9f)
+				else if(pValue.first > 4f && cofConnectedWithOrientation.floatValue == 0.4f && pValue.first < 7f)
 				{
-					pValue = Pair(pValue.first - 2.4f, pValue.second)
+					pValue = Pair(pValue.first + 0.8f, pValue.second)
 				}
-				else if(pValue.first > 9f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 11f)
+				else if(pValue.first > 7f && cofConnectedWithOrientation.floatValue == 0.4f && pValue.first < 9f)
 				{
-					pValue = Pair(pValue.first - 3.6f, pValue.second)
+					pValue = Pair(pValue.first + 0.6f, pValue.second)
 				}
-				else if(pValue.first > 11f && cofConnectedWithOrientation.floatValue == 0.6f)
+				else if(pValue.first > 9f && cofConnectedWithOrientation.floatValue == 0.4f && pValue.first < 11f)
 				{
-					pValue = Pair(pValue.first - 4.7f, pValue.second)
+					pValue = Pair(pValue.first + 0.5f, pValue.second)
+				}
+				else if(pValue.first > 11f && cofConnectedWithOrientation.floatValue == 0.4f)
+				{
+					pValue = Pair(pValue.first + 0.4f, pValue.second)
+				}
+				if(pValue.first == 0f && cofConnectedWithOrientation.floatValue != 0.4f)
+				{
+					pValue = Pair(pValue.first + 0.1f, pValue.second)
+				}
+				if(yForExit == 1.6f && cofConnectedWithOrientation.floatValue != 0.4f)
+				{
+					yForExit += 0.1f
 				}
 			}
-			Log.d("che za bred to", " to${pValue.first}, $yForExit")
-			Log.d("che za bred", "${pValue.first / pairOfCofForExit.first}, ${yForExit / pairOfCofForExit.second}")
+			Log.d("che za bred to", "to ${pValue.first}, to $yForExit")
+			Log.d("che za bred", "${pValue.first / pairOfCof.first}, ${yForExit / pairOfCof.second}")
 			scaleOut(
-				animationSpec = tween(5500),
-				targetScale = cofConnectedWithOrientation.floatValue,
+				animationSpec = tween(1500),
+				targetScale = cofConnectedWithOrientationForExit.floatValue,
 				transformOrigin = TransformOrigin(pValue.first / pairOfCofForExit.first, yForExit / pairOfCofForExit.second)
 			)
 		}
@@ -292,22 +304,22 @@ class MainActivity: AppCompatActivity()
 			startDestination = BottomNavItem.Home.route,
 			popEnterTransition = {
 				scaleIn(
-					animationSpec = tween(5500),
+					animationSpec = tween(1500),
 					initialScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
 				)
 			},
 			popExitTransition = {
 				scaleOut(
-					animationSpec = tween(5500),
+					animationSpec = tween(1500),
 					targetScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first / pairOfCof.first, pValue.second / 2.4f)
 				)
 			},
 			enterTransition = {
 				scaleIn(
-					animationSpec = tween(5400),
-					initialScale = cofConnectedWithOrientationForExit.floatValue,
+					animationSpec = tween(1400),
+					initialScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(
 						pValue.first / pairOfCof.first,
 						pValue.second / pairOfCof.second
@@ -316,7 +328,7 @@ class MainActivity: AppCompatActivity()
 			},
 			exitTransition = {
 				scaleOut(
-					animationSpec = tween(5400),
+					animationSpec = tween(1400),
 					targetScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
 				)
@@ -348,7 +360,7 @@ class MainActivity: AppCompatActivity()
 						navController.navigate(Screen.Details.route)
 						isExit.value = false
 						lifecycleScope.launch {
-							delay(5500)
+							delay(1500)
 							isExit.value = true
 						}
 					},
@@ -391,7 +403,7 @@ class MainActivity: AppCompatActivity()
 				enterTransition = { enterTransForDetails },
 				exitTransition = { exitTransitionForDetails },
 				popExitTransition = { popExitTransitionForDetails },
-				popEnterTransition = { EnterTransition.None }
+				popEnterTransition = { popEnterTransition }
 			) {
 				DetailsScreen(
 					navController = navController,
@@ -411,6 +423,7 @@ class MainActivity: AppCompatActivity()
 					setImageSharedState = { isShared ->
 						detVM.isSharedImage(isShared)
 						isSharedImage.value = isShared
+						isImageToShareOrDelete.value = false
 					},
 					picsUiState = picVM.picturesUiState,
 					setCurrentPictureUrl = { url ->
@@ -658,13 +671,17 @@ class MainActivity: AppCompatActivity()
 						Log.d("Test111", "SHARE")
 						picVM.clickOnPicture(0, 0)
 						detVM.setWasSharedFromNotification(true)
+						nav?.popBackStack()
 						navAfterNewIntent(nav)
+						isImageToShareOrDelete.value = true
 					}
 					else if(intent.getBooleanExtra(SHOULD_WE_DELETE_THIS, false))
 					{
 						Log.d("Test111", "DELETE")
 						detVM.setWasDeletedFromNotification(true)
+						nav?.popBackStack()
 						navAfterNewIntent(nav)
+						isImageToShareOrDelete.value = true
 					}
 					else
 					{
@@ -767,17 +784,17 @@ class MainActivity: AppCompatActivity()
 		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
 		pairOfCof = if(width > height)
 		{
-			cofConnectedWithOrientation.floatValue = 0.6f
+			cofConnectedWithOrientation.floatValue = 0.4f
 			cofConnectedWithOrientationForExit.floatValue = 0.35f
-			pairOfCofForExit = Pair(0.72f, 0.9f)
+			pairOfCofForExit = Pair(10.52f, 2.84f)
 			Pair(10.52f, 2.84f)
 		}
 		else
 		{
-			cofConnectedWithOrientation.floatValue = 0.33f
-			cofConnectedWithOrientationForExit.floatValue = 0.31f
-			pairOfCofForExit = Pair(3.4f, 3f)
-			Pair(3.84f, 6.5f)
+			cofConnectedWithOrientation.floatValue = 0.28f
+			cofConnectedWithOrientationForExit.floatValue = 0.3f
+			pairOfCofForExit = Pair(3.6f, 6.8f)
+			Pair(3.84f, 7f)
 		}
 		val density = displayMetrics.density
 		return (width / density).toInt() / LENGTH_OF_PICTURE
