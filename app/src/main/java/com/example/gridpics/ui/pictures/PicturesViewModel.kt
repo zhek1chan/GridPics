@@ -260,10 +260,12 @@ class PicturesViewModel(
 		val screenWidth = screenWidth
 		val screenHeight = screenHeight
 		val gridQuantity = gridQuantity
-		val x = if (screenWidth > screenHeight && column == 1)
+		val x = if(screenWidth > screenHeight && column == 1)
 		{
 			-1.3f
-		} else if (screenWidth > screenHeight) {
+		}
+		else if(screenWidth > screenHeight)
+		{
 			2.3f * (column - 1) - 1.9f
 		}
 		else if(column == 1)
@@ -272,11 +274,11 @@ class PicturesViewModel(
 		}
 		else if(column == 2)
 		{
-			1.1f
+			1.8f
 		}
 		else if(column == 3)
 		{
-			2.2f
+			3.5f
 		}
 		else
 		{
@@ -404,7 +406,8 @@ class PicturesViewModel(
 			clickOnPicture(firstVisibleIndex + 3, 0)
 			nLine -= 1
 		}
-		if (line == 99999999 && !useReCalc){
+		if(line == 99999999 && !useReCalc)
+		{
 			nLine = 4
 		}
 		val y = if(screenWidth > screenHeight && nLine <= 0)
@@ -417,19 +420,23 @@ class PicturesViewModel(
 		}
 		else if(nLine == 0 && screenWidth < screenHeight)
 		{
-			0.6f
+			0.3f
 		}
 		else if(nLine == 1 && screenWidth < screenHeight)
 		{
-			1.53f
+			1.6f
 		}
 		else if(nLine == 2 && screenWidth < screenHeight)
 		{
-			2.55f
+			3.13f
+		}
+		else if(nLine == 3 && screenWidth < screenHeight)
+		{
+			4.6f
 		}
 		else
 		{
-			(nLine + 1) * 0.9f
+			(nLine + 1) * 1.2f
 		}
 		Log.d("CalcCalcСalc", "calculated line = $nLine")
 		postPivotsXandY(Pair(x, y))

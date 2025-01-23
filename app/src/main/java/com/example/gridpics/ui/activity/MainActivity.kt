@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
@@ -64,6 +65,7 @@ class MainActivity: AppCompatActivity()
 	private var themePick: Int = 2
 	private var job: Job? = null
 	private var pairOfCof = Pair(4f, 10f)
+	private var pairOfCofForExit = Pair(4f, 10f)
 	private var mutableIsThemeBlackState = mutableStateOf(false)
 	private var cofConnectedWithOrientation = mutableFloatStateOf(0f)
 	private var cofConnectedWithOrientationForExit = mutableFloatStateOf(0f)
@@ -166,6 +168,7 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
+	@SuppressLint("RestrictedApi")
 	@Composable
 	fun NavigationSetup(navController: NavHostController)
 	{
@@ -177,7 +180,7 @@ class MainActivity: AppCompatActivity()
 		val pairOfCof = pairOfCof
 		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
 		val isSharedImage = isSharedImage
-		val pValue = pivots.value
+		var pValue = pivots.value
 		val enterTrans = if(pivots.value != Pair(12345f, 12345f))
 		{
 			scaleIn(
@@ -217,19 +220,72 @@ class MainActivity: AppCompatActivity()
 				transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
 			)
 		}
+		val isExit = remember { mutableStateOf(false) }
 		val popExitTransitionForDetails = if(isSharedImage.value)
 		{
 			ExitTransition.None
 		}
 		else
 		{
+			var yForExit = if(pValue.second == 4.6f)
+			{
+				pValue.second - 0.19f
+			}
+			else if(pValue.second > 4.6f)
+			{
+				pValue.second - 0.4f
+			}
+			else if(pValue.second == 0.3f)
+			{
+				pValue.second + 0.43f
+			}
+			else if(pValue.second == 1.6f)
+			{
+				pValue.second + 0.36f
+			}
+			else
+			{
+				pValue.second
+			}
+			if(isExit.value)
+			{
+				if(cofConnectedWithOrientation.floatValue == 0.6f && yForExit < 2.09f)
+				{
+					yForExit -= 0.43f
+				}
+				else if(cofConnectedWithOrientation.floatValue == 0.6f && yForExit >= 2.09f)
+				{
+					yForExit -= 0.8f
+				}
+				if(pValue.first > -2f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 0.39f)
+				{
+					pValue = Pair(0.455555f, pValue.second)
+				}
+				else if(pValue.first > 4f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 7f)
+				{
+					pValue = Pair(pValue.first - 1.2f, pValue.second)
+				}
+				else if(pValue.first > 7f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 9f)
+				{
+					pValue = Pair(pValue.first - 2.4f, pValue.second)
+				}
+				else if(pValue.first > 9f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 11f)
+				{
+					pValue = Pair(pValue.first - 3.6f, pValue.second)
+				}
+				else if(pValue.first > 11f && cofConnectedWithOrientation.floatValue == 0.6f)
+				{
+					pValue = Pair(pValue.first - 4.7f, pValue.second)
+				}
+			}
+			Log.d("che za bred to", " to${pValue.first}, $yForExit")
+			Log.d("che za bred", "${pValue.first / pairOfCofForExit.first}, ${yForExit / pairOfCofForExit.second}")
 			scaleOut(
 				animationSpec = tween(5500),
 				targetScale = cofConnectedWithOrientation.floatValue,
-				transformOrigin = TransformOrigin(pValue.first, pValue.second / pairOfCof.second)
+				transformOrigin = TransformOrigin(pValue.first / pairOfCofForExit.first, yForExit / pairOfCofForExit.second)
 			)
 		}
-		Log.d("che za bred", "${pValue.first * 0.47f}, ${pValue.second / 2.4f}")
 		Log.d("exit test", "$pairOfCof")
 		NavHost(
 			navController = navController,
@@ -245,7 +301,7 @@ class MainActivity: AppCompatActivity()
 				scaleOut(
 					animationSpec = tween(5500),
 					targetScale = cofConnectedWithOrientation.floatValue,
-					transformOrigin = TransformOrigin(pValue.first /pairOfCof.first, pValue.second / 2.4f)
+					transformOrigin = TransformOrigin(pValue.first / pairOfCof.first, pValue.second / 2.4f)
 				)
 			},
 			enterTransition = {
@@ -290,6 +346,11 @@ class MainActivity: AppCompatActivity()
 						detVM.postCurrentPicture(url)
 						pivots.value = picVM.getPivotsXandY()
 						navController.navigate(Screen.Details.route)
+						isExit.value = false
+						lifecycleScope.launch {
+							delay(5500)
+							isExit.value = true
+						}
 					},
 					isValidUrl = { url -> picVM.isValidUrl(url) },
 					postSavedUrls = { urls ->
@@ -708,12 +769,14 @@ class MainActivity: AppCompatActivity()
 		{
 			cofConnectedWithOrientation.floatValue = 0.6f
 			cofConnectedWithOrientationForExit.floatValue = 0.35f
+			pairOfCofForExit = Pair(0.72f, 0.9f)
 			Pair(10.52f, 2.84f)
 		}
 		else
 		{
 			cofConnectedWithOrientation.floatValue = 0.33f
 			cofConnectedWithOrientationForExit.floatValue = 0.31f
+			pairOfCofForExit = Pair(3.4f, 3f)
 			Pair(3.84f, 6.5f)
 		}
 		val density = displayMetrics.density
