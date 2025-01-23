@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.domain.interactor.ImagesInteractor
+import com.example.gridpics.domain.model.PicturesDataForNotification
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
@@ -17,31 +18,36 @@ class DetailsViewModel(
 ): ViewModel()
 {
 	private val imageFlow =
-		MutableStateFlow<Pair<String?, Bitmap?>?>(null)
+		MutableStateFlow(PicturesDataForNotification(null, null, false))
 	val uiState =
-		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = ""))
+		mutableStateOf(DetailsScreenUiState(isMultiWindowed = false, barsAreVisible = true, isSharedImage = false, picturesUrl = mutableListOf(), currentPicture = "", wasSharedFromNotification = false, wasDeletedFromNotification = false))
 	private val job = Job()
-	private var jobForScope: Job? = null
 	fun observeUrlFlow() = imageFlow
 	fun postNewPic(url: String?, bitmap: Bitmap?)
 	{
-		jobForScope?.cancel()
-		jobForScope = viewModelScope.launch {
+		viewModelScope.launch {
 			job.cancelChildren()
-			imageFlow.emit(Pair(url, bitmap))
+			val showButtons = url != null
+			imageFlow.emit(PicturesDataForNotification(url, bitmap, showButtons))
 		}
 	}
 
-	fun postImageBitmap(url: String)
+	fun postImageBitmap(url: String, stringFromRes: String)
 	{
 		Log.d("Description posted", "desc was posted")
-		jobForScope?.cancel()
-		jobForScope = viewModelScope.launch {
+		viewModelScope.launch {
 			Log.d("description job is active", "${job.isActive}")
 			job.cancelChildren()
-			imageFlow.emit(Pair("Картинка ещё грузится, пожалуйста подождите", null))
+			imageFlow.emit(PicturesDataForNotification(stringFromRes, null, false))
 			val bitmap = interactor.getPictureBitmap(url, job)
-			imageFlow.emit(Pair(url, bitmap))
+			if(uiState.value.isSharedImage)
+			{
+				imageFlow.emit(PicturesDataForNotification(url, bitmap, false))
+			}
+			else
+			{
+				imageFlow.emit(PicturesDataForNotification(url, bitmap, true))
+			}
 		}
 	}
 
@@ -115,5 +121,27 @@ class DetailsViewModel(
 		}
 		state.value = state.value.copy(picturesUrl = listForState)
 		Log.d("index list", "create list for screen was called")
+	}
+
+	fun setWasSharedFromNotification(case: Boolean)
+	{
+		val state = uiState
+		state.value = state.value.copy(wasSharedFromNotification = case)
+	}
+
+	fun setWasDeletedFromNotification(case: Boolean)
+	{
+		val state = uiState
+		state.value = state.value.copy(wasDeletedFromNotification = case)
+	}
+
+	fun deleteCurrentPicture(url: String): List<String>
+	{
+		val state = uiState
+		val list = state.value.picturesUrl as MutableList
+		list.remove(url)
+		Log.d("test111", "$list")
+		state.value = state.value.copy(picturesUrl = list)
+		return list
 	}
 }

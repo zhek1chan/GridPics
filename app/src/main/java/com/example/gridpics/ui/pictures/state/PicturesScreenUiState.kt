@@ -8,5 +8,6 @@ data class PicturesScreenUiState(
 	val index: Int,
 	val offset: Int,
 	val isPortraitOrientation: Boolean,
-	val themeState: ThemePick
+	val themeState: ThemePick,
+	val deletedUrls: List<String>
 )

@@ -12,13 +12,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -41,8 +41,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,6 +55,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -68,11 +71,10 @@ import coil3.request.error
 import coil3.request.placeholder
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
-import com.example.gridpics.ui.activity.MainActivity.Companion.LENGTH_OF_PICTURE
-import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -88,6 +90,9 @@ fun PicturesScreen(
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (List<String>) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
+	calculateGridSpan: () -> Int,
+	postGridSize: (Int) -> Unit,
+	animationIsRunning: MutableState<Boolean>
 )
 {
 	LaunchedEffect(Unit) {
@@ -96,14 +101,17 @@ fun PicturesScreen(
 	BackHandler {
 		postPressOnBackButton()
 	}
+	val calculatedGridSpan = calculateGridSpan()
+	val statusBars = WindowInsets.statusBarsIgnoringVisibility
+	val cutouts = WindowInsets.displayCutout
 	val value = state.value
 	val windowInsets = if(value.isPortraitOrientation)
 	{
-		WindowInsets.statusBarsIgnoringVisibility
+		statusBars
 	}
 	else
 	{
-		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
+		cutouts.union(statusBars)
 	}
 	Scaffold(
 		contentWindowInsets = windowInsets,
@@ -142,13 +150,15 @@ fun PicturesScreen(
 					addError = addError,
 					state = loadingState,
 					clearErrors = clearErrors,
-					navController = navController,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					postSavedUrls = postSavedUrls,
 					saveToSharedPrefs = saveToSharedPrefs,
 					offset = offset,
-					index = index
+					index = index,
+					calculateGridSpan = calculatedGridSpan,
+					postGridSize = postGridSize,
+					animationIsRunning = animationIsRunning
 				)
 			}
 		}
@@ -159,12 +169,14 @@ fun PicturesScreen(
 @Composable
 fun ItemsCard(
 	item: String,
-	navController: NavController,
 	getErrorMessageFromErrorsList: (String) -> String?,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	lazyState: LazyGridState,
 	addError: (String, String) -> Unit,
+	width: MutableIntState,
+	height: MutableIntState,
+	animationIsRunning: MutableState<Boolean>,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -194,72 +206,85 @@ fun ItemsCard(
 			.error(R.drawable.error)
 			.build()
 	}
-	SubcomposeAsyncImage(
-		model = (imgRequest),
-		contentDescription = item,
-		modifier = Modifier
-			.clickable {
-				if(isError)
-				{
-					openAlertDialog.value = true
-				}
-				else
-				{
-					Log.d("current", item)
-					currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
-					navController.navigate(Screen.Details.route) {
-						popUpTo(Screen.Home.route) {
-							inclusive = true
-						}
-					}
-					openAlertDialog.value = false
-				}
-			}
-			.padding(10.dp)
-			.size(100.dp)
-			.clip(RoundedCornerShape(8.dp)),
-		contentScale = ContentScale.Crop,
-		loading = {
-			Box(Modifier.fillMaxSize()) {
-				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-			}
-		},
-		onError = {
-			isError = true
-			addError(item, it.result.throwable.message.toString())
-		},
-		onSuccess = {
-			isError = false
-		}
-	)
-	if(openAlertDialog.value)
+	val modifier = remember { mutableStateOf(Modifier.fillMaxSize()) }
+	if(width.intValue == 0)
 	{
-		if(isValidUrl(item))
-		{
-			val reloadString = stringResource(R.string.reload)
-			AlertDialogMain(
-				onDismissRequest = { openAlertDialog.value = false },
-				onConfirmation =
-				{
-					openAlertDialog.value = false
-					println("Confirmation registered")
-					Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
-				},
-				dialogTitle = stringResource(R.string.error_ocurred_loading_img),
-				dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
-				icon = Icons.Default.Warning,
-				textButtonCancel = stringResource(R.string.cancel),
-				textButtonConfirm = stringResource(R.string.confirm))
+		modifier.value = Modifier.layout { measurable, constraints ->
+			val placeable = measurable.measure(constraints)
+			width.intValue = placeable.width
+			height.intValue = placeable.height
+			Log.d("checkers check", "${placeable.width}")
+			Log.d("checkers check", "${placeable.height}")
+			layout(placeable.width, placeable.height) {
+				placeable.place(0, 0)
+			}
 		}
-		else
+	}
+	Box(modifier = Modifier
+		.aspectRatio(1f)
+		.padding(10.dp)) {
+		SubcomposeAsyncImage(
+			model = (imgRequest),
+			contentDescription = item,
+			modifier = modifier.value
+				.clickable(!animationIsRunning.value) {
+					if(isError)
+					{
+						openAlertDialog.value = true
+					}
+					else
+					{
+						Log.d("current", item)
+						currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
+						animationIsRunning.value = true
+						openAlertDialog.value = false
+					}
+				}
+				.fillMaxSize()
+				.clip(RoundedCornerShape(8.dp)),
+			contentScale = ContentScale.Crop,
+			loading = {
+				Box(Modifier.fillMaxSize()) {
+					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+				}
+			},
+			onError = {
+				isError = true
+				addError(item, it.result.throwable.message.toString())
+			},
+			onSuccess = {
+				isError = false
+			}
+		)
+		if(openAlertDialog.value)
 		{
-			AlertDialogSecondary(
-				onDismissRequest = { openAlertDialog.value = false },
-				onConfirmation =
-				{
-					openAlertDialog.value = false
-				},
-				dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
+			if(isValidUrl(item))
+			{
+				val reloadString = stringResource(R.string.reload)
+				AlertDialogMain(
+					onDismissRequest = { openAlertDialog.value = false },
+					onConfirmation =
+					{
+						openAlertDialog.value = false
+						println("Confirmation registered")
+						Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
+					},
+					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
+					dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
+					icon = Icons.Default.Warning,
+					textButtonCancel = stringResource(R.string.cancel),
+					textButtonConfirm = stringResource(R.string.confirm))
+			}
+			else
+			{
+				AlertDialogSecondary(
+					onDismissRequest = { openAlertDialog.value = false },
+					onConfirmation =
+					{
+						openAlertDialog.value = false
+					},
+					dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
+			}
 		}
 	}
 }
@@ -271,15 +296,19 @@ fun ShowList(
 	addError: (String, String) -> Unit,
 	state: PicturesState,
 	clearErrors: () -> Unit,
-	navController: NavController,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (List<String>) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
 	offset: Int,
 	index: Int,
+	calculateGridSpan: Int,
+	postGridSize: (Int) -> Unit,
+	animationIsRunning: MutableState<Boolean>,
 )
 {
+	val widthInPx = remember(Unit) { mutableIntStateOf(0) }
+	val heightInPx = remember(Unit) { mutableIntStateOf(0) }
 	val context = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
@@ -298,18 +327,21 @@ fun ShowList(
 				}
 				LazyVerticalGrid(
 					state = listState,
+					userScrollEnabled = !animationIsRunning.value,
 					modifier = Modifier
 						.fillMaxSize(),
-					columns = GridCells.Fixed(count = calculateGridSpan())) {
+					columns = GridCells.Fixed(count = calculateGridSpan)) {
 					items(items = list) {
 						ItemsCard(
 							item = it,
-							navController = navController,
 							getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 							currentPicture = currentPicture,
 							isValidUrl = isValidUrl,
 							lazyState = listState,
-							addError = addError
+							addError = addError,
+							width = widthInPx,
+							height = heightInPx,
+							animationIsRunning = animationIsRunning
 						)
 					}
 				}
@@ -341,25 +373,31 @@ fun ShowList(
 		}
 		LazyVerticalGrid(
 			state = listState,
+			userScrollEnabled = !animationIsRunning.value,
 			modifier = Modifier
 				.fillMaxSize(),
-			columns = GridCells.Fixed(count = calculateGridSpan())) {
+			columns = GridCells.Fixed(count = calculateGridSpan)) {
 			Log.d("PicturesFragment", "$imagesUrlsSP")
 			items(items = imagesUrlsSP) {
 				ItemsCard(
 					item = it,
-					navController = navController,
 					getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					lazyState = listState,
-					addError = addError
+					addError = addError,
+					width = widthInPx,
+					height = heightInPx,
+					animationIsRunning = animationIsRunning
 				)
 			}
 		}
 	}
 	LaunchedEffect(Unit) {
 		listState.scrollToItem(index, offset)
+		postGridSize(listState.layoutInfo.viewportEndOffset)
+		delay(5500)
+		animationIsRunning.value = false
 	}
 }
 
@@ -467,13 +505,4 @@ fun AlertDialogSecondary(
 			Text(stringResource(R.string.okey))
 		}
 	})
-}
-
-@Composable
-private fun calculateGridSpan(): Int
-{
-	val displayMetrics = LocalContext.current.resources.displayMetrics
-	val width = displayMetrics.widthPixels
-	val density = displayMetrics.density
-	return (width / density).toInt() / LENGTH_OF_PICTURE
 }

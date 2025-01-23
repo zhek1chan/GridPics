@@ -2,6 +2,7 @@ package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.util.Log
 import android.widget.Toast
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,8 +39,10 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.Button
@@ -64,6 +68,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -78,6 +84,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
+import androidx.navigation.navOptions
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.error
@@ -85,11 +92,14 @@ import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
+import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailsScreen(
@@ -101,27 +111,54 @@ fun DetailsScreen(
 	postUrl: (String?, Bitmap?) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	changeBarsVisability: (Boolean) -> Unit,
-	postNewBitmap: (String) -> Unit,
+	postNewBitmap: (String, String) -> Unit,
 	addPicture: (String) -> Unit,
 	setImageSharedState: (Boolean) -> Unit,
 	picsUiState: MutableState<PicturesScreenUiState>,
 	setCurrentPictureUrl: (String) -> Unit,
 	share: (String) -> Unit,
+	deleteCurrentPicture: (String) -> Unit,
+	postWasSharedState: () -> Unit,
+	setFalseToWasDeletedFromNotification: () -> Unit,
+	setInitialPage: (Int) -> Unit,
+	animationHasBeenStarted: MutableState<Boolean>,
+	postPivot: () -> Unit,
 )
 {
+	val color = MaterialTheme.colorScheme.background
+	val backgroundColor = remember { mutableStateOf(color) }
+	val animationIsRunningLocal = remember(false) { mutableStateOf(true) }
+	val thisIsEnterAnimation = remember { mutableStateOf(true) }
+	LaunchedEffect(false) {
+		if(state.value.isSharedImage)
+		{
+			animationIsRunningLocal.value = false
+			thisIsEnterAnimation.value = false
+		}
+		else
+		{
+			delay(5500)
+			animationIsRunningLocal.value = false
+			animationHasBeenStarted.value = false
+			thisIsEnterAnimation.value = false
+		}
+	}
+	LaunchedEffect(animationIsRunningLocal.value) {
+		if(animationIsRunningLocal.value)
+		{
+			backgroundColor.value = color.copy(0.0001f)
+		}
+		else
+		{
+			backgroundColor.value = color
+		}
+	}
 	val value = state.value
 	val context = LocalContext.current
 	val currentPicture = value.currentPicture
-	BackHandler {
-		navigateToHome(
-			changeBarsVisability = changeBarsVisability,
-			postUrl = postUrl,
-			navController = navController,
-			setImageSharedStateToFalse = setImageSharedState
-		)
-	}
-	var list = state.value.picturesUrl
+	var list = remember(state.value.isSharedImage) { state.value.picturesUrl }
 	var initialPage = list.indexOf(currentPicture)
+	val orientation = LocalConfiguration.current.orientation
 	val size: Int
 	if(initialPage >= 0)
 	{
@@ -133,59 +170,123 @@ fun DetailsScreen(
 		initialPage = 0
 		size = 1
 	}
-	Log.d("index currentPage", currentPicture)
-	Log.d("index initialPage", "$initialPage")
-	Log.d("index size of list", "$size")
-	val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
-	val currentPage = pagerState.currentPage
-	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
-	LaunchedEffect(currentPage) {
-		val pic = list[currentPage]
-		setCurrentPictureUrl(pic)
-		if(getErrorMessageFromErrorsList(pic) != null)
+	val mod = remember(animationIsRunningLocal.value) { mutableStateOf(Modifier.fillMaxSize()) }
+	Box(modifier = mod.value) {
+		if(animationIsRunningLocal.value && !thisIsEnterAnimation.value)
 		{
-			Log.d("checkMa", "gruzim oshibku")
-			postUrl(pic, errorPicture)
+			if(orientation == Configuration.ORIENTATION_PORTRAIT)
+			{
+				mod.value = Modifier
+					.width(400.dp)
+					.height(500.dp)
+			}
+			else
+			{
+				mod.value = Modifier
+					.width(200.dp)
+					.height(300.dp)
+			}
 		}
 		else
 		{
-			postNewBitmap(pic)
+			mod.value = Modifier.fillMaxSize()
 		}
+		Log.d("index currentPage", currentPicture)
+		Log.d("index initialPage", "$initialPage")
+		setInitialPage(initialPage)
+		Log.d("index size of list", "$size")
+		val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
+		val currentPage = pagerState.currentPage
+		val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
+		val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
+		BackHandler {
+			if(!animationIsRunningLocal.value)
+			{
+				Log.d("activated", "activated")
+				navigateToHome(
+					changeBarsVisability = changeBarsVisability,
+					postUrl = postUrl,
+					navController = navController,
+					setImageSharedStateToFalse = setImageSharedState,
+					animationIsRunning = animationIsRunningLocal,
+					wasDeleted = false,
+					animationHasBeenStarted = animationHasBeenStarted,
+					postPivot = postPivot,
+					state = state,
+					checkOnErrorExists = getErrorMessageFromErrorsList
+				)
+			}
+		}
+		LaunchedEffect(currentPage) {
+			val pic = if(list.size >= currentPage)
+			{
+				list[currentPage]
+			}
+			else
+			{
+				""
+			}
+			if(pic.isNotEmpty())
+			{
+				setCurrentPictureUrl(pic)
+				if(getErrorMessageFromErrorsList(pic) != null)
+				{
+					Log.d("checkMa", "gruzim oshibku")
+					postUrl(pic, errorPicture)
+				}
+				else
+				{
+					postNewBitmap(pic, pleaseWaitString)
+				}
+			}
+		}
+		Scaffold(
+			containerColor = backgroundColor.value,
+			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
+			topBar = {
+				AppBar(
+					isVisible = value.barsAreVisible,
+					nc = navController,
+					currentPicture = currentPicture,
+					postUrl = postUrl,
+					state = state,
+					changeBarsVisability = changeBarsVisability,
+					setImageSharedStateToFalse = setImageSharedState,
+					share = share,
+					postWasSharedState = postWasSharedState,
+					animationIsRunning = animationIsRunningLocal,
+					animationHasBeenStarted = animationHasBeenStarted,
+					postPivot = postPivot,
+					checkOnErrorExists = getErrorMessageFromErrorsList
+				)
+			},
+			content = { padding ->
+				ShowDetails(
+					navController = navController,
+					context = context,
+					checkOnErrorExists = getErrorMessageFromErrorsList,
+					addError = addError,
+					removeSpecialError = removeError,
+					state = state,
+					isValidUrl = isValidUrl,
+					padding = padding,
+					changeBarsVisability = changeBarsVisability,
+					postUrl = postUrl,
+					addPicture = addPicture,
+					setImageSharedState = setImageSharedState,
+					picturesState = picsUiState,
+					pagerState = pagerState,
+					list = list.toMutableList(),
+					deleteCurrentPicture = deleteCurrentPicture,
+					animationIsRunning = animationIsRunningLocal,
+					setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
+					thisIsEnterAnimation = thisIsEnterAnimation,
+					animationHasBeenStarted = animationHasBeenStarted,
+					postPivot = postPivot
+				)
+			}
+		)
 	}
-	Scaffold(
-		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
-		topBar = {
-			AppBar(
-				isVisible = value.barsAreVisible,
-				nc = navController,
-				currentPicture = currentPicture,
-				postUrl = postUrl,
-				state = state,
-				changeBarsVisability = changeBarsVisability,
-				setImageSharedStateToFalse = setImageSharedState,
-				share = share
-			)
-		},
-		content = { padding ->
-			ShowDetails(
-				navController = navController,
-				context = context,
-				checkOnErrorExists = getErrorMessageFromErrorsList,
-				addError = addError,
-				removeSpecialError = removeError,
-				state = state,
-				isValidUrl = isValidUrl,
-				padding = padding,
-				changeBarsVisability = changeBarsVisability,
-				postUrl = postUrl,
-				addPicture = addPicture,
-				setImageSharedState = setImageSharedState,
-				picturesState = picsUiState,
-				pagerState = pagerState,
-				list = list.toMutableList()
-			)
-		}
-	)
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -206,6 +307,12 @@ fun ShowDetails(
 	picturesState: MutableState<PicturesScreenUiState>,
 	pagerState: PagerState,
 	list: MutableList<String>,
+	deleteCurrentPicture: (String) -> Unit,
+	animationIsRunning: MutableState<Boolean>,
+	setFalseToWasDeletedFromNotification: () -> Unit,
+	thisIsEnterAnimation: MutableState<Boolean>,
+	animationHasBeenStarted: MutableState<Boolean>,
+	postPivot: () -> Unit,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -217,23 +324,22 @@ fun ShowDetails(
 		state = pagerState,
 		pageSize = PageSize.Fill,
 		contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
-		userScrollEnabled = !isSharedImage,
+		userScrollEnabled = !isSharedImage && !animationIsRunning.value,
 		pageSpacing = 10.dp
 	) { page ->
 		val url = list[page]
 		val errorMessage = checkOnErrorExists(url)
 		Log.d("checkUp", "is error $errorMessage")
-		Box(modifier = Modifier.fillMaxSize()) {
+		Box(modifier = Modifier
+			.fillMaxSize()
+			.background(Color.Transparent)) {
 			if(errorMessage != null)
 			{
 				ShowError(
 					context = context,
 					currentUrl = url,
-					pagerState = pagerState,
 					isValidUrl = isValidUrl,
-					removeSpecialError = removeSpecialError,
-					isShared = isSharedImage
-				)
+					removeSpecialError = removeSpecialError)
 			}
 			else
 			{
@@ -247,7 +353,12 @@ fun ShowDetails(
 					changeBarsVisability = changeBarsVisability,
 					postUrl = postUrl,
 					isScreenInPortraitState = isScreenInPortraitState,
-					setImageSharedStateToFalse = setImageSharedState
+					setImageSharedStateToFalse = setImageSharedState,
+					animationIsRunning = animationIsRunning,
+					thisIsEnterAnimation = thisIsEnterAnimation,
+					animationHasBeenStarted = animationHasBeenStarted,
+					postPivot = postPivot,
+					checkOnErrorExists = checkOnErrorExists
 				)
 			}
 			if(isSharedImage)
@@ -272,7 +383,13 @@ fun ShowDetails(
 									changeBarsVisability = changeBarsVisability,
 									postUrl = postUrl,
 									navController = navController,
-									setImageSharedStateToFalse = setImageSharedState
+									setImageSharedStateToFalse = setImageSharedState,
+									animationIsRunning = animationIsRunning,
+									wasDeleted = false,
+									animationHasBeenStarted = animationHasBeenStarted,
+									postPivot = postPivot,
+									state = state,
+									checkOnErrorExists = checkOnErrorExists
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -294,7 +411,13 @@ fun ShowDetails(
 											changeBarsVisability = changeBarsVisability,
 											postUrl = postUrl,
 											navController = navController,
-											setImageSharedStateToFalse = setImageSharedState
+											setImageSharedStateToFalse = setImageSharedState,
+											animationIsRunning = animationIsRunning,
+											wasDeleted = false,
+											animationHasBeenStarted = animationHasBeenStarted,
+											postPivot = postPivot,
+											state = state,
+											checkOnErrorExists = checkOnErrorExists
 										)
 									}
 									setImageSharedState(false)
@@ -307,6 +430,62 @@ fun ShowDetails(
 							}
 						}
 					}
+				}
+			}
+			else
+			{
+				val openDialog = remember { mutableStateOf(state.value.wasDeletedFromNotification) }
+				val cancelString = stringResource(R.string.delete_picture)
+				Row(
+					modifier = Modifier
+						.height(80.dp)
+						.padding(0.dp, 0.dp, 0.dp, 0.dp)
+						.align(Alignment.BottomCenter)
+				) {
+					AnimatedVisibility(!animationIsRunning.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+						CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+							Button(
+								modifier = Modifier
+									.align(Alignment.CenterVertically)
+									.size(130.dp, 60.dp),
+								onClick = {
+									openDialog.value = true
+								},
+								border = BorderStroke(3.dp, Color.Red),
+								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+							) {
+								Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
+							}
+						}
+					}
+				}
+				AnimatedVisibility(openDialog.value) {
+					AlertDialogMain(
+						dialogText = null,
+						dialogTitle = stringResource(R.string.do_you_really_want_to_delete_it),
+						onConfirmation = {
+							navigateToHome(
+								changeBarsVisability = changeBarsVisability,
+								postUrl = postUrl,
+								navController = navController,
+								setImageSharedStateToFalse = setImageSharedState,
+								animationIsRunning = animationIsRunning,
+								wasDeleted = true,
+								animationHasBeenStarted = animationHasBeenStarted,
+								postPivot = postPivot,
+								state = state,
+								checkOnErrorExists = checkOnErrorExists
+							)
+							deleteCurrentPicture(url)
+						},
+						onDismissRequest = {
+							openDialog.value = false
+							setFalseToWasDeletedFromNotification()
+						},
+						icon = Icons.Default.Delete,
+						textButtonCancel = stringResource(R.string.cancel),
+						textButtonConfirm = stringResource(R.string.confirm))
 				}
 			}
 		}
@@ -326,101 +505,140 @@ fun ShowAsynchImage(
 	postUrl: (String?, Bitmap?) -> Unit,
 	isScreenInPortraitState: Boolean,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
+	animationIsRunning: MutableState<Boolean>,
+	thisIsEnterAnimation: MutableState<Boolean>,
+	animationHasBeenStarted: MutableState<Boolean>,
+	postPivot: () -> Unit,
+	checkOnErrorExists: (String) -> String?,
 )
 {
-	val scale = if(state.value.isMultiWindowed)
-	{
-		ContentScale.Fit
-	}
-	else
-	{
-		if(isScreenInPortraitState)
+	Box(Modifier.fillMaxSize()) {
+		val scale = if(animationIsRunning.value)
 		{
 			ContentScale.FillWidth
 		}
+		else if(state.value.isMultiWindowed)
+		{
+			ContentScale.Fit
+		}
 		else
 		{
-			ContentScale.FillHeight
-		}
-	}
-	val zoom = rememberZoomState(15f, Size.Zero)
-	var imageSize by remember { mutableStateOf(Size.Zero) }
-	val imgRequest = remember(img) {
-		ImageRequest.Builder(context)
-			.data(img)
-			.error(R.drawable.error)
-			.diskCacheKey(img)
-			.build()
-	}
-	val scope = rememberCoroutineScope()
-	SubcomposeAsyncImage(
-		model = imgRequest,
-		contentDescription = null,
-		contentScale = scale,
-		onSuccess = {
-			val resultImage = it.result.image
-			imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
-			removeSpecialError(img)
-		},
-		loading = {
-			Box(Modifier.fillMaxSize()) {
-				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+			if(isScreenInPortraitState)
+			{
+				ContentScale.FillWidth
 			}
-		},
-		onError = {
-			addError(img, it.result.throwable.message.toString())
-			navController.navigate(Screen.Details.route)
-		},
-		modifier = Modifier
-			.fillMaxSize()
-			.zoomable(
-				zoomState = zoom,
-				enableOneFingerZoom = false,
-				onTap =
-				{
-					val visibility = state.value.barsAreVisible
-					changeBarsVisability(!visibility)
-				}
-			)
-			.pointerInput(Unit) {
-				awaitEachGesture {
-					val count = mutableListOf(0)
-					val countLastThree = mutableListOf(0)
-					while(true)
+			else
+			{
+				ContentScale.FillHeight
+			}
+		}
+		val zoom = rememberZoomState(15f, Size.Zero)
+		var imageSize by remember { mutableStateOf(Size.Zero) }
+		val imgRequest = remember(img) {
+			ImageRequest.Builder(context)
+				.data(img)
+				.error(R.drawable.error)
+				.diskCacheKey(img)
+				.build()
+		}
+		val mod = remember(animationIsRunning.value) { mutableStateOf(Modifier.fillMaxSize()) }
+		if(animationIsRunning.value && !thisIsEnterAnimation.value)
+		{
+			mod.value = Modifier
+				.aspectRatio(1f)
+				.clip(RoundedCornerShape(8.dp))
+				.alpha(0.5f)
+				.align(Alignment.Center)
+		}
+		else if(animationIsRunning.value && thisIsEnterAnimation.value)
+		{
+			mod.value = Modifier
+				.aspectRatio(1f)
+				.align(Alignment.Center)
+				.alpha(0.5f)
+				.clip(RoundedCornerShape(8.dp))
+		}
+		else
+		{
+			mod.value = Modifier
+				.fillMaxSize()
+				.zoomable(
+					zoomState = zoom,
+					enableOneFingerZoom = false,
+					onTap =
 					{
-						val event = awaitPointerEvent()
-						val changes = event.changes
-						val exit = !changes.any {
-							it.isConsumed
-						}
-						if(count.size >= 3)
+						val visibility = state.value.barsAreVisible
+						changeBarsVisability(!visibility)
+					}
+				)
+				.pointerInput(Unit) {
+					awaitEachGesture {
+						val count = mutableListOf(0)
+						val countLastThree = mutableListOf(0)
+						while(true)
 						{
-							val lastIndex = count.lastIndex
-							countLastThree.add(count[lastIndex])
-							countLastThree.add(count[lastIndex - 1])
-							countLastThree.add(count[lastIndex - 2])
-						}
-						if(changes.any { !it.pressed })
-						{
-							if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
-							{
-								navigateToHome(
-									changeBarsVisability = changeBarsVisability,
-									postUrl = postUrl,
-									navController = navController,
-									setImageSharedStateToFalse = setImageSharedStateToFalse
-								)
+							val event = awaitPointerEvent()
+							val changes = event.changes
+							val exit = !changes.any {
+								it.isConsumed
 							}
+							if(count.size >= 3)
+							{
+								val lastIndex = count.lastIndex
+								countLastThree.add(count[lastIndex])
+								countLastThree.add(count[lastIndex - 1])
+								countLastThree.add(count[lastIndex - 2])
+							}
+							if(changes.any { !it.pressed })
+							{
+								if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
+								{
+									navigateToHome(
+										changeBarsVisability = changeBarsVisability,
+										postUrl = postUrl,
+										navController = navController,
+										setImageSharedStateToFalse = setImageSharedStateToFalse,
+										animationIsRunning = animationIsRunning,
+										wasDeleted = false,
+										animationHasBeenStarted = animationHasBeenStarted,
+										postPivot = postPivot,
+										state = state,
+										checkOnErrorExists = checkOnErrorExists
+									)
+								}
+							}
+							countLastThree.clear()
+							count.add(changes.size)
 						}
-						countLastThree.clear()
-						count.add(changes.size)
 					}
 				}
-			}
-	)
+		}
+		val scope = rememberCoroutineScope()
+		SubcomposeAsyncImage(
+			model = imgRequest,
+			contentDescription = null,
+			contentScale = scale,
+			onSuccess = {
+				val resultImage = it.result.image
+				imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
+				removeSpecialError(img)
+			},
+			loading = {
+				Box(Modifier.fillMaxSize()) {
+					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+				}
+			},
+			onError = {
+				addError(img, it.result.throwable.message.toString())
+				navController.navigate(Screen.Details.route)
+			},
+			modifier = mod.value
+				.align(Alignment.TopStart)
+		)
 
-	scope.launch {
-		zoom.setContentSize(imageSize)
+		scope.launch {
+			zoom.setContentSize(imageSize)
+		}
 	}
 }
 
@@ -428,14 +646,11 @@ fun ShowAsynchImage(
 fun ShowError(
 	context: Context,
 	currentUrl: String,
-	pagerState: PagerState,
 	isValidUrl: (String) -> Boolean,
 	removeSpecialError: (String) -> Unit,
-	isShared: Boolean,
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
-	val scope = rememberCoroutineScope()
 	val errorMessage = if(isValidUrl(currentUrl))
 	{
 		HTTP_ERROR
@@ -444,6 +659,7 @@ fun ShowError(
 	{
 		linkIsNotValid
 	}
+	val scope = rememberCoroutineScope()
 	Column(
 		modifier = Modifier.fillMaxSize(),
 		verticalArrangement = Arrangement.Center,
@@ -461,16 +677,14 @@ fun ShowError(
 		)
 		if(errorMessage != linkIsNotValid)
 		{
+			Log.d("TEST111", "error")
 			Button(
 				onClick =
 				{
 					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
 					scope.launch {
-						if(!isShared)
-						{
-							removeSpecialError(currentUrl)
-						}
-						pagerState.scrollToPage(pagerState.currentPage)
+						delay(500)
+						removeSpecialError(currentUrl)
 					}
 				},
 				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
@@ -485,103 +699,116 @@ fun ShowError(
 @Composable
 fun AppBar(
 	isVisible: Boolean,
-	nc: NavController, currentPicture: String,
+	nc: NavController,
+	currentPicture: String,
 	postUrl: (String?, Bitmap?) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	changeBarsVisability: (Boolean) -> Unit,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	share: (String) -> Unit,
+	postWasSharedState: () -> Unit,
+	animationIsRunning: MutableState<Boolean>,
+	animationHasBeenStarted: MutableState<Boolean>,
+	postPivot: () -> Unit,
+	checkOnErrorExists: (String) -> String?,
 )
 {
+	if(state.value.wasSharedFromNotification)
+	{
+		share(currentPicture)
+		postWasSharedState()
+	}
 	val navBack = remember { mutableStateOf(false) }
 	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 	Log.d("shared pic url", currentPicture)
 	val sharedImgCase = state.value.isSharedImage
 	Log.d("wahwah", "$screenWidth")
-	AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
-		Box(
-			modifier = Modifier
-				.background(MaterialTheme.colorScheme.background)
-				.height(
-					WindowInsets.systemBarsIgnoringVisibility
-						.asPaddingValues()
-						.calculateTopPadding() + 64.dp
-				)
-				.fillMaxWidth())
-		val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-			TopAppBar(
+	AnimatedVisibility(!animationIsRunning.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+		AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
+			Box(
 				modifier = Modifier
-					.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-					.wrapContentSize(),
-				title = {
-					val width = if(sharedImgCase)
-					{
-						screenWidth
-					}
-					else
-					{
-						screenWidth - 50.dp
-					}
-					Box(modifier = Modifier
-						.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-						.height(64.dp)
-						.width(width)
-						.clickable {
-							navBack.value = true
-						}) {
-						Text(
-							text = currentPicture,
-							fontSize = 18.sp,
-							maxLines = 2,
-							modifier = Modifier
-								.align(Alignment.Center),
-							overflow = TextOverflow.Ellipsis,
-						)
-					}
-				},
-				navigationIcon = {
-					Box(modifier = Modifier
-						.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-						.height(64.dp)
-						.width(50.dp)
-						.clickable {
-							navBack.value = true
-						}) {
-						Icon(
-							imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-							contentDescription = "back",
-							modifier = Modifier
-								.align(Alignment.Center)
-						)
-					}
-				},
-				colors = TopAppBarDefaults.topAppBarColors(
-					titleContentColor = MaterialTheme.colorScheme.onPrimary,
-					navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-					actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-					containerColor = MaterialTheme.colorScheme.background
-				),
-				actions = {
-					AnimatedVisibility(!sharedImgCase) {
+					.background(MaterialTheme.colorScheme.background)
+					.height(
+						WindowInsets.systemBarsIgnoringVisibility
+							.asPaddingValues()
+							.calculateTopPadding() + 64.dp
+					)
+					.fillMaxWidth())
+			val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+			CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+				TopAppBar(
+					modifier = Modifier
+						.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+						.wrapContentSize(),
+					title = {
+						val width = if(sharedImgCase)
+						{
+							screenWidth
+						}
+						else
+						{
+							screenWidth - 50.dp
+						}
+						Box(modifier = Modifier
+							.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+							.height(64.dp)
+							.width(width)
+							.clickable {
+								navBack.value = true
+							}) {
+							Text(
+								text = currentPicture,
+								fontSize = 18.sp,
+								maxLines = 2,
+								modifier = Modifier
+									.align(Alignment.Center),
+								overflow = TextOverflow.Ellipsis,
+							)
+						}
+					},
+					navigationIcon = {
 						Box(modifier = Modifier
 							.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 							.height(64.dp)
 							.width(50.dp)
 							.clickable {
-								share(currentPicture)
-							}
-						) {
+								navBack.value = true
+							}) {
 							Icon(
-								modifier = Modifier.align(Alignment.Center),
-								imageVector = Icons.Default.Share,
-								contentDescription = "share",
-								tint = MaterialTheme.colorScheme.onPrimary,
+								imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+								contentDescription = "back",
+								modifier = Modifier
+									.align(Alignment.Center)
 							)
 						}
+					},
+					colors = TopAppBarDefaults.topAppBarColors(
+						titleContentColor = MaterialTheme.colorScheme.onPrimary,
+						navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+						actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+						containerColor = MaterialTheme.colorScheme.background
+					),
+					actions = {
+						AnimatedVisibility(!sharedImgCase) {
+							Box(modifier = Modifier
+								.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+								.height(64.dp)
+								.width(50.dp)
+								.clickable {
+									share(currentPicture)
+								}
+							) {
+								Icon(
+									modifier = Modifier.align(Alignment.Center),
+									imageVector = Icons.Default.Share,
+									contentDescription = "share",
+									tint = MaterialTheme.colorScheme.onPrimary,
+								)
+							}
+						}
 					}
-				}
-			)
+				)
+			}
 		}
 	}
 	if(navBack.value)
@@ -591,20 +818,52 @@ fun AppBar(
 			changeBarsVisability = changeBarsVisability,
 			postUrl = postUrl,
 			navController = nc,
-			setImageSharedStateToFalse = setImageSharedStateToFalse
+			setImageSharedStateToFalse = setImageSharedStateToFalse,
+			animationIsRunning = animationIsRunning,
+			wasDeleted = false,
+			animationHasBeenStarted = animationHasBeenStarted,
+			postPivot = postPivot,
+			state = state,
+			checkOnErrorExists = checkOnErrorExists
 		)
 	}
 }
 
+@SuppressLint("RestrictedApi")
 fun navigateToHome(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String?, Bitmap?) -> Unit,
 	navController: NavController,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
+	animationIsRunning: MutableState<Boolean>,
+	wasDeleted: Boolean,
+	animationHasBeenStarted: MutableState<Boolean>,
+	postPivot: () -> Unit,
+	state: MutableState<DetailsScreenUiState>,
+	checkOnErrorExists: (String) -> String?,
 )
 {
+	animationIsRunning.value = true
+	animationHasBeenStarted.value = true
 	changeBarsVisability(true)
+	if(wasDeleted || state.value.isSharedImage || checkOnErrorExists(state.value.currentPicture) != null)
+	{
+		postPivot()
+		setImageSharedStateToFalse(false)
+		navController.navigate(Screen.Home.route,
+			navOptions = navOptions {
+				anim {
+					enter = 0
+					exit = 0
+					popEnter = 0
+					popExit = 0
+				}
+			})
+	}
+	else
+	{
+		setImageSharedStateToFalse(false)
+		navController.navigateUp()
+	}
 	postUrl(null, null)
-	setImageSharedStateToFalse(false)
-	navController.navigate(Screen.Home.route)
 }

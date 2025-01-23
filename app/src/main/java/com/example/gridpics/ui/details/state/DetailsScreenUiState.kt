@@ -5,5 +5,7 @@ data class DetailsScreenUiState(
 	val barsAreVisible: Boolean,
 	val isSharedImage: Boolean,
 	val picturesUrl: List<String>,
-	val currentPicture: String
+	val currentPicture: String,
+	val wasSharedFromNotification: Boolean,
+	val wasDeletedFromNotification: Boolean
 )
