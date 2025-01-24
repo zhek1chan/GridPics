@@ -11,6 +11,7 @@ import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
 import kotlinx.coroutines.launch
 import kotlin.math.ceil
+import kotlin.math.max
 
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
@@ -26,6 +27,12 @@ class PicturesViewModel(
 	private var initialPage = 0
 	private var sizeOfGridInPixels = 0
 	private var urlForCalculation = ""
+	private var listOfPositions = mutableListOf<Pair<Float, Float>>()
+	private var mapOfColumns = mutableMapOf<String, Int>()
+	private var mapOfLines = mutableMapOf<String, Int>()
+	private var firstVisibleItemIndex = 0
+	private var numOfVisibleElements = 0
+	private var cutouts = Pair(0f, 0f)
 
 	init
 	{
@@ -237,303 +244,125 @@ class PicturesViewModel(
 		urlForCalculation = url
 		val list = picturesUiState.value.picturesUrl
 		val gridQuantity = gridQuantity
-		val index = list.indexOf(url) + 1
 		//вычисляем позицию в формате таблицы
-		var column: Int
-		val line: Float = ceil(index.toFloat() / gridQuantity.toFloat())
-		column = index % gridQuantity
-		if(column == 0)
+		if(mapOfColumns.isEmpty())
 		{
-			column = gridQuantity
+			viewModelScope.launch {
+				for(i in list.indices)
+				{
+					var column: Int
+					val line = ceil((i + 1).toFloat() / gridQuantity.toFloat()).toInt()
+					column = (i) % gridQuantity
+					if(column == 0)
+					{
+						column = gridQuantity
+					}
+					Log.d("column", "$column")
+					mapOfColumns[list[i]] = column
+					mapOfLines[list[i]] = line
+				}
+			}
 		}
-		Log.d("column", "$column")
-		calculatePixelPosition(line.toInt(), column, true)
+		calculatePixelPosition(url)
 	}
 
 	private fun calculatePixelPosition(
-		line: Int,
-		column: Int,
-		useReCalc: Boolean,
+		url: String,
 	)
 	{
-		Log.d("Calc check", "${densityOfScreen / 2 - 0.05}")
-		val screenWidth = screenWidth
-		val screenHeight = screenHeight
-		val gridQuantity = gridQuantity
-		val x = if(screenWidth > screenHeight && column == 1)
+		val urls = picturesUiState.value.picturesUrl
+		val positionInPx = listOfPositions[urls.indexOf(url)]
+
+		Log.d("watafak x", "${positionInPx.first} / ${screenWidth.toFloat()} = ${positionInPx.first / screenWidth.toFloat()}")
+		Log.d("watafak y", "$${positionInPx.second} / ${screenHeight.toFloat()} = ${positionInPx.second / screenHeight.toFloat()}")
+		var x = positionInPx.first / screenWidth.toFloat()
+		var y = positionInPx.second / screenHeight.toFloat()
+		if(screenWidth < screenHeight)
 		{
-			-1.3f
-		}
-		else if(screenWidth > screenHeight)
-		{
-			2.3f * (column - 1) - 1.9f
-		}
-		else if(column == 1)
-		{
-			0f
-		}
-		else if(column == 2)
-		{
-			1.8f
-		}
-		else if(column == 3)
-		{
-			3.5f
+			postPivotsXandY(Pair(x * 1.4f, y * 1.37f))
 		}
 		else
 		{
-			column * 1.7f
-		}
-		val numOfVisibleLines = (sizeOfGridInPixels / densityOfScreen / 110).toInt()
-		var k = 0
-		var maxK = 0
-		for(i in 1 .. 9000)
-		{
-			k = line / (numOfVisibleLines * i)
-			if(k > maxK)
-			{
-				maxK = k
-			}
-			if(k <= 1)
-			{
-				break
-			}
-		}
-		Log.d("Calc check", "max k = $maxK")
-		val value = picturesUiState.value
-		Log.d("Calc check", "k = $k")
-		var nLine = if(!useReCalc)
-		{
-			line
-		}
-		else if(line > numOfVisibleLines)
-		{
-			line - numOfVisibleLines * maxK
-		}
-		else
-		{
-			line
-		}
-		val firstVisibleIndex = value.index
-		if(useReCalc)
-		{
-			clickOnPicture(firstVisibleIndex, 0)
-		}
-		val indexOfClickedPic = value.picturesUrl.indexOf(urlForCalculation)
-		if(nLine == 0 || line * gridQuantity >= value.picturesUrl.size)
-		{
-			nLine = line - (numOfVisibleLines - 1) * (maxK - 1)
-			if(value.picturesUrl.size - indexOfClickedPic <= 3)
-			{
-				Log.d("calccalc", "clicked on last")
-				clickOnPicture(value.picturesUrl.size - 1, 0)
-			}
-		}
-		Log.d("CalcCalcСalc", "firstVisibleIndex = $firstVisibleIndex , maxK = $maxK")
-		if((firstVisibleIndex < indexOfClickedPic) && (indexOfClickedPic - firstVisibleIndex > 2) && useReCalc && maxK != 0)
-		{
-			Log.d("qazwsx", "line in range ${line in value.picturesUrl.size / gridQuantity - numOfVisibleLines - 1 .. value.picturesUrl.size / gridQuantity}")
-			val nY = ((indexOfClickedPic - firstVisibleIndex) / gridQuantity)
-			nLine -= 1
-			nLine = if(nY == 1)
-			{
-				Log.d("qazwsx", "nLine = 1")
-				1
-			}
-			else if(nY < nLine && (nY + 1) != nLine && nLine - nY > 2 && line !in value.picturesUrl.size / gridQuantity - numOfVisibleLines - 1 .. value.picturesUrl.size / gridQuantity)
-			{
-				nY
-			}
-			else if((nY < nLine && (nY + 1) != nLine && nLine - nY > 2 && line in value.picturesUrl.size / gridQuantity - numOfVisibleLines - 1 .. value.picturesUrl.size / gridQuantity))
-			{
-				Log.d("qazwsx", "sidim s bobrim za stolom")
-				nLine - 5
-			}
-			else
-			{
-				Log.d("qazwsx", "nLine = nY")
-				nY
+			if(cutouts.first != 0f) {
+				if(positionInPx.first < 100f)
+				{
+					x = -0.05f
+				}
+				else if(positionInPx.first <= 2126f && positionInPx.first>1826f)
+				{
+					x = 1.12f
+				}
+				else if(positionInPx.first <= 1826f && positionInPx.first>1226f)
+				{
+					x = 0.96f
+				}
+				else if(positionInPx.first <= 1226f && positionInPx.first>926f)
+				{
+					x = 0.795f
+				}
+				else if(positionInPx.first <= 926f && positionInPx.first>626f )
+				{
+					x = 0.455f
+				}
+				else if(positionInPx.first <= 626f && positionInPx.first>326f)
+				{
+					x = 0.29f
+				}
+				else if(positionInPx.first <= 326f && positionInPx.first> 100f)
+				{
+					x = 0.12f
+				}
+				else
+				{
+					x = 0.6f
+				}
+				if(positionInPx.second <= 26)
+				{
+					y += 0.2f
+				}
+				else
+				{
+					y *= 2f
+				}
+				postPivotsXandY(Pair(x, y))
+				Log.d("cutout sleva", "${cutouts.first}")
+			} else {
+				cutouts.second
+				Log.d("cutout sprava", "${cutouts.second}")
 			}
 		}
-		else if(useReCalc && maxK != 0)
-		{
-			nLine = 0
-		}
-		else if(firstVisibleIndex != 0 && maxK == 0 && useReCalc)
-		{
-			if(indexOfClickedPic - firstVisibleIndex <= 2)
-			{
-				nLine = 0
-			}
-			else if(indexOfClickedPic - firstVisibleIndex > 2)
-			{
-				ceil(((indexOfClickedPic - firstVisibleIndex) / gridQuantity).toDouble()).toInt()
-				nLine = ceil(((indexOfClickedPic - firstVisibleIndex) / gridQuantity).toDouble()).toInt()
-			}
-		}
-		else if(maxK != 0)
-		{
-			Log.d("CalcCalcСalc", "Srabotalo nLine = 0 v1")
-			nLine = 0
-			clickOnPicture(indexOfClickedPic, 0)
-		}
-		else if(!useReCalc && indexOfClickedPic - firstVisibleIndex <= 2)
-		{
-			Log.d("CalcCalcСalc", "Srabotalo nLine = 0 v2")
-			nLine = 0
-			clickOnPicture(indexOfClickedPic, 0)
-		}
-		else if(!useReCalc && indexOfClickedPic - firstVisibleIndex > 2)
-		{
-			Log.d("CalcCalcСalc", "Srabotalo nLine = 0 v3")
-			nLine = 0
-			clickOnPicture(indexOfClickedPic, 0)
-		}
-		else if(!useReCalc && indexOfClickedPic - firstVisibleIndex > 2)
-		{
-			Log.d("CalcCalcСalc", "Srabotalo nLine = 1")
-			nLine = 1
-			clickOnPicture(indexOfClickedPic, 0)
-		}
-		else if(useReCalc)
-		{
-			Log.d("CalcCalcСalc", "nLine - 1")
-			nLine -= 1
-		}
-		Log.d("CalcCalc", "numOfVisibleLines = $numOfVisibleLines")
-		if(nLine == numOfVisibleLines - 1)
-		{
-			clickOnPicture(firstVisibleIndex + 3, 0)
-			nLine -= 1
-		}
-		if(line == 99999999 && !useReCalc)
-		{
-			nLine = 4
-		}
-		val y = if(screenWidth > screenHeight && nLine <= 0)
-		{
-			0.77f
-		}
-		else if(screenWidth > screenHeight)
-		{
-			(nLine) * 2.09f
-		}
-		else if(nLine == 0 && screenWidth < screenHeight)
-		{
-			0.3f
-		}
-		else if(nLine == 1 && screenWidth < screenHeight)
-		{
-			1.6f
-		}
-		else if(nLine == 2 && screenWidth < screenHeight)
-		{
-			3.13f
-		}
-		else if(nLine == 3 && screenWidth < screenHeight)
-		{
-			4.6f
-		}
-		else
-		{
-			(nLine + 1) * 1.2f
-		}
-		Log.d("CalcCalcСalc", "calculated line = $nLine")
-		postPivotsXandY(Pair(x, y))
 	}
 
 	fun calculateListPosition(url: String)
 	{
-		val value = picturesUiState.value
-		val pics = value.picturesUrl
-		val gridQuantity = gridQuantity
-		val numOfVisibleLines = (sizeOfGridInPixels / densityOfScreen / 110).toInt()
-		var numOfLastLines = pics.size / gridQuantity - numOfVisibleLines
-		val index = pics.indexOf(url)
-		urlForCalculation = url
-		if(pics.size % gridQuantity != 0)
+		val list = picturesUiState.value.picturesUrl
+		val column = mapOfColumns[url]
+		val positionInPx = listOfPositions[column!!]
+		//val minVisibleLine = mapOfLines[list[firstVisibleItemIndex]]!!
+		//val maxVisibleLine = minVisibleLine + (numOfVisibleElements / gridQuantity)
+		if(url != urlForCalculation)
 		{
-			numOfLastLines += 1
-		}
-		if(initialPage != index)
-		{
-			val line = ceil(((pics.indexOf(url)) / gridQuantity).toDouble())
-			val maxLine = ceil(((pics.size - 1) / gridQuantity).toDouble())
-			Log.d("CalcCalc", "maxLine = $maxLine, line = $line")
-			Log.d("CalcCalc", "line = $line, size = ${pics.size}")
-			if((line + numOfVisibleLines - 1) * gridQuantity >= pics.size)
+			clickOnPicture(list.indexOf(url), 0)
+			var x = positionInPx.first / screenWidth.toFloat()
+			val y = positionInPx.second / screenHeight.toFloat()
+			if(screenWidth < screenHeight)
 			{
-				Log.d("CalcCalc", "line = $line, size = ${pics.size}")
-				var k: Int
-				var maxK = 0
-				for(i in 1 .. 9000)
-				{
-					k = line.toInt() / (numOfVisibleLines * i)
-					if(k > maxK)
-					{
-						maxK = k
-					}
-					if(k <= 1)
-					{
-						break
-					}
-				}
-				val endOfLines = if(line.toInt() - numOfVisibleLines * (maxK - 1) > numOfVisibleLines)
-				{
-					line.toInt() - numOfVisibleLines * (maxK)
-				}
-				else
-				{
-					line.toInt() - numOfVisibleLines * (maxK - 1)
-				}
-				Log.d("CalcCalc", "line1 = ${endOfLines + 1}, size = ${pics.size}")
-				if(line == maxLine)
-				{
-					Log.d("CalcCalc", "britney spyrs")
-					calculatePixelPosition(99999999, index % gridQuantity + 1, false)
-				}
-				else
-				{
-					calculatePixelPosition(endOfLines + 1, index % gridQuantity + 1, true)
-				}
-			}
-			else if((index + 1) / gridQuantity >= numOfVisibleLines)
-			{
-				Log.d("CalcCalc", "v2 line = $line, size = ${pics.size}")
-				val cof = ((index + 1) / gridQuantity / numOfVisibleLines)
-				val currRealLine = if(cof <= 1)
-				{
-					(index + 1) / gridQuantity - (numOfVisibleLines + 1)
-				}
-				else
-				{
-					(index + 1) / gridQuantity - numOfVisibleLines * cof
-				}
-				clickOnPicture(pics.indexOf(url) + 1, 0)
-				calculatePixelPosition(currRealLine, index % gridQuantity + 1, false)
-			}
-			else if(index > gridQuantity)
-			{
-				Log.d("CalcCalc", "v3 line = $line, size = ${pics.size}")
-				Log.d("Calc check", "another type 1")
-				var column = 0
-				for(i in 0 ..< gridQuantity)
-				{
-					if(index % gridQuantity == i)
-					{
-						clickOnPicture(pics.indexOf(url) - gridQuantity + 1 + i, 0)
-						column = i + 1
-					}
-				}
-				calculatePixelPosition(0, column, false)
-				clickOnPicture(index = pics.indexOf(url), offset = 0)
+				postPivotsXandY(Pair(x * 1.4f, y * 1.37f))
 			}
 			else
 			{
-				calculatePixelPosition(0, index + 1, false)
-				clickOnPicture(index = pics.indexOf(url), offset = 0)
+				if(positionInPx.first < 100f)
+				{
+					x = -0.08f
+				}
+				else
+				{
+					x += 0.05f * (mapOfColumns[url]?.minus(1)!!)
+				}
+				postPivotsXandY(Pair(x, y + 0.25f))
 			}
 		}
+		Log.d("wtfwtf", "$column, $positionInPx")
 	}
 
 	fun postInitialPage(page: Int)
@@ -544,5 +373,26 @@ class PicturesViewModel(
 	fun postGridSize(sizeInPx: Int)
 	{
 		sizeOfGridInPixels = sizeInPx
+	}
+
+	fun postPosition(url: String, position: Pair<Float, Float>)
+	{
+		val urls = picturesUiState.value.picturesUrl
+		if(position != Pair(0f, 0f))
+		{
+			listOfPositions.add(urls.indexOf(url), Pair(1f, 1f))
+			listOfPositions[urls.indexOf(url)] = position
+		}
+	}
+
+	fun postGridParams(index: Int, maxVisibleElements: Int)
+	{
+		firstVisibleItemIndex = index
+		numOfVisibleElements = maxVisibleElements
+	}
+
+	fun postCutouts(left: Float, right: Float)
+	{
+		cutouts = Pair(left, right)
 	}
 }

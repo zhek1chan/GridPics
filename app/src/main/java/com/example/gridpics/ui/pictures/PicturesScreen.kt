@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
@@ -41,12 +42,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,8 +55,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -74,7 +76,9 @@ import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -92,7 +96,10 @@ fun PicturesScreen(
 	saveToSharedPrefs: (List<String>) -> Unit,
 	calculateGridSpan: () -> Int,
 	postGridSize: (Int) -> Unit,
-	animationIsRunning: MutableState<Boolean>
+	animationIsRunning: MutableState<Boolean>,
+	postPosition: (String, Pair<Float, Float>) -> Unit,
+	postGridParams: (Int, Int) -> Unit,
+	postCutouts: (Float, Float) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -113,6 +120,12 @@ fun PicturesScreen(
 	{
 		cutouts.union(statusBars)
 	}
+	val direction = LocalLayoutDirection.current
+	val paddingForCutouts = cutouts.asPaddingValues()
+	val left = paddingForCutouts.calculateLeftPadding(direction)
+	val right = paddingForCutouts.calculateRightPadding(direction)
+	Log.d("cutout sleva", "${left.value} ${right.value}")
+	postCutouts(left.value, right.value)
 	Scaffold(
 		contentWindowInsets = windowInsets,
 		topBar = {
@@ -134,7 +147,7 @@ fun PicturesScreen(
 		},
 		bottomBar = { BottomNavigationBar(navController) },
 		content = { padding ->
-			Column(
+			Box(
 				modifier = Modifier
 					.padding(padding)
 					.consumeWindowInsets(padding)
@@ -158,7 +171,9 @@ fun PicturesScreen(
 					index = index,
 					calculateGridSpan = calculatedGridSpan,
 					postGridSize = postGridSize,
-					animationIsRunning = animationIsRunning
+					animationIsRunning = animationIsRunning,
+					postPosition = postPosition,
+					postGridParams = postGridParams
 				)
 			}
 		}
@@ -174,9 +189,10 @@ fun ItemsCard(
 	isValidUrl: (String) -> Boolean,
 	lazyState: LazyGridState,
 	addError: (String, String) -> Unit,
-	width: MutableIntState,
-	height: MutableIntState,
 	animationIsRunning: MutableState<Boolean>,
+	postPosition: (String, Pair<Float, Float>) -> Unit,
+	scope: CoroutineScope,
+	postGridParams: (Int, Int) -> Unit,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -207,86 +223,86 @@ fun ItemsCard(
 			.build()
 	}
 	val modifier = remember { mutableStateOf(Modifier.fillMaxSize()) }
-	if(width.intValue == 0)
+	var position by remember(item) { mutableStateOf(Pair(0f, 0f)) }
+	SubcomposeAsyncImage(
+		model = (imgRequest),
+		contentDescription = item,
+		modifier = modifier.value
+			.aspectRatio(1f)
+			.padding(10.dp)
+			.clickable(!animationIsRunning.value) {
+				if(isError)
+				{
+					openAlertDialog.value = true
+				}
+				else
+				{
+					scope.launch {
+						lazyState.scrollToItem(lazyState.firstVisibleItemIndex, 0)
+					}
+					postGridParams(lazyState.firstVisibleItemIndex, lazyState.layoutInfo.visibleItemsInfo.size)
+					Log.d("current", item)
+					currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
+					animationIsRunning.value = true
+					openAlertDialog.value = false
+				}
+			}
+			.clip(RoundedCornerShape(8.dp))
+			.background(MaterialTheme.colorScheme.onPrimary)
+			.onGloballyPositioned { coordinates ->
+				// Получаем положение относительно экрана
+				position = coordinates
+					.positionInParent()
+					.run {
+						Pair(x, y)
+					}
+			},
+		contentScale = ContentScale.Crop,
+		loading = {
+			Box(Modifier.fillMaxSize()) {
+				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+			}
+		},
+		onError = {
+			isError = true
+			addError(item, it.result.throwable.message.toString())
+		},
+		onSuccess = {
+			isError = false
+		}
+	)
+	if(openAlertDialog.value)
 	{
-		modifier.value = Modifier.layout { measurable, constraints ->
-			val placeable = measurable.measure(constraints)
-			width.intValue = placeable.width
-			height.intValue = placeable.height
-			Log.d("checkers check", "${placeable.width}")
-			Log.d("checkers check", "${placeable.height}")
-			layout(placeable.width, placeable.height) {
-				placeable.place(0, 0)
-			}
-		}
-	}
-	Box(modifier = Modifier
-		.aspectRatio(1f)
-		.padding(10.dp)) {
-		SubcomposeAsyncImage(
-			model = (imgRequest),
-			contentDescription = item,
-			modifier = modifier.value
-				.clickable(!animationIsRunning.value) {
-					if(isError)
-					{
-						openAlertDialog.value = true
-					}
-					else
-					{
-						Log.d("current", item)
-						currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
-						animationIsRunning.value = true
-						openAlertDialog.value = false
-					}
-				}
-				.fillMaxSize()
-				.clip(RoundedCornerShape(8.dp)),
-			contentScale = ContentScale.Crop,
-			loading = {
-				Box(Modifier.fillMaxSize()) {
-					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-				}
-			},
-			onError = {
-				isError = true
-				addError(item, it.result.throwable.message.toString())
-			},
-			onSuccess = {
-				isError = false
-			}
-		)
-		if(openAlertDialog.value)
+		if(isValidUrl(item))
 		{
-			if(isValidUrl(item))
-			{
-				val reloadString = stringResource(R.string.reload)
-				AlertDialogMain(
-					onDismissRequest = { openAlertDialog.value = false },
-					onConfirmation =
-					{
-						openAlertDialog.value = false
-						println("Confirmation registered")
-						Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
-					},
-					dialogTitle = stringResource(R.string.error_ocurred_loading_img),
-					dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
-					icon = Icons.Default.Warning,
-					textButtonCancel = stringResource(R.string.cancel),
-					textButtonConfirm = stringResource(R.string.confirm))
-			}
-			else
-			{
-				AlertDialogSecondary(
-					onDismissRequest = { openAlertDialog.value = false },
-					onConfirmation =
-					{
-						openAlertDialog.value = false
-					},
-					dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
-			}
+			val reloadString = stringResource(R.string.reload)
+			AlertDialogMain(
+				onDismissRequest = { openAlertDialog.value = false },
+				onConfirmation =
+				{
+					openAlertDialog.value = false
+					println("Confirmation registered")
+					Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
+				},
+				dialogTitle = stringResource(R.string.error_ocurred_loading_img),
+				dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
+				icon = Icons.Default.Warning,
+				textButtonCancel = stringResource(R.string.cancel),
+				textButtonConfirm = stringResource(R.string.confirm))
+		}
+		else
+		{
+			AlertDialogSecondary(
+				onDismissRequest = { openAlertDialog.value = false },
+				onConfirmation =
+				{
+					openAlertDialog.value = false
+				},
+				dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
 		}
 	}
+	Log.d("wat 33", "$position")
+	postPosition(item, position)
 }
 
 @Composable
@@ -305,13 +321,14 @@ fun ShowList(
 	calculateGridSpan: Int,
 	postGridSize: (Int) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
+	postPosition: (String, Pair<Float, Float>) -> Unit,
+	postGridParams: (Int, Int) -> Unit,
 )
 {
-	val widthInPx = remember(Unit) { mutableIntStateOf(0) }
-	val heightInPx = remember(Unit) { mutableIntStateOf(0) }
 	val context = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
+	val scope = rememberCoroutineScope()
 	val listState = rememberLazyGridState()
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
@@ -326,6 +343,7 @@ fun ShowList(
 					saveToSharedPrefs(list)
 				}
 				LazyVerticalGrid(
+					horizontalArrangement = Arrangement.End,
 					state = listState,
 					userScrollEnabled = !animationIsRunning.value,
 					modifier = Modifier
@@ -339,9 +357,10 @@ fun ShowList(
 							isValidUrl = isValidUrl,
 							lazyState = listState,
 							addError = addError,
-							width = widthInPx,
-							height = heightInPx,
-							animationIsRunning = animationIsRunning
+							animationIsRunning = animationIsRunning,
+							postPosition = postPosition,
+							scope = scope,
+							postGridParams = postGridParams
 						)
 					}
 				}
@@ -372,6 +391,7 @@ fun ShowList(
 			postSavedUrls(imagesUrlsSP)
 		}
 		LazyVerticalGrid(
+			horizontalArrangement = Arrangement.End,
 			state = listState,
 			userScrollEnabled = !animationIsRunning.value,
 			modifier = Modifier
@@ -386,9 +406,10 @@ fun ShowList(
 					isValidUrl = isValidUrl,
 					lazyState = listState,
 					addError = addError,
-					width = widthInPx,
-					height = heightInPx,
-					animationIsRunning = animationIsRunning
+					animationIsRunning = animationIsRunning,
+					postPosition = postPosition,
+					scope = scope,
+					postGridParams = postGridParams
 				)
 			}
 		}
