@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.pictures
 
 import android.util.Log
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,8 +11,6 @@ import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
 import kotlinx.coroutines.launch
-import kotlin.math.ceil
-import kotlin.math.max
 
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
@@ -19,19 +18,19 @@ class PicturesViewModel(
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM, emptyList()))
 	private val errorsMap: MutableMap<String, String> = mutableMapOf()
+	var mutableIsThemeBlackState = mutableStateOf(false)
+	var cofConnectedWithOrientation = mutableFloatStateOf(0f)
+	var cofConnectedWithOrientationForExit = mutableFloatStateOf(0f)
+	var isSharedImage = mutableStateOf(false)
+	var isImageToShareOrDelete = mutableStateOf(false)
 	private var pairOfPivotsXandY = Pair(0.1f, 0.1f)
 	private var gridQuantity = 0
 	private var screenWidth = 0
 	private var screenHeight = 0
 	private var densityOfScreen = 0f
-	private var initialPage = 0
-	private var sizeOfGridInPixels = 0
 	private var urlForCalculation = ""
 	private var listOfPositions = mutableListOf<Pair<Float, Float>>()
 	private var mapOfColumns = mutableMapOf<String, Int>()
-	private var mapOfLines = mutableMapOf<String, Int>()
-	private var firstVisibleItemIndex = 0
-	private var numOfVisibleElements = 0
 	private var cutouts = Pair(0f, 0f)
 
 	init
@@ -251,7 +250,6 @@ class PicturesViewModel(
 				for(i in list.indices)
 				{
 					var column: Int
-					val line = ceil((i + 1).toFloat() / gridQuantity.toFloat()).toInt()
 					column = (i) % gridQuantity
 					if(column == 0)
 					{
@@ -259,7 +257,6 @@ class PicturesViewModel(
 					}
 					Log.d("column", "$column")
 					mapOfColumns[list[i]] = column
-					mapOfLines[list[i]] = line
 				}
 			}
 		}
@@ -272,64 +269,64 @@ class PicturesViewModel(
 	{
 		val urls = picturesUiState.value.picturesUrl
 		val positionInPx = listOfPositions[urls.indexOf(url)]
-
-		Log.d("watafak x", "${positionInPx.first} / ${screenWidth.toFloat()} = ${positionInPx.first / screenWidth.toFloat()}")
-		Log.d("watafak y", "$${positionInPx.second} / ${screenHeight.toFloat()} = ${positionInPx.second / screenHeight.toFloat()}")
 		var x = positionInPx.first / screenWidth.toFloat()
 		var y = positionInPx.second / screenHeight.toFloat()
+		Log.d("cutouts", "${cutouts.first}")
 		if(screenWidth < screenHeight)
 		{
 			postPivotsXandY(Pair(x * 1.4f, y * 1.37f))
 		}
 		else
 		{
-			if(cutouts.first != 0f) {
-				if(positionInPx.first < 100f)
+			if(cutouts.first != 0f)
+			{
+				val cutsToPivots = cutouts.first * densityOfScreen / screenWidth.toFloat()
+				val column = mapOfColumns[url]!!
+
+				x = if(column == gridQuantity)
 				{
-					x = -0.05f
+					-0.06f
 				}
-				else if(positionInPx.first <= 2126f && positionInPx.first>1826f)
+				else
+					1.32f * x - cutsToPivots
+				if(positionInPx.second <= 26)
 				{
-					x = 1.12f
-				}
-				else if(positionInPx.first <= 1826f && positionInPx.first>1226f)
-				{
-					x = 0.96f
-				}
-				else if(positionInPx.first <= 1226f && positionInPx.first>926f)
-				{
-					x = 0.795f
-				}
-				else if(positionInPx.first <= 926f && positionInPx.first>626f )
-				{
-					x = 0.455f
-				}
-				else if(positionInPx.first <= 626f && positionInPx.first>326f)
-				{
-					x = 0.29f
-				}
-				else if(positionInPx.first <= 326f && positionInPx.first> 100f)
-				{
-					x = 0.12f
+					y += 0.215f
 				}
 				else
 				{
-					x = 0.6f
+					y *= 2.05f
+				}
+
+				Log.d("proverka column", "$column")
+				Log.d("proverka", "$x")
+				Log.d("cutout sleva", "${cutouts.first}")
+			}
+			else
+			{
+				val cutsToPivots = cutouts.second / screenWidth.toFloat()
+				val column = mapOfColumns[url]!!
+				x = if(column == gridQuantity)
+				{
+					-0.13f
+				}
+				else
+				{
+					x + x * column / 15 - cutsToPivots * column * 1.5f
 				}
 				if(positionInPx.second <= 26)
 				{
-					y += 0.2f
+					y += 0.215f
 				}
 				else
 				{
-					y *= 2f
+					y *= 2.05f
 				}
-				postPivotsXandY(Pair(x, y))
-				Log.d("cutout sleva", "${cutouts.first}")
-			} else {
-				cutouts.second
+				Log.d("proverka", "$x")
+				Log.d("proverka", "real ${positionInPx.first / screenWidth}")
 				Log.d("cutout sprava", "${cutouts.second}")
 			}
+			postPivotsXandY(Pair(x, y))
 		}
 	}
 
@@ -338,8 +335,6 @@ class PicturesViewModel(
 		val list = picturesUiState.value.picturesUrl
 		val column = mapOfColumns[url]
 		val positionInPx = listOfPositions[column!!]
-		//val minVisibleLine = mapOfLines[list[firstVisibleItemIndex]]!!
-		//val maxVisibleLine = minVisibleLine + (numOfVisibleElements / gridQuantity)
 		if(url != urlForCalculation)
 		{
 			clickOnPicture(list.indexOf(url), 0)
@@ -359,20 +354,9 @@ class PicturesViewModel(
 				{
 					x += 0.05f * (mapOfColumns[url]?.minus(1)!!)
 				}
-				postPivotsXandY(Pair(x, y + 0.25f))
+				postPivotsXandY(Pair(x, y + 0.5f))
 			}
 		}
-		Log.d("wtfwtf", "$column, $positionInPx")
-	}
-
-	fun postInitialPage(page: Int)
-	{
-		initialPage = page
-	}
-
-	fun postGridSize(sizeInPx: Int)
-	{
-		sizeOfGridInPixels = sizeInPx
 	}
 
 	fun postPosition(url: String, position: Pair<Float, Float>)
@@ -383,12 +367,6 @@ class PicturesViewModel(
 			listOfPositions.add(urls.indexOf(url), Pair(1f, 1f))
 			listOfPositions[urls.indexOf(url)] = position
 		}
-	}
-
-	fun postGridParams(index: Int, maxVisibleElements: Int)
-	{
-		firstVisibleItemIndex = index
-		numOfVisibleElements = maxVisibleElements
 	}
 
 	fun postCutouts(left: Float, right: Float)

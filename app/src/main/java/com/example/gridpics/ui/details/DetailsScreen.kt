@@ -119,7 +119,6 @@ fun DetailsScreen(
 	deleteCurrentPicture: (String) -> Unit,
 	postWasSharedState: () -> Unit,
 	setFalseToWasDeletedFromNotification: () -> Unit,
-	setInitialPage: (Int) -> Unit,
 	animationHasBeenStarted: MutableState<Boolean>,
 	postPivot: () -> Unit,
 )
@@ -168,103 +167,100 @@ fun DetailsScreen(
 		initialPage = 0
 		size = 1
 	}
-	Box(modifier = Modifier.fillMaxSize()) {
-		Log.d("index currentPage", currentPicture)
-		Log.d("index initialPage", "$initialPage")
-		setInitialPage(initialPage)
-		Log.d("index size of list", "$size")
-		val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
-		val currentPage = pagerState.currentPage
-		val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
-		val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
-		BackHandler {
-			if(!animationIsRunningLocal.value)
-			{
-				Log.d("activated", "activated")
-				navigateToHome(
-					changeBarsVisability = changeBarsVisability,
-					postUrl = postUrl,
-					navController = navController,
-					setImageSharedStateToFalse = setImageSharedState,
-					animationIsRunning = animationIsRunningLocal,
-					wasDeleted = false,
-					animationHasBeenStarted = animationHasBeenStarted,
-					postPivot = postPivot,
-					state = state,
-					checkOnErrorExists = getErrorMessageFromErrorsList
-				)
-			}
+	Log.d("index currentPage", currentPicture)
+	Log.d("index initialPage", "$initialPage")
+	Log.d("index size of list", "$size")
+	val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
+	val currentPage = pagerState.currentPage
+	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
+	val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
+	BackHandler {
+		if(!animationIsRunningLocal.value)
+		{
+			Log.d("activated", "activated")
+			navigateToHome(
+				changeBarsVisability = changeBarsVisability,
+				postUrl = postUrl,
+				navController = navController,
+				setImageSharedStateToFalse = setImageSharedState,
+				animationIsRunning = animationIsRunningLocal,
+				wasDeleted = false,
+				animationHasBeenStarted = animationHasBeenStarted,
+				postPivot = postPivot,
+				state = state,
+				checkOnErrorExists = getErrorMessageFromErrorsList
+			)
 		}
-		LaunchedEffect(currentPage) {
-			val pic = if(list.size >= currentPage)
+	}
+	LaunchedEffect(currentPage) {
+		val pic = if(list.size >= currentPage)
+		{
+			list[currentPage]
+		}
+		else
+		{
+			""
+		}
+		if(pic.isNotEmpty())
+		{
+			setCurrentPictureUrl(pic)
+			if(getErrorMessageFromErrorsList(pic) != null)
 			{
-				list[currentPage]
+				Log.d("checkMa", "gruzim oshibku")
+				postUrl(pic, errorPicture)
 			}
 			else
 			{
-				""
-			}
-			if(pic.isNotEmpty())
-			{
-				setCurrentPictureUrl(pic)
-				if(getErrorMessageFromErrorsList(pic) != null)
-				{
-					Log.d("checkMa", "gruzim oshibku")
-					postUrl(pic, errorPicture)
-				}
-				else
-				{
-					postNewBitmap(pic, pleaseWaitString)
-				}
+				postNewBitmap(pic, pleaseWaitString)
 			}
 		}
-		Scaffold(
-			containerColor = backgroundColor.value,
-			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
-			topBar = {
-				AppBar(
-					isVisible = value.barsAreVisible,
-					nc = navController,
-					currentPicture = currentPicture,
-					postUrl = postUrl,
-					state = state,
-					changeBarsVisability = changeBarsVisability,
-					setImageSharedStateToFalse = setImageSharedState,
-					share = share,
-					postWasSharedState = postWasSharedState,
-					animationIsRunning = animationIsRunningLocal,
-					animationHasBeenStarted = animationHasBeenStarted,
-					postPivot = postPivot,
-					checkOnErrorExists = getErrorMessageFromErrorsList
-				)
-			},
-			content = { padding ->
-				ShowDetails(
-					navController = navController,
-					context = context,
-					checkOnErrorExists = getErrorMessageFromErrorsList,
-					addError = addError,
-					removeSpecialError = removeError,
-					state = state,
-					isValidUrl = isValidUrl,
-					padding = padding,
-					changeBarsVisability = changeBarsVisability,
-					postUrl = postUrl,
-					addPicture = addPicture,
-					setImageSharedState = setImageSharedState,
-					picturesState = picsUiState,
-					pagerState = pagerState,
-					list = list.toMutableList(),
-					deleteCurrentPicture = deleteCurrentPicture,
-					animationIsRunning = animationIsRunningLocal,
-					setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
-					thisIsEnterAnimation = thisIsEnterAnimation,
-					animationHasBeenStarted = animationHasBeenStarted,
-					postPivot = postPivot
-				)
-			}
-		)
 	}
+	Scaffold(
+		containerColor = backgroundColor.value,
+		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
+		topBar = {
+			AppBar(
+				isVisible = value.barsAreVisible,
+				nc = navController,
+				currentPicture = currentPicture,
+				postUrl = postUrl,
+				state = state,
+				changeBarsVisability = changeBarsVisability,
+				setImageSharedStateToFalse = setImageSharedState,
+				share = share,
+				postWasSharedState = postWasSharedState,
+				animationIsRunning = animationIsRunningLocal,
+				animationHasBeenStarted = animationHasBeenStarted,
+				postPivot = postPivot,
+				checkOnErrorExists = getErrorMessageFromErrorsList
+			)
+		},
+		content = { padding ->
+			ShowDetails(
+				navController = navController,
+				context = context,
+				checkOnErrorExists = getErrorMessageFromErrorsList,
+				addError = addError,
+				removeSpecialError = removeError,
+				state = state,
+				isValidUrl = isValidUrl,
+				padding = padding,
+				changeBarsVisability = changeBarsVisability,
+				postUrl = postUrl,
+				addPicture = addPicture,
+				setImageSharedState = setImageSharedState,
+				picturesState = picsUiState,
+				pagerState = pagerState,
+				list = list.toMutableList(),
+				deleteCurrentPicture = deleteCurrentPicture,
+				animationIsRunning = animationIsRunningLocal,
+				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
+				thisIsEnterAnimation = thisIsEnterAnimation,
+				animationHasBeenStarted = animationHasBeenStarted,
+				postPivot = postPivot
+			)
+		}
+	)
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)

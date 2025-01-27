@@ -95,10 +95,8 @@ fun PicturesScreen(
 	postSavedUrls: (List<String>) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
 	calculateGridSpan: () -> Int,
-	postGridSize: (Int) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
-	postGridParams: (Int, Int) -> Unit,
 	postCutouts: (Float, Float) -> Unit,
 )
 {
@@ -170,10 +168,8 @@ fun PicturesScreen(
 					offset = offset,
 					index = index,
 					calculateGridSpan = calculatedGridSpan,
-					postGridSize = postGridSize,
 					animationIsRunning = animationIsRunning,
 					postPosition = postPosition,
-					postGridParams = postGridParams
 				)
 			}
 		}
@@ -192,7 +188,6 @@ fun ItemsCard(
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
 	scope: CoroutineScope,
-	postGridParams: (Int, Int) -> Unit,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -239,18 +234,17 @@ fun ItemsCard(
 				{
 					scope.launch {
 						lazyState.scrollToItem(lazyState.firstVisibleItemIndex, 0)
+						delay(50)
+						Log.d("current", item)
+						currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
+						animationIsRunning.value = true
+						openAlertDialog.value = false
 					}
-					postGridParams(lazyState.firstVisibleItemIndex, lazyState.layoutInfo.visibleItemsInfo.size)
-					Log.d("current", item)
-					currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
-					animationIsRunning.value = true
-					openAlertDialog.value = false
 				}
 			}
 			.clip(RoundedCornerShape(8.dp))
 			.background(MaterialTheme.colorScheme.onPrimary)
 			.onGloballyPositioned { coordinates ->
-				// Получаем положение относительно экрана
 				position = coordinates
 					.positionInParent()
 					.run {
@@ -301,7 +295,6 @@ fun ItemsCard(
 				dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
 		}
 	}
-	Log.d("wat 33", "$position")
 	postPosition(item, position)
 }
 
@@ -319,10 +312,8 @@ fun ShowList(
 	offset: Int,
 	index: Int,
 	calculateGridSpan: Int,
-	postGridSize: (Int) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
-	postGridParams: (Int, Int) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -360,7 +351,6 @@ fun ShowList(
 							animationIsRunning = animationIsRunning,
 							postPosition = postPosition,
 							scope = scope,
-							postGridParams = postGridParams
 						)
 					}
 				}
@@ -409,14 +399,12 @@ fun ShowList(
 					animationIsRunning = animationIsRunning,
 					postPosition = postPosition,
 					scope = scope,
-					postGridParams = postGridParams
 				)
 			}
 		}
 	}
 	LaunchedEffect(Unit) {
 		listState.scrollToItem(index, offset)
-		postGridSize(listState.layoutInfo.viewportEndOffset)
 		delay(1500)
 		animationIsRunning.value = false
 	}

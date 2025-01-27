@@ -26,7 +26,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.TransformOrigin
@@ -62,12 +61,6 @@ class MainActivity: AppCompatActivity()
 	private var navigation: NavHostController? = null
 	private var themePick: Int = 2
 	private var job: Job? = null
-	private var pairOfCof = Pair(4f, 10f)
-	private var mutableIsThemeBlackState = mutableStateOf(false)
-	private var cofConnectedWithOrientation = mutableFloatStateOf(0f)
-	private var cofConnectedWithOrientationForExit = mutableFloatStateOf(0f)
-	private var isSharedImage = mutableStateOf(false)
-	private var isImageToShareOrDelete = mutableStateOf(false)
 	private var animationIsRunning = mutableStateOf(false)
 	private val connection = object: ServiceConnection
 	{
@@ -160,7 +153,7 @@ class MainActivity: AppCompatActivity()
 				navigation = navController
 				postValuesFromIntent(intent, listOfUrls, picVM)
 			}
-			ComposeTheme(isDarkTheme = mutableIsThemeBlackState.value) {
+			ComposeTheme(isDarkTheme = picVM.mutableIsThemeBlackState.value) {
 				NavigationSetup(navController = navController)
 			}
 		}
@@ -175,11 +168,11 @@ class MainActivity: AppCompatActivity()
 		val picState = picVM.picturesUiState
 		val pivots = remember { mutableStateOf(picVM.getPivotsXandY()) }
 		Log.d("test 333", "new pivots $pivots")
-		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
-		val cofConnectedWithOrientation = cofConnectedWithOrientation
-		val isSharedImage = isSharedImage
+		val cofConnectedWithOrientationForExit = picVM.cofConnectedWithOrientationForExit
+		val cofConnectedWithOrientation = picVM.cofConnectedWithOrientation
+		val isSharedImage = picVM.isSharedImage
 		val pValue = pivots.value
-		val isImageToShareOrDelete = isImageToShareOrDelete
+		val isImageToShareOrDelete = picVM.isImageToShareOrDelete
 		val enterTrans = if(pivots.value != Pair(12345f, 12345f))
 		{
 			scaleIn(
@@ -229,7 +222,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleOut(
-				animationSpec = tween(1500),
+				animationSpec = tween(500),
 				targetScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
@@ -247,7 +240,6 @@ class MainActivity: AppCompatActivity()
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
 		}
-		Log.d("exit test", "$pairOfCof")
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
@@ -317,10 +309,8 @@ class MainActivity: AppCompatActivity()
 						saveToSharedPrefs(picVM.convertFromListToString(urls))
 					},
 					calculateGridSpan = { calculateGridSpan() },
-					postGridSize = { sizeInPx -> picVM.postGridSize(sizeInPx) },
 					animationIsRunning = animationIsRunning,
-					postPosition = { url, postition -> picVM.postPosition(url, postition) },
-					postGridParams = { index, maxVisibleElements -> picVM.postGridParams(index, maxVisibleElements) },
+					postPosition = { url, position -> picVM.postPosition(url, position) },
 					postCutouts = { left, right -> picVM.postCutouts(left, right) }
 				)
 			}
@@ -385,7 +375,6 @@ class MainActivity: AppCompatActivity()
 					},
 					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
-					setInitialPage = { page -> picVM.postInitialPage(page) },
 					animationHasBeenStarted = animationIsRunning,
 					postPivot = { pivots.value = Pair(12345f, 12345f) }
 				)
@@ -535,7 +524,7 @@ class MainActivity: AppCompatActivity()
 		themePick = option
 		val blackColor = getColor(R.color.black)
 		val whiteColor = getColor(R.color.white)
-		mutableIsThemeBlackState.value = isDarkTheme
+		picVM.mutableIsThemeBlackState.value = isDarkTheme
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(lightScrim = whiteColor, darkScrim = blackColor, detectDarkMode = { isDarkTheme }),
 			navigationBarStyle = SystemBarStyle.auto(lightScrim = whiteColor, darkScrim = blackColor, detectDarkMode = { isDarkTheme })
@@ -620,7 +609,7 @@ class MainActivity: AppCompatActivity()
 						detVM.setWasSharedFromNotification(true)
 						nav?.popBackStack()
 						navAfterNewIntent(nav)
-						isImageToShareOrDelete.value = true
+						picVM.isImageToShareOrDelete.value = true
 					}
 					else if(intent.getBooleanExtra(SHOULD_WE_DELETE_THIS, false))
 					{
@@ -628,7 +617,7 @@ class MainActivity: AppCompatActivity()
 						detVM.setWasDeletedFromNotification(true)
 						nav?.popBackStack()
 						navAfterNewIntent(nav)
-						isImageToShareOrDelete.value = true
+						picVM.isImageToShareOrDelete.value = true
 					}
 					else
 					{
@@ -644,7 +633,7 @@ class MainActivity: AppCompatActivity()
 					detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
 				}
 				detVM.isSharedImage(true)
-				isSharedImage.value = true
+				picVM.isSharedImage.value = true
 				detVM.postCurrentPicture(sharedValue)
 				detVM.postCorrectList()
 				picVM.clickOnPicture(0, 0)
@@ -724,11 +713,12 @@ class MainActivity: AppCompatActivity()
 
 	private fun calculateGridSpan(): Int
 	{
+		val picVM = picturesViewModel
 		val displayMetrics = this.resources.displayMetrics
 		val width = displayMetrics.widthPixels
 		val height = displayMetrics.heightPixels
-		val cofConnectedWithOrientation = cofConnectedWithOrientation
-		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
+		val cofConnectedWithOrientation = picVM.cofConnectedWithOrientation
+		val cofConnectedWithOrientationForExit = picVM.cofConnectedWithOrientationForExit
 		if(width > height)
 		{
 			cofConnectedWithOrientation.floatValue = 0.3f
