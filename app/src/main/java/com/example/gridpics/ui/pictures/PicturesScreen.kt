@@ -234,8 +234,11 @@ fun ItemsCard(
 				{
 					scope.launch {
 						lazyState.scrollToItem(lazyState.firstVisibleItemIndex, 0)
-						delay(50)
 						Log.d("current", item)
+						postPosition(item, position)
+						while(lazyState.isScrollInProgress){
+							delay(300)
+						}
 						currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
 						animationIsRunning.value = true
 						openAlertDialog.value = false
@@ -243,7 +246,6 @@ fun ItemsCard(
 				}
 			}
 			.clip(RoundedCornerShape(8.dp))
-			.background(MaterialTheme.colorScheme.onPrimary)
 			.onGloballyPositioned { coordinates ->
 				position = coordinates
 					.positionInParent()

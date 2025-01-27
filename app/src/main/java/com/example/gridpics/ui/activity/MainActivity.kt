@@ -112,6 +112,7 @@ class MainActivity: AppCompatActivity()
 		{
 			picVM.changeOrientation(isPortrait = false)
 		}
+		picVM.orientationWasChanged.value = false
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
@@ -171,6 +172,7 @@ class MainActivity: AppCompatActivity()
 		val cofConnectedWithOrientationForExit = picVM.cofConnectedWithOrientationForExit
 		val cofConnectedWithOrientation = picVM.cofConnectedWithOrientation
 		val isSharedImage = picVM.isSharedImage
+		val orientationWasChangedCheck = picVM.orientationWasChanged
 		val pValue = pivots.value
 		val isImageToShareOrDelete = picVM.isImageToShareOrDelete
 		val enterTrans = if(pivots.value != Pair(12345f, 12345f))
@@ -192,7 +194,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleIn(
-				animationSpec = tween(1400),
+				animationSpec = tween(900),
 				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(
 					pValue.first,
@@ -207,7 +209,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleIn(
-				animationSpec = tween(1400),
+				animationSpec = tween(900),
 				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(
 					pValue.first,
@@ -215,58 +217,59 @@ class MainActivity: AppCompatActivity()
 				)
 			)
 		}
-		val exitTransitionForDetails = if(isSharedImage.value)
+		val exitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value || orientationWasChangedCheck.value)
 		{
 			ExitTransition.None
 		}
 		else
 		{
 			scaleOut(
-				animationSpec = tween(500),
+				animationSpec = tween(1000),
 				targetScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
 		}
 		val isExit = remember { mutableStateOf(false) }
-		val popExitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
+		val popExitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value || orientationWasChangedCheck.value)
 		{
 			ExitTransition.None
 		}
 		else
 		{
 			scaleOut(
-				animationSpec = tween(1500),
+				animationSpec = tween(1000),
 				targetScale = cofConnectedWithOrientationForExit.floatValue,
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
 		}
+		val animationIsRunning = animationIsRunning
 		NavHost(
 			navController = navController,
 			startDestination = BottomNavItem.Home.route,
 			popEnterTransition = {
 				scaleIn(
-					animationSpec = tween(1500),
+					animationSpec = tween(1000),
 					initialScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			},
 			popExitTransition = {
 				scaleOut(
-					animationSpec = tween(1500),
+					animationSpec = tween(1000),
 					targetScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			},
 			enterTransition = {
 				scaleIn(
-					animationSpec = tween(1400),
+					animationSpec = tween(900),
 					initialScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			},
 			exitTransition = {
 				scaleOut(
-					animationSpec = tween(1400),
+					animationSpec = tween(900),
 					targetScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
@@ -293,10 +296,11 @@ class MainActivity: AppCompatActivity()
 						picVM.calculatePosition(url)
 						detVM.postCurrentPicture(url)
 						pivots.value = picVM.getPivotsXandY()
+						orientationWasChangedCheck.value = false
 						navController.navigate(Screen.Details.route)
 						isExit.value = false
 						lifecycleScope.launch {
-							delay(1500)
+							delay(1000)
 							isExit.value = true
 						}
 					},
@@ -361,6 +365,14 @@ class MainActivity: AppCompatActivity()
 						detVM.isSharedImage(isShared)
 						isSharedImage.value = isShared
 						isImageToShareOrDelete.value = false
+						lifecycleScope.launch {
+							delay(50)
+							if(orientationWasChangedCheck.value)
+							{
+								animationIsRunning.value = false
+								orientationWasChangedCheck.value = false
+							}
+						}
 					},
 					picsUiState = picVM.picturesUiState,
 					setCurrentPictureUrl = { url ->
@@ -376,7 +388,8 @@ class MainActivity: AppCompatActivity()
 					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
 					animationHasBeenStarted = animationIsRunning,
-					postPivot = { pivots.value = Pair(12345f, 12345f) }
+					postPivot = { pivots.value = Pair(12345f, 12345f) },
+					postCutouts = { left, right -> picVM.postCutouts(left, right) }
 				)
 			}
 		}

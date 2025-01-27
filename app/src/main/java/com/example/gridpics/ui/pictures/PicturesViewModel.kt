@@ -18,6 +18,7 @@ class PicturesViewModel(
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM, emptyList()))
 	private val errorsMap: MutableMap<String, String> = mutableMapOf()
+	var orientationWasChanged = mutableStateOf(false)
 	var mutableIsThemeBlackState = mutableStateOf(false)
 	var cofConnectedWithOrientation = mutableFloatStateOf(0f)
 	var cofConnectedWithOrientationForExit = mutableFloatStateOf(0f)
@@ -148,6 +149,8 @@ class PicturesViewModel(
 	fun changeOrientation(isPortrait: Boolean)
 	{
 		val state = picturesUiState
+		orientationWasChanged.value = true
+		postPivotsXandY(Pair(12345f, 12345f))
 		if(isPortrait)
 		{
 			val k = screenWidth
@@ -260,18 +263,23 @@ class PicturesViewModel(
 				}
 			}
 		}
-		calculatePixelPosition(url)
+		calculatePixelPosition(url, false)
 	}
 
 	private fun calculatePixelPosition(
-		url: String,
+		url: String, setYToDefault: Boolean,
 	)
 	{
+		val listOfPositions = listOfPositions
+		val screenWidth = screenWidth
+		val screenHeight = screenHeight
+		val mapOfColumns = mapOfColumns
 		val urls = picturesUiState.value.picturesUrl
 		val positionInPx = listOfPositions[urls.indexOf(url)]
 		var x = positionInPx.first / screenWidth.toFloat()
 		var y = positionInPx.second / screenHeight.toFloat()
 		Log.d("cutouts", "${cutouts.first}")
+		val column = mapOfColumns[url]!!
 		if(screenWidth < screenHeight)
 		{
 			postPivotsXandY(Pair(x * 1.4f, y * 1.37f))
@@ -281,31 +289,19 @@ class PicturesViewModel(
 			if(cutouts.first != 0f)
 			{
 				val cutsToPivots = cutouts.first * densityOfScreen / screenWidth.toFloat()
-				val column = mapOfColumns[url]!!
-
 				x = if(column == gridQuantity)
 				{
 					-0.06f
 				}
 				else
 					1.32f * x - cutsToPivots
-				if(positionInPx.second <= 26)
-				{
-					y += 0.215f
-				}
-				else
-				{
-					y *= 2.05f
-				}
-
 				Log.d("proverka column", "$column")
 				Log.d("proverka", "$x")
 				Log.d("cutout sleva", "${cutouts.first}")
 			}
-			else
+			else if(cutouts.second != 0f)
 			{
-				val cutsToPivots = cutouts.second / screenWidth.toFloat()
-				val column = mapOfColumns[url]!!
+				val cutsToPivots = cutouts.second * densityOfScreen / screenWidth.toFloat()
 				x = if(column == gridQuantity)
 				{
 					-0.13f
@@ -314,18 +310,33 @@ class PicturesViewModel(
 				{
 					x + x * column / 15 - cutsToPivots * column * 1.5f
 				}
-				if(positionInPx.second <= 26)
-				{
-					y += 0.215f
-				}
-				else
-				{
-					y *= 2.05f
-				}
 				Log.d("proverka", "$x")
 				Log.d("proverka", "real ${positionInPx.first / screenWidth}")
 				Log.d("cutout sprava", "${cutouts.second}")
 			}
+			else
+			{
+				x = if (column == gridQuantity) {
+					-0.13f
+				} else
+				{
+					0.8f * x + (column) * 0.1f
+				}
+				Log.d("proverka", "net cotout ili s dvuh storon")
+			}
+			if(setYToDefault)
+			{
+				y = listOfPositions[0].second / screenHeight + 0.215f
+			}
+			else if(positionInPx.second <= 26)
+			{
+				y += 0.215f
+			}
+			else
+			{
+				y *= 2.05f
+			}
+			Log.d("proverka", "Pair $x , $y")
 			postPivotsXandY(Pair(x, y))
 		}
 	}
@@ -334,27 +345,21 @@ class PicturesViewModel(
 	{
 		val list = picturesUiState.value.picturesUrl
 		val column = mapOfColumns[url]
+		val rightY = listOfPositions[0]
 		val positionInPx = listOfPositions[column!!]
 		if(url != urlForCalculation)
 		{
 			clickOnPicture(list.indexOf(url), 0)
-			var x = positionInPx.first / screenWidth.toFloat()
-			val y = positionInPx.second / screenHeight.toFloat()
+			val x = positionInPx.first / screenWidth.toFloat()
+			val y = rightY.second / screenHeight.toFloat()
 			if(screenWidth < screenHeight)
 			{
 				postPivotsXandY(Pair(x * 1.4f, y * 1.37f))
 			}
 			else
 			{
-				if(positionInPx.first < 100f)
-				{
-					x = -0.08f
-				}
-				else
-				{
-					x += 0.05f * (mapOfColumns[url]?.minus(1)!!)
-				}
-				postPivotsXandY(Pair(x, y + 0.5f))
+				calculatePixelPosition(url, true)
+				clickOnPicture(list.indexOf(url), 0)
 			}
 		}
 	}

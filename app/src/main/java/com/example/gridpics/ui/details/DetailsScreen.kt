@@ -75,6 +75,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -121,12 +122,19 @@ fun DetailsScreen(
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	animationHasBeenStarted: MutableState<Boolean>,
 	postPivot: () -> Unit,
+	postCutouts: (Float, Float) -> Unit,
 )
 {
 	val color = MaterialTheme.colorScheme.background
 	val backgroundColor = remember { mutableStateOf(color) }
 	val animationIsRunningLocal = remember(false) { mutableStateOf(true) }
 	val thisIsEnterAnimation = remember { mutableStateOf(true) }
+	val direction = LocalLayoutDirection.current
+	val cutouts = WindowInsets.displayCutout
+	val paddingForCutouts = cutouts.asPaddingValues()
+	val left = paddingForCutouts.calculateLeftPadding(direction)
+	val right = paddingForCutouts.calculateRightPadding(direction)
+	postCutouts(left.value, right.value)
 	LaunchedEffect(false) {
 		if(state.value.isSharedImage)
 		{
@@ -135,7 +143,7 @@ fun DetailsScreen(
 		}
 		else
 		{
-			delay(1500)
+			delay(1000)
 			animationIsRunningLocal.value = false
 			animationHasBeenStarted.value = false
 			thisIsEnterAnimation.value = false
