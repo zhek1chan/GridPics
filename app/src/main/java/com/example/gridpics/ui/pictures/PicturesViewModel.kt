@@ -291,13 +291,13 @@ class PicturesViewModel(
 				val cutsToPivots = cutouts.first * densityOfScreen / screenWidth.toFloat()
 				x = if(column == gridQuantity)
 				{
-					-0.06f
+					-0.05f
 				}
 				else
 					1.32f * x - cutsToPivots
 				Log.d("proverka column", "$column")
 				Log.d("proverka", "$x")
-				Log.d("cutout sleva", "${cutouts.first}")
+				Log.d("proverka cutout sleva", "${cutouts.first}")
 			}
 			else if(cutouts.second != 0f)
 			{
@@ -308,21 +308,22 @@ class PicturesViewModel(
 				}
 				else
 				{
-					x + x * column / 15 - cutsToPivots * column * 1.5f
+					1.33f * x - cutsToPivots - 0.08f * (1)
 				}
 				Log.d("proverka", "$x")
 				Log.d("proverka", "real ${positionInPx.first / screenWidth}")
-				Log.d("cutout sprava", "${cutouts.second}")
+				Log.d("proverka cutout sprava", "${cutouts.second}")
 			}
 			else
 			{
-				x = if (column == gridQuantity) {
+				x = if(column == gridQuantity)
+				{
 					-0.13f
-				} else
+				}
+				else
 				{
 					0.8f * x + (column) * 0.1f
 				}
-				Log.d("proverka", "net cotout ili s dvuh storon")
 			}
 			if(setYToDefault)
 			{

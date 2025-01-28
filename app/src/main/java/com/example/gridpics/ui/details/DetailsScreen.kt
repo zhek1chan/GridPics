@@ -128,7 +128,6 @@ fun DetailsScreen(
 	val color = MaterialTheme.colorScheme.background
 	val backgroundColor = remember { mutableStateOf(color) }
 	val animationIsRunningLocal = remember(false) { mutableStateOf(true) }
-	val thisIsEnterAnimation = remember { mutableStateOf(true) }
 	val direction = LocalLayoutDirection.current
 	val cutouts = WindowInsets.displayCutout
 	val paddingForCutouts = cutouts.asPaddingValues()
@@ -139,14 +138,12 @@ fun DetailsScreen(
 		if(state.value.isSharedImage)
 		{
 			animationIsRunningLocal.value = false
-			thisIsEnterAnimation.value = false
 		}
 		else
 		{
 			delay(1000)
 			animationIsRunningLocal.value = false
 			animationHasBeenStarted.value = false
-			thisIsEnterAnimation.value = false
 		}
 	}
 	LaunchedEffect(animationIsRunningLocal.value) {
@@ -263,7 +260,6 @@ fun DetailsScreen(
 				deleteCurrentPicture = deleteCurrentPicture,
 				animationIsRunning = animationIsRunningLocal,
 				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
-				thisIsEnterAnimation = thisIsEnterAnimation,
 				animationHasBeenStarted = animationHasBeenStarted,
 				postPivot = postPivot
 			)
@@ -292,7 +288,6 @@ fun ShowDetails(
 	deleteCurrentPicture: (String) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	setFalseToWasDeletedFromNotification: () -> Unit,
-	thisIsEnterAnimation: MutableState<Boolean>,
 	animationHasBeenStarted: MutableState<Boolean>,
 	postPivot: () -> Unit,
 )
@@ -337,7 +332,6 @@ fun ShowDetails(
 					isScreenInPortraitState = isScreenInPortraitState,
 					setImageSharedStateToFalse = setImageSharedState,
 					animationIsRunning = animationIsRunning,
-					thisIsEnterAnimation = thisIsEnterAnimation,
 					animationHasBeenStarted = animationHasBeenStarted,
 					postPivot = postPivot,
 					checkOnErrorExists = checkOnErrorExists
@@ -488,7 +482,6 @@ fun ShowAsynchImage(
 	isScreenInPortraitState: Boolean,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
-	thisIsEnterAnimation: MutableState<Boolean>,
 	animationHasBeenStarted: MutableState<Boolean>,
 	postPivot: () -> Unit,
 	checkOnErrorExists: (String) -> String?,
@@ -524,21 +517,13 @@ fun ShowAsynchImage(
 				.build()
 		}
 		val mod = remember(animationIsRunning.value) { mutableStateOf(Modifier.fillMaxSize()) }
-		if(animationIsRunning.value && !thisIsEnterAnimation.value)
+		if(animationIsRunning.value)
 		{
 			mod.value = Modifier
 				.aspectRatio(1f)
 				.clip(RoundedCornerShape(8.dp))
 				.alpha(0.5f)
 				.align(Alignment.Center)
-		}
-		else if(animationIsRunning.value && thisIsEnterAnimation.value)
-		{
-			mod.value = Modifier
-				.aspectRatio(1f)
-				.align(Alignment.Center)
-				.alpha(0.5f)
-				.clip(RoundedCornerShape(8.dp))
 		}
 		else
 		{
