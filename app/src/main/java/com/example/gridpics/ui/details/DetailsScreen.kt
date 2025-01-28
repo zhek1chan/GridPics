@@ -134,7 +134,7 @@ fun DetailsScreen(
 	LaunchedEffect(direction) {
 		if(direction == LayoutDirection.Ltr)
 		{
-			postCutouts(insets.calculateLeftPadding(LayoutDirection.Ltr).value, 0f)
+			postCutouts(insets.calculateTopPadding().value, 0f)
 		}
 		else
 		{
