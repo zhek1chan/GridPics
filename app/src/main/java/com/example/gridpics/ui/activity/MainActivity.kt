@@ -104,14 +104,7 @@ class MainActivity: AppCompatActivity()
 		val detVM = detailsViewModel
 		val resources = resources
 		val orientation = resources.configuration.orientation
-		if(orientation == Configuration.ORIENTATION_PORTRAIT)
-		{
-			picVM.changeOrientation(isPortrait = true)
-		}
-		else
-		{
-			picVM.changeOrientation(isPortrait = false)
-		}
+		picVM.changeOrientation(isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT)
 		picVM.orientationWasChanged.value = false
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
@@ -389,8 +382,10 @@ class MainActivity: AppCompatActivity()
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
 					animationHasBeenStarted = animationIsRunning,
 					postPivot = { pivots.value = Pair(12345f, 12345f) },
-					postCutouts = { left, right -> picVM.postCutouts(left, right)
-						Log.d("proverka", "new cutouts")}
+					postCutouts = { left, right ->
+						picVM.postCutouts(left, right)
+						Log.d("proverka", "new cutouts")
+					}
 				)
 			}
 		}
