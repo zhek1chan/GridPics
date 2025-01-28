@@ -79,6 +79,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -128,12 +129,18 @@ fun DetailsScreen(
 	val color = MaterialTheme.colorScheme.background
 	val backgroundColor = remember { mutableStateOf(color) }
 	val animationIsRunningLocal = remember(false) { mutableStateOf(true) }
+	val insets = WindowInsets.displayCutout.asPaddingValues()
 	val direction = LocalLayoutDirection.current
-	val cutouts = WindowInsets.displayCutout
-	val paddingForCutouts = cutouts.asPaddingValues()
-	val left = paddingForCutouts.calculateLeftPadding(direction)
-	val right = paddingForCutouts.calculateRightPadding(direction)
-	postCutouts(left.value, right.value)
+	LaunchedEffect(direction) {
+		if(direction == LayoutDirection.Ltr)
+		{
+			postCutouts(insets.calculateLeftPadding(LayoutDirection.Ltr).value, 0f)
+		}
+		else
+		{
+			postCutouts(0f, insets.calculateTopPadding().value)
+		}
+	}
 	LaunchedEffect(false) {
 		if(state.value.isSharedImage)
 		{

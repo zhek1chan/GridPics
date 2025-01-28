@@ -167,7 +167,7 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
-		val pivots = remember { mutableStateOf(picVM.getPivotsXandY()) }
+		val pivots = picVM.pairOfPivotsXandY
 		Log.d("test 333", "new pivots $pivots")
 		val cofConnectedWithOrientationForExit = picVM.cofConnectedWithOrientationForExit
 		val cofConnectedWithOrientation = picVM.cofConnectedWithOrientation
@@ -217,7 +217,7 @@ class MainActivity: AppCompatActivity()
 				)
 			)
 		}
-		val exitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value || orientationWasChangedCheck.value)
+		val exitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
 		{
 			ExitTransition.None
 		}
@@ -230,7 +230,7 @@ class MainActivity: AppCompatActivity()
 			)
 		}
 		val isExit = remember { mutableStateOf(false) }
-		val popExitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value || orientationWasChangedCheck.value)
+		val popExitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
 		{
 			ExitTransition.None
 		}
@@ -389,7 +389,8 @@ class MainActivity: AppCompatActivity()
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
 					animationHasBeenStarted = animationIsRunning,
 					postPivot = { pivots.value = Pair(12345f, 12345f) },
-					postCutouts = { left, right -> picVM.postCutouts(left, right) }
+					postCutouts = { left, right -> picVM.postCutouts(left, right)
+						Log.d("proverka", "new cutouts")}
 				)
 			}
 		}
@@ -500,6 +501,7 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
 		picVM.updateGridSpan(calculateGridSpan())
+		picVM.calculatePosition(null)
 		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
 		if(themePick == followSysTheme)
 		{
@@ -726,22 +728,8 @@ class MainActivity: AppCompatActivity()
 
 	private fun calculateGridSpan(): Int
 	{
-		val picVM = picturesViewModel
 		val displayMetrics = this.resources.displayMetrics
 		val width = displayMetrics.widthPixels
-		val height = displayMetrics.heightPixels
-		val cofConnectedWithOrientation = picVM.cofConnectedWithOrientation
-		val cofConnectedWithOrientationForExit = picVM.cofConnectedWithOrientationForExit
-		if(width > height)
-		{
-			cofConnectedWithOrientation.floatValue = 0.3f
-			cofConnectedWithOrientationForExit.floatValue = 0.3f
-		}
-		else
-		{
-			cofConnectedWithOrientation.floatValue = 0.28f
-			cofConnectedWithOrientationForExit.floatValue = 0.29f
-		}
 		val density = displayMetrics.density
 		return (width / density).toInt() / LENGTH_OF_PICTURE
 	}

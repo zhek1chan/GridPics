@@ -24,7 +24,7 @@ class PicturesViewModel(
 	var cofConnectedWithOrientationForExit = mutableFloatStateOf(0f)
 	var isSharedImage = mutableStateOf(false)
 	var isImageToShareOrDelete = mutableStateOf(false)
-	private var pairOfPivotsXandY = Pair(0.1f, 0.1f)
+	var pairOfPivotsXandY = mutableStateOf(Pair(0.1f, 0.1f))
 	private var gridQuantity = 0
 	private var screenWidth = 0
 	private var screenHeight = 0
@@ -33,6 +33,8 @@ class PicturesViewModel(
 	private var listOfPositions = mutableListOf<Pair<Float, Float>>()
 	private var mapOfColumns = mutableMapOf<String, Int>()
 	private var cutouts = Pair(0f, 0f)
+	private var firstPositionsForLandScape = mutableListOf<Pair<Float, Float>>()
+	private var firstPositionsForPortrait = mutableListOf<Pair<Float, Float>>()
 
 	init
 	{
@@ -156,12 +158,16 @@ class PicturesViewModel(
 			val k = screenWidth
 			screenWidth = screenHeight
 			screenHeight = k
+			cofConnectedWithOrientation.floatValue = 0.28f
+			cofConnectedWithOrientationForExit.floatValue = 0.29f
 		}
 		else
 		{
 			val k = screenHeight
 			screenHeight = screenWidth
 			screenWidth = k
+			cofConnectedWithOrientation.floatValue = 0.3f
+			cofConnectedWithOrientationForExit.floatValue = 0.3f
 		}
 		state.value = state.value.copy(isPortraitOrientation = isPortrait)
 	}
@@ -214,12 +220,13 @@ class PicturesViewModel(
 
 	private fun postPivotsXandY(pairOfPivots: Pair<Float, Float>)
 	{
-		pairOfPivotsXandY = pairOfPivots
+		pairOfPivotsXandY.value = pairOfPivots
+		Log.d("proverka", "Posted pivots")
 	}
 
 	fun getPivotsXandY(): Pair<Float, Float>
 	{
-		return pairOfPivotsXandY
+		return pairOfPivotsXandY.value
 	}
 
 	private fun compareAndCombineLists(list1: List<String>, list2: List<String>): List<String>
@@ -241,33 +248,53 @@ class PicturesViewModel(
 		gridQuantity = newSpan
 	}
 
-	fun calculatePosition(url: String)
+	fun calculatePosition(urlOfPic: String?)
 	{
-		urlForCalculation = url
+		var url = ""
 		val list = picturesUiState.value.picturesUrl
+		val urlForCalc = urlForCalculation
+		if(urlOfPic != null)
+		{
+			urlForCalculation = urlOfPic
+			url = urlOfPic
+		}
+		else if(urlForCalc.isNotEmpty())
+		{
+			//смена ориентации
+			url = urlForCalc
+			clickOnPicture(list.indexOf(url), 0)
+		}
 		val gridQuantity = gridQuantity
 		//вычисляем позицию в формате таблицы
-		if(mapOfColumns.isEmpty())
+		if(mapOfColumns.isEmpty() || urlOfPic == null)
 		{
-			viewModelScope.launch {
-				for(i in list.indices)
+			for(i in list.indices)
+			{
+				var column: Int
+				column = (i + 1) % gridQuantity
+				if(column == 0)
 				{
-					var column: Int
-					column = (i) % gridQuantity
-					if(column == 0)
-					{
-						column = gridQuantity
-					}
-					Log.d("column", "$column")
-					mapOfColumns[list[i]] = column
+					column = gridQuantity
 				}
+				Log.d("column", "$column")
+				mapOfColumns[list[i]] = column
 			}
 		}
-		calculatePixelPosition(url, false)
+		Log.d("columns", "$mapOfColumns")
+		if(url.isNotEmpty())
+		{
+			calculatePixelPosition(
+				url = url,
+				setYToDefault = false,
+				needsRecalculation = urlOfPic == null
+			)
+		}
 	}
 
 	private fun calculatePixelPosition(
-		url: String, setYToDefault: Boolean,
+		url: String,
+		setYToDefault: Boolean,
+		needsRecalculation: Boolean,
 	)
 	{
 		val listOfPositions = listOfPositions
@@ -278,67 +305,125 @@ class PicturesViewModel(
 		val positionInPx = listOfPositions[urls.indexOf(url)]
 		var x = positionInPx.first / screenWidth.toFloat()
 		var y = positionInPx.second / screenHeight.toFloat()
+		val cutouts = cutouts
+		val gridQuantity = gridQuantity
+		val densityOfScreen = densityOfScreen
 		Log.d("cutouts", "${cutouts.first}")
 		val column = mapOfColumns[url]!!
-		if(screenWidth < screenHeight)
+		if(!needsRecalculation)
 		{
-			postPivotsXandY(Pair(x * 1.4f, y * 1.37f))
+			if(screenWidth < screenHeight)
+			{
+				postPivotsXandY(Pair(x * 1.4f, y * 1.37f))
+				Log.d("proverka x, y", "$x, $y, portrait")
+			}
+			else
+			{
+				if(cutouts.first != 0f)
+				{
+					val cutsToPivots = cutouts.first * densityOfScreen / screenWidth.toFloat()
+					x = if(column == 1)
+					{
+						-0.05f
+					}
+					else
+						1.32f * x - cutsToPivots
+					Log.d("proverka column", "$column")
+					Log.d("proverka", "$x, cutout sleva")
+				}
+				else if(cutouts.second != 0f)
+				{
+					val cutsToPivots = cutouts.second * densityOfScreen / screenWidth.toFloat()
+					x = if(column == 1)
+					{
+						-0.13f
+					}
+					else
+					{
+						1.33f * x - cutsToPivots - 0.08f * (1)
+					}
+					Log.d("proverka", "$x, cutout sprava")
+					Log.d("proverka column", "$column")
+				}
+				else
+				{
+					x = if(column == gridQuantity)
+					{
+						-0.13f
+					}
+					else
+					{
+						0.8f * x + (column) * 0.1f
+					}
+				}
+				if(setYToDefault)
+				{
+					y = listOfPositions[0].second / screenHeight + 0.215f
+				}
+				else if(positionInPx.second <= 26)
+				{
+					y += 0.215f
+				}
+				else
+				{
+					y *= 2.05f
+				}
+				Log.d("proverka", "Pair $x , $y")
+				postPivotsXandY(Pair(x, y))
+			}
 		}
 		else
 		{
-			if(cutouts.first != 0f)
+			Log.d("proverka", " cutouts = $cutouts")
+			if(screenWidth < screenHeight)
 			{
-				val cutsToPivots = cutouts.first * densityOfScreen / screenWidth.toFloat()
-				x = if(column == gridQuantity)
-				{
-					-0.05f
-				}
-				else
-					1.32f * x - cutsToPivots
-				Log.d("proverka column", "$column")
-				Log.d("proverka", "$x")
-				Log.d("proverka cutout sleva", "${cutouts.first}")
-			}
-			else if(cutouts.second != 0f)
-			{
-				val cutsToPivots = cutouts.second * densityOfScreen / screenWidth.toFloat()
-				x = if(column == gridQuantity)
-				{
-					-0.13f
-				}
-				else
-				{
-					1.33f * x - cutsToPivots - 0.08f * (1)
-				}
-				Log.d("proverka", "$x")
-				Log.d("proverka", "real ${positionInPx.first / screenWidth}")
-				Log.d("proverka cutout sprava", "${cutouts.second}")
+				val xPortrait = 1f / gridQuantity * column - 0.15f*(gridQuantity-column)
+				postPivotsXandY(Pair(xPortrait, 0f))
+				Log.d("proverka density", "$densityOfScreen")
+				Log.d("proverka x, y", "$xPortrait, 0, portrait, column = $column")
 			}
 			else
 			{
-				x = if(column == gridQuantity)
+				if(cutouts.first != 0f)
 				{
-					-0.13f
+					x = if(column == gridQuantity)
+					{
+						-0.05f
+					}
+					else
+					{
+						((110 * column + cutouts.first)) * densityOfScreen / screenWidth.toFloat()
+					}
+					Log.d("proverka", "$x, cutout sleva")
+					Log.d("proverka column", "$column")
+				}
+				else if(cutouts.second != 0f)
+				{
+					x = if(column == gridQuantity)
+					{
+						-0.13f
+					}
+					else
+					{
+						((110 * column)) * densityOfScreen / screenWidth.toFloat() - 0.08f
+					}
+					Log.d("proverka", "$x, cutout sprava")
+					Log.d("proverka column", "$column")
 				}
 				else
 				{
-					0.8f * x + (column) * 0.1f
+					x = if(column == gridQuantity)
+					{
+						-0.13f
+					}
+					else
+					{
+						((110 * (column + 2))) * densityOfScreen / screenWidth.toFloat() - 0.08f
+					}
 				}
+				Log.d("proverka", "Pair $x , 2.09f")
+				postPivotsXandY(Pair(x, 0.24056539f))
 			}
-			if(setYToDefault)
-			{
-				y = listOfPositions[0].second / screenHeight + 0.215f
-			}
-			else if(positionInPx.second <= 26)
-			{
-				y += 0.215f
-			}
-			else
-			{
-				y *= 2.05f
-			}
-			Log.d("proverka", "Pair $x , $y")
-			postPivotsXandY(Pair(x, y))
 		}
 	}
 
@@ -346,6 +431,7 @@ class PicturesViewModel(
 	{
 		val list = picturesUiState.value.picturesUrl
 		val column = mapOfColumns[url]
+		val listOfPositions = listOfPositions
 		val rightY = listOfPositions[0]
 		val positionInPx = listOfPositions[column!!]
 		if(url != urlForCalculation)
@@ -359,7 +445,11 @@ class PicturesViewModel(
 			}
 			else
 			{
-				calculatePixelPosition(url, true)
+				calculatePixelPosition(
+					url = url,
+					setYToDefault = true,
+					needsRecalculation = false
+				)
 				clickOnPicture(list.indexOf(url), 0)
 			}
 		}
@@ -368,10 +458,23 @@ class PicturesViewModel(
 	fun postPosition(url: String, position: Pair<Float, Float>)
 	{
 		val urls = picturesUiState.value.picturesUrl
+		val listOfPositions = listOfPositions
+		val index = urls.indexOf(url)
 		if(position != Pair(0f, 0f))
 		{
-			listOfPositions.add(urls.indexOf(url), Pair(1f, 1f))
-			listOfPositions[urls.indexOf(url)] = position
+			if(index <= gridQuantity - 1)
+			{
+				if(screenWidth < screenHeight)
+				{
+					firstPositionsForPortrait.add(index, position)
+				}
+				else
+				{
+					firstPositionsForLandScape.add(index, position)
+				}
+			}
+			listOfPositions.add(index, Pair(1f, 1f))
+			listOfPositions[index] = position
 		}
 	}
 
