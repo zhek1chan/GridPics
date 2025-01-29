@@ -173,6 +173,7 @@ class PicturesViewModel(
 			cofConnectedWithOrientation.floatValue = 0.36f
 			cofConnectedWithOrientationForExit.floatValue = 0.36f
 		}
+		calculatePosition(null)
 		state.value = state.value.copy(isPortraitOrientation = isPortrait)
 	}
 
@@ -336,7 +337,7 @@ class PicturesViewModel(
 					}
 					else
 					{
-						1.4f * x - 0.025f * (1 + gridQuantity - column)
+						1.4f * x - 0.04f * (gridQuantity - column+1) + (gridQuantity-column) * 0.03f
 					}
 					//x = x * 1.4f - (gridQuantity - column) * 0.005f - 0.06f
 					Log.d("proverka7", "$x, cutout sleva")
@@ -353,25 +354,26 @@ class PicturesViewModel(
 					}
 					else
 					{
-						1.4f * x - 0.025f * (1 + gridQuantity - column) - 0.08f
+						1.4f * x - 0.04f * (gridQuantity - column+1) + (gridQuantity-column) * 0.03f - 0.08f
 					}
 					Log.d("proverka7", "$x, cutout sprava")
 				}
 				else
 				{
-					x = x * 1.4f - (column) * 0.01f - 0.12f
+					1.4f * x - 0.02f * column
 				}
+				Log.d("proverka y", "$y")
 				if(setYToDefault)
 				{
-					y = listOfPositions[0].second / screenHeight + 0.215f
+					y = listOfPositions[0].second / screenHeight + 0.25f
 				}
-				else if(positionInPx.second <= 26)
+				else if(y <= 0.3f)
 				{
-					y += 0.215f
+					y += 0.25f
 				}
 				else
 				{
-					y *= 2f
+					y *= 2f+0.15f
 				}
 				Log.d("proverka", "Pair $x , $y")
 				postPivotsXandY(Pair(x, y))

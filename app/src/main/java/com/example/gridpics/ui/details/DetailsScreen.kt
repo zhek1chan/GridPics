@@ -127,15 +127,16 @@ fun DetailsScreen(
 	val color = MaterialTheme.colorScheme.background
 	val backgroundColor = remember { mutableStateOf(color) }
 	val animationIsRunningLocal = remember(false) { mutableStateOf(true) }
+		val cutouts = WindowInsets.displayCutout
+		val direction = LocalLayoutDirection.current
+		val paddingForCutouts = cutouts.asPaddingValues()
+	LaunchedEffect(true) {
+		val left = paddingForCutouts.calculateLeftPadding(direction)
+		val right = paddingForCutouts.calculateRightPadding(direction)
+		Log.d("wtf", "${left.value} ${right.value}")
+		postCutouts(left.value, right.value)
+	}
 
-	val cutouts = WindowInsets.displayCutout
-	val direction = LocalLayoutDirection.current
-	val paddingForCutouts = cutouts.asPaddingValues()
-	val left = paddingForCutouts.calculateLeftPadding(direction)
-	val right = paddingForCutouts.calculateRightPadding(direction)
-	Log.d("wtf", "${left.value} ${right.value}")
-
-	postCutouts(left.value, right.value)
 
 	LaunchedEffect(false) {
 		if(state.value.isSharedImage)
