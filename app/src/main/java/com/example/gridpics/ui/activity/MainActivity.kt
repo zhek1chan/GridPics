@@ -303,7 +303,7 @@ class MainActivity: AppCompatActivity()
 					saveToSharedPrefs = { urls ->
 						saveToSharedPrefs(picVM.convertFromListToString(urls))
 					},
-					calculateGridSpan = { calculateGridSpan() },
+					calculateGridSpan = { picVM.getGridSpan() },
 					animationIsRunning = animationIsRunning,
 					postPosition = { url, position -> picVM.postPosition(url, position) },
 					postSizeOfPic = { intSize -> picVM.postSizeOfPic(intSize) }
@@ -382,7 +382,6 @@ class MainActivity: AppCompatActivity()
 					postPivot = { pivots.value = Pair(12345f, 12345f) },
 					postCutouts = { left, right ->
 						picVM.postCutouts(left, right)
-						picVM.calculatePosition(null)
 						Log.d("proverka2", "new cutouts")
 					}
 				)
@@ -495,6 +494,7 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
 		picVM.updateGridSpan(calculateGridSpan())
+		picVM.calculatePosition(null)
 		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
 		if(themePick == followSysTheme)
 		{

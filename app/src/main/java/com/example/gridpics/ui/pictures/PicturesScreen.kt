@@ -95,7 +95,7 @@ fun PicturesScreen(
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (List<String>) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
-	calculateGridSpan: () -> Int,
+	calculateGridSpan: () -> MutableState<Int>,
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
 	postSizeOfPic: (IntSize) -> Unit
@@ -317,7 +317,7 @@ fun ShowList(
 	saveToSharedPrefs: (List<String>) -> Unit,
 	offset: Int,
 	index: Int,
-	calculateGridSpan: Int,
+	calculateGridSpan: MutableState<Int>,
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
 	postSizeOfPic: (IntSize) -> Unit
@@ -347,7 +347,7 @@ fun ShowList(
 					userScrollEnabled = !animationIsRunning.value,
 					modifier = Modifier
 						.fillMaxSize(),
-					columns = GridCells.Fixed(count = calculateGridSpan)) {
+					columns = GridCells.Fixed(count = calculateGridSpan.value)) {
 					items(items = list) {
 						ItemsCard(
 							item = it,
@@ -395,7 +395,7 @@ fun ShowList(
 			userScrollEnabled = !animationIsRunning.value,
 			modifier = Modifier
 				.fillMaxSize(),
-			columns = GridCells.Fixed(count = calculateGridSpan)) {
+			columns = GridCells.Fixed(count = calculateGridSpan.value)) {
 			Log.d("PicturesFragment", "$imagesUrlsSP")
 			items(items = imagesUrlsSP) {
 				ItemsCard(

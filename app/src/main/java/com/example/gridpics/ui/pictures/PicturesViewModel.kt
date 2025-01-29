@@ -1,7 +1,9 @@
 package com.example.gridpics.ui.pictures
 
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.ViewModel
@@ -26,7 +28,7 @@ class PicturesViewModel(
 	var isSharedImage = mutableStateOf(false)
 	var isImageToShareOrDelete = mutableStateOf(false)
 	var pairOfPivotsXandY = mutableStateOf(Pair(0.1f, 0.1f))
-	private var gridQuantity = 0
+	private var gridQuantity = mutableIntStateOf(0)
 	private var screenWidth = 0
 	private var screenHeight = 0
 	private var densityOfScreen = 0f
@@ -167,8 +169,8 @@ class PicturesViewModel(
 			val k = screenHeight
 			screenHeight = screenWidth
 			screenWidth = k
-			cofConnectedWithOrientation.floatValue = 0.3f
-			cofConnectedWithOrientationForExit.floatValue = 0.3f
+			cofConnectedWithOrientation.floatValue = 0.35f
+			cofConnectedWithOrientationForExit.floatValue = 0.35f
 		}
 		state.value = state.value.copy(isPortraitOrientation = isPortrait)
 	}
@@ -237,7 +239,7 @@ class PicturesViewModel(
 
 	fun postParamsOfScreen(gridNum: Int, width: Int, height: Int, density: Float)
 	{
-		gridQuantity = gridNum
+		gridQuantity.intValue = gridNum
 		screenHeight = height
 		screenWidth = width
 		densityOfScreen = density
@@ -246,7 +248,7 @@ class PicturesViewModel(
 	fun updateGridSpan(newSpan: Int)
 	{
 		Log.d("calculator1", "updated grid num")
-		gridQuantity = newSpan
+		gridQuantity.intValue = newSpan
 	}
 
 	fun calculatePosition(urlOfPic: String?)
@@ -263,9 +265,10 @@ class PicturesViewModel(
 		{
 			//смена ориентации
 			url = urlForCalc
+			Log.d("I was called", "I was called")
 			clickOnPicture(list.indexOf(url), 0)
 		}
-		val gridQuantity = gridQuantity
+		val gridQuantity = gridQuantity.intValue
 		//вычисляем позицию в формате таблицы
 		if(mapOfColumns.isEmpty() || urlOfPic == null)
 		{
@@ -307,7 +310,7 @@ class PicturesViewModel(
 		var x = positionInPx.first / screenWidth.toFloat()
 		var y = positionInPx.second / screenHeight.toFloat()
 		val cutouts = cutouts
-		val gridQuantity = gridQuantity
+		val gridQuantity = gridQuantity.intValue
 		val densityOfScreen = densityOfScreen
 		Log.d("cutouts", "${cutouts.first}")
 		val column = mapOfColumns[url]!!
@@ -494,5 +497,10 @@ class PicturesViewModel(
 	{
 		sizeOfPic = size
 		Log.d("size", "${size.width}, ${size.height}")
+	}
+
+	fun getGridSpan(): MutableState<Int>
+	{
+		return gridQuantity
 	}
 }
