@@ -98,7 +98,7 @@ fun PicturesScreen(
 	calculateGridSpan: () -> MutableState<Int>,
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
-	postSizeOfPic: (IntSize) -> Unit
+	postSizeOfPicAndGridMaxVisibleLines: (IntSize, Int) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -170,7 +170,7 @@ fun PicturesScreen(
 					calculateGridSpan = calculatedGridSpan,
 					animationIsRunning = animationIsRunning,
 					postPosition = postPosition,
-					postSizeOfPic = postSizeOfPic
+					postSizeOfPicAndGridMaxVisibleLines = postSizeOfPicAndGridMaxVisibleLines
 				)
 			}
 		}
@@ -189,7 +189,8 @@ fun ItemsCard(
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
 	scope: CoroutineScope,
-	size: MutableState<IntSize>
+	size: MutableState<IntSize>,
+	index: Int,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -235,7 +236,15 @@ fun ItemsCard(
 				else
 				{
 					scope.launch {
-						lazyState.scrollToItem(lazyState.firstVisibleItemIndex, 0)
+						Log.d("hernya", "${lazyState.layoutInfo.visibleItemsInfo.size}")
+						if(lazyState.layoutInfo.totalItemsCount - index > lazyState.layoutInfo.visibleItemsInfo.size)
+						{
+							lazyState.scrollToItem(lazyState.firstVisibleItemIndex, 0)
+							Log.d("hernya", "1")
+						} else {
+							lazyState.scrollToItem(lazyState.firstVisibleItemIndex+3, 0)
+							Log.d("hernya", "2")
+						}
 						Log.d("current", item)
 						postPosition(item, position)
 						while(lazyState.isScrollInProgress)
@@ -320,7 +329,7 @@ fun ShowList(
 	calculateGridSpan: MutableState<Int>,
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
-	postSizeOfPic: (IntSize) -> Unit
+	postSizeOfPicAndGridMaxVisibleLines: (IntSize, Int) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -359,7 +368,8 @@ fun ShowList(
 							animationIsRunning = animationIsRunning,
 							postPosition = postPosition,
 							scope = scope,
-							size = size
+							size = size,
+							index = list.indexOf(it)
 						)
 					}
 				}
@@ -408,13 +418,14 @@ fun ShowList(
 					animationIsRunning = animationIsRunning,
 					postPosition = postPosition,
 					scope = scope,
-					size = size
+					size = size,
+					index = imagesUrlsSP.indexOf(it)
 				)
 			}
 		}
 	}
 	LaunchedEffect(calculateGridSpan) {
-		postSizeOfPic(size.value)
+		postSizeOfPicAndGridMaxVisibleLines(size.value, listState.layoutInfo.visibleItemsInfo.size)
 	}
 	LaunchedEffect(Unit) {
 		listState.scrollToItem(index, offset)

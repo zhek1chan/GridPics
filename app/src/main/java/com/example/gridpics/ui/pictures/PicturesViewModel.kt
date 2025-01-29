@@ -30,10 +30,12 @@ class PicturesViewModel(
 	var isImageToShareOrDelete = mutableStateOf(false)
 	var pairOfPivotsXandY = mutableStateOf(Pair(0.1f, 0.1f))
 	private var gridQuantity = mutableIntStateOf(0)
+	private var gridInPortraitQ = 3
 	private var screenWidth = 0
 	private var screenHeight = 0
 	private var densityOfScreen = 0f
 	private var urlForCalculation = ""
+	private var maxVisibleElements = 18
 	private var listOfPositions = mutableListOf<Pair<Float, Float>>()
 	private var mapOfColumns = mutableMapOf<String, Int>()
 	private var cutouts = Pair(0f, 0f)
@@ -268,7 +270,14 @@ class PicturesViewModel(
 			//смена ориентации
 			url = urlForCalc
 			Log.d("I was called", "I was called")
-			clickOnPicture(list.indexOf(url), 0)
+			if(list.size - list.indexOf(url) < 18)
+			{
+				clickOnPicture(list.size - 1, 0)
+			}
+			else
+			{
+				clickOnPicture(list.indexOf(url), 0)
+			}
 		}
 		val gridQuantity = gridQuantity.intValue
 		//вычисляем позицию в формате таблицы
@@ -312,6 +321,7 @@ class PicturesViewModel(
 		var x = positionInPx.first / screenWidth.toFloat()
 		var y = positionInPx.second / screenHeight.toFloat()
 		val cutouts = cutouts
+		val list = picturesUiState.value.picturesUrl
 		val gridQuantity = gridQuantity.intValue
 		val densityOfScreen = densityOfScreen
 		Log.d("cutouts", "${cutouts.first}")
@@ -337,7 +347,7 @@ class PicturesViewModel(
 					}
 					else
 					{
-						1.4f * x - 0.04f * (gridQuantity - column+1) + (gridQuantity-column) * 0.03f
+						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f
 					}
 					//x = x * 1.4f - (gridQuantity - column) * 0.005f - 0.06f
 					Log.d("proverka7", "$x, cutout sleva")
@@ -354,7 +364,7 @@ class PicturesViewModel(
 					}
 					else
 					{
-						1.4f * x - 0.04f * (gridQuantity - column+1) + (gridQuantity-column) * 0.03f - 0.08f
+						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.08f
 					}
 					Log.d("proverka7", "$x, cutout sprava")
 				}
@@ -373,7 +383,7 @@ class PicturesViewModel(
 				}
 				else
 				{
-					y *= 2f+0.15f
+					y *= 2f + 0.15f
 				}
 				Log.d("proverka", "Pair $x , $y")
 				postPivotsXandY(Pair(x, y))
@@ -400,9 +410,24 @@ class PicturesViewModel(
 							1f / gridQuantity * column - 0.08f * (gridQuantity - column + 1)
 						}
 					}
-				postPivotsXandY(Pair(xPortrait, 0f))
+				val size = list.size
+				val maxVisibleElements = maxVisibleElements
+				var nY = 0.0121f
+				val gridInPortraitQ = gridInPortraitQ
+				if(size - list.indexOf(url) < maxVisibleElements)
+				{
+					Log.d("proverka", "rabotaem?")
+					val nList = list.subList(size - maxVisibleElements - 1, size - 1)
+					var line = nList.indexOf(url).toFloat() / gridInPortraitQ - 1
+					Log.d("proverka", "line = $line")
+					if (line <= -1f) {
+						line = 6.1f
+					}
+					nY = 0.6f / 4f * line
+				}
+				postPivotsXandY(Pair(xPortrait, nY))
 				Log.d("proverka density", "$densityOfScreen")
-				Log.d("proverka x, y", "$xPortrait, 0, portrait, column = $column")
+				Log.d("proverka x, y", "$xPortrait, $nY, portrait, column = $column")
 			}
 			else
 			{
@@ -461,7 +486,8 @@ class PicturesViewModel(
 					Log.d("proverka", "cutouta net ili ih dva")
 				}
 				Log.d("proverka", "Pair $x , 2.09f")
-				postPivotsXandY(Pair(x, 0.24056539f))
+				val yT = listOfPositions[0].second / screenHeight + 0.25f
+				postPivotsXandY(Pair(x, yT))
 			}
 		}
 	}
@@ -513,9 +539,14 @@ class PicturesViewModel(
 		cutouts = Pair(left, right)
 	}
 
-	fun postSizeOfPic(size: IntSize)
+	fun postSizeOfPic(size: IntSize, maxVisibleElementsNum: Int)
 	{
 		sizeOfPic = size
+		if(screenWidth < screenHeight)
+		{
+			maxVisibleElements = maxVisibleElementsNum
+			gridInPortraitQ = gridQuantity.intValue
+		}
 		Log.d("size", "${size.width}, ${size.height}")
 	}
 

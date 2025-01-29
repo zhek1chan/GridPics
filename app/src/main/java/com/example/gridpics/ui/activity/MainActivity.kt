@@ -306,7 +306,10 @@ class MainActivity: AppCompatActivity()
 					calculateGridSpan = { picVM.getGridSpan() },
 					animationIsRunning = animationIsRunning,
 					postPosition = { url, position -> picVM.postPosition(url, position) },
-					postSizeOfPic = { intSize -> picVM.postSizeOfPic(intSize) }
+					postSizeOfPicAndGridMaxVisibleLines =
+					{ intSize, maxVisibleElementsNum ->
+						picVM.postSizeOfPic(intSize, maxVisibleElementsNum)
+					}
 				)
 			}
 			composable(
