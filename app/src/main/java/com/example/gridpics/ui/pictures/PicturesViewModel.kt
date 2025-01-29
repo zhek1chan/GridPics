@@ -322,10 +322,10 @@ class PicturesViewModel(
 		var y = positionInPx.second / screenHeight.toFloat()
 		val cutouts = cutouts
 		val list = picturesUiState.value.picturesUrl
-		val gridQuantity = gridQuantity.intValue
+		var gridQuantity = gridQuantity.intValue
 		val densityOfScreen = densityOfScreen
 		Log.d("cutouts", "${cutouts.first}")
-		val column = mapOfColumns[url]!!
+		var column = mapOfColumns[url]!!
 		if(!needsRecalculation)
 		{
 			if(screenWidth < screenHeight)
@@ -394,12 +394,20 @@ class PicturesViewModel(
 			Log.d("proverka", " cutouts = $cutouts")
 			if(screenWidth < screenHeight)
 			{
+				val gridInPortraitQ = gridInPortraitQ
+				column = (list.indexOf(url) + 1) % gridInPortraitQ
+				if(column == 0)
+				{
+					column = gridInPortraitQ
+				}
+				calculatePosition(url)
+				Log.d("proverka", "column perevorot $column")
 				val xPortrait =
 					when(column)
 					{
-						gridQuantity ->
+						gridInPortraitQ ->
 						{
-							0.965f
+							0.975f
 						}
 						1 ->
 						{
@@ -407,20 +415,20 @@ class PicturesViewModel(
 						}
 						else ->
 						{
-							1f / gridQuantity * column - 0.08f * (gridQuantity - column + 1)
+							1f / gridInPortraitQ * column - 0.08f * (gridInPortraitQ - column + 1)
 						}
 					}
 				val size = list.size
 				val maxVisibleElements = maxVisibleElements
 				var nY = 0.0121f
-				val gridInPortraitQ = gridInPortraitQ
 				if(size - list.indexOf(url) < maxVisibleElements)
 				{
 					Log.d("proverka", "rabotaem?")
 					val nList = list.subList(size - maxVisibleElements - 1, size - 1)
 					var line = nList.indexOf(url).toFloat() / gridInPortraitQ - 1
 					Log.d("proverka", "line = $line")
-					if (line <= -1f) {
+					if(line <= -1f)
+					{
 						line = 6.1f
 					}
 					nY = 0.6f / 4f * line
@@ -431,6 +439,9 @@ class PicturesViewModel(
 			}
 			else
 			{
+				gridQuantity = (screenWidth / densityOfScreen / 110).toInt()
+				Log.d("proverka gridNum", "$gridQuantity")
+				//todo: надо поменять формулы снизу (было неправильно)
 				if(cutouts.first != 0f)
 				{
 					x = if(column == 1)

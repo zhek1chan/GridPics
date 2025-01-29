@@ -726,7 +726,8 @@ class MainActivity: AppCompatActivity()
 		val displayMetrics = this.resources.displayMetrics
 		val width = displayMetrics.widthPixels
 		val density = displayMetrics.density
-		return (width / density).toInt() / LENGTH_OF_PICTURE
+		val result = (width / density).toInt() / LENGTH_OF_PICTURE
+		return result
 	}
 
 	companion object
