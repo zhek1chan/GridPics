@@ -14,6 +14,7 @@ import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
 import kotlinx.coroutines.launch
+import kotlin.math.ceil
 
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
@@ -169,8 +170,8 @@ class PicturesViewModel(
 			val k = screenHeight
 			screenHeight = screenWidth
 			screenWidth = k
-			cofConnectedWithOrientation.floatValue = 0.35f
-			cofConnectedWithOrientationForExit.floatValue = 0.35f
+			cofConnectedWithOrientation.floatValue = 0.36f
+			cofConnectedWithOrientationForExit.floatValue = 0.36f
 		}
 		state.value = state.value.copy(isPortraitOrientation = isPortrait)
 	}
@@ -325,19 +326,36 @@ class PicturesViewModel(
 			{
 				if(cutouts.first != 0f)
 				{
-					val cutsToPivots = cutouts.first * densityOfScreen / screenWidth.toFloat()
-					//x = ((column - 2) / gridQuantity) +	(1.3f + (column - 1) / gridQuantity) * x - 0.046f * (1f - (column) / gridQuantity)
-					x = x * 1.4f - (column) * 0.005f - 0.06f
-					Log.d("proverka cutsToPivots", "$cutsToPivots")
-					Log.d("proverka", "$x, cutout sleva")
+					x = if(column.toDouble() < ceil(gridQuantity.toDouble() / 2))
+					{
+						1.4f * x - 0.02f * (gridQuantity - column)
+					}
+					else if(column.toDouble() == ceil(gridQuantity.toDouble() / 2))
+					{
+						1.4f * x - 0.02f * column
+					}
+					else
+					{
+						1.4f * x - 0.025f * (1 + gridQuantity - column)
+					}
+					//x = x * 1.4f - (gridQuantity - column) * 0.005f - 0.06f
+					Log.d("proverka7", "$x, cutout sleva")
 				}
 				else if(cutouts.second != 0f)
 				{
-					val cutsToPivots = cutouts.second * densityOfScreen / screenWidth.toFloat()
-					x = x * 1.4f - (column) * 0.01f - 0.12f
-
-					Log.d("proverka", "$x, cutout sprava")
-					Log.d("proverka cutsToPivots", "$cutsToPivots")
+					x = if(column.toDouble() < ceil(gridQuantity.toDouble() / 2))
+					{
+						1.4f * x - 0.02f * (gridQuantity - column) - 0.08f
+					}
+					else if(column.toDouble() == ceil(gridQuantity.toDouble() / 2))
+					{
+						1.4f * x - 0.02f * column - 0.08f
+					}
+					else
+					{
+						1.4f * x - 0.025f * (1 + gridQuantity - column) - 0.08f
+					}
+					Log.d("proverka7", "$x, cutout sprava")
 				}
 				else
 				{
