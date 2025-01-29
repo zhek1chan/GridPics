@@ -3,6 +3,7 @@ package com.example.gridpics.ui.pictures
 import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.data.network.Resource
@@ -33,6 +34,7 @@ class PicturesViewModel(
 	private var listOfPositions = mutableListOf<Pair<Float, Float>>()
 	private var mapOfColumns = mutableMapOf<String, Int>()
 	private var cutouts = Pair(0f, 0f)
+	private var sizeOfPic = IntSize.Zero
 
 	init
 	{
@@ -321,29 +323,22 @@ class PicturesViewModel(
 				if(cutouts.first != 0f)
 				{
 					val cutsToPivots = cutouts.first * densityOfScreen / screenWidth.toFloat()
-					x = ((column - 2) / gridQuantity) + (1.3f + (column - 1) / gridQuantity) * x - 0.046f * (1f - (column) / gridQuantity)
-
+					//x = ((column - 2) / gridQuantity) +	(1.3f + (column - 1) / gridQuantity) * x - 0.046f * (1f - (column) / gridQuantity)
+					x = x * 1.4f - (column) * 0.005f - 0.06f
 					Log.d("proverka cutsToPivots", "$cutsToPivots")
 					Log.d("proverka", "$x, cutout sleva")
 				}
 				else if(cutouts.second != 0f)
 				{
 					val cutsToPivots = cutouts.second * densityOfScreen / screenWidth.toFloat()
-					x = ((column - 2) / gridQuantity) + (1.3f + (column - 1) / gridQuantity) * x - 0.046f * (1f - (column) / gridQuantity) - 0.08f
+					x = x * 1.4f - (column) * 0.01f - 0.12f
 
 					Log.d("proverka", "$x, cutout sprava")
 					Log.d("proverka cutsToPivots", "$cutsToPivots")
 				}
 				else
 				{
-					x = if(column == gridQuantity)
-					{
-						-0.13f
-					}
-					else
-					{
-						0.8f * x + (column) * 0.1f
-					}
+					x = x * 1.4f - (column) * 0.01f - 0.12f
 				}
 				if(setYToDefault)
 				{
@@ -355,7 +350,7 @@ class PicturesViewModel(
 				}
 				else
 				{
-					y *= 2.05f
+					y *= 2f
 				}
 				Log.d("proverka", "Pair $x , $y")
 				postPivotsXandY(Pair(x, y))
@@ -366,7 +361,22 @@ class PicturesViewModel(
 			Log.d("proverka", " cutouts = $cutouts")
 			if(screenWidth < screenHeight)
 			{
-				val xPortrait = 1f / gridQuantity * column - 0.15f * (gridQuantity - column)
+				val xPortrait =
+					when(column)
+					{
+						gridQuantity ->
+						{
+							0.965f
+						}
+						1 ->
+						{
+							0.025f
+						}
+						else ->
+						{
+							1f / gridQuantity * column - 0.08f * (gridQuantity - column + 1)
+						}
+					}
 				postPivotsXandY(Pair(xPortrait, 0f))
 				Log.d("proverka density", "$densityOfScreen")
 				Log.d("proverka x, y", "$xPortrait, 0, portrait, column = $column")
@@ -379,6 +389,14 @@ class PicturesViewModel(
 					{
 						-0.05f
 					}
+					else if(column < gridQuantity / 2)
+					{
+						0.15f * (column - 1) + column * 0.01f - 0.04f
+					}
+					else if(column > gridQuantity / 2)
+					{
+						0.15f * (column - 1) + column * 0.01f - 0.02f
+					}
 					else
 					{
 						0.15f * (column - 1) + column * 0.01f
@@ -388,9 +406,17 @@ class PicturesViewModel(
 				}
 				else if(cutouts.second != 0f)
 				{
-					x = if(column == gridQuantity)
+					x = if(column == 1)
 					{
-						-0.13f
+						-0.05f - 0.08f
+					}
+					else if(column < gridQuantity / 2)
+					{
+						0.15f * (column - 1) + column * 0.01f - 0.04f - 0.08f
+					}
+					else if(column > gridQuantity / 2)
+					{
+						0.15f * (column - 1) + column * 0.01f - 0.02f - 0.08f
 					}
 					else
 					{
@@ -409,6 +435,7 @@ class PicturesViewModel(
 					{
 						((110 * (column + 2))) * densityOfScreen / screenWidth.toFloat() - 0.08f
 					}
+					Log.d("proverka", "cutouta net ili ih dva")
 				}
 				Log.d("proverka", "Pair $x , 2.09f")
 				postPivotsXandY(Pair(x, 0.24056539f))
@@ -458,5 +485,11 @@ class PicturesViewModel(
 	fun postCutouts(left: Float, right: Float)
 	{
 		cutouts = Pair(left, right)
+	}
+
+	fun postSizeOfPic(size: IntSize)
+	{
+		sizeOfPic = size
+		Log.d("size", "${size.width}, ${size.height}")
 	}
 }

@@ -79,7 +79,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -100,7 +99,6 @@ import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
-@SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailsScreen(
@@ -129,18 +127,16 @@ fun DetailsScreen(
 	val color = MaterialTheme.colorScheme.background
 	val backgroundColor = remember { mutableStateOf(color) }
 	val animationIsRunningLocal = remember(false) { mutableStateOf(true) }
-	val insets = WindowInsets.displayCutout.asPaddingValues()
+
+	val cutouts = WindowInsets.displayCutout
 	val direction = LocalLayoutDirection.current
-	LaunchedEffect(direction) {
-		if(direction == LayoutDirection.Ltr)
-		{
-			postCutouts(insets.calculateTopPadding().value, 0f)
-		}
-		else
-		{
-			postCutouts(0f, insets.calculateTopPadding().value)
-		}
-	}
+	val paddingForCutouts = cutouts.asPaddingValues()
+	val left = paddingForCutouts.calculateLeftPadding(direction)
+	val right = paddingForCutouts.calculateRightPadding(direction)
+	Log.d("wtf", "${left.value} ${right.value}")
+
+	postCutouts(left.value, right.value)
+
 	LaunchedEffect(false) {
 		if(state.value.isSharedImage)
 		{
@@ -152,6 +148,7 @@ fun DetailsScreen(
 			animationIsRunningLocal.value = false
 			animationHasBeenStarted.value = false
 		}
+
 	}
 	LaunchedEffect(animationIsRunningLocal.value) {
 		if(animationIsRunningLocal.value)

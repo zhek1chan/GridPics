@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -97,7 +98,7 @@ fun PicturesScreen(
 	calculateGridSpan: () -> Int,
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
-	postCutouts: (Float, Float) -> Unit,
+	postSizeOfPic: (IntSize) -> Unit
 )
 {
 	LaunchedEffect(Unit) {
@@ -122,8 +123,7 @@ fun PicturesScreen(
 	val paddingForCutouts = cutouts.asPaddingValues()
 	val left = paddingForCutouts.calculateLeftPadding(direction)
 	val right = paddingForCutouts.calculateRightPadding(direction)
-	Log.d("cutout sleva", "${left.value} ${right.value}")
-	postCutouts(left.value, right.value)
+	Log.d("proverka cutouts", "${left.value} ${right.value}")
 	Scaffold(
 		contentWindowInsets = windowInsets,
 		topBar = {
@@ -170,6 +170,7 @@ fun PicturesScreen(
 					calculateGridSpan = calculatedGridSpan,
 					animationIsRunning = animationIsRunning,
 					postPosition = postPosition,
+					postSizeOfPic = postSizeOfPic
 				)
 			}
 		}
@@ -188,6 +189,7 @@ fun ItemsCard(
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
 	scope: CoroutineScope,
+	size: MutableState<IntSize>
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -236,7 +238,8 @@ fun ItemsCard(
 						lazyState.scrollToItem(lazyState.firstVisibleItemIndex, 0)
 						Log.d("current", item)
 						postPosition(item, position)
-						while(lazyState.isScrollInProgress){
+						while(lazyState.isScrollInProgress)
+						{
 							delay(300)
 						}
 						currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
@@ -247,6 +250,7 @@ fun ItemsCard(
 			}
 			.clip(RoundedCornerShape(8.dp))
 			.onGloballyPositioned { coordinates ->
+				size.value = coordinates.size
 				position = coordinates
 					.positionInParent()
 					.run {
@@ -316,6 +320,7 @@ fun ShowList(
 	calculateGridSpan: Int,
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
+	postSizeOfPic: (IntSize) -> Unit
 )
 {
 	val context = LocalContext.current
@@ -323,6 +328,7 @@ fun ShowList(
 	Log.d("We got:", "$imagesUrlsSP")
 	val scope = rememberCoroutineScope()
 	val listState = rememberLazyGridState()
+	val size = remember { mutableStateOf(IntSize(0, 0)) }
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
 		when(state)
@@ -353,6 +359,7 @@ fun ShowList(
 							animationIsRunning = animationIsRunning,
 							postPosition = postPosition,
 							scope = scope,
+							size = size
 						)
 					}
 				}
@@ -401,9 +408,13 @@ fun ShowList(
 					animationIsRunning = animationIsRunning,
 					postPosition = postPosition,
 					scope = scope,
+					size = size
 				)
 			}
 		}
+	}
+	LaunchedEffect(calculateGridSpan) {
+		postSizeOfPic(size.value)
 	}
 	LaunchedEffect(Unit) {
 		listState.scrollToItem(index, offset)

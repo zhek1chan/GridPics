@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
@@ -153,7 +152,6 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	@SuppressLint("RestrictedApi")
 	@Composable
 	fun NavigationSetup(navController: NavHostController)
 	{
@@ -308,7 +306,7 @@ class MainActivity: AppCompatActivity()
 					calculateGridSpan = { calculateGridSpan() },
 					animationIsRunning = animationIsRunning,
 					postPosition = { url, position -> picVM.postPosition(url, position) },
-					postCutouts = { left, right -> picVM.postCutouts(left, right) }
+					postSizeOfPic = { intSize -> picVM.postSizeOfPic(intSize) }
 				)
 			}
 			composable(
@@ -384,7 +382,8 @@ class MainActivity: AppCompatActivity()
 					postPivot = { pivots.value = Pair(12345f, 12345f) },
 					postCutouts = { left, right ->
 						picVM.postCutouts(left, right)
-						Log.d("proverka", "new cutouts")
+						picVM.calculatePosition(null)
+						Log.d("proverka2", "new cutouts")
 					}
 				)
 			}
@@ -496,7 +495,6 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
 		picVM.updateGridSpan(calculateGridSpan())
-		picVM.calculatePosition(null)
 		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
 		if(themePick == followSysTheme)
 		{
