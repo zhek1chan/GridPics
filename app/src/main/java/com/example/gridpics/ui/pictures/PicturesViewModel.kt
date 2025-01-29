@@ -448,25 +448,28 @@ class PicturesViewModel(
 		val list = picturesUiState.value.picturesUrl
 		val column = mapOfColumns[url]
 		val listOfPositions = listOfPositions
-		val rightY = listOfPositions[0]
-		val positionInPx = listOfPositions[column!! - 1]
-		if(url != urlForCalculation)
+		if(column != null && listOfPositions.size > 0)
 		{
-			clickOnPicture(list.indexOf(url), 0)
-			val x = positionInPx.first / screenWidth.toFloat()
-			val y = rightY.second / screenHeight.toFloat()
-			if(screenWidth < screenHeight)
+			val rightY = listOfPositions[0]
+			val positionInPx = listOfPositions[column - 1]
+			if(url != urlForCalculation)
 			{
-				postPivotsXandY(Pair(x * 1.4f, y * 1.37f))
-			}
-			else
-			{
-				calculatePixelPosition(
-					url = url,
-					setYToDefault = true,
-					needsRecalculation = false
-				)
 				clickOnPicture(list.indexOf(url), 0)
+				val x = positionInPx.first / screenWidth.toFloat()
+				val y = rightY.second / screenHeight.toFloat()
+				if(screenWidth < screenHeight)
+				{
+					postPivotsXandY(Pair(x * 1.4f, y * 1.37f))
+				}
+				else
+				{
+					calculatePixelPosition(
+						url = url,
+						setYToDefault = true,
+						needsRecalculation = false
+					)
+					clickOnPicture(list.indexOf(url), 0)
+				}
 			}
 		}
 	}
