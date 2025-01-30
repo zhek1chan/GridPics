@@ -122,17 +122,26 @@ fun DetailsScreen(
 	animationHasBeenStarted: MutableState<Boolean>,
 	postPivot: () -> Unit,
 	postCutouts: (Float, Float) -> Unit,
+	orientationWasChanged: MutableState<Boolean>
 )
 {
 	val cutouts = WindowInsets.displayCutout
 	val direction = LocalLayoutDirection.current
 	val conf = LocalConfiguration.current.orientation
-	val paddingForCutouts = cutouts.asPaddingValues()
+	val paddingForCutouts = if (cutouts.asPaddingValues() == PaddingValues(0.dp)){
+		PaddingValues(600.dp)
+	} else {
+		cutouts.asPaddingValues()
+	}
+
 	LaunchedEffect(conf) {
 		val left = paddingForCutouts.calculateLeftPadding(direction)
 		val right = paddingForCutouts.calculateRightPadding(direction)
 		Log.d("proverka cutov", "${left.value} ${right.value}")
-		postCutouts(left.value, right.value)
+		if (orientationWasChanged.value)
+		{
+			postCutouts(left.value, right.value)
+		}
 	}
 	val color = MaterialTheme.colorScheme.background
 	val backgroundColor = remember { mutableStateOf(color) }

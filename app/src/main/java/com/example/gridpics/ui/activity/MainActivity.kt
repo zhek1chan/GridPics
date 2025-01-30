@@ -309,7 +309,8 @@ class MainActivity: AppCompatActivity()
 					postSizeOfPicAndGridMaxVisibleLines =
 					{ intSize, maxVisibleElementsNum ->
 						picVM.postSizeOfPic(intSize, maxVisibleElementsNum)
-					}
+					},
+					postCutouts = { left, right -> picVM.postCutouts(left, right, false) }
 				)
 			}
 			composable(
@@ -386,7 +387,8 @@ class MainActivity: AppCompatActivity()
 					postCutouts = { left, right ->
 						picVM.postCutouts(left, right, true)
 						Log.d("proverka2", "new cutouts")
-					}
+					},
+					orientationWasChanged = orientationWasChangedCheck
 				)
 			}
 		}

@@ -359,17 +359,28 @@ class PicturesViewModel(
 					}
 					else if(column.toDouble() == ceil(gridQuantity.toDouble() / 2))
 					{
-						1.4f * x - 0.02f * column - 0.08f
+						1.4f * x - 0.02f * column - 0.07f
 					}
 					else
 					{
-						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.08f
+						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.075f
 					}
 					Log.d("proverka7", "$x, cutout sprava")
 				}
 				else
 				{
-					1.4f * x - 0.02f * column
+					x = if(column.toDouble() < ceil(gridQuantity.toDouble() / 2))
+					{
+						1.4f * x - 0.02f * (gridQuantity - column) - 0.08f
+					}
+					else if(column.toDouble() == ceil(gridQuantity.toDouble() / 2))
+					{
+						1.4f * x - 0.02f * column - 0.07f
+					}
+					else
+					{
+						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.075f
+					}
 				}
 				Log.d("proverka y", "$y")
 				if(setYToDefault)
@@ -378,7 +389,7 @@ class PicturesViewModel(
 				}
 				else if(y <= 0.3f)
 				{
-					y += 0.25f
+					y += 0.23f
 				}
 				else
 				{
@@ -484,21 +495,33 @@ class PicturesViewModel(
 				}
 				else
 				{
-					x = if(column == gridQuantity)
+					x = if(column == 1)
 					{
 						-0.13f
 					}
+					else if(column < gridQuantity / 2)
+					{
+						0.15f * (column - 1) + column * 0.01f - 0.06f
+					}
+					else if(column > gridQuantity / 2)
+					{
+						0.2f * (column - 1) + column * 0.01f - 0.1f + 0.15f
+					}
 					else
 					{
-						((110 * (column + 2))) * densityOfScreen / screenWidth.toFloat() - 0.08f
+						0.15f * (column - 1) + column * 0.01f
 					}
-					Log.d("proverka", "cutouta net ili ih dva")
+					Log.d("pppppppp", "column = $column")
+					Log.d("pppppppp", "x = $x")
+					Log.d("pppppppp", "cutouta net ili ih dva")
 				}
 				Log.d("proverka", "Pair $x , 2.09f")
-				val yT =if(size - list.indexOf(url) < gridQuantity)
+				val yT = if(size - list.indexOf(url) < gridQuantity)
 				{
-					0.2766f*2
-				} else {
+					0.2766f * 2
+				}
+				else
+				{
 					0.2766f
 				}
 				postPivotsXandY(Pair(x, yT))
@@ -553,6 +576,10 @@ class PicturesViewModel(
 		val newCuts = Pair(left, right)
 		if(needsCheckOnWasChanged)
 		{
+			if (left == right && left != 600f)
+			{
+				calculatePosition(null)
+			}
 			if(cutouts != newCuts)
 			{
 				cutouts = newCuts

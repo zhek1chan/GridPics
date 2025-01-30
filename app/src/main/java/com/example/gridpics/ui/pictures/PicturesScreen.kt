@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -100,6 +101,7 @@ fun PicturesScreen(
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
 	postSizeOfPicAndGridMaxVisibleLines: (IntSize, Int) -> Unit,
+	postCutouts: (Float, Float) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -124,9 +126,15 @@ fun PicturesScreen(
 	val paddingForCutouts = cutouts.asPaddingValues()
 	val conf = LocalConfiguration.current
 	LaunchedEffect(conf) {
-		val left = paddingForCutouts.calculateLeftPadding(direction)
-		val right = paddingForCutouts.calculateRightPadding(direction)
-		Log.d("proverka cutouts", "${left.value} ${right.value}")
+		val left = paddingForCutouts.calculateLeftPadding(direction).value
+		val right = paddingForCutouts.calculateRightPadding(direction).value
+		Log.d("proverka cutouts", "$left $right")
+		postCutouts(left, right)
+	}
+	val mod = if (value.isPortraitOrientation) {
+		Modifier.fillMaxWidth()
+	} else {
+		Modifier.height(400.dp).width(900.dp)
 	}
 	Scaffold(
 		contentWindowInsets = windowInsets,
@@ -150,7 +158,7 @@ fun PicturesScreen(
 		bottomBar = { BottomNavigationBar(navController) },
 		content = { padding ->
 			Box(
-				modifier = Modifier
+				modifier = mod
 					.padding(padding)
 					.consumeWindowInsets(padding)
 					.fillMaxSize()
@@ -245,8 +253,10 @@ fun ItemsCard(
 						{
 							lazyState.scrollToItem(lazyState.firstVisibleItemIndex, 0)
 							Log.d("hernya", "1")
-						} else {
-							lazyState.scrollToItem(lazyState.firstVisibleItemIndex+3, 0)
+						}
+						else
+						{
+							lazyState.scrollToItem(lazyState.firstVisibleItemIndex + 3, 0)
 							Log.d("hernya", "2")
 						}
 						Log.d("current", item)
