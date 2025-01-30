@@ -384,7 +384,7 @@ class MainActivity: AppCompatActivity()
 					animationHasBeenStarted = animationIsRunning,
 					postPivot = { pivots.value = Pair(12345f, 12345f) },
 					postCutouts = { left, right ->
-						picVM.postCutouts(left, right)
+						picVM.postCutouts(left, right, true)
 						Log.d("proverka2", "new cutouts")
 					}
 				)

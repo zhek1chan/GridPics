@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -121,9 +122,12 @@ fun PicturesScreen(
 	}
 	val direction = LocalLayoutDirection.current
 	val paddingForCutouts = cutouts.asPaddingValues()
-	val left = paddingForCutouts.calculateLeftPadding(direction)
-	val right = paddingForCutouts.calculateRightPadding(direction)
-	Log.d("proverka cutouts", "${left.value} ${right.value}")
+	val conf = LocalConfiguration.current
+	LaunchedEffect(conf) {
+		val left = paddingForCutouts.calculateLeftPadding(direction)
+		val right = paddingForCutouts.calculateRightPadding(direction)
+		Log.d("proverka cutouts", "${left.value} ${right.value}")
+	}
 	Scaffold(
 		contentWindowInsets = windowInsets,
 		topBar = {

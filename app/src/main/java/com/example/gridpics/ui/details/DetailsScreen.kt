@@ -124,20 +124,19 @@ fun DetailsScreen(
 	postCutouts: (Float, Float) -> Unit,
 )
 {
+	val cutouts = WindowInsets.displayCutout
+	val direction = LocalLayoutDirection.current
+	val conf = LocalConfiguration.current.orientation
+	val paddingForCutouts = cutouts.asPaddingValues()
+	LaunchedEffect(conf) {
+		val left = paddingForCutouts.calculateLeftPadding(direction)
+		val right = paddingForCutouts.calculateRightPadding(direction)
+		Log.d("proverka cutov", "${left.value} ${right.value}")
+		postCutouts(left.value, right.value)
+	}
 	val color = MaterialTheme.colorScheme.background
 	val backgroundColor = remember { mutableStateOf(color) }
 	val animationIsRunningLocal = remember(false) { mutableStateOf(true) }
-		val cutouts = WindowInsets.displayCutout
-		val direction = LocalLayoutDirection.current
-		val paddingForCutouts = cutouts.asPaddingValues()
-	LaunchedEffect(true) {
-		val left = paddingForCutouts.calculateLeftPadding(direction)
-		val right = paddingForCutouts.calculateRightPadding(direction)
-		Log.d("wtf", "${left.value} ${right.value}")
-		postCutouts(left.value, right.value)
-	}
-
-
 	LaunchedEffect(false) {
 		if(state.value.isSharedImage)
 		{
@@ -149,7 +148,6 @@ fun DetailsScreen(
 			animationIsRunningLocal.value = false
 			animationHasBeenStarted.value = false
 		}
-
 	}
 	LaunchedEffect(animationIsRunningLocal.value) {
 		if(animationIsRunningLocal.value)

@@ -320,11 +320,11 @@ class PicturesViewModel(
 		val positionInPx = listOfPositions[urls.indexOf(url)]
 		var x = positionInPx.first / screenWidth.toFloat()
 		var y = positionInPx.second / screenHeight.toFloat()
-		val cutouts = cutouts
+		val cutoutsLocal = cutouts
 		val list = picturesUiState.value.picturesUrl
 		var gridQuantity = gridQuantity.intValue
 		val densityOfScreen = densityOfScreen
-		Log.d("cutouts", "${cutouts.first}")
+		Log.d("cutouts", "${cutoutsLocal.first}")
 		var column = mapOfColumns[url]!!
 		if(!needsRecalculation)
 		{
@@ -335,7 +335,7 @@ class PicturesViewModel(
 			}
 			else
 			{
-				if(cutouts.first != 0f)
+				if(cutoutsLocal.first != 0f)
 				{
 					x = if(column.toDouble() < ceil(gridQuantity.toDouble() / 2))
 					{
@@ -349,10 +349,9 @@ class PicturesViewModel(
 					{
 						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f
 					}
-					//x = x * 1.4f - (gridQuantity - column) * 0.005f - 0.06f
 					Log.d("proverka7", "$x, cutout sleva")
 				}
-				else if(cutouts.second != 0f)
+				else if(cutoutsLocal.second != 0f)
 				{
 					x = if(column.toDouble() < ceil(gridQuantity.toDouble() / 2))
 					{
@@ -391,7 +390,8 @@ class PicturesViewModel(
 		}
 		else
 		{
-			Log.d("proverka", " cutouts = $cutouts")
+			val size = list.size
+			Log.d("proverka", " cutouts = $cutoutsLocal")
 			if(screenWidth < screenHeight)
 			{
 				val gridInPortraitQ = gridInPortraitQ
@@ -418,7 +418,6 @@ class PicturesViewModel(
 							1f / gridInPortraitQ * column - 0.08f * (gridInPortraitQ - column + 1)
 						}
 					}
-				val size = list.size
 				val maxVisibleElements = maxVisibleElements
 				var nY = 0.0121f
 				if(size - list.indexOf(url) < maxVisibleElements)
@@ -441,20 +440,19 @@ class PicturesViewModel(
 			{
 				gridQuantity = (screenWidth / densityOfScreen / 110).toInt()
 				Log.d("proverka gridNum", "$gridQuantity")
-				//todo: надо поменять формулы снизу (было неправильно)
-				if(cutouts.first != 0f)
+				if(cutoutsLocal.first != 0f)
 				{
 					x = if(column == 1)
 					{
-						-0.05f
+						-0.1f
 					}
 					else if(column < gridQuantity / 2)
 					{
-						0.15f * (column - 1) + column * 0.01f - 0.04f
+						0.15f * (column - 1) + column * 0.01f - 0.06f
 					}
 					else if(column > gridQuantity / 2)
 					{
-						0.15f * (column - 1) + column * 0.01f - 0.02f
+						0.2f * (column - 1) + column * 0.01f - 0.1f
 					}
 					else
 					{
@@ -463,19 +461,19 @@ class PicturesViewModel(
 					Log.d("proverka", "$x, cutout sleva")
 					Log.d("proverka column", "$column")
 				}
-				else if(cutouts.second != 0f)
+				else if(cutoutsLocal.second != 0f)
 				{
 					x = if(column == 1)
 					{
-						-0.05f - 0.08f
+						-0.1f - 0.08f
 					}
 					else if(column < gridQuantity / 2)
 					{
-						0.15f * (column - 1) + column * 0.01f - 0.04f - 0.08f
+						0.15f * (column - 1) + column * 0.01f - 0.06f - 0.08f
 					}
 					else if(column > gridQuantity / 2)
 					{
-						0.15f * (column - 1) + column * 0.01f - 0.02f - 0.08f
+						0.2f * (column - 1) + column * 0.01f - 0.1f - 0.08f
 					}
 					else
 					{
@@ -497,7 +495,12 @@ class PicturesViewModel(
 					Log.d("proverka", "cutouta net ili ih dva")
 				}
 				Log.d("proverka", "Pair $x , 2.09f")
-				val yT = listOfPositions[0].second / screenHeight + 0.25f
+				val yT =if(size - list.indexOf(url) < gridQuantity)
+				{
+					0.2766f*2
+				} else {
+					0.2766f
+				}
 				postPivotsXandY(Pair(x, yT))
 			}
 		}
@@ -545,9 +548,21 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postCutouts(left: Float, right: Float)
+	fun postCutouts(left: Float, right: Float, needsCheckOnWasChanged: Boolean)
 	{
-		cutouts = Pair(left, right)
+		val newCuts = Pair(left, right)
+		if(needsCheckOnWasChanged)
+		{
+			if(cutouts != newCuts)
+			{
+				cutouts = newCuts
+				calculatePosition(null)
+			}
+		}
+		else
+		{
+			cutouts = newCuts
+		}
 	}
 
 	fun postSizeOfPic(size: IntSize, maxVisibleElementsNum: Int)
