@@ -365,6 +365,8 @@ class PicturesViewModel(
 					{
 						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.075f
 					}
+					Log.d("proverka7", "gridQuantity $gridQuantity")
+					Log.d("proverka7", "column $column")
 					Log.d("proverka7", "$x, cutout sprava")
 				}
 				else
@@ -576,11 +578,11 @@ class PicturesViewModel(
 		val newCuts = Pair(left, right)
 		if(needsCheckOnWasChanged)
 		{
-			if (left == right && left != 600f)
+			if(left == right && left != 600f)
 			{
 				calculatePosition(null)
 			}
-			if(cutouts != newCuts)
+			else if(cutouts != newCuts)
 			{
 				cutouts = newCuts
 				calculatePosition(null)

@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -131,10 +130,13 @@ fun PicturesScreen(
 		Log.d("proverka cutouts", "$left $right")
 		postCutouts(left, right)
 	}
-	val mod = if (value.isPortraitOrientation) {
+	val mod = if(value.isPortraitOrientation)
+	{
 		Modifier.fillMaxWidth()
-	} else {
-		Modifier.height(400.dp).width(900.dp)
+	}
+	else
+	{
+		Modifier.height(400.dp)
 	}
 	Scaffold(
 		contentWindowInsets = windowInsets,
