@@ -363,7 +363,7 @@ class PicturesViewModel(
 					}
 					else
 					{
-						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.075f
+						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.08f
 					}
 					Log.d("proverka7", "gridQuantity $gridQuantity")
 					Log.d("proverka7", "column $column")
