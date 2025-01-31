@@ -392,7 +392,6 @@ class MainActivity: AppCompatActivity()
 					},
 					orientationWasChanged = orientationWasChangedCheck,
 					postBars = { top, bottom -> picVM.postBars(top, bottom) },
-					coefficientOfTransformation = picVM.cofConnectedWithOrientation,
 				)
 			}
 		}

@@ -79,6 +79,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -122,25 +123,35 @@ fun DetailsScreen(
 	animationHasBeenStarted: MutableState<Boolean>,
 	postPivot: () -> Unit,
 	postCutouts: (Float, Float) -> Unit,
-	orientationWasChanged: MutableState<Boolean>
+	orientationWasChanged: MutableState<Boolean>,
+	postBars: (Float, Float) -> Unit,
 )
 {
-	val cutouts = WindowInsets.displayCutout
+	val cutouts = WindowInsets.displayCutout.union(WindowInsets.systemBarsIgnoringVisibility)
 	val direction = LocalLayoutDirection.current
 	val conf = LocalConfiguration.current.orientation
-	val paddingForCutouts = if (cutouts.asPaddingValues() == PaddingValues(0.dp)){
-		PaddingValues(600.dp)
-	} else {
+	val paddingForCutouts = if(cutouts.asPaddingValues().calculateLeftPadding(direction).value == 0f &&
+		cutouts.asPaddingValues().calculateRightPadding(LayoutDirection.Ltr).value == 0f)
+	{
+		val top = cutouts.asPaddingValues().calculateTopPadding().value
+		val bottom = cutouts.asPaddingValues().calculateBottomPadding().value
+		PaddingValues(600.dp, top.dp, bottom.dp, 600.dp)
+	}
+	else
+	{
 		cutouts.asPaddingValues()
 	}
 
 	LaunchedEffect(conf) {
 		val left = paddingForCutouts.calculateLeftPadding(direction)
 		val right = paddingForCutouts.calculateRightPadding(direction)
+		val top = paddingForCutouts.calculateTopPadding().value
+		val bottom = paddingForCutouts.calculateBottomPadding().value
 		Log.d("proverka cutov", "${left.value} ${right.value}")
-		if (orientationWasChanged.value)
+		if(orientationWasChanged.value)
 		{
 			postCutouts(left.value, right.value)
+			postBars(top, bottom)
 		}
 	}
 	val color = MaterialTheme.colorScheme.background
@@ -500,11 +511,7 @@ fun ShowAsynchImage(
 )
 {
 	Box(Modifier.fillMaxSize()) {
-		val scale = if(animationIsRunning.value)
-		{
-			ContentScale.FillWidth
-		}
-		else if(state.value.isMultiWindowed)
+		val scale = if(state.value.isMultiWindowed)
 		{
 			ContentScale.Fit
 		}
