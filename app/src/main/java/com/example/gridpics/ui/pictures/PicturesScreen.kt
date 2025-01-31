@@ -101,6 +101,7 @@ fun PicturesScreen(
 	postPosition: (String, Pair<Float, Float>) -> Unit,
 	postSizeOfPicAndGridMaxVisibleLines: (IntSize, Int) -> Unit,
 	postCutouts: (Float, Float) -> Unit,
+	postBars: (Float, Float) -> Unit
 )
 {
 	LaunchedEffect(Unit) {
@@ -122,12 +123,15 @@ fun PicturesScreen(
 		cutouts.union(statusBars)
 	}
 	val direction = LocalLayoutDirection.current
-	val paddingForCutouts = cutouts.asPaddingValues()
+	val paddingForCutouts = windowInsets.asPaddingValues()
 	val conf = LocalConfiguration.current
 	LaunchedEffect(conf) {
 		val left = paddingForCutouts.calculateLeftPadding(direction).value
 		val right = paddingForCutouts.calculateRightPadding(direction).value
+		val top = paddingForCutouts.calculateTopPadding().value
+		val bottom = paddingForCutouts.calculateBottomPadding().value
 		Log.d("proverka cutouts", "$left $right")
+		postBars(top, bottom)
 		postCutouts(left, right)
 	}
 	val mod = if(value.isPortraitOrientation)

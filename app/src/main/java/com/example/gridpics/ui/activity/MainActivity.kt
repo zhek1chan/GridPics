@@ -103,7 +103,13 @@ class MainActivity: AppCompatActivity()
 		val detVM = detailsViewModel
 		val resources = resources
 		val orientation = resources.configuration.orientation
+		picVM.updateGridSpan(calculateGridSpan())
 		picVM.changeOrientation(isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT)
+		val displayMetrics = resources.displayMetrics
+		val width = displayMetrics.widthPixels
+		val height = displayMetrics.heightPixels
+		val density = displayMetrics.density
+		picVM.postParamsOfScreen(width, height, density)
 		picVM.orientationWasChanged.value = false
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
@@ -134,11 +140,6 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-		val displayMetrics = resources.displayMetrics
-		val width = displayMetrics.widthPixels
-		val height = displayMetrics.heightPixels
-		val density = displayMetrics.density
-		picVM.postParamsOfScreen(calculateGridSpan(), width, height, density)
 
 		setContent {
 			val navController = rememberNavController()
@@ -310,7 +311,8 @@ class MainActivity: AppCompatActivity()
 					{ intSize, maxVisibleElementsNum ->
 						picVM.postSizeOfPic(intSize, maxVisibleElementsNum)
 					},
-					postCutouts = { left, right -> picVM.postCutouts(left, right, false) }
+					postCutouts = { left, right -> picVM.postCutouts(left, right, false) },
+					postBars = { top, bottom -> picVM.postBars(top, bottom) }
 				)
 			}
 			composable(
@@ -388,7 +390,9 @@ class MainActivity: AppCompatActivity()
 						picVM.postCutouts(left, right, true)
 						Log.d("proverka2", "new cutouts")
 					},
-					orientationWasChanged = orientationWasChangedCheck
+					orientationWasChanged = orientationWasChangedCheck,
+					postBars = { top, bottom -> picVM.postBars(top, bottom) },
+					coefficientOfTransformation = picVM.cofConnectedWithOrientation,
 				)
 			}
 		}

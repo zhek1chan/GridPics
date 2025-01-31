@@ -24,8 +24,8 @@ class PicturesViewModel(
 	private val errorsMap: MutableMap<String, String> = mutableMapOf()
 	var orientationWasChanged = mutableStateOf(false)
 	var mutableIsThemeBlackState = mutableStateOf(false)
-	var cofConnectedWithOrientation = mutableFloatStateOf(0f)
-	var cofConnectedWithOrientationForExit = mutableFloatStateOf(0f)
+	var cofConnectedWithOrientation = mutableFloatStateOf(0.3f)
+	var cofConnectedWithOrientationForExit = mutableFloatStateOf(0.3f)
 	var isSharedImage = mutableStateOf(false)
 	var isImageToShareOrDelete = mutableStateOf(false)
 	var pairOfPivotsXandY = mutableStateOf(Pair(0.1f, 0.1f))
@@ -39,6 +39,7 @@ class PicturesViewModel(
 	private var listOfPositions = mutableListOf<Pair<Float, Float>>()
 	private var mapOfColumns = mutableMapOf<String, Int>()
 	private var cutouts = Pair(0f, 0f)
+	private var barsSize = Pair(0f, 0f)
 	private var sizeOfPic = IntSize.Zero
 
 	init
@@ -156,25 +157,39 @@ class PicturesViewModel(
 	fun changeOrientation(isPortrait: Boolean)
 	{
 		val state = picturesUiState
-
 		orientationWasChanged.value = true
+		val sizeOfPicLocal = sizeOfPic.width
+		val densityOfScreen = densityOfScreen
+		val barsSize = barsSize
+		val top = barsSize.first
+		val bottom = barsSize.second
+		val cofConnectedWithOrientation = cofConnectedWithOrientation
+		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
 		postPivotsXandY(Pair(12345f, 12345f))
+		Log.d("size check", "${sizeOfPicLocal / screenWidth.toFloat()}")
+		Log.d("size check", "$sizeOfPicLocal")
+		Log.d("size check", "${screenWidth.toFloat()}")
 		if(isPortrait)
 		{
+			Log.d("size check", "${sizeOfPicLocal / screenWidth.toFloat()}")
 			val k = screenWidth
 			screenWidth = screenHeight
 			screenHeight = k
-			cofConnectedWithOrientation.floatValue = 0.28f
-			cofConnectedWithOrientationForExit.floatValue = 0.29f
+			cofConnectedWithOrientation.floatValue = sizeOfPicLocal / screenWidth.toFloat()
+			cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / screenWidth.toFloat()
 		}
 		else
 		{
 			val k = screenHeight
 			screenHeight = screenWidth
 			screenWidth = k
-			cofConnectedWithOrientation.floatValue = 0.36f
-			cofConnectedWithOrientationForExit.floatValue = 0.36f
+			if(sizeOfPicLocal != 0)
+			{
+				cofConnectedWithOrientation.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) - 0.00978835f
+				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) - 0.00978835f
+			}
 		}
+		Log.d("pupu", "${cofConnectedWithOrientation.floatValue}   ${cofConnectedWithOrientationForExit.floatValue}")
 		calculatePosition(null)
 		state.value = state.value.copy(isPortraitOrientation = isPortrait)
 	}
@@ -241,9 +256,8 @@ class PicturesViewModel(
 		return list1.filterNot { it in list2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
 	}
 
-	fun postParamsOfScreen(gridNum: Int, width: Int, height: Int, density: Float)
+	fun postParamsOfScreen(width: Int, height: Int, density: Float)
 	{
-		gridQuantity.intValue = gridNum
 		screenHeight = height
 		screenWidth = width
 		densityOfScreen = density
@@ -330,12 +344,23 @@ class PicturesViewModel(
 		{
 			if(screenWidth < screenHeight)
 			{
-				postPivotsXandY(Pair(x * 1.4f, y * 1.37f))
+				Log.d("pop", "y = $y")
+				if (y<0.1) {
+					y += 0.04f
+				} else if(y < 0.3)
+				{
+					y += 0.09f
+				}
+				else
+				{
+					y *= 1.37f
+				}
+				postPivotsXandY(Pair(x * 1.4f, y))
 				Log.d("proverka x, y", "$x, $y, portrait")
 			}
 			else
 			{
-				if(cutoutsLocal.first != 0f)
+				if(cutoutsLocal.first != 0f && cutoutsLocal.second == 0f)
 				{
 					x = if(column.toDouble() < ceil(gridQuantity.toDouble() / 2))
 					{
@@ -347,7 +372,7 @@ class PicturesViewModel(
 					}
 					else
 					{
-						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f
+						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.04f
 					}
 					Log.d("proverka7", "$x, cutout sleva")
 				}
@@ -355,16 +380,17 @@ class PicturesViewModel(
 				{
 					x = if(column.toDouble() < ceil(gridQuantity.toDouble() / 2))
 					{
-						1.4f * x - 0.02f * (gridQuantity - column) - 0.08f
+						1.4f * x - 0.02f * (gridQuantity - column) - 0.07f
 					}
 					else if(column.toDouble() == ceil(gridQuantity.toDouble() / 2))
 					{
-						1.4f * x - 0.02f * column - 0.07f
+						1.4f * x - 0.02f * column - 0.09f
 					}
 					else
 					{
-						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.08f
+						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.11f
 					}
+					Log.d("watafak", "${ceil(gridQuantity.toDouble() / 2)}")
 					Log.d("proverka7", "gridQuantity $gridQuantity")
 					Log.d("proverka7", "column $column")
 					Log.d("proverka7", "$x, cutout sprava")
@@ -597,16 +623,38 @@ class PicturesViewModel(
 	fun postSizeOfPic(size: IntSize, maxVisibleElementsNum: Int)
 	{
 		sizeOfPic = size
+		val sizeOfPicLocal = size.width
+		val cofConnectedWithOrientation = cofConnectedWithOrientation
+		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
+		val barsSize = barsSize
+		val top = barsSize.first
+		val bottom = barsSize.second
+		val screenWidth = screenWidth
+		val screenHeight = screenHeight
+		val densityOfScreen = densityOfScreen
 		if(screenWidth < screenHeight)
 		{
 			maxVisibleElements = maxVisibleElementsNum
 			gridInPortraitQ = gridQuantity.intValue
+			cofConnectedWithOrientation.floatValue = sizeOfPicLocal / screenWidth.toFloat()
+			cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / screenWidth.toFloat()
 		}
+		else if(sizeOfPicLocal != 0)
+		{
+			cofConnectedWithOrientation.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) + 0.00978835f
+			cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) + 0.00978835f
+		}
+		Log.d("pupu", "${cofConnectedWithOrientation.floatValue}   ${cofConnectedWithOrientationForExit.floatValue}")
 		Log.d("size", "${size.width}, ${size.height}")
 	}
 
 	fun getGridSpan(): MutableState<Int>
 	{
 		return gridQuantity
+	}
+
+	fun postBars(top: Float, bottom: Float)
+	{
+		barsSize = Pair(top, bottom)
 	}
 }
