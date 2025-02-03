@@ -186,7 +186,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleIn(
-				animationSpec = tween(900),
+				animationSpec = tween(1400),
 				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(
 					pValue.first,
@@ -201,7 +201,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleIn(
-				animationSpec = tween(900),
+				animationSpec = tween(1400),
 				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(
 					pValue.first,
@@ -229,7 +229,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleOut(
-				animationSpec = tween(1000),
+				animationSpec = tween(1500),
 				targetScale = cofConnectedWithOrientationForExit.floatValue,
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
@@ -240,28 +240,28 @@ class MainActivity: AppCompatActivity()
 			startDestination = BottomNavItem.Home.route,
 			popEnterTransition = {
 				scaleIn(
-					animationSpec = tween(1000),
+					animationSpec = tween(1500),
 					initialScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			},
 			popExitTransition = {
 				scaleOut(
-					animationSpec = tween(1000),
+					animationSpec = tween(1500),
 					targetScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			},
 			enterTransition = {
 				scaleIn(
-					animationSpec = tween(900),
+					animationSpec = tween(1400),
 					initialScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			},
 			exitTransition = {
 				scaleOut(
-					animationSpec = tween(900),
+					animationSpec = tween(1400),
 					targetScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
@@ -312,7 +312,8 @@ class MainActivity: AppCompatActivity()
 						picVM.postSizeOfPic(intSize, maxVisibleElementsNum)
 					},
 					postCutouts = { left, right -> picVM.postCutouts(left, right, false) },
-					postBars = { top, bottom -> picVM.postBars(top, bottom) }
+					postBars = { top, bottom -> picVM.postBars(top, bottom) },
+					postSizeOfPic = { width, height -> picVM.postOriginalSizeOfPic(width, height) }
 				)
 			}
 			composable(
@@ -392,6 +393,7 @@ class MainActivity: AppCompatActivity()
 					},
 					orientationWasChanged = orientationWasChangedCheck,
 					postBars = { top, bottom -> picVM.postBars(top, bottom) },
+					postSizeOfPic = { width, height -> picVM.postOriginalSizeOfPic(width, height) }
 				)
 			}
 		}

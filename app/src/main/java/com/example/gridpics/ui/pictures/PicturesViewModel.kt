@@ -15,6 +15,8 @@ import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
 import kotlinx.coroutines.launch
 import kotlin.math.ceil
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
@@ -41,6 +43,8 @@ class PicturesViewModel(
 	private var cutouts = Pair(0f, 0f)
 	private var barsSize = Pair(0f, 0f)
 	private var sizeOfPic = IntSize.Zero
+	private var origWidth = 0
+	private var origHeight = 0
 
 	init
 	{
@@ -242,8 +246,35 @@ class PicturesViewModel(
 
 	private fun postPivotsXandY(pairOfPivots: Pair<Float, Float>)
 	{
-		pairOfPivotsXandY.value = pairOfPivots
-		Log.d("proverka", "Posted pivots")
+		var biggerPivots = pairOfPivots
+		if(screenWidth < screenHeight && origWidth > origHeight && origWidth - origHeight > 10)
+		{
+			if(pairOfPivots.second < 0.1f)
+			{
+				biggerPivots = Pair(pairOfPivots.first, pairOfPivots.second - 0.1f)
+			}
+			else if(pairOfPivots.second > 0.5f)
+			{
+				biggerPivots = Pair(pairOfPivots.first, pairOfPivots.second + 0.07f)
+			}
+			else if(pairOfPivots.second < 0.3f)
+			{
+				biggerPivots = Pair(pairOfPivots.first, pairOfPivots.second - 0.05f)
+			}
+			if(mapOfColumns[urlForCalculation] == 1)
+			{
+				cofConnectedWithOrientation.floatValue * screenWidth
+				Log.d("che kak ne pon", "${cofConnectedWithOrientation.floatValue}")
+				biggerPivots = Pair(-(screenWidth * cofConnectedWithOrientation.floatValue - 100 * densityOfScreen) / screenHeight, biggerPivots.second)
+			}
+			else if(mapOfColumns[urlForCalculation] == gridQuantity.intValue)
+			{
+				biggerPivots = Pair((screenWidth * cofConnectedWithOrientation.floatValue - 100 * densityOfScreen) / screenHeight + 1f, biggerPivots.second)
+				Log.d("che kak ne pon", "olololol ${biggerPivots.first}")
+			}
+		}
+		pairOfPivotsXandY.value = biggerPivots
+		Log.d("proverka", "Posted pivots, $biggerPivots")
 	}
 
 	fun getPivotsXandY(): Pair<Float, Float>
@@ -345,9 +376,11 @@ class PicturesViewModel(
 			if(screenWidth < screenHeight)
 			{
 				Log.d("pop", "y = $y")
-				if (y<0.1) {
+				if(y < 0.1)
+				{
 					y += 0.04f
-				} else if(y < 0.3)
+				}
+				else if(y < 0.3)
 				{
 					y += 0.09f
 				}
@@ -656,5 +689,21 @@ class PicturesViewModel(
 	fun postBars(top: Float, bottom: Float)
 	{
 		barsSize = Pair(top, bottom)
+	}
+
+	fun postOriginalSizeOfPic(width: Int, height: Int)
+	{
+		if(width > height && screenWidth < screenHeight && width - height > 10)
+		{
+			sqrt(width.toDouble().pow(2) + height.toDouble().pow(2))
+			//диагональ п.у.
+			cofConnectedWithOrientationForExit.floatValue = 100 * densityOfScreen / (height * screenWidth / width) * 1.2f
+			cofConnectedWithOrientation.floatValue = 100 * densityOfScreen / (height * screenWidth / width) * 1.2f
+		}
+		origHeight = height
+		origWidth = width
+		Log.d("che kak ono", "$width, $height, ${100 * densityOfScreen / height * screenWidth / width}, ${100 * densityOfScreen}")
+		Log.d("che kak ono", "${screenWidth * cofConnectedWithOrientation.floatValue} shirina")
+		Log.d("che kak ono", "${100 * densityOfScreen} shirina picture")
 	}
 }

@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,7 +37,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -60,16 +58,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -125,6 +119,7 @@ fun DetailsScreen(
 	postCutouts: (Float, Float) -> Unit,
 	orientationWasChanged: MutableState<Boolean>,
 	postBars: (Float, Float) -> Unit,
+	postSizeOfPic: (Int, Int) -> Unit,
 )
 {
 	val cutouts = WindowInsets.displayCutout.union(WindowInsets.systemBarsIgnoringVisibility)
@@ -164,7 +159,7 @@ fun DetailsScreen(
 		}
 		else
 		{
-			delay(1000)
+			delay(1500)
 			animationIsRunningLocal.value = false
 			animationHasBeenStarted.value = false
 		}
@@ -284,7 +279,8 @@ fun DetailsScreen(
 				animationIsRunning = animationIsRunningLocal,
 				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
 				animationHasBeenStarted = animationHasBeenStarted,
-				postPivot = postPivot
+				postPivot = postPivot,
+				postSizeOfPic = postSizeOfPic
 			)
 		}
 	)
@@ -313,6 +309,7 @@ fun ShowDetails(
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	animationHasBeenStarted: MutableState<Boolean>,
 	postPivot: () -> Unit,
+	postSizeOfPic: (Int, Int) -> Unit,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -357,7 +354,8 @@ fun ShowDetails(
 					animationIsRunning = animationIsRunning,
 					animationHasBeenStarted = animationHasBeenStarted,
 					postPivot = postPivot,
-					checkOnErrorExists = checkOnErrorExists
+					checkOnErrorExists = checkOnErrorExists,
+					postSizeOfPic = postSizeOfPic
 				)
 			}
 			if(isSharedImage)
@@ -491,7 +489,6 @@ fun ShowDetails(
 	}
 }
 
-@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ShowAsynchImage(
 	img: String,
@@ -508,6 +505,7 @@ fun ShowAsynchImage(
 	animationHasBeenStarted: MutableState<Boolean>,
 	postPivot: () -> Unit,
 	checkOnErrorExists: (String) -> String?,
+	postSizeOfPic: (Int, Int) -> Unit,
 )
 {
 	Box(Modifier.fillMaxSize()) {
@@ -526,8 +524,7 @@ fun ShowAsynchImage(
 				ContentScale.FillHeight
 			}
 		}
-		val zoom = rememberZoomState(15f, Size.Zero)
-		var imageSize by remember { mutableStateOf(Size.Zero) }
+		val zoom = rememberZoomState(15f)
 		val imgRequest = remember(img) {
 			ImageRequest.Builder(context)
 				.data(img)
@@ -539,15 +536,14 @@ fun ShowAsynchImage(
 		if(animationIsRunning.value)
 		{
 			mod.value = Modifier
-				.aspectRatio(1f)
-				.clip(RoundedCornerShape(8.dp))
+				.fillMaxSize()
 				.alpha(0.5f)
-				.align(Alignment.Center)
 		}
 		else
 		{
 			mod.value = Modifier
 				.fillMaxSize()
+				.align(Alignment.Center)
 				.zoomable(
 					zoomState = zoom,
 					enableOneFingerZoom = false,
@@ -599,15 +595,14 @@ fun ShowAsynchImage(
 					}
 				}
 		}
-		val scope = rememberCoroutineScope()
 		SubcomposeAsyncImage(
 			model = imgRequest,
 			contentDescription = null,
 			contentScale = scale,
 			onSuccess = {
 				val resultImage = it.result.image
-				imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
 				removeSpecialError(img)
+				postSizeOfPic(resultImage.width, resultImage.height)
 			},
 			loading = {
 				Box(Modifier.fillMaxSize()) {
@@ -621,10 +616,6 @@ fun ShowAsynchImage(
 			modifier = mod.value
 				.align(Alignment.TopStart)
 		)
-
-		scope.launch {
-			zoom.setContentSize(imageSize)
-		}
 	}
 }
 

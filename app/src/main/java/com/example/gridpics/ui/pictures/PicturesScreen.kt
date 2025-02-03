@@ -44,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -101,7 +102,8 @@ fun PicturesScreen(
 	postPosition: (String, Pair<Float, Float>) -> Unit,
 	postSizeOfPicAndGridMaxVisibleLines: (IntSize, Int) -> Unit,
 	postCutouts: (Float, Float) -> Unit,
-	postBars: (Float, Float) -> Unit
+	postBars: (Float, Float) -> Unit,
+	postSizeOfPic: (Int, Int) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -188,7 +190,8 @@ fun PicturesScreen(
 					calculateGridSpan = calculatedGridSpan,
 					animationIsRunning = animationIsRunning,
 					postPosition = postPosition,
-					postSizeOfPicAndGridMaxVisibleLines = postSizeOfPicAndGridMaxVisibleLines
+					postSizeOfPicAndGridMaxVisibleLines = postSizeOfPicAndGridMaxVisibleLines,
+					postSizeOfPic = postSizeOfPic
 				)
 			}
 		}
@@ -209,6 +212,7 @@ fun ItemsCard(
 	scope: CoroutineScope,
 	size: MutableState<IntSize>,
 	index: Int,
+	postSizeOfPic: (Int, Int) -> Unit,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -238,6 +242,8 @@ fun ItemsCard(
 			.error(R.drawable.error)
 			.build()
 	}
+	val origHeight = remember { mutableIntStateOf(0) }
+	val origWidth = remember { mutableIntStateOf(0) }
 	val modifier = remember { mutableStateOf(Modifier.fillMaxSize()) }
 	var position by remember(item) { mutableStateOf(Pair(0f, 0f)) }
 	SubcomposeAsyncImage(
@@ -266,6 +272,8 @@ fun ItemsCard(
 							Log.d("hernya", "2")
 						}
 						Log.d("current", item)
+						postSizeOfPic(origWidth.intValue, origHeight.intValue)
+						Log.d("nazhali e", "pervii")
 						postPosition(item, position)
 						while(lazyState.isScrollInProgress)
 						{
@@ -298,6 +306,9 @@ fun ItemsCard(
 		},
 		onSuccess = {
 			isError = false
+			val img = it.result.image
+			origWidth.intValue = img.width
+			origHeight.intValue = img.height
 		}
 	)
 	if(openAlertDialog.value)
@@ -350,6 +361,7 @@ fun ShowList(
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
 	postSizeOfPicAndGridMaxVisibleLines: (IntSize, Int) -> Unit,
+	postSizeOfPic: (Int, Int) -> Unit,
 )
 {
 	val context = LocalContext.current
@@ -389,7 +401,8 @@ fun ShowList(
 							postPosition = postPosition,
 							scope = scope,
 							size = size,
-							index = list.indexOf(it)
+							index = list.indexOf(it),
+							postSizeOfPic = postSizeOfPic
 						)
 					}
 				}
@@ -439,7 +452,8 @@ fun ShowList(
 					postPosition = postPosition,
 					scope = scope,
 					size = size,
-					index = imagesUrlsSP.indexOf(it)
+					index = imagesUrlsSP.indexOf(it),
+					postSizeOfPic = postSizeOfPic
 				)
 			}
 		}
