@@ -236,12 +236,13 @@ fun ItemsCard(
 	}
 	val modifier = remember { mutableStateOf(Modifier.fillMaxSize()) }
 	var position by remember(item) { mutableStateOf(Pair(0f, 0f)) }
+	val scale = remember { mutableStateOf(ContentScale.FillHeight) }
 	SubcomposeAsyncImage(
 		model = (imgRequest),
 		contentDescription = item,
 		modifier = modifier.value
-			.aspectRatio(1f)
 			.padding(10.dp)
+			.aspectRatio(1f)
 			.clickable(!animationIsRunning.value) {
 				if(isError)
 				{
@@ -282,7 +283,7 @@ fun ItemsCard(
 						Pair(x, y)
 					}
 			},
-		contentScale = ContentScale.Crop,
+		contentScale = scale.value,
 		loading = {
 			Box(Modifier.fillMaxSize()) {
 				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -294,6 +295,18 @@ fun ItemsCard(
 		},
 		onSuccess = {
 			isError = false
+			scale.value = if(it.result.image.width > it.result.image.height)
+			{
+				ContentScale.FillWidth
+			}
+			else if(it.result.image.width < it.result.image.height)
+			{
+				ContentScale.FillHeight
+			}
+			else
+			{
+				ContentScale.Crop
+			}
 		}
 	)
 	if(openAlertDialog.value)

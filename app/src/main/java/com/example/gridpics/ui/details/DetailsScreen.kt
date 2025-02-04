@@ -9,6 +9,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,7 +22,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,6 +61,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -499,10 +500,32 @@ fun ShowAsynchImage(
 	checkOnErrorExists: (String) -> String?,
 )
 {
+	val expanded =  remember { mutableStateOf(false) }
+	if (animationIsRunning.value) {
+		expanded.value = true
+	}
 	Box(Modifier.fillMaxSize()) {
+		Box(Modifier.animateContentSize()
+			.align(Alignment.Center)
+			.height(if (expanded.value) 400.dp else 1000.dp)
+			.fillMaxWidth()
+		) {
+		val width = remember { mutableIntStateOf(0) }
+		val height = remember { mutableIntStateOf(0) }
 		val scale = if(animationIsRunning.value)
 		{
-			ContentScale.FillWidth
+			if(width.intValue > height.intValue)
+			{
+				ContentScale.FillWidth
+			}
+			else if(width.intValue < height.intValue)
+			{
+				ContentScale.FillHeight
+			}
+			else
+			{
+				ContentScale.Crop
+			}
 		}
 		else if(state.value.isMultiWindowed)
 		{
@@ -512,7 +535,18 @@ fun ShowAsynchImage(
 		{
 			if(isScreenInPortraitState)
 			{
-				ContentScale.FillWidth
+				if(width.intValue > height.intValue)
+				{
+					ContentScale.FillWidth
+				}
+				else if(width.intValue < height.intValue)
+				{
+					ContentScale.FillHeight
+				}
+				else
+				{
+					ContentScale.Crop
+				}
 			}
 			else
 			{
@@ -532,7 +566,7 @@ fun ShowAsynchImage(
 		if(animationIsRunning.value)
 		{
 			mod.value = Modifier
-				.aspectRatio(1f)
+				.fillMaxSize()
 				.clip(RoundedCornerShape(8.dp))
 				.alpha(0.5f)
 				.align(Alignment.Center)
@@ -600,6 +634,8 @@ fun ShowAsynchImage(
 			onSuccess = {
 				val resultImage = it.result.image
 				imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
+				width.intValue = resultImage.width
+				height.intValue = resultImage.height
 				removeSpecialError(img)
 			},
 			loading = {
@@ -619,6 +655,7 @@ fun ShowAsynchImage(
 			zoom.setContentSize(imageSize)
 		}
 	}
+		}
 }
 
 @Composable
