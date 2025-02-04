@@ -296,7 +296,7 @@ class PicturesViewModel(
 			}
 			if(biggerPivots.second < 0.3 && biggerPivots.second > 0.2)
 			{
-				biggerPivots = Pair(biggerPivots.first, biggerPivots.second + 0.01f)
+				biggerPivots = Pair(biggerPivots.first, biggerPivots.second + 0.008f)
 			}
 		}
 		pairOfPivotsXandY.value = biggerPivots

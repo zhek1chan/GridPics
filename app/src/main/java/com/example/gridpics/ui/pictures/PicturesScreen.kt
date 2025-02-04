@@ -295,7 +295,7 @@ fun ItemsCard(
 						Pair(x, y)
 					}
 			},
-		contentScale = ContentScale.Crop,
+		contentScale = ContentScale.FillWidth,
 		loading = {
 			Box(Modifier.fillMaxSize()) {
 				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
