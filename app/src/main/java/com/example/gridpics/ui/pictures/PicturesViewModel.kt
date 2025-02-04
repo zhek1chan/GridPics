@@ -14,6 +14,7 @@ import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -179,8 +180,11 @@ class PicturesViewModel(
 			val k = screenWidth
 			screenWidth = screenHeight
 			screenHeight = k
-			cofConnectedWithOrientation.floatValue = sizeOfPicLocal / screenWidth.toFloat()
-			cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / screenWidth.toFloat()
+			if(sizeOfPicLocal != 0)
+			{
+				cofConnectedWithOrientation.floatValue = sizeOfPicLocal.toFloat() / screenWidth.toFloat()
+				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal.toFloat() / screenWidth.toFloat()
+			}
 		}
 		else
 		{
@@ -189,6 +193,7 @@ class PicturesViewModel(
 			screenWidth = k
 			if(sizeOfPicLocal != 0)
 			{
+				val screenHeight = screenHeight
 				cofConnectedWithOrientation.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) - 0.00978835f
 				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) - 0.00978835f
 			}
@@ -247,11 +252,23 @@ class PicturesViewModel(
 	private fun postPivotsXandY(pairOfPivots: Pair<Float, Float>)
 	{
 		var biggerPivots = pairOfPivots
-		if(screenWidth < screenHeight && origWidth > origHeight && origWidth - origHeight > 10)
+		val screenWidth = screenWidth
+		val screenHeight = screenHeight
+		val origHeight = origHeight
+		val origWidth = origWidth
+		if(screenWidth < screenHeight && origWidth > origHeight && origWidth - origHeight > 50 && abs(origWidth - origHeight) > 50)
 		{
+			val cofConnectedWithOrientation = cofConnectedWithOrientation
+			val mapOfColumns = mapOfColumns
+			val urlForCalculation = urlForCalculation
+			val densityOfScreen = densityOfScreen
 			if(pairOfPivots.second < 0.1f)
 			{
 				biggerPivots = Pair(pairOfPivots.first, pairOfPivots.second - 0.1f)
+			}
+			else if(pairOfPivots.second > 0.9f)
+			{
+				biggerPivots = Pair(pairOfPivots.first, pairOfPivots.second + 0.03f)
 			}
 			else if(pairOfPivots.second > 0.5f)
 			{
@@ -265,12 +282,21 @@ class PicturesViewModel(
 			{
 				cofConnectedWithOrientation.floatValue * screenWidth
 				Log.d("che kak ne pon", "${cofConnectedWithOrientation.floatValue}")
-				biggerPivots = Pair(-(screenWidth * cofConnectedWithOrientation.floatValue - 100 * densityOfScreen) / screenHeight, biggerPivots.second)
+				biggerPivots = Pair(-(screenWidth * cofConnectedWithOrientation.floatValue - 100 * densityOfScreen) / screenHeight + 0.045f, biggerPivots.second)
 			}
 			else if(mapOfColumns[urlForCalculation] == gridQuantity.intValue)
 			{
 				biggerPivots = Pair((screenWidth * cofConnectedWithOrientation.floatValue - 100 * densityOfScreen) / screenHeight + 1f, biggerPivots.second)
 				Log.d("che kak ne pon", "olololol ${biggerPivots.first}")
+			}
+			if(cofConnectedWithOrientation.floatValue > 0.39)
+			{
+				val stateValue = picturesUiState.value
+				biggerPivots = Pair(biggerPivots.first, biggerPivots.second - (ceil((stateValue.picturesUrl.indexOf(urlForCalculation) - stateValue.index) / 3f)) * 0.013f)
+			}
+			if(biggerPivots.second < 0.3 && biggerPivots.second > 0.2)
+			{
+				biggerPivots = Pair(biggerPivots.first, biggerPivots.second + 0.01f)
 			}
 		}
 		pairOfPivotsXandY.value = biggerPivots
@@ -326,6 +352,7 @@ class PicturesViewModel(
 		}
 		val gridQuantity = gridQuantity.intValue
 		//вычисляем позицию в формате таблицы
+		val mapOfColumns = mapOfColumns
 		if(mapOfColumns.isEmpty() || urlOfPic == null)
 		{
 			for(i in list.indices)
@@ -382,7 +409,7 @@ class PicturesViewModel(
 				}
 				else if(y < 0.3)
 				{
-					y += 0.09f
+					y += 0.084f
 				}
 				else
 				{
@@ -601,6 +628,8 @@ class PicturesViewModel(
 			val positionInPx = listOfPositions[column - 1]
 			if(url != urlForCalculation)
 			{
+				val screenHeight = screenHeight
+				val screenWidth = screenWidth
 				clickOnPicture(list.indexOf(url), 0)
 				val x = positionInPx.first / screenWidth.toFloat()
 				val y = rightY.second / screenHeight.toFloat()
@@ -669,8 +698,11 @@ class PicturesViewModel(
 		{
 			maxVisibleElements = maxVisibleElementsNum
 			gridInPortraitQ = gridQuantity.intValue
-			cofConnectedWithOrientation.floatValue = sizeOfPicLocal / screenWidth.toFloat()
-			cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / screenWidth.toFloat()
+			if(sizeOfPicLocal != 0)
+			{
+				cofConnectedWithOrientation.floatValue = sizeOfPicLocal / screenWidth.toFloat()
+				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / screenWidth.toFloat()
+			}
 		}
 		else if(sizeOfPicLocal != 0)
 		{
@@ -693,17 +725,19 @@ class PicturesViewModel(
 
 	fun postOriginalSizeOfPic(width: Int, height: Int)
 	{
-		if(width > height && screenWidth < screenHeight && width - height > 10)
+		if(width > height && screenWidth < screenHeight && width - height > 10 && abs(width - height) > 50)
 		{
+			val screenWidth = screenWidth
+			val densityOfScreen = densityOfScreen
 			sqrt(width.toDouble().pow(2) + height.toDouble().pow(2))
 			//диагональ п.у.
-			cofConnectedWithOrientationForExit.floatValue = 100 * densityOfScreen / (height * screenWidth / width) * 1.2f
-			cofConnectedWithOrientation.floatValue = 100 * densityOfScreen / (height * screenWidth / width) * 1.2f
+			cofConnectedWithOrientationForExit.floatValue = 100 * densityOfScreen / (height * screenWidth / width) * 1.2f - 0.01f
+			cofConnectedWithOrientation.floatValue = 100 * densityOfScreen / (height * screenWidth / width) * 1.2f - 0.01f
+			Log.d("che kak ono", "$width, $height, ${100 * densityOfScreen / height * screenWidth / width}, ${100 * densityOfScreen}")
+			Log.d("che kak ono", "${screenWidth * cofConnectedWithOrientation.floatValue} shirina")
+			Log.d("che kak ono", "${100 * densityOfScreen / (height * screenWidth / width) * 1.2f - 0.01f} CHECK")
 		}
 		origHeight = height
 		origWidth = width
-		Log.d("che kak ono", "$width, $height, ${100 * densityOfScreen / height * screenWidth / width}, ${100 * densityOfScreen}")
-		Log.d("che kak ono", "${screenWidth * cofConnectedWithOrientation.floatValue} shirina")
-		Log.d("che kak ono", "${100 * densityOfScreen} shirina picture")
 	}
 }

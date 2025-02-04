@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -458,8 +459,9 @@ fun ShowList(
 			}
 		}
 	}
-	LaunchedEffect(calculateGridSpan) {
-		postSizeOfPicAndGridMaxVisibleLines(size.value, listState.layoutInfo.visibleItemsInfo.size)
+	val sizeOfPic = remember { derivedStateOf { listState.layoutInfo.visibleItemsInfo.size } }
+	LaunchedEffect(sizeOfPic.value) {
+		postSizeOfPicAndGridMaxVisibleLines(size.value, sizeOfPic.value)
 	}
 	LaunchedEffect(Unit) {
 		listState.scrollToItem(index, offset)

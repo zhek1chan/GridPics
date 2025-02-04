@@ -102,8 +102,8 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val resources = resources
-		val orientation = resources.configuration.orientation
 		picVM.updateGridSpan(calculateGridSpan())
+		val orientation = resources.configuration.orientation
 		picVM.changeOrientation(isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT)
 		val displayMetrics = resources.displayMetrics
 		val width = displayMetrics.widthPixels
@@ -167,10 +167,10 @@ class MainActivity: AppCompatActivity()
 		val orientationWasChangedCheck = picVM.orientationWasChanged
 		val pValue = pivots.value
 		val isImageToShareOrDelete = picVM.isImageToShareOrDelete
-		val enterTrans = if(pivots.value != Pair(12345f, 12345f))
+		val enterTrans = if(pivots.value != defaultPairValue)
 		{
 			scaleIn(
-				animationSpec = tween(1400),
+				animationSpec = tween(1500),
 				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
@@ -186,7 +186,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleIn(
-				animationSpec = tween(1400),
+				animationSpec = tween(1500),
 				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(
 					pValue.first,
@@ -201,7 +201,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleIn(
-				animationSpec = tween(1400),
+				animationSpec = tween(1500),
 				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(
 					pValue.first,
@@ -216,7 +216,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleOut(
-				animationSpec = tween(1000),
+				animationSpec = tween(1500),
 				targetScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
@@ -261,7 +261,7 @@ class MainActivity: AppCompatActivity()
 			},
 			exitTransition = {
 				scaleOut(
-					animationSpec = tween(1400),
+					animationSpec = tween(1500),
 					targetScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
@@ -292,7 +292,7 @@ class MainActivity: AppCompatActivity()
 						navController.navigate(Screen.Details.route)
 						isExit.value = false
 						lifecycleScope.launch {
-							delay(1000)
+							delay(1500)
 							isExit.value = true
 						}
 					},
@@ -386,7 +386,7 @@ class MainActivity: AppCompatActivity()
 					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
 					animationHasBeenStarted = animationIsRunning,
-					postPivot = { pivots.value = Pair(12345f, 12345f) },
+					postPivot = { pivots.value = defaultPairValue },
 					postCutouts = { left, right ->
 						picVM.postCutouts(left, right, true)
 						Log.d("proverka2", "new cutouts")
@@ -753,5 +753,6 @@ class MainActivity: AppCompatActivity()
 		const val SHARED_PREFERENCE_GRIDPICS = "SHARED_PREFERENCE_GRIDPICS"
 		const val HTTP_ERROR = "HTTP error: 404, or bad image"
 		const val SAVED_URL_FROM_SCREEN_DETAILS = "SAVED_URL_FROM_SCREEN_DETAILS"
+		val defaultPairValue = Pair(12345f, 12345f)
 	}
 }

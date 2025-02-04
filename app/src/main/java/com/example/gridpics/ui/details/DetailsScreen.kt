@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -93,6 +94,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
+import kotlin.math.abs
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -532,10 +534,12 @@ fun ShowAsynchImage(
 				.diskCacheKey(img)
 				.build()
 		}
-		val mod = remember(animationIsRunning.value) { mutableStateOf(Modifier.fillMaxSize()) }
+		val mod = remember(img) { mutableStateOf(Modifier.fillMaxSize()) }
+		val isSquare = remember(img) { mutableStateOf(false) }
 		if(animationIsRunning.value)
 		{
 			mod.value = Modifier
+				.align(Alignment.Center)
 				.fillMaxSize()
 				.alpha(0.5f)
 		}
@@ -595,14 +599,26 @@ fun ShowAsynchImage(
 					}
 				}
 		}
+		if(isSquare.value)
+		{
+			mod.value = mod.value.aspectRatio(1f)
+		}
 		SubcomposeAsyncImage(
 			model = imgRequest,
+			modifier = mod.value.align(Alignment.TopStart),
 			contentDescription = null,
 			contentScale = scale,
 			onSuccess = {
 				val resultImage = it.result.image
 				removeSpecialError(img)
-				postSizeOfPic(resultImage.width, resultImage.height)
+				val width = resultImage.width
+				val height = resultImage.height
+				if(abs(width - height) <= 50)
+				{
+					isSquare.value = true
+					mod.value = mod.value.aspectRatio(1f)
+				}
+				postSizeOfPic(width, height)
 			},
 			loading = {
 				Box(Modifier.fillMaxSize()) {
@@ -613,8 +629,6 @@ fun ShowAsynchImage(
 				addError(img, it.result.throwable.message.toString())
 				navController.navigate(Screen.Details.route)
 			},
-			modifier = mod.value
-				.align(Alignment.TopStart)
 		)
 	}
 }
