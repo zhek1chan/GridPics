@@ -171,7 +171,7 @@ class MainActivity: AppCompatActivity()
 			scaleIn(
 				animationSpec = tween(1500),
 				initialScale = cofConnectedWithOrientation.floatValue,
-				transformOrigin = TransformOrigin(pValue.first, pValue.second)
+				transformOrigin = TransformOrigin(pValue.first, pValue.second) //можно удалить
 			)
 		}
 		else
@@ -220,6 +220,7 @@ class MainActivity: AppCompatActivity()
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
 		}
+		//зачем нужны поп анимации, почему на выходе не обрабатывается ошибочная картинка
 		val isExit = remember { mutableStateOf(false) }
 		val popExitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
 		{
@@ -265,7 +266,7 @@ class MainActivity: AppCompatActivity()
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			}
-		)
+		) //можно ли убрать - надо смотреть
 		{
 			composable(
 				route = BottomNavItem.Home.route,
@@ -283,10 +284,10 @@ class MainActivity: AppCompatActivity()
 					clearErrors = { picVM.clearErrors() },
 					postVisibleBarsState = { detVM.changeVisabilityState(true) },
 					currentPicture = { url, index, offset ->
+						picVM.saveUrlOfCurrentPic(index)
 						picVM.clickOnPicture(index, offset)
 						picVM.calculatePosition(url)
 						detVM.postCurrentPicture(url)
-						pivots.value = picVM.getPivotsXandY()
 						orientationWasChangedCheck.value = false
 						navController.navigate(Screen.Details.route)
 						isExit.value = false
@@ -374,7 +375,6 @@ class MainActivity: AppCompatActivity()
 					setCurrentPictureUrl = { url ->
 						picVM.calculateListPosition(url)
 						detVM.postCurrentPicture(url)
-						pivots.value = picVM.getPivotsXandY()
 					},
 					share = { url -> share(url) },
 					deleteCurrentPicture = { url ->
@@ -384,7 +384,9 @@ class MainActivity: AppCompatActivity()
 					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
 					animationHasBeenStarted = animationIsRunning,
-					postPivot = { pivots.value = Pair(12345f, 12345f) },
+					postPivot = {
+						pivots.value = Pair(12345f, 12345f)
+					},
 					postCutouts = { left, right ->
 						picVM.postCutouts(left, right, true)
 						Log.d("proverka2", "new cutouts")

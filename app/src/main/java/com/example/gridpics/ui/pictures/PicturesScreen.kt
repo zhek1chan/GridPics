@@ -252,7 +252,7 @@ fun ItemsCard(
 				else
 				{
 					scope.launch {
-						Log.d("hernya", "${lazyState.layoutInfo.visibleItemsInfo.size}")
+						//надо расписать
 						if(lazyState.layoutInfo.totalItemsCount - index > lazyState.layoutInfo.visibleItemsInfo.size)
 						{
 							lazyState.scrollToItem(lazyState.firstVisibleItemIndex, 0)
@@ -269,6 +269,7 @@ fun ItemsCard(
 						{
 							delay(300)
 						}
+						//что это чинит
 						currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
 						animationIsRunning.value = true
 						openAlertDialog.value = false

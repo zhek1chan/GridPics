@@ -556,8 +556,10 @@ fun ShowAsynchImage(
 			{
 				ContentScale.FillWidth
 			}
-			else if(width.intValue < height.intValue && abs(width.intValue - height.intValue) > 50)
+			else if(width.intValue < height.intValue && abs(width.intValue - height.intValue) > 50 && sizeOfBoxState < 1000.dp)
 			{
+				ContentScale.Fit
+			} else if (width.intValue < height.intValue && abs(width.intValue - height.intValue) > 50) {
 				ContentScale.FillHeight
 			}
 			else

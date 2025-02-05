@@ -42,6 +42,7 @@ class PicturesViewModel(
 	private var cutouts = Pair(0f, 0f)
 	private var sizeOfPic = IntSize.Zero
 	private var isOrientationPortrait = false
+	private var wasFirstVisibleIndex = 0
 
 	init
 	{
@@ -250,11 +251,6 @@ class PicturesViewModel(
 		Log.d("proverka", "Posted pivots $pairOfPivots")
 	}
 
-	fun getPivotsXandY(): Pair<Float, Float>
-	{
-		return pairOfPivotsXandY.value
-	}
-
 	private fun compareAndCombineLists(list1: List<String>, list2: List<String>): List<String>
 	{
 		return list1.filterNot { it in list2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
@@ -292,7 +288,7 @@ class PicturesViewModel(
 			if(list.size - list.indexOf(url) < 18)
 			{
 				clickOnPicture(list.size - 1, 0)
-			}
+			} // надо смотреть
 			else
 			{
 				clickOnPicture(list.indexOf(url), 0)
@@ -316,7 +312,7 @@ class PicturesViewModel(
 			}
 		}
 		Log.d("columns", "$mapOfColumns")
-		if(url.isNotEmpty())
+		if(url.isNotEmpty()) // можно убрать скорее всего
 		{
 			calculatePixelPosition(
 				url = url,
@@ -468,13 +464,13 @@ class PicturesViewModel(
 			Log.d("proverka", " pr cutouts  = $cutoutsLocal")
 			if(screenWidth < screenHeight)
 			{
-				val gridInPortraitQ = gridInPortraitQ
+				val gridInPortraitQ = gridInPortraitQ // надо посмотреть нужна ли переменная
 				column = (list.indexOf(url) + 1) % gridInPortraitQ
 				if(column == 0)
 				{
 					column = gridInPortraitQ
 				}
-				calculatePosition(url)
+				calculatePosition(url) // надо понять нах надо
 				Log.d("proverka", "column perevorot $column")
 				val xPortrait =
 					when(column)
@@ -600,28 +596,17 @@ class PicturesViewModel(
 		val listOfPositions = listOfPositions
 		if(column != null && listOfPositions.size > 0)
 		{
-			val rightY = listOfPositions[0]
-			val positionInPx = listOfPositions[column - 1]
 			if(url != urlForCalculation)
 			{
-				val screenHeight = screenHeight
-				val screenWidth = screenWidth
-				clickOnPicture(list.indexOf(url), 0)
-				val x = positionInPx.first / screenWidth.toFloat()
-				val y = rightY.second / screenHeight.toFloat()
-				if(screenWidth < screenHeight)
+				if(list.indexOf(url) - wasFirstVisibleIndex >= maxVisibleElements || list.indexOf(url) - wasFirstVisibleIndex < 0)
 				{
-					postPivotsXandY(Pair(x * 1.4f, y * 1.37f))
-				}
-				else
-				{
-					calculatePixelPosition(
-						url = url,
-						setYToDefault = true,
-						needsRecalculation = false
-					)
 					clickOnPicture(list.indexOf(url), 0)
 				}
+				calculatePixelPosition(
+					url = url,
+					setYToDefault = true,
+					needsRecalculation = false
+				)
 			}
 		}
 	}
@@ -631,7 +616,7 @@ class PicturesViewModel(
 		val urls = picturesUiState.value.picturesUrl
 		val listOfPositions = listOfPositions
 		val index = urls.indexOf(url)
-		if(position != Pair(0f, 0f))
+		if(position != Pair(0f, 0f)) // надо проверить
 		{
 			listOfPositions.add(index, position)
 		}
@@ -700,5 +685,10 @@ class PicturesViewModel(
 	fun postBars(top: Float, bottom: Float)
 	{
 		barsSize = Pair(top, bottom)
+	}
+
+	fun saveUrlOfCurrentPic(index: Int)
+	{
+		wasFirstVisibleIndex = index
 	}
 }
