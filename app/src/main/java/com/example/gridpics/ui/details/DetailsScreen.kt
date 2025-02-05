@@ -100,6 +100,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
+import kotlin.math.abs
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -516,34 +517,107 @@ fun ShowAsynchImage(
 )
 {
 	val animationIsRunningLocal = remember { mutableStateOf(animationIsRunning.value) }
-	LaunchedEffect(animationIsRunning.value, itIsStartAnimationState.value) {
-		if(!itIsStartAnimationState.value && animationIsRunning.value)
-		{
-			animationIsRunningLocal.value = true
-		}
-		else if(animationIsRunning.value)
-		{
-			delay(100)
-			animationIsRunningLocal.value = false
-		}
-		else
-		{
-			animationIsRunningLocal.value = false
-		}
-	}
 	val width = remember { mutableIntStateOf(0) }
 	val height = remember { mutableIntStateOf(0) }
+	if(isScreenInPortraitState && (width.intValue < height.intValue) || !isScreenInPortraitState && (width.intValue < height.intValue))
+	{
+		LaunchedEffect(animationIsRunning.value, itIsStartAnimationState.value) {
+			if(!itIsStartAnimationState.value && animationIsRunning.value)
+			{
+				animationIsRunningLocal.value = true
+			}
+			else if(animationIsRunning.value)
+			{
+				delay(100)
+				animationIsRunningLocal.value = false
+			}
+			else
+			{
+				animationIsRunningLocal.value = false
+			}
+		}
+	}
 	val sizeOfBoxState = if(isScreenInPortraitState)
 	{
 		400.dp
 	}
-	else if(width.intValue > height.intValue)
+	else if(width.intValue > height.intValue && width.intValue - height.intValue > 50)
 	{
 		200.dp
 	}
 	else
 	{
 		400.dp
+	}
+	val scale = if(animationIsRunning.value)
+	{
+		if(isScreenInPortraitState)
+		{
+			if(width.intValue >= height.intValue)
+			{
+				ContentScale.FillWidth
+			}
+			else if(width.intValue < height.intValue && abs(width.intValue - height.intValue) > 50)
+			{
+				ContentScale.FillHeight
+			}
+			else
+			{
+				ContentScale.FillWidth
+			}
+		}
+		else
+		{
+			if(width.intValue > height.intValue)
+			{
+				ContentScale.FillHeight
+			}
+			else if(width.intValue < height.intValue)
+			{
+				ContentScale.FillHeight
+			}
+			else
+			{
+				ContentScale.FillHeight
+			}
+		}
+	}
+	else if(state.value.isMultiWindowed)
+	{
+		ContentScale.Fit
+	}
+	else
+	{
+		if(isScreenInPortraitState)
+		{
+			if(width.intValue >= height.intValue)
+			{
+				ContentScale.FillWidth
+			}
+			else if(width.intValue < height.intValue && abs(width.intValue - height.intValue) > 50)
+			{
+				ContentScale.FillHeight
+			}
+			else
+			{
+				ContentScale.FillWidth
+			}
+		}
+		else
+		{
+			if(width.intValue > height.intValue)
+			{
+				ContentScale.FillHeight
+			}
+			else if(width.intValue < height.intValue)
+			{
+				ContentScale.FillHeight
+			}
+			else
+			{
+				ContentScale.FillHeight
+			}
+		}
 	}
 	Log.d("animashka", "$animationIsRunningLocal")
 	Box(Modifier.fillMaxSize()) {
@@ -553,76 +627,6 @@ fun ShowAsynchImage(
 			.height(if(animationIsRunningLocal.value) sizeOfBoxState else 1000.dp)
 			.fillMaxWidth()
 		) {
-			val scale = if(animationIsRunning.value)
-			{
-				if(isScreenInPortraitState)
-				{
-					if(width.intValue >= height.intValue)
-					{
-						ContentScale.FillWidth
-					}
-					else if(width.intValue < height.intValue)
-					{
-						ContentScale.FillHeight
-					}
-					else
-					{
-						ContentScale.Crop
-					}
-				}
-				else
-				{
-					if(width.intValue > height.intValue)
-					{
-						ContentScale.FillHeight
-					}
-					else if(width.intValue < height.intValue)
-					{
-						ContentScale.FillHeight
-					}
-					else
-					{
-						ContentScale.FillHeight
-					}
-				}
-			}
-			else if(state.value.isMultiWindowed)
-			{
-				ContentScale.Fit
-			}
-			else
-			{
-				if(isScreenInPortraitState)
-				{
-					if(width.intValue >= height.intValue)
-					{
-						ContentScale.FillWidth
-					}
-					else if(width.intValue < height.intValue)
-					{
-						ContentScale.FillHeight
-					}
-					else
-					{
-						ContentScale.Crop
-					}
-				}
-				else
-				{
-					if(width.intValue > height.intValue)
-					{
-						ContentScale.FillHeight
-					}
-					else if(width.intValue < height.intValue)
-					{
-						ContentScale.FillHeight
-					}
-					else
-					{
-						ContentScale.FillHeight
-					}
-				}
-			}
 			val zoom = rememberZoomState(15f, Size.Zero)
 			var imageSize by remember { mutableStateOf(Size.Zero) }
 			val imgRequest = remember(img) {

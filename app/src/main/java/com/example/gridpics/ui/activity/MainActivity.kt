@@ -310,7 +310,7 @@ class MainActivity: AppCompatActivity()
 					{ intSize, maxVisibleElementsNum ->
 						picVM.postSizeOfPic(intSize, maxVisibleElementsNum)
 					},
-					postCutouts = { left, right -> picVM.postCutouts(left, right, false) },
+					postCutouts = { left, right -> picVM.postCutouts(left, right, true) },
 					postBars = { top, bottom -> picVM.postBars(top, bottom) },
 				)
 			}

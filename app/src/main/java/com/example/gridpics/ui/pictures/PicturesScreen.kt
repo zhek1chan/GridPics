@@ -183,7 +183,8 @@ fun PicturesScreen(
 					calculateGridSpan = calculatedGridSpan,
 					animationIsRunning = animationIsRunning,
 					postPosition = postPosition,
-					postSizeOfPicAndGridMaxVisibleLines = postSizeOfPicAndGridMaxVisibleLines
+					postSizeOfPicAndGridMaxVisibleLines = postSizeOfPicAndGridMaxVisibleLines,
+					isPortraitOrientation = conf.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 				)
 			}
 		}
@@ -204,6 +205,7 @@ fun ItemsCard(
 	scope: CoroutineScope,
 	size: MutableState<IntSize>,
 	index: Int,
+	isScreenInPortrait: Boolean,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -294,11 +296,14 @@ fun ItemsCard(
 		},
 		onSuccess = {
 			isError = false
-			scale.value = if(it.result.image.width > it.result.image.height)
+			val image = it.result.image
+			val width = image.width
+			val height = image.height
+			scale.value = if(width > height)
 			{
 				ContentScale.FillWidth
 			}
-			else if(it.result.image.width < it.result.image.height)
+			else if(width < height && (!isScreenInPortrait || height - width > 50))
 			{
 				ContentScale.FillHeight
 			}
@@ -358,6 +363,7 @@ fun ShowList(
 	animationIsRunning: MutableState<Boolean>,
 	postPosition: (String, Pair<Float, Float>) -> Unit,
 	postSizeOfPicAndGridMaxVisibleLines: (IntSize, Int) -> Unit,
+	isPortraitOrientation: Boolean,
 )
 {
 	val context = LocalContext.current
@@ -397,7 +403,8 @@ fun ShowList(
 							postPosition = postPosition,
 							scope = scope,
 							size = size,
-							index = list.indexOf(it)
+							index = list.indexOf(it),
+							isScreenInPortrait = isPortraitOrientation
 						)
 					}
 				}
@@ -447,7 +454,8 @@ fun ShowList(
 					postPosition = postPosition,
 					scope = scope,
 					size = size,
-					index = imagesUrlsSP.indexOf(it)
+					index = imagesUrlsSP.indexOf(it),
+					isScreenInPortrait = isPortraitOrientation
 				)
 			}
 		}
