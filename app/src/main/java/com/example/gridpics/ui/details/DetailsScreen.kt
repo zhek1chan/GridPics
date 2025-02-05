@@ -130,9 +130,12 @@ fun DetailsScreen(
 	val cutouts = WindowInsets.displayCutout
 	val direction = LocalLayoutDirection.current
 	val conf = LocalConfiguration.current.orientation
-	val paddingForCutouts = if (cutouts.asPaddingValues() == PaddingValues(0.dp)){
+	val paddingForCutouts = if(cutouts.asPaddingValues() == PaddingValues(0.dp))
+	{
 		PaddingValues(600.dp)
-	} else {
+	}
+	else
+	{
 		cutouts.asPaddingValues()
 	}
 
@@ -144,7 +147,7 @@ fun DetailsScreen(
 		Log.d("proverka cutouts", "$left $right")
 		postBars(top, bottom)
 		Log.d("proverka cutov", "${left.value} ${right.value}")
-		if (orientationWasChanged.value)
+		if(orientationWasChanged.value)
 		{
 			postCutouts(left.value, right.value)
 		}
@@ -505,162 +508,193 @@ fun ShowAsynchImage(
 	checkOnErrorExists: (String) -> String?,
 )
 {
-	val expanded =  remember { mutableStateOf(false) }
-	if (animationIsRunning.value) {
+	val expanded = remember { mutableStateOf(false) }
+	if(animationIsRunning.value)
+	{
 		expanded.value = true
 	}
 	Box(Modifier.fillMaxSize()) {
-		Box(Modifier.animateContentSize()
+		Box(Modifier
+			.animateContentSize()
 			.align(Alignment.Center)
-			.height(if (expanded.value) 400.dp else 1000.dp)
+			.height(if(expanded.value) 400.dp else 1000.dp)
 			.fillMaxWidth()
 		) {
-		val width = remember { mutableIntStateOf(0) }
-		val height = remember { mutableIntStateOf(0) }
-		val scale = if(animationIsRunning.value)
-		{
-			if(width.intValue > height.intValue)
+			val width = remember { mutableIntStateOf(0) }
+			val height = remember { mutableIntStateOf(0) }
+			val scale = if(animationIsRunning.value)
 			{
-				ContentScale.FillWidth
-			}
-			else if(width.intValue < height.intValue)
-			{
-				ContentScale.FillHeight
-			}
-			else
-			{
-				ContentScale.Crop
-			}
-		}
-		else if(state.value.isMultiWindowed)
-		{
-			ContentScale.Fit
-		}
-		else
-		{
-			if(isScreenInPortraitState)
-			{
-				if(width.intValue > height.intValue)
+				if(isScreenInPortraitState)
 				{
-					ContentScale.FillWidth
-				}
-				else if(width.intValue < height.intValue)
-				{
-					ContentScale.FillHeight
+					if(width.intValue > height.intValue)
+					{
+						ContentScale.FillWidth
+					}
+					else if(width.intValue < height.intValue)
+					{
+						ContentScale.FillHeight
+					}
+					else
+					{
+						ContentScale.Crop
+					}
 				}
 				else
 				{
-					ContentScale.Crop
+					if(width.intValue > height.intValue)
+					{
+						ContentScale.FillHeight
+					}
+					else if(width.intValue < height.intValue)
+					{
+						ContentScale.FillHeight
+					}
+					else
+					{
+						ContentScale.FillHeight
+					}
 				}
+			}
+			else if(state.value.isMultiWindowed)
+			{
+				ContentScale.Fit
 			}
 			else
 			{
-				ContentScale.FillHeight
-			}
-		}
-		val zoom = rememberZoomState(15f, Size.Zero)
-		var imageSize by remember { mutableStateOf(Size.Zero) }
-		val imgRequest = remember(img) {
-			ImageRequest.Builder(context)
-				.data(img)
-				.error(R.drawable.error)
-				.diskCacheKey(img)
-				.build()
-		}
-		val mod = remember(animationIsRunning.value) { mutableStateOf(Modifier.fillMaxSize()) }
-		if(animationIsRunning.value)
-		{
-			mod.value = Modifier
-				.fillMaxSize()
-				.clip(RoundedCornerShape(8.dp))
-				.alpha(0.5f)
-				.align(Alignment.Center)
-		}
-		else
-		{
-			mod.value = Modifier
-				.fillMaxSize()
-				.zoomable(
-					zoomState = zoom,
-					enableOneFingerZoom = false,
-					onTap =
+				if(isScreenInPortraitState)
+				{
+					if(width.intValue > height.intValue)
 					{
-						val visibility = state.value.barsAreVisible
-						changeBarsVisability(!visibility)
+						ContentScale.FillWidth
 					}
-				)
-				.pointerInput(Unit) {
-					awaitEachGesture {
-						val count = mutableListOf(0)
-						val countLastThree = mutableListOf(0)
-						while(true)
+					else if(width.intValue < height.intValue)
+					{
+						ContentScale.FillHeight
+					}
+					else
+					{
+						ContentScale.Crop
+					}
+				}
+				else
+				{
+					if(width.intValue > height.intValue)
+					{
+						ContentScale.FillHeight
+					}
+					else if(width.intValue < height.intValue)
+					{
+						ContentScale.FillHeight
+					}
+					else
+					{
+						ContentScale.FillHeight
+					}
+				}
+			}
+			val zoom = rememberZoomState(15f, Size.Zero)
+			var imageSize by remember { mutableStateOf(Size.Zero) }
+			val imgRequest = remember(img) {
+				ImageRequest.Builder(context)
+					.data(img)
+					.error(R.drawable.error)
+					.diskCacheKey(img)
+					.build()
+			}
+			val mod = remember(animationIsRunning.value) { mutableStateOf(Modifier.fillMaxSize()) }
+			if(animationIsRunning.value)
+			{
+				mod.value = Modifier
+					.fillMaxSize()
+					.clip(RoundedCornerShape(8.dp))
+					.alpha(0.5f)
+					.align(Alignment.Center)
+			}
+			else
+			{
+				mod.value = Modifier
+					.fillMaxSize()
+					.zoomable(
+						zoomState = zoom,
+						enableOneFingerZoom = false,
+						onTap =
 						{
-							val event = awaitPointerEvent()
-							val changes = event.changes
-							val exit = !changes.any {
-								it.isConsumed
-							}
-							if(count.size >= 3)
+							val visibility = state.value.barsAreVisible
+							changeBarsVisability(!visibility)
+						}
+					)
+					.pointerInput(Unit) {
+						awaitEachGesture {
+							val count = mutableListOf(0)
+							val countLastThree = mutableListOf(0)
+							while(true)
 							{
-								val lastIndex = count.lastIndex
-								countLastThree.add(count[lastIndex])
-								countLastThree.add(count[lastIndex - 1])
-								countLastThree.add(count[lastIndex - 2])
-							}
-							if(changes.any { !it.pressed })
-							{
-								if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
-								{
-									navigateToHome(
-										changeBarsVisability = changeBarsVisability,
-										postUrl = postUrl,
-										navController = navController,
-										setImageSharedStateToFalse = setImageSharedStateToFalse,
-										animationIsRunning = animationIsRunning,
-										wasDeleted = false,
-										animationHasBeenStarted = animationHasBeenStarted,
-										postPivot = postPivot,
-										state = state,
-										checkOnErrorExists = checkOnErrorExists
-									)
+								val event = awaitPointerEvent()
+								val changes = event.changes
+								val exit = !changes.any {
+									it.isConsumed
 								}
+								if(count.size >= 3)
+								{
+									val lastIndex = count.lastIndex
+									countLastThree.add(count[lastIndex])
+									countLastThree.add(count[lastIndex - 1])
+									countLastThree.add(count[lastIndex - 2])
+								}
+								if(changes.any { !it.pressed })
+								{
+									if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
+									{
+										navigateToHome(
+											changeBarsVisability = changeBarsVisability,
+											postUrl = postUrl,
+											navController = navController,
+											setImageSharedStateToFalse = setImageSharedStateToFalse,
+											animationIsRunning = animationIsRunning,
+											wasDeleted = false,
+											animationHasBeenStarted = animationHasBeenStarted,
+											postPivot = postPivot,
+											state = state,
+											checkOnErrorExists = checkOnErrorExists
+										)
+									}
+								}
+								countLastThree.clear()
+								count.add(changes.size)
 							}
-							countLastThree.clear()
-							count.add(changes.size)
 						}
 					}
-				}
-		}
-		val scope = rememberCoroutineScope()
-		SubcomposeAsyncImage(
-			model = imgRequest,
-			contentDescription = null,
-			contentScale = scale,
-			onSuccess = {
-				val resultImage = it.result.image
-				imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
-				width.intValue = resultImage.width
-				height.intValue = resultImage.height
-				removeSpecialError(img)
-			},
-			loading = {
-				Box(Modifier.fillMaxSize()) {
-					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-				}
-			},
-			onError = {
-				addError(img, it.result.throwable.message.toString())
-				navController.navigate(Screen.Details.route)
-			},
-			modifier = mod.value
-				.align(Alignment.TopStart)
-		)
+			}
+			val scope = rememberCoroutineScope()
+			SubcomposeAsyncImage(
+				model = imgRequest,
+				contentDescription = null,
+				contentScale = scale,
+				onSuccess = {
+					val resultImage = it.result.image
+					imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
+					width.intValue = resultImage.width
+					height.intValue = resultImage.height
+					removeSpecialError(img)
+				},
+				loading = {
+					Box(Modifier.fillMaxSize()) {
+						CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+					}
+				},
+				onError = {
+					addError(img, it.result.throwable.message.toString())
+					navController.navigate(Screen.Details.route)
+				},
+				modifier = mod.value
+					.align(Alignment.TopStart)
+			)
 
-		scope.launch {
-			zoom.setContentSize(imageSize)
+			scope.launch {
+				zoom.setContentSize(imageSize)
+			}
 		}
 	}
-		}
 }
 
 @Composable

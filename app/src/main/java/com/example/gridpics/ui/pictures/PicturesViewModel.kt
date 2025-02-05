@@ -178,8 +178,8 @@ class PicturesViewModel(
 			screenHeight = k
 			if(sizeOfPicLocal != 0)
 			{
-				cofConnectedWithOrientation.floatValue = sizeOfPicLocal.toFloat() / screenWidth.toFloat()
-				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal.toFloat() / screenWidth.toFloat()
+				cofConnectedWithOrientation.floatValue = sizeOfPicLocal.toFloat() / screenWidth.toFloat() + 0.03f
+				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal.toFloat() / screenWidth.toFloat() + 0.03f
 			}
 		}
 		else
@@ -190,8 +190,8 @@ class PicturesViewModel(
 			if(sizeOfPicLocal != 0)
 			{
 				val screenHeight = screenHeight
-				cofConnectedWithOrientation.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) - 0.00978835f
-				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) - 0.00978835f
+				cofConnectedWithOrientation.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) - 0.057f
+				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen)- 0.057f
 			}
 		}
 		Log.d("pupu", "${cofConnectedWithOrientation.floatValue}   ${cofConnectedWithOrientationForExit.floatValue}")
@@ -380,7 +380,10 @@ class PicturesViewModel(
 					}
 					else
 					{
-						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.04f
+						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f
+					}
+					if (x<0) {
+						x += 0.02f
 					}
 					Log.d("proverka7", "$x, cutout sleva")
 				}
@@ -392,11 +395,11 @@ class PicturesViewModel(
 					}
 					else if(column.toDouble() == ceil(gridQuantity.toDouble() / 2))
 					{
-						1.4f * x - 0.02f * column - 0.09f
+						1.4f * x - 0.02f * column - 0.08f
 					}
 					else
 					{
-						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.11f
+						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.075f
 					}
 					Log.d("watafak", "${ceil(gridQuantity.toDouble() / 2)}")
 					Log.d("proverka7", "gridQuantity $gridQuantity")
@@ -554,11 +557,11 @@ class PicturesViewModel(
 				Log.d("proverka", "Pair $x , 2.09f")
 				val yT = if(size - list.indexOf(url) < gridQuantity)
 				{
-					0.2766f * 2
+					0.2666f * 2
 				}
 				else
 				{
-					0.2766f
+					0.2666f
 				}
 				postPivotsXandY(Pair(x, yT))
 			}
