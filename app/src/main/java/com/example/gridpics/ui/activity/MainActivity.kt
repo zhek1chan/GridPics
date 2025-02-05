@@ -310,7 +310,8 @@ class MainActivity: AppCompatActivity()
 					{ intSize, maxVisibleElementsNum ->
 						picVM.postSizeOfPic(intSize, maxVisibleElementsNum)
 					},
-					postCutouts = { left, right -> picVM.postCutouts(left, right, false) }
+					postCutouts = { left, right -> picVM.postCutouts(left, right, false) },
+					postBars = { top, bottom -> picVM.postBars(top, bottom) },
 				)
 			}
 			composable(
@@ -388,7 +389,8 @@ class MainActivity: AppCompatActivity()
 						picVM.postCutouts(left, right, true)
 						Log.d("proverka2", "new cutouts")
 					},
-					orientationWasChanged = orientationWasChangedCheck
+					orientationWasChanged = orientationWasChangedCheck,
+					postBars = { top, bottom -> picVM.postBars(top, bottom) },
 				)
 			}
 		}

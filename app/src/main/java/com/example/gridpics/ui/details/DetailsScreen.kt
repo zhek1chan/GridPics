@@ -123,7 +123,8 @@ fun DetailsScreen(
 	animationHasBeenStarted: MutableState<Boolean>,
 	postPivot: () -> Unit,
 	postCutouts: (Float, Float) -> Unit,
-	orientationWasChanged: MutableState<Boolean>
+	orientationWasChanged: MutableState<Boolean>,
+	postBars: (Float, Float) -> Unit,
 )
 {
 	val cutouts = WindowInsets.displayCutout
@@ -138,6 +139,10 @@ fun DetailsScreen(
 	LaunchedEffect(conf) {
 		val left = paddingForCutouts.calculateLeftPadding(direction)
 		val right = paddingForCutouts.calculateRightPadding(direction)
+		val top = paddingForCutouts.calculateTopPadding().value
+		val bottom = paddingForCutouts.calculateBottomPadding().value
+		Log.d("proverka cutouts", "$left $right")
+		postBars(top, bottom)
 		Log.d("proverka cutov", "${left.value} ${right.value}")
 		if (orientationWasChanged.value)
 		{
