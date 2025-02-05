@@ -169,7 +169,7 @@ class MainActivity: AppCompatActivity()
 		val enterTrans = if(pivots.value != Pair(12345f, 12345f))
 		{
 			scaleIn(
-				animationSpec = tween(1400),
+				animationSpec = tween(1500),
 				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
@@ -185,7 +185,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleIn(
-				animationSpec = tween(900),
+				animationSpec = tween(1000),
 				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(
 					pValue.first,
@@ -200,7 +200,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleIn(
-				animationSpec = tween(900),
+				animationSpec = tween(1000),
 				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(
 					pValue.first,
@@ -253,14 +253,14 @@ class MainActivity: AppCompatActivity()
 			},
 			enterTransition = {
 				scaleIn(
-					animationSpec = tween(900),
+					animationSpec = tween(1000),
 					initialScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)
 			},
 			exitTransition = {
 				scaleOut(
-					animationSpec = tween(900),
+					animationSpec = tween(1000),
 					targetScale = cofConnectedWithOrientation.floatValue,
 					transformOrigin = TransformOrigin(pValue.first, pValue.second)
 				)

@@ -115,14 +115,7 @@ fun PicturesScreen(
 	val statusBars = WindowInsets.statusBarsIgnoringVisibility
 	val cutouts = WindowInsets.displayCutout
 	val value = state.value
-	val windowInsets = if(value.isPortraitOrientation)
-	{
-		statusBars
-	}
-	else
-	{
-		cutouts.union(statusBars)
-	}
+	val windowInsets = cutouts.union(statusBars)
 	val direction = LocalLayoutDirection.current
 	val paddingForCutouts = cutouts.asPaddingValues()
 	val conf = LocalConfiguration.current

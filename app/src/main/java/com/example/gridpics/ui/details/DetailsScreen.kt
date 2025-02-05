@@ -10,6 +10,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -127,7 +128,8 @@ fun DetailsScreen(
 	postBars: (Float, Float) -> Unit,
 )
 {
-	val cutouts = WindowInsets.displayCutout
+	val itIsStartAnimationState = remember { mutableStateOf(true) }
+	val cutouts = WindowInsets.displayCutout.union(WindowInsets.systemBarsIgnoringVisibility)
 	val direction = LocalLayoutDirection.current
 	val conf = LocalConfiguration.current.orientation
 	val paddingForCutouts = if(cutouts.asPaddingValues() == PaddingValues(0.dp))
@@ -163,6 +165,7 @@ fun DetailsScreen(
 		else
 		{
 			delay(1000)
+			itIsStartAnimationState.value = false
 			animationIsRunningLocal.value = false
 			animationHasBeenStarted.value = false
 		}
@@ -282,7 +285,8 @@ fun DetailsScreen(
 				animationIsRunning = animationIsRunningLocal,
 				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
 				animationHasBeenStarted = animationHasBeenStarted,
-				postPivot = postPivot
+				postPivot = postPivot,
+				itIsStartAnimationState = itIsStartAnimationState
 			)
 		}
 	)
@@ -311,6 +315,7 @@ fun ShowDetails(
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	animationHasBeenStarted: MutableState<Boolean>,
 	postPivot: () -> Unit,
+	itIsStartAnimationState: MutableState<Boolean>,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -355,7 +360,8 @@ fun ShowDetails(
 					animationIsRunning = animationIsRunning,
 					animationHasBeenStarted = animationHasBeenStarted,
 					postPivot = postPivot,
-					checkOnErrorExists = checkOnErrorExists
+					checkOnErrorExists = checkOnErrorExists,
+					itIsStartAnimationState = itIsStartAnimationState
 				)
 			}
 			if(isSharedImage)
@@ -506,27 +512,52 @@ fun ShowAsynchImage(
 	animationHasBeenStarted: MutableState<Boolean>,
 	postPivot: () -> Unit,
 	checkOnErrorExists: (String) -> String?,
+	itIsStartAnimationState: MutableState<Boolean>,
 )
 {
-	val expanded = remember { mutableStateOf(false) }
-	if(animationIsRunning.value)
-	{
-		expanded.value = true
+	val animationIsRunningLocal = remember { mutableStateOf(animationIsRunning.value) }
+	LaunchedEffect(animationIsRunning.value, itIsStartAnimationState.value) {
+		if(!itIsStartAnimationState.value && animationIsRunning.value)
+		{
+			animationIsRunningLocal.value = true
+		}
+		else if(animationIsRunning.value)
+		{
+			delay(100)
+			animationIsRunningLocal.value = false
+		}
+		else
+		{
+			animationIsRunningLocal.value = false
+		}
 	}
+	val width = remember { mutableIntStateOf(0) }
+	val height = remember { mutableIntStateOf(0) }
+	val sizeOfBoxState = if(isScreenInPortraitState)
+	{
+		400.dp
+	}
+	else if(width.intValue > height.intValue)
+	{
+		200.dp
+	}
+	else
+	{
+		400.dp
+	}
+	Log.d("animashka", "$animationIsRunningLocal")
 	Box(Modifier.fillMaxSize()) {
 		Box(Modifier
-			.animateContentSize()
+			.animateContentSize(animationSpec = tween(durationMillis = 500))
 			.align(Alignment.Center)
-			.height(if(expanded.value) 400.dp else 1000.dp)
+			.height(if(animationIsRunningLocal.value) sizeOfBoxState else 1000.dp)
 			.fillMaxWidth()
 		) {
-			val width = remember { mutableIntStateOf(0) }
-			val height = remember { mutableIntStateOf(0) }
 			val scale = if(animationIsRunning.value)
 			{
 				if(isScreenInPortraitState)
 				{
-					if(width.intValue > height.intValue)
+					if(width.intValue >= height.intValue)
 					{
 						ContentScale.FillWidth
 					}
@@ -563,7 +594,7 @@ fun ShowAsynchImage(
 			{
 				if(isScreenInPortraitState)
 				{
-					if(width.intValue > height.intValue)
+					if(width.intValue >= height.intValue)
 					{
 						ContentScale.FillWidth
 					}
@@ -672,9 +703,11 @@ fun ShowAsynchImage(
 				contentScale = scale,
 				onSuccess = {
 					val resultImage = it.result.image
-					imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
-					width.intValue = resultImage.width
-					height.intValue = resultImage.height
+					val widthImage = resultImage.width
+					val heightImage = resultImage.height
+					imageSize = Size(widthImage.toFloat(), heightImage.toFloat())
+					width.intValue = widthImage
+					height.intValue = heightImage
 					removeSpecialError(img)
 				},
 				loading = {
