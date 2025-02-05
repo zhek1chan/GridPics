@@ -519,29 +519,27 @@ fun ShowAsynchImage(
 	val animationIsRunningLocal = remember { mutableStateOf(animationIsRunning.value) }
 	val width = remember { mutableIntStateOf(0) }
 	val height = remember { mutableIntStateOf(0) }
-	if(isScreenInPortraitState && (width.intValue < height.intValue) || !isScreenInPortraitState && (width.intValue < height.intValue))
+	if(isScreenInPortraitState && (width.intValue < height.intValue) || !isScreenInPortraitState && (width.intValue > height.intValue))
 	{
 		LaunchedEffect(animationIsRunning.value, itIsStartAnimationState.value) {
 			if(!itIsStartAnimationState.value && animationIsRunning.value)
 			{
+				delay(200)
 				animationIsRunningLocal.value = true
 			}
 			else if(animationIsRunning.value)
 			{
-				delay(100)
+				delay(200)
 				animationIsRunningLocal.value = false
 			}
 			else
 			{
+				delay(200)
 				animationIsRunningLocal.value = false
 			}
 		}
 	}
-	val sizeOfBoxState = if(isScreenInPortraitState)
-	{
-		400.dp
-	}
-	else if(width.intValue > height.intValue && width.intValue - height.intValue > 50)
+	val sizeOfBoxState = if(!isScreenInPortraitState && width.intValue > height.intValue && width.intValue - height.intValue > 50)
 	{
 		200.dp
 	}
@@ -549,6 +547,7 @@ fun ShowAsynchImage(
 	{
 		400.dp
 	}
+	Log.d("checkBox", "$sizeOfBoxState")
 	val scale = if(animationIsRunning.value)
 	{
 		if(isScreenInPortraitState)
