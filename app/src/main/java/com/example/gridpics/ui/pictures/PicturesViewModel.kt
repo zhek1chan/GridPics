@@ -286,7 +286,7 @@ class PicturesViewModel(
 			//смена ориентации
 			url = urlForCalc
 			Log.d("I was called", "I was called")
-			if(list.size - list.indexOf(url) < 18)
+			if(list.size - list.indexOf(url) < maxVisibleElements)
 			{
 				clickOnPicture(list.size - 1, 0)
 			} // надо смотреть
