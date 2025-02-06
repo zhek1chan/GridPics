@@ -81,12 +81,12 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
-import androidx.navigation.navOptions
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.error
@@ -506,30 +506,31 @@ fun ShowAsynchImage(
 	itIsStartAnimationState: MutableState<Boolean>,
 )
 {
-	val animationIsRunningLocal = remember { mutableStateOf(animationIsRunning.value) }
+	val extraAnimationIsNeeded = remember { mutableStateOf(animationIsRunning.value) }
 	val width = remember { mutableIntStateOf(0) }
 	val height = remember { mutableIntStateOf(0) }
+	// если в портретном режиме картинка длинная или в горизонтальном положении картинка широкая, то включаем доп анимацию
 	if(isScreenInPortraitState && (width.intValue < height.intValue) || !isScreenInPortraitState && (width.intValue > height.intValue))
 	{
 		LaunchedEffect(animationIsRunning.value, itIsStartAnimationState.value) {
 			if(!itIsStartAnimationState.value && animationIsRunning.value)
 			{
 				delay(200)
-				animationIsRunningLocal.value = true
+				extraAnimationIsNeeded.value = true
 			}
 			else if(animationIsRunning.value)
 			{
 				delay(200)
-				animationIsRunningLocal.value = false
+				extraAnimationIsNeeded.value = false
 			}
 			else
 			{
 				delay(200)
-				animationIsRunningLocal.value = false
+				extraAnimationIsNeeded.value = false
 			}
 		}
 	}
-	val sizeOfBoxState = if(!isScreenInPortraitState && width.intValue > height.intValue && width.intValue - height.intValue > 50)
+	val adaptiveSizeOfBoxForAnimation = if(!isScreenInPortraitState && width.intValue > height.intValue && width.intValue - height.intValue > 50)
 	{
 		200.dp
 	}
@@ -537,85 +538,23 @@ fun ShowAsynchImage(
 	{
 		400.dp
 	}
-	Log.d("checkBox", "$sizeOfBoxState")
-	val scale = if(animationIsRunning.value)
-	{
-		if(isScreenInPortraitState)
-		{
-			if(width.intValue >= height.intValue)
-			{
-				ContentScale.FillWidth
-			}
-			else if(width.intValue < height.intValue && abs(width.intValue - height.intValue) > 50 && sizeOfBoxState < 1000.dp)
-			{
-				ContentScale.Fit
-			} else if (width.intValue < height.intValue && abs(width.intValue - height.intValue) > 50) {
-				ContentScale.FillHeight
-			}
-			else
-			{
-				ContentScale.FillWidth
-			}
-		}
-		else
-		{
-			if(width.intValue > height.intValue)
-			{
-				ContentScale.FillHeight
-			}
-			else if(width.intValue < height.intValue)
-			{
-				ContentScale.FillHeight
-			}
-			else
-			{
-				ContentScale.FillHeight
-			}
-		}
-	}
-	else if(state.value.isMultiWindowed)
+	Log.d("checkBox", "$adaptiveSizeOfBoxForAnimation")
+	//Изменение параметров изображения
+	val scale = if(state.value.isMultiWindowed)
 	{
 		ContentScale.Fit
 	}
+	// если идёт анимация перехода (стандартная не дополнительная)
 	else
 	{
-		if(isScreenInPortraitState)
-		{
-			if(width.intValue >= height.intValue)
-			{
-				ContentScale.FillWidth
-			}
-			else if(width.intValue < height.intValue && abs(width.intValue - height.intValue) > 50)
-			{
-				ContentScale.FillHeight
-			}
-			else
-			{
-				ContentScale.FillWidth
-			}
-		}
-		else
-		{
-			if(width.intValue > height.intValue)
-			{
-				ContentScale.FillHeight
-			}
-			else if(width.intValue < height.intValue)
-			{
-				ContentScale.FillHeight
-			}
-			else
-			{
-				ContentScale.FillHeight
-			}
-		}
+		getScale(isScreenInPortraitState, width.intValue, height.intValue, adaptiveSizeOfBoxForAnimation)
 	}
-	Log.d("animashka", "$animationIsRunningLocal")
+	Log.d("animashka", "$extraAnimationIsNeeded")
 	Box(Modifier.fillMaxSize()) {
 		Box(Modifier
 			.animateContentSize(animationSpec = tween(durationMillis = 500))
 			.align(Alignment.Center)
-			.height(if(animationIsRunningLocal.value) sizeOfBoxState else 1000.dp)
+			.height(if(extraAnimationIsNeeded.value) adaptiveSizeOfBoxForAnimation else Int.MAX_VALUE.dp)
 			.fillMaxWidth()
 		) {
 			val zoom = rememberZoomState(15f, Size.Zero)
@@ -929,15 +868,7 @@ fun navigateToHome(
 	{
 		setImageSharedStateToFalse(false)
 		animationHasBeenStarted.value = false
-		navController.navigate(Screen.Home.route,
-			navOptions = navOptions {
-				anim {
-					enter = 0
-					exit = 0
-					popEnter = 0
-					popExit = 0
-				}
-			})
+		navController.navigate(Screen.Home.route)
 	}
 	else
 	{
@@ -945,4 +876,47 @@ fun navigateToHome(
 		navController.navigateUp()
 	}
 	postUrl(null, null)
+}
+
+fun getScale(isScreenInPortraitState: Boolean, width: Int, height: Int, adaptiveSizeOfBoxForAnimation: Dp): ContentScale
+{
+	//вариант для вертикальной ориентации
+	return if(isScreenInPortraitState)
+	{
+		if(width >= height)
+		{
+			ContentScale.FillWidth
+		}
+		else if(abs(width - height) > 50 && adaptiveSizeOfBoxForAnimation < Int.MAX_VALUE.dp)
+		{
+			// abs(width.intValue - height.intValue) > 50 нужно для того чтобы отсеять варианты,
+			// когда разница длины и ширины слишком мала, чтобы явно сказать, что одна сторона больше другой
+			// короче считаем просто, что картинка квадратная
+			ContentScale.Fit
+		}
+		else if(abs(width - height) > 50)
+		{
+			ContentScale.FillHeight
+		}
+		else
+		{
+			ContentScale.FillWidth
+		}
+	}
+	//вариант для горизонтальной ориентации
+	else
+	{
+		if(width > height)
+		{
+			ContentScale.FillHeight
+		}
+		else if(width < height)
+		{
+			ContentScale.FillHeight
+		}
+		else
+		{
+			ContentScale.FillHeight
+		}
+	}
 }

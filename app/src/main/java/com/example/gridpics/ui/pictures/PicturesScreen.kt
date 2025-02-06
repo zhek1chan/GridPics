@@ -252,22 +252,20 @@ fun ItemsCard(
 				else
 				{
 					scope.launch {
-						//надо расписать
 						if(lazyState.layoutInfo.totalItemsCount - index > lazyState.layoutInfo.visibleItemsInfo.size)
 						{
 							lazyState.scrollToItem(lazyState.firstVisibleItemIndex, 0)
+							//Это решает проблему с доворотом списка, если сверху видно только часть картинок в строке,
+							// а не целиком всю строку картинок, то список прокрутится наверх
 						}
 						else
 						{
 							lazyState.scrollToItem(lazyState.firstVisibleItemIndex + 3, 0)
+							//Это решает ту же проблему, только для конца списка, когда поднять список не имеет возможности,
+							// потому что могут скрыться нужные элементы снизу, на которые мы нажали
 						}
 						Log.d("current", item)
 						postPosition(item, position)
-						while(lazyState.isScrollInProgress)
-						{
-							delay(300)
-						}
-						//что это чинит
 						currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
 						animationIsRunning.value = true
 						openAlertDialog.value = false
@@ -280,7 +278,7 @@ fun ItemsCard(
 				position = coordinates
 					.positionInParent()
 					.run {
-						Pair(x, y)
+						Pair(x, y) //здесь получаем левую верхнюю точку картинки
 					}
 			},
 		contentScale = scale.value,

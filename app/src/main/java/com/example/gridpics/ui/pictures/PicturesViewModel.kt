@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
+import com.example.gridpics.ui.activity.MainActivity.Companion.LENGTH_OF_PICTURE
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
@@ -30,13 +31,13 @@ class PicturesViewModel(
 	var isImageToShareOrDelete = mutableStateOf(false)
 	var pairOfPivotsXandY = mutableStateOf(Pair(0.1f, 0.1f))
 	private var gridQuantity = mutableIntStateOf(0)
-	private var gridInPortraitQ = 3
+	private var gridInPortraitQ = 0
 	private var screenWidth = 0
 	private var screenHeight = 0
 	private var densityOfScreen = 0f
 	private var barsSize = Pair(0f, 0f)
 	private var urlForCalculation = ""
-	private var maxVisibleElements = 18
+	private var maxVisibleElements = 0
 	private var listOfPositions = mutableListOf<Pair<Float, Float>>()
 	private var mapOfColumns = mutableMapOf<String, Int>()
 	private var cutouts = Pair(0f, 0f)
@@ -331,35 +332,32 @@ class PicturesViewModel(
 		val screenWidth = screenWidth
 		val screenHeight = screenHeight
 		val mapOfColumns = mapOfColumns
-		val urls = picturesUiState.value.picturesUrl
-		val positionInPx = listOfPositions[urls.indexOf(url)]
+		val list = picturesUiState.value.picturesUrl
+		val positionInPx = listOfPositions[list.indexOf(url)]
 		var x = positionInPx.first / screenWidth.toFloat()
 		var y = positionInPx.second / screenHeight.toFloat()
 		val cutoutsLocal = cutouts
-		val list = picturesUiState.value.picturesUrl
 		var gridQuantity = gridQuantity.intValue
 		val densityOfScreen = densityOfScreen
-		Log.d("cutouts", "${cutoutsLocal.first}")
 		var column = mapOfColumns[url]!!
 		if(!needsRecalculation)
 		{
 			if(screenWidth < screenHeight)
 			{
-				Log.d("pop", "y = $y")
 				if(y < 0.1)
 				{
-					y += 0.04f
+					y += 0.04f //если картинка находится на самом верху
 				}
 				else if(y < 0.3)
 				{
-					y += 0.084f
+					y += 0.084f //если картинка чуть выше
 				}
 				else
 				{
 					y *= 1.37f
 				}
 				if(list.size - list.indexOf(url) < maxVisibleElements)
-				{
+				{ //если находимся в конце списка
 					if(y < 0.5f)
 					{
 						y += 0.01f
@@ -373,18 +371,7 @@ class PicturesViewModel(
 						y -= 0.005f
 					}
 				}
-				if(0.46120036f == y)
-				{
-					y += 0.006f
-				}
-				else if(0.6837635f == y)
-				{
-					y -= 0.006f
-				}
-				else if(0.8963268f <= y)
-				{
-					y -= 0.022f
-				}
+				//
 				postPivotsXandY(Pair(x * 1.4f, y))
 				Log.d("proverka x, y", "$x, $y, portrait")
 			}
@@ -395,14 +382,17 @@ class PicturesViewModel(
 					x = if(column.toDouble() < ceil(gridQuantity.toDouble() / 2))
 					{
 						1.4f * x - 0.02f * (gridQuantity - column)
+						// картинка находится слева от центра
 					}
 					else if(column.toDouble() == ceil(gridQuantity.toDouble() / 2))
 					{
 						1.4f * x - 0.02f * column
+						// картинка находится по центру
 					}
 					else
 					{
 						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.04f
+						// картинка находится справа от центра
 					}
 					Log.d("proverka7", "$x, cutout sleva")
 				}
@@ -411,14 +401,17 @@ class PicturesViewModel(
 					x = if(column.toDouble() < ceil(gridQuantity.toDouble() / 2))
 					{
 						1.4f * x - 0.02f * (gridQuantity - column) - 0.07f
+						// картинка находится слева от центра
 					}
 					else if(column.toDouble() == ceil(gridQuantity.toDouble() / 2))
 					{
 						1.4f * x - 0.02f * column - 0.09f
+						// картинка находится по центру
 					}
 					else
 					{
 						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.11f
+						// картинка находится справа от центра
 					}
 					Log.d("watafak", "${ceil(gridQuantity.toDouble() / 2)}")
 					Log.d("proverka7", "gridQuantity $gridQuantity")
@@ -430,24 +423,30 @@ class PicturesViewModel(
 					x = if(column.toDouble() < ceil(gridQuantity.toDouble() / 2))
 					{
 						1.4f * x - 0.02f * (gridQuantity - column) - 0.08f
+						// картинка находится слева от центра
 					}
 					else if(column.toDouble() == ceil(gridQuantity.toDouble() / 2))
 					{
 						1.4f * x - 0.02f * column - 0.07f
+						// картинка находится по центру
 					}
 					else
 					{
 						1.4f * x - 0.04f * (gridQuantity - column + 1) + (gridQuantity - column) * 0.03f - 0.075f
+						// картинка находится справа от центра
 					}
 				}
 				Log.d("proverka y", "$y")
+				//корректировка значений по оси OY
 				if(setYToDefault)
 				{
 					y = listOfPositions[0].second / screenHeight + 0.25f
+					//выставляем стандартное значение по оси OY для первой линии картинок из списка (сверху)
 				}
 				else if(y <= 0.3f)
 				{
 					y += 0.23f
+					// Если картинка находится в самом верху
 				}
 				else
 				{
@@ -476,26 +475,24 @@ class PicturesViewModel(
 					{
 						gridInPortraitQ ->
 						{
-							0.975f
+							0.975f //крайнее правое положение по оси ox
 						}
 						1 ->
 						{
-							0.1f
+							0.1f //крайнее левое положение по оси ox
 						}
 						else ->
 						{
-							1f / gridInPortraitQ * column - 0.08f * (gridInPortraitQ - column + 1)
+							1f / gridInPortraitQ * column - 0.08f * (gridInPortraitQ - column + 1) //остальные положения
 						}
 					}
 				val maxVisibleElements = maxVisibleElements
 				var nY = 0.0121f
 				if(size - list.indexOf(url) < maxVisibleElements)
 				{
-					Log.d("proverka", "rabotaem?")
+					// Посчёт нужной высоты для линий, находящихся в конце списка
 					val nList = list.subList(size - maxVisibleElements - 1, size - 1)
-					Log.d("proverka", "nlist = ${nList.size}")
 					var line = nList.indexOf(url).toFloat() / gridInPortraitQ - 1
-					Log.d("proverka", "line = $line")
 					if(line <= -1f)
 					{
 						line = 6.1f
@@ -508,25 +505,29 @@ class PicturesViewModel(
 			}
 			else
 			{
-				gridQuantity = (screenWidth / densityOfScreen / 110).toInt()
+				gridQuantity = (screenWidth / densityOfScreen / LENGTH_OF_PICTURE).toInt()
 				Log.d("proverka gridNum", "$gridQuantity")
 				if(cutoutsLocal.first != 0f)
 				{
 					x = if(column == 1)
 					{
 						-0.1f
+						// картинка крайняя слева
 					}
 					else if(column < gridQuantity / 2)
 					{
 						0.15f * (column - 1) + column * 0.01f - 0.06f
+						// картинка находится слева от центра
 					}
 					else if(column > gridQuantity / 2)
 					{
 						0.2f * (column - 1) + column * 0.01f - 0.1f
+						// картинка находится по центру
 					}
 					else
 					{
 						0.15f * (column - 1) + column * 0.01f
+						// картинка находится справа от центра
 					}
 					Log.d("proverka", "$x, cutout sleva")
 					Log.d("proverka column", "$column")
@@ -536,18 +537,22 @@ class PicturesViewModel(
 					x = if(column == 1)
 					{
 						-0.1f - 0.08f
+						// картинка крайняя слева
 					}
 					else if(column < gridQuantity / 2)
 					{
 						0.15f * (column - 1) + column * 0.01f - 0.06f - 0.08f
+						// картинка находится слева от центра
 					}
 					else if(column > gridQuantity / 2)
 					{
 						0.2f * (column - 1) + column * 0.01f - 0.1f - 0.08f
+						// картинка находится по центру
 					}
 					else
 					{
 						0.15f * (column - 1) + column * 0.01f - 0.08f
+						// картинка находится справа от центра
 					}
 					Log.d("proverka", "$x, cutout sprava")
 					Log.d("proverka column", "$column")
@@ -557,18 +562,22 @@ class PicturesViewModel(
 					x = if(column == 1)
 					{
 						-0.13f
+						//самая левая картинка
 					}
 					else if(column < gridQuantity / 2)
 					{
 						0.15f * (column - 1) + column * 0.01f - 0.06f
+						// картинка находится слева от центра
 					}
 					else if(column > gridQuantity / 2)
 					{
 						0.2f * (column - 1) + column * 0.01f - 0.1f + 0.15f
+						// картинка находится по центру
 					}
 					else
 					{
 						0.15f * (column - 1) + column * 0.01f
+						// картинка находится справа от центра
 					}
 					Log.d("pppppppp", "column = $column")
 					Log.d("pppppppp", "x = $x")
@@ -590,16 +599,20 @@ class PicturesViewModel(
 
 	fun calculateListPosition(url: String)
 	{
+		//Для обработки пролистывания с экрана деталей
 		val list = picturesUiState.value.picturesUrl
 		val column = mapOfColumns[url]
 		val listOfPositions = listOfPositions
 		if(column != null && listOfPositions.size > 0)
 		{
+			//если мы листали картинки на экране деталей и не вернулись к той же, с которой зашли, то
 			if(url != urlForCalculation)
 			{
 				if(list.indexOf(url) - wasFirstVisibleIndex >= maxVisibleElements || list.indexOf(url) - wasFirstVisibleIndex < 0)
 				{
 					clickOnPicture(list.indexOf(url), 0)
+					// если картинка не находится в видимой зоне списка на экране картинок,
+					// то пролистываем до неё
 				}
 				calculatePixelPosition(
 					url = url,
@@ -615,10 +628,7 @@ class PicturesViewModel(
 		val urls = picturesUiState.value.picturesUrl
 		val listOfPositions = listOfPositions
 		val index = urls.indexOf(url)
-		if(position != Pair(0f, 0f)) // надо проверить
-		{
-			listOfPositions.add(index, position)
-		}
+		listOfPositions.add(index, position)
 	}
 
 	fun postCutouts(left: Float, right: Float, needsCheckOnWasChanged: Boolean)
@@ -647,6 +657,7 @@ class PicturesViewModel(
 		sizeOfPic = size
 		val cofConnectedWithOrientation = cofConnectedWithOrientation
 		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
+		//если коофиценты ещё нулевые, то присваиваем нужные
 		if(cofConnectedWithOrientationForExit.floatValue == 0f)
 		{
 			val barsSize = barsSize
@@ -655,6 +666,7 @@ class PicturesViewModel(
 			val screenWidth = screenWidth
 			val screenHeight = screenHeight
 			val densityOfScreen = densityOfScreen
+			val sizeOfTopBarInDp = SIZE_OF_TOP_BAR
 			if(screenWidth < screenHeight)
 			{
 				val sizeOfPicLocal = size.width
@@ -669,10 +681,9 @@ class PicturesViewModel(
 			else
 			{
 				val sizeOfPicLocal = size.height
-				cofConnectedWithOrientation.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) + 0.047f
-				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) + 0.047f
+				cofConnectedWithOrientation.floatValue = sizeOfPicLocal / (screenHeight + (-sizeOfTopBarInDp - top - bottom) * densityOfScreen) + 0.047f
+				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / (screenHeight + (-sizeOfTopBarInDp - top - bottom) * densityOfScreen) + 0.047f
 			}
-			Log.d("pupu2", "${cofConnectedWithOrientation.floatValue} ${cofConnectedWithOrientationForExit.floatValue}")
 		}
 	}
 
@@ -689,5 +700,10 @@ class PicturesViewModel(
 	fun saveUrlOfCurrentPic(index: Int)
 	{
 		wasFirstVisibleIndex = index
+	}
+
+	companion object
+	{
+		const val SIZE_OF_TOP_BAR = 60
 	}
 }
