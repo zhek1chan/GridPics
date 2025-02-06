@@ -166,18 +166,6 @@ class MainActivity: AppCompatActivity()
 		val orientationWasChangedCheck = picVM.orientationWasChanged
 		val pValue = pivots.value
 		val isImageToShareOrDelete = picVM.isImageToShareOrDelete
-		val enterTrans = if(pivots.value != Pair(12345f, 12345f))
-		{
-			scaleIn(
-				animationSpec = tween(1500),
-				initialScale = cofConnectedWithOrientation.floatValue,
-				transformOrigin = TransformOrigin(pValue.first, pValue.second) //можно удалить
-			)
-		}
-		else
-		{
-			EnterTransition.None
-		}
 		val enterTransForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
 		{
 			EnterTransition.None
@@ -220,7 +208,6 @@ class MainActivity: AppCompatActivity()
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
 		}
-		//зачем нужны поп анимации, почему на выходе не обрабатывается ошибочная картинка
 		val isExit = remember { mutableStateOf(false) }
 		val popExitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
 		{
@@ -234,43 +221,25 @@ class MainActivity: AppCompatActivity()
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
 		}
+		// 1. Exit Transition:
+		// Это анимация, которая применяется, когда фрагмент покидает экран. То есть, когда фрагмент закрывается или заменяется другим фрагментом.
+		// 2. EnterTransition:
+		// Это анимация, которая применяется, когда фрагмент появляется на экране. То есть, когда новый фрагмент отображается вместо старого.
+		// 3. PopEnterTransition:
+		// Это анимация, которая применяется, когда фрагмент возвращается на экран из стека (при "поп-операции", т.е. возвращении фрагмента из стека).
+		// Например, когда вы вызываете рорpBackStack(), чтобы вернуться к предыдущему фрагменту. Эта анимация применяется при переходе фрагмента из стека обратно в активное состояние.
+		// 4. PopExit Transition:
+		// Это анимация, которая применяется, когда фрагмент уходит со экрана при возврате к предыдущему фрагменту (при "поп-операции").
+		// То есть, когда фрагмент удаляется из экрана при возвращении назад через стек.
 		val animationIsRunning = animationIsRunning
 		NavHost(
 			navController = navController,
-			startDestination = BottomNavItem.Home.route,
-			popEnterTransition = {
-				scaleIn(
-					animationSpec = tween(1000),
-					initialScale = cofConnectedWithOrientation.floatValue,
-					transformOrigin = TransformOrigin(pValue.first, pValue.second)
-				)
-			},
-			popExitTransition = {
-				scaleOut(
-					animationSpec = tween(1000),
-					targetScale = cofConnectedWithOrientation.floatValue,
-					transformOrigin = TransformOrigin(pValue.first, pValue.second)
-				)
-			},
-			enterTransition = {
-				scaleIn(
-					animationSpec = tween(1000),
-					initialScale = cofConnectedWithOrientation.floatValue,
-					transformOrigin = TransformOrigin(pValue.first, pValue.second)
-				)
-			},
-			exitTransition = {
-				scaleOut(
-					animationSpec = tween(1000),
-					targetScale = cofConnectedWithOrientation.floatValue,
-					transformOrigin = TransformOrigin(pValue.first, pValue.second)
-				)
-			}
-		) //можно ли убрать - надо смотреть
+			startDestination = BottomNavItem.Home.route
+		)
 		{
 			composable(
 				route = BottomNavItem.Home.route,
-				enterTransition = { enterTrans },
+				enterTransition = { EnterTransition.None },
 				exitTransition = { ExitTransition.None },
 				popEnterTransition = { EnterTransition.None }
 			) {
@@ -384,9 +353,6 @@ class MainActivity: AppCompatActivity()
 					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
 					animationHasBeenStarted = animationIsRunning,
-					postPivot = {
-						pivots.value = Pair(12345f, 12345f)
-					},
 					postCutouts = { left, right ->
 						picVM.postCutouts(left, right, true)
 						Log.d("proverka2", "new cutouts")

@@ -167,7 +167,6 @@ class PicturesViewModel(
 		val bottom = barsSize.second
 		val cofConnectedWithOrientation = cofConnectedWithOrientation
 		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
-		postPivotsXandY(Pair(12345f, 12345f))
 		if(isPortrait)
 		{
 			val sizeOfPicLocal = sizeOfPic.width

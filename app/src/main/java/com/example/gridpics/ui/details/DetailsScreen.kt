@@ -123,7 +123,6 @@ fun DetailsScreen(
 	postWasSharedState: () -> Unit,
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	animationHasBeenStarted: MutableState<Boolean>,
-	postPivot: () -> Unit,
 	postCutouts: (Float, Float) -> Unit,
 	orientationWasChanged: MutableState<Boolean>,
 	postBars: (Float, Float) -> Unit,
@@ -216,7 +215,6 @@ fun DetailsScreen(
 				animationIsRunning = animationIsRunningLocal,
 				wasDeleted = false,
 				animationHasBeenStarted = animationHasBeenStarted,
-				postPivot = postPivot,
 				state = state,
 				checkOnErrorExists = getErrorMessageFromErrorsList
 			)
@@ -261,7 +259,6 @@ fun DetailsScreen(
 				postWasSharedState = postWasSharedState,
 				animationIsRunning = animationIsRunningLocal,
 				animationHasBeenStarted = animationHasBeenStarted,
-				postPivot = postPivot,
 				checkOnErrorExists = getErrorMessageFromErrorsList
 			)
 		},
@@ -286,7 +283,6 @@ fun DetailsScreen(
 				animationIsRunning = animationIsRunningLocal,
 				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
 				animationHasBeenStarted = animationHasBeenStarted,
-				postPivot = postPivot,
 				itIsStartAnimationState = itIsStartAnimationState
 			)
 		}
@@ -315,7 +311,6 @@ fun ShowDetails(
 	animationIsRunning: MutableState<Boolean>,
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	animationHasBeenStarted: MutableState<Boolean>,
-	postPivot: () -> Unit,
 	itIsStartAnimationState: MutableState<Boolean>,
 )
 {
@@ -360,7 +355,6 @@ fun ShowDetails(
 					setImageSharedStateToFalse = setImageSharedState,
 					animationIsRunning = animationIsRunning,
 					animationHasBeenStarted = animationHasBeenStarted,
-					postPivot = postPivot,
 					checkOnErrorExists = checkOnErrorExists,
 					itIsStartAnimationState = itIsStartAnimationState
 				)
@@ -391,7 +385,6 @@ fun ShowDetails(
 									animationIsRunning = animationIsRunning,
 									wasDeleted = false,
 									animationHasBeenStarted = animationHasBeenStarted,
-									postPivot = postPivot,
 									state = state,
 									checkOnErrorExists = checkOnErrorExists
 								)
@@ -419,7 +412,6 @@ fun ShowDetails(
 											animationIsRunning = animationIsRunning,
 											wasDeleted = false,
 											animationHasBeenStarted = animationHasBeenStarted,
-											postPivot = postPivot,
 											state = state,
 											checkOnErrorExists = checkOnErrorExists
 										)
@@ -477,7 +469,6 @@ fun ShowDetails(
 								animationIsRunning = animationIsRunning,
 								wasDeleted = true,
 								animationHasBeenStarted = animationHasBeenStarted,
-								postPivot = postPivot,
 								state = state,
 								checkOnErrorExists = checkOnErrorExists
 							)
@@ -511,7 +502,6 @@ fun ShowAsynchImage(
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	animationHasBeenStarted: MutableState<Boolean>,
-	postPivot: () -> Unit,
 	checkOnErrorExists: (String) -> String?,
 	itIsStartAnimationState: MutableState<Boolean>,
 )
@@ -689,7 +679,6 @@ fun ShowAsynchImage(
 											animationIsRunning = animationIsRunning,
 											wasDeleted = false,
 											animationHasBeenStarted = animationHasBeenStarted,
-											postPivot = postPivot,
 											state = state,
 											checkOnErrorExists = checkOnErrorExists
 										)
@@ -802,7 +791,6 @@ fun AppBar(
 	postWasSharedState: () -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	animationHasBeenStarted: MutableState<Boolean>,
-	postPivot: () -> Unit,
 	checkOnErrorExists: (String) -> String?,
 )
 {
@@ -915,7 +903,6 @@ fun AppBar(
 			animationIsRunning = animationIsRunning,
 			wasDeleted = false,
 			animationHasBeenStarted = animationHasBeenStarted,
-			postPivot = postPivot,
 			state = state,
 			checkOnErrorExists = checkOnErrorExists
 		)
@@ -931,7 +918,6 @@ fun navigateToHome(
 	animationIsRunning: MutableState<Boolean>,
 	wasDeleted: Boolean,
 	animationHasBeenStarted: MutableState<Boolean>,
-	postPivot: () -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	checkOnErrorExists: (String) -> String?,
 )
@@ -941,7 +927,6 @@ fun navigateToHome(
 	changeBarsVisability(true)
 	if(wasDeleted || state.value.isSharedImage || checkOnErrorExists(state.value.currentPicture) != null)
 	{
-		postPivot()
 		setImageSharedStateToFalse(false)
 		animationHasBeenStarted.value = false
 		navController.navigate(Screen.Home.route,

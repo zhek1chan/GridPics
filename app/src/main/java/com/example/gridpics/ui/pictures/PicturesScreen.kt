@@ -256,12 +256,10 @@ fun ItemsCard(
 						if(lazyState.layoutInfo.totalItemsCount - index > lazyState.layoutInfo.visibleItemsInfo.size)
 						{
 							lazyState.scrollToItem(lazyState.firstVisibleItemIndex, 0)
-							Log.d("hernya", "1")
 						}
 						else
 						{
 							lazyState.scrollToItem(lazyState.firstVisibleItemIndex + 3, 0)
-							Log.d("hernya", "2")
 						}
 						Log.d("current", item)
 						postPosition(item, position)
