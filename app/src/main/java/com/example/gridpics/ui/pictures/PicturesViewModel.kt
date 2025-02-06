@@ -461,21 +461,21 @@ class PicturesViewModel(
 		}
 		else
 		{
+			//:todo надо поправить формулы при пролистывании для горизонтального положения
 			val size = list.size
 			Log.d("proverka", " pr cutouts  = $cutoutsLocal")
 			if(screenWidth < screenHeight)
 			{
-				val gridInPortraitQ = gridQuantity // надо посмотреть нужна ли переменная
-				column = (list.indexOf(url) + 1) % gridInPortraitQ
+				column = (list.indexOf(url) + 1) % gridQuantity
 				if(column == 0)
 				{
-					column = gridInPortraitQ
+					column = gridQuantity
 				}
 				Log.d("proverka", "column perevorot $column")
 				val xPortrait =
 					when(column)
 					{
-						gridInPortraitQ ->
+						gridQuantity ->
 						{
 							0.975f //крайнее правое положение по оси ox
 						}
@@ -605,6 +605,7 @@ class PicturesViewModel(
 		val list = picturesUiState.value.picturesUrl
 		val column = mapOfColumns[url]
 		val listOfPositions = listOfPositions
+		//:todo надо посмотреть правильно ли работает логика прокрутки списка при листании, потому что позиционирование не верное
 		if(column != null && listOfPositions.size > 0)
 		{
 			//если мы листали картинки на экране деталей и не вернулись к той же, с которой зашли, то
