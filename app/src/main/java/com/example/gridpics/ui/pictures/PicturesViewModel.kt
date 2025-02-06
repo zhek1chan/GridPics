@@ -586,6 +586,7 @@ class PicturesViewModel(
 					Log.d("pppppppp", "cutouta net ili ih dva")
 				}
 				Log.d("proverka", "Pair $x , 2.09f")
+				//в этом условии нужно явно что-то поправить
 				val yT = if(size - list.indexOf(url) < gridQuantity)
 				{
 					0.2766f * 2
