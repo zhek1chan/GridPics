@@ -26,7 +26,6 @@ class PicturesViewModel(
 	var orientationWasChanged = mutableStateOf(false)
 	var mutableIsThemeBlackState = mutableStateOf(false)
 	var cofConnectedWithOrientation = mutableFloatStateOf(0f)
-	var cofConnectedWithOrientationForExit = mutableFloatStateOf(0f)
 	var isSharedImage = mutableStateOf(false)
 	var isImageToShareOrDelete = mutableStateOf(false)
 	var pairOfPivotsXandY = mutableStateOf(Pair(0.1f, 0.1f))
@@ -167,7 +166,6 @@ class PicturesViewModel(
 		val top = barsSize.first
 		val bottom = barsSize.second
 		val cofConnectedWithOrientation = cofConnectedWithOrientation
-		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
 		if(isPortrait)
 		{
 			val sizeOfPicLocal = sizeOfPic.width
@@ -179,7 +177,6 @@ class PicturesViewModel(
 			{
 				val screenWidth = screenWidth
 				cofConnectedWithOrientation.floatValue = sizeOfPicLocal.toFloat() / screenWidth.toFloat() + 0.03f
-				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal.toFloat() / screenWidth.toFloat() + 0.03f
 			}
 		}
 		else
@@ -192,10 +189,9 @@ class PicturesViewModel(
 			{
 				val screenHeight = screenHeight
 				cofConnectedWithOrientation.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) - 0.05f
-				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / (screenHeight + (-60 - top - bottom) * densityOfScreen) - 0.05f
 			}
 		}
-		Log.d("pupu", "${cofConnectedWithOrientation.floatValue}   ${cofConnectedWithOrientationForExit.floatValue}")
+		Log.d("pupu", "${cofConnectedWithOrientation.floatValue}")
 		calculatePosition(null)
 		state.value = state.value.copy(isPortraitOrientation = isPortrait)
 	}
@@ -660,9 +656,8 @@ class PicturesViewModel(
 	{
 		sizeOfPic = size
 		val cofConnectedWithOrientation = cofConnectedWithOrientation
-		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
 		//если коофиценты ещё нулевые, то присваиваем нужные
-		if(cofConnectedWithOrientationForExit.floatValue == 0f)
+		if(cofConnectedWithOrientation.floatValue == 0f)
 		{
 			val barsSize = barsSize
 			val top = barsSize.first
@@ -679,14 +674,12 @@ class PicturesViewModel(
 				if(sizeOfPicLocal != 0)
 				{
 					cofConnectedWithOrientation.floatValue = sizeOfPicLocal / screenWidth.toFloat()
-					cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / screenWidth.toFloat()
 				}
 			}
 			else
 			{
 				val sizeOfPicLocal = size.height
 				cofConnectedWithOrientation.floatValue = sizeOfPicLocal / (screenHeight + (-sizeOfTopBarInDp - top - bottom) * densityOfScreen) + 0.047f
-				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal / (screenHeight + (-sizeOfTopBarInDp - top - bottom) * densityOfScreen) + 0.047f
 			}
 		}
 	}

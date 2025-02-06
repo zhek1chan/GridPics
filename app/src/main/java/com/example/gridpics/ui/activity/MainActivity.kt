@@ -160,28 +160,12 @@ class MainActivity: AppCompatActivity()
 		val picState = picVM.picturesUiState
 		val pivots = picVM.pairOfPivotsXandY
 		Log.d("test 333", "new pivots $pivots")
-		val cofConnectedWithOrientationForExit = picVM.cofConnectedWithOrientationForExit
 		val cofConnectedWithOrientation = picVM.cofConnectedWithOrientation
 		val isSharedImage = picVM.isSharedImage
 		val orientationWasChangedCheck = picVM.orientationWasChanged
 		val pValue = pivots.value
 		val isImageToShareOrDelete = picVM.isImageToShareOrDelete
 		val enterTransForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
-		{
-			EnterTransition.None
-		}
-		else
-		{
-			scaleIn(
-				animationSpec = tween(1000),
-				initialScale = cofConnectedWithOrientation.floatValue,
-				transformOrigin = TransformOrigin(
-					pValue.first,
-					pValue.second
-				)
-			)
-		}
-		val popEnterTransition = if(isSharedImage.value || isImageToShareOrDelete.value)
 		{
 			EnterTransition.None
 		}
@@ -209,25 +193,13 @@ class MainActivity: AppCompatActivity()
 			)
 		}
 		val isExit = remember { mutableStateOf(false) }
-		val popExitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
-		{
-			ExitTransition.None
-		}
-		else
-		{
-			scaleOut(
-				animationSpec = tween(1000),
-				targetScale = cofConnectedWithOrientationForExit.floatValue,
-				transformOrigin = TransformOrigin(pValue.first, pValue.second)
-			)
-		}
 		// 1. Exit Transition:
 		// Это анимация, которая применяется, когда фрагмент покидает экран. То есть, когда фрагмент закрывается или заменяется другим фрагментом.
 		// 2. EnterTransition:
 		// Это анимация, которая применяется, когда фрагмент появляется на экране. То есть, когда новый фрагмент отображается вместо старого.
 		// 3. PopEnterTransition:
 		// Это анимация, которая применяется, когда фрагмент возвращается на экран из стека (при "поп-операции", т.е. возвращении фрагмента из стека).
-		// Например, когда вы вызываете рорpBackStack(), чтобы вернуться к предыдущему фрагменту. Эта анимация применяется при переходе фрагмента из стека обратно в активное состояние.
+		// Например, когда вы вызывается рорBackStack(), чтобы вернуться к предыдущему фрагменту. Эта анимация применяется при переходе фрагмента из стека обратно в активное состояние.
 		// 4. PopExit Transition:
 		// Это анимация, которая применяется, когда фрагмент уходит со экрана при возврате к предыдущему фрагменту (при "поп-операции").
 		// То есть, когда фрагмент удаляется из экрана при возвращении назад через стек.
@@ -309,8 +281,8 @@ class MainActivity: AppCompatActivity()
 				route = Screen.Details.route,
 				enterTransition = { enterTransForDetails },
 				exitTransition = { exitTransitionForDetails },
-				popExitTransition = { popExitTransitionForDetails },
-				popEnterTransition = { popEnterTransition }
+				popExitTransition = { exitTransitionForDetails },
+				popEnterTransition = { enterTransForDetails }
 			) {
 				DetailsScreen(
 					navController = navController,
