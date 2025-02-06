@@ -289,12 +289,14 @@ class PicturesViewModel(
 			if(list.size - list.indexOf(url) < maxVisibleElements)
 			{
 				clickOnPicture(list.size - 1, 0)
-			} // надо смотреть
+				//список пролистается до конца, если элемент находится в крайней (самой последней) снизу видимой области списка
+			}
 			else
 			{
 				clickOnPicture(list.indexOf(url), 0)
 			}
 		}
+		// сохраняем значение для вертикального режима
 		val gridQuantity = gridQuantity.intValue
 		//вычисляем позицию в формате таблицы
 		val mapOfColumns = mapOfColumns
@@ -463,13 +465,12 @@ class PicturesViewModel(
 			Log.d("proverka", " pr cutouts  = $cutoutsLocal")
 			if(screenWidth < screenHeight)
 			{
-				val gridInPortraitQ = gridInPortraitQ // надо посмотреть нужна ли переменная
+				val gridInPortraitQ = gridQuantity // надо посмотреть нужна ли переменная
 				column = (list.indexOf(url) + 1) % gridInPortraitQ
 				if(column == 0)
 				{
 					column = gridInPortraitQ
 				}
-				calculatePosition(url) // надо понять нах надо
 				Log.d("proverka", "column perevorot $column")
 				val xPortrait =
 					when(column)
