@@ -10,12 +10,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridpics.data.network.Resource
 import com.example.gridpics.domain.interactor.ImagesInteractor
-import com.example.gridpics.ui.activity.MainActivity.Companion.LENGTH_OF_PICTURE
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
 import kotlinx.coroutines.launch
-import kotlin.math.ceil
+import kotlin.math.abs
 
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
@@ -333,13 +332,15 @@ class PicturesViewModel(
 		val mapOfColumns = mapOfColumns
 		val list = picturesUiState.value.picturesUrl
 		val positionInPx = listOfPositions[list.indexOf(url)]
-		var x = positionInPx.first / screenWidth.toFloat()
-		var y = positionInPx.second / screenHeight.toFloat()
+		val densityOfScreen = densityOfScreen
+		var x = (positionInPx.first ) / screenWidth
+		var y = (positionInPx.second) / 2400 //?
+		Log.d("checkPos", "x = ${positionInPx.first} y = ${positionInPx.second} \n width = $screenWidth height = $screenHeight")
 		val cutoutsLocal = cutouts
 		var gridQuantity = gridQuantity.intValue
-		val densityOfScreen = densityOfScreen
 		var column = mapOfColumns[url]!!
-		if(!needsRecalculation)
+		postPivotsXandY(Pair(x, y))
+		/*if(!needsRecalculation)
 		{
 			if(screenWidth < screenHeight)
 			{
@@ -593,7 +594,7 @@ class PicturesViewModel(
 				}
 				postPivotsXandY(Pair(x, yT))
 			}
-		}
+		}*/
 	}
 
 	fun calculateListPosition(url: String)
@@ -652,35 +653,40 @@ class PicturesViewModel(
 		}
 	}
 
-	fun postSizeOfPic(size: IntSize, maxVisibleElementsNum: Int)
+	fun postSizeOfPic(width: Int, height: Int, maxVisibleElementsNum: Int)
 	{
-		sizeOfPic = size
+		//sizeOfPic = size
 		val cofConnectedWithOrientation = cofConnectedWithOrientation
 		//если коофиценты ещё нулевые, то присваиваем нужные
-		if(cofConnectedWithOrientation.floatValue == 0f)
+		val barsSize = barsSize
+		val top = barsSize.first
+		val bottom = barsSize.second
+		val screenWidth = screenWidth
+		val screenHeight = screenHeight
+		val densityOfScreen = densityOfScreen
+		val sizeOfTopBarInDp = SIZE_OF_TOP_BAR
+		if(screenWidth < screenHeight)
 		{
-			val barsSize = barsSize
-			val top = barsSize.first
-			val bottom = barsSize.second
-			val screenWidth = screenWidth
-			val screenHeight = screenHeight
-			val densityOfScreen = densityOfScreen
-			val sizeOfTopBarInDp = SIZE_OF_TOP_BAR
-			if(screenWidth < screenHeight)
+			maxVisibleElements = maxVisibleElementsNum
+			gridInPortraitQ = gridQuantity.intValue
+			if(width != 0)
 			{
-				val sizeOfPicLocal = size.width
-				maxVisibleElements = maxVisibleElementsNum
-				gridInPortraitQ = gridQuantity.intValue
-				if(sizeOfPicLocal != 0)
-				{
-					cofConnectedWithOrientation.floatValue = sizeOfPicLocal / screenWidth.toFloat()
-				}
+				cofConnectedWithOrientation.floatValue =
+					if(width <= height)
+					{
+						137 * densityOfScreen / 2400f
+					}
+					else
+					{
+						(137 * densityOfScreen) / screenWidth.toFloat()
+					}
+				Log.d("checkParams", "width = $width height = $height $densityOfScreen")
 			}
-			else
-			{
-				val sizeOfPicLocal = size.height
-				cofConnectedWithOrientation.floatValue = sizeOfPicLocal / (screenHeight + (-sizeOfTopBarInDp - top - bottom) * densityOfScreen) + 0.047f
-			}
+		}
+		else
+		{
+			Log.d("checkParams", "width = $width height = $height")
+			cofConnectedWithOrientation.floatValue = height / (screenHeight + (-sizeOfTopBarInDp - top - bottom) * densityOfScreen) + 0.047f
 		}
 	}
 

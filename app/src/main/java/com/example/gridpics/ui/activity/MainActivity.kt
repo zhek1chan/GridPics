@@ -20,14 +20,22 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -41,6 +49,7 @@ import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
+import com.example.gridpics.ui.details.DopDetailsScreen
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.service.MainNotificationService
@@ -152,6 +161,7 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
+	@OptIn(ExperimentalSharedTransitionApi::class)
 	@Composable
 	fun NavigationSetup(navController: NavHostController)
 	{
@@ -172,7 +182,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleIn(
-				animationSpec = tween(1000),
+				animationSpec = tween(1000, easing = FastOutLinearInEasing),
 				initialScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(
 					pValue.first,
@@ -187,7 +197,7 @@ class MainActivity: AppCompatActivity()
 		else
 		{
 			scaleOut(
-				animationSpec = tween(1000),
+				animationSpec = tween(1000, easing = LinearEasing),
 				targetScale = cofConnectedWithOrientation.floatValue,
 				transformOrigin = TransformOrigin(pValue.first, pValue.second)
 			)
@@ -204,134 +214,144 @@ class MainActivity: AppCompatActivity()
 		// Это анимация, которая применяется, когда фрагмент уходит со экрана при возврате к предыдущему фрагменту (при "поп-операции").
 		// То есть, когда фрагмент удаляется из экрана при возвращении назад через стек.
 		val animationIsRunning = animationIsRunning
-		NavHost(
-			navController = navController,
-			startDestination = BottomNavItem.Home.route
-		)
-		{
-			composable(
-				route = BottomNavItem.Home.route,
-				enterTransition = { EnterTransition.None },
-				exitTransition = { ExitTransition.None },
-				popEnterTransition = { EnterTransition.None }
-			) {
-				detVM.postNewPic(null, null)
-				PicturesScreen(
-					navController = navController,
-					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
-					getErrorMessageFromErrorsList = { str -> picVM.checkOnErrorExists(str) },
-					addError = { url, message -> picVM.addError(url, message) },
-					state = picState,
-					clearErrors = { picVM.clearErrors() },
-					postVisibleBarsState = { detVM.changeVisabilityState(true) },
-					currentPicture = { url, index, offset ->
-						picVM.saveUrlOfCurrentPic(index)
-						picVM.clickOnPicture(index, offset)
-						picVM.calculatePosition(url)
-						detVM.postCurrentPicture(url)
-						orientationWasChangedCheck.value = false
-						navController.navigate(Screen.Details.route)
-						isExit.value = false
-						lifecycleScope.launch {
-							delay(1000)
-							isExit.value = true
-						}
-					},
-					isValidUrl = { url -> picVM.isValidUrl(url) },
-					postSavedUrls = { urls ->
-						picVM.postSavedUrls(urls = urls)
-						detVM.firstSetOfListState(urls)
-					},
-					saveToSharedPrefs = { urls ->
-						saveToSharedPrefs(picVM.convertFromListToString(urls))
-					},
-					calculateGridSpan = { picVM.getGridSpan() },
-					animationIsRunning = animationIsRunning,
-					postPosition = { url, position -> picVM.postPosition(url, position) },
-					postSizeOfPicAndGridMaxVisibleLines =
-					{ intSize, maxVisibleElementsNum ->
-						picVM.postSizeOfPic(intSize, maxVisibleElementsNum)
-					},
-					postCutouts = { left, right -> picVM.postCutouts(left, right, true) },
-					postBars = { top, bottom -> picVM.postBars(top, bottom) },
-				)
-			}
-			composable(
-				route = BottomNavItem.Settings.route,
-				enterTransition = { EnterTransition.None },
-				exitTransition = { ExitTransition.None },
-				popExitTransition = { ExitTransition.None },
-				popEnterTransition = { EnterTransition.None }
-			) {
-				SettingsScreen(
-					navController = navController,
-					option = picVM.picturesUiState,
-					changeTheme = { int -> changeTheme(int) },
-					isScreenInPortraitState = picState,
-					clearImageCache = {
-						val imageLoader = this@MainActivity.imageLoader
-						imageLoader.diskCache?.clear()
-						imageLoader.memoryCache?.clear()
-						picVM.clearErrors()
-					},
-					postStartOfPager = { picVM.clickOnPicture(0, 0) }
-				)
-			}
-			composable(
-				route = Screen.Details.route,
-				enterTransition = { enterTransForDetails },
-				exitTransition = { exitTransitionForDetails },
-				popExitTransition = { exitTransitionForDetails },
-				popEnterTransition = { enterTransForDetails }
-			) {
-				DetailsScreen(
-					navController = navController,
-					getErrorMessageFromErrorsList = { url -> picVM.checkOnErrorExists(url) },
-					addError = { url, message -> picVM.addError(url, message) },
-					state = detVM.uiState,
-					removeError = { str -> picVM.removeSpecialError(str) },
-					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
-					isValidUrl = { url -> picVM.isValidUrl(url) },
-					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
-					postNewBitmap = { url, strLoadingFromResources -> detVM.postImageBitmap(url, strLoadingFromResources) },
-					addPicture = { url ->
-						picVM.addPictureToUrls(url)
-						picVM.clickOnPicture(0, 0)
-						saveToSharedPrefs(picVM.returnStringOfList())
-					},
-					setImageSharedState = { isShared ->
-						detVM.isSharedImage(isShared)
-						isSharedImage.value = isShared
-						isImageToShareOrDelete.value = false
-						lifecycleScope.launch {
-							delay(50)
-							if(orientationWasChangedCheck.value)
-							{
-								animationIsRunning.value = false
-								orientationWasChangedCheck.value = false
+		SharedTransitionLayout() {
+			NavHost(
+				navController = navController,
+				startDestination = BottomNavItem.Home.route
+			)
+			{
+				composable(
+					route = BottomNavItem.Home.route,
+					enterTransition = { EnterTransition.None },
+					exitTransition = { ExitTransition.None },
+					popEnterTransition = { EnterTransition.None }
+				) {
+					detVM.postNewPic(null, null)
+					PicturesScreen(
+						navController = navController,
+						postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
+						getErrorMessageFromErrorsList = { str -> picVM.checkOnErrorExists(str) },
+						addError = { url, message -> picVM.addError(url, message) },
+						state = picState,
+						clearErrors = { picVM.clearErrors() },
+						postVisibleBarsState = { detVM.changeVisabilityState(true) },
+						currentPicture = { url, index, offset ->
+							picVM.saveUrlOfCurrentPic(index)
+							picVM.clickOnPicture(index, offset)
+							picVM.calculatePosition(url)
+							detVM.postCurrentPicture(url)
+							orientationWasChangedCheck.value = false
+							navController.navigate(Screen.Details.route)
+							isExit.value = false
+							lifecycleScope.launch {
+								delay(1000)
+								isExit.value = true
 							}
-						}
-					},
-					picsUiState = picVM.picturesUiState,
-					setCurrentPictureUrl = { url ->
-						picVM.calculateListPosition(url)
-						detVM.postCurrentPicture(url)
-					},
-					share = { url -> share(url) },
-					deleteCurrentPicture = { url ->
-						deletePicture(url)
-						detVM.postNewPic(null, null)
-					},
-					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
-					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
-					animationHasBeenStarted = animationIsRunning,
-					postCutouts = { left, right ->
-						picVM.postCutouts(left, right, true)
-						Log.d("proverka2", "new cutouts")
-					},
-					orientationWasChanged = orientationWasChangedCheck,
-					postBars = { top, bottom -> picVM.postBars(top, bottom) },
-				)
+						},
+						isValidUrl = { url -> picVM.isValidUrl(url) },
+						postSavedUrls = { urls ->
+							picVM.postSavedUrls(urls = urls)
+							detVM.firstSetOfListState(urls)
+						},
+						saveToSharedPrefs = { urls ->
+							saveToSharedPrefs(picVM.convertFromListToString(urls))
+						},
+						calculateGridSpan = { picVM.getGridSpan() },
+						animationIsRunning = animationIsRunning,
+						postPosition = { url, position -> picVM.postPosition(url, position) },
+						postSizeOfPicAndGridMaxVisibleLines =
+						{ intSize, maxVisibleElementsNum ->
+							//picVM.postSizeOfPic(intSize, maxVisibleElementsNum)
+						},
+						postCutouts = { left, right -> picVM.postCutouts(left, right, true) },
+						postBars = { top, bottom -> picVM.postBars(top, bottom) },
+						postPictureSizeInPx = { width, height, maxVisibleElementsNum -> picVM.postSizeOfPic(width, height, maxVisibleElementsNum) },
+						animatedVisibilityScope = this@composable
+					)
+				}
+				composable(
+					route = BottomNavItem.Settings.route,
+					enterTransition = { EnterTransition.None },
+					exitTransition = { ExitTransition.None },
+					popExitTransition = { ExitTransition.None },
+					popEnterTransition = { EnterTransition.None }
+				) {
+					SettingsScreen(
+						navController = navController,
+						option = picVM.picturesUiState,
+						changeTheme = { int -> changeTheme(int) },
+						isScreenInPortraitState = picState,
+						clearImageCache = {
+							val imageLoader = this@MainActivity.imageLoader
+							imageLoader.diskCache?.clear()
+							imageLoader.memoryCache?.clear()
+							picVM.clearErrors()
+						},
+						postStartOfPager = { picVM.clickOnPicture(0, 0) }
+					)
+				}
+				composable(
+					route = Screen.Details.route,
+				) {
+					DetailsScreen(
+						navController = navController,
+						getErrorMessageFromErrorsList = { url -> picVM.checkOnErrorExists(url) },
+						addError = { url, message -> picVM.addError(url, message) },
+						state = detVM.uiState,
+						removeError = { str -> picVM.removeSpecialError(str) },
+						postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
+						isValidUrl = { url -> picVM.isValidUrl(url) },
+						changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
+						postNewBitmap = { url, strLoadingFromResources -> detVM.postImageBitmap(url, strLoadingFromResources) },
+						addPicture = { url ->
+							picVM.addPictureToUrls(url)
+							picVM.clickOnPicture(0, 0)
+							saveToSharedPrefs(picVM.returnStringOfList())
+						},
+						setImageSharedState = { isShared ->
+							detVM.isSharedImage(isShared)
+							isSharedImage.value = isShared
+							isImageToShareOrDelete.value = false
+							lifecycleScope.launch {
+								delay(50)
+								if(orientationWasChangedCheck.value)
+								{
+									animationIsRunning.value = false
+									orientationWasChangedCheck.value = false
+								}
+							}
+						},
+						picsUiState = picVM.picturesUiState,
+						setCurrentPictureUrl = { url ->
+							picVM.calculateListPosition(url)
+							detVM.postCurrentPicture(url)
+						},
+						share = { url -> share(url) },
+						deleteCurrentPicture = { url ->
+							deletePicture(url)
+							detVM.postNewPic(null, null)
+						},
+						postWasSharedState = { detVM.setWasSharedFromNotification(false) },
+						setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
+						animationHasBeenStarted = animationIsRunning,
+						postCutouts = { left, right ->
+							picVM.postCutouts(left, right, true)
+							Log.d("proverka2", "new cutouts")
+						},
+						orientationWasChanged = orientationWasChangedCheck,
+						postBars = { top, bottom -> picVM.postBars(top, bottom) },
+						animatedVisibilityScope = this@composable
+					)
+				}
+				composable(
+					route = Screen.DopDetails.route,
+				) {
+					DopDetailsScreen(
+						url = detVM.uiState.value.currentPicture,
+						isPortrait = picVM.picturesUiState.value.isPortraitOrientation,
+						animatedVisibilityScope = this@composable
+					)
+				}
 			}
 		}
 	}

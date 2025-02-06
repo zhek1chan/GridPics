@@ -104,4 +104,5 @@ dependencies {
     implementation(libs.transformations)
     //anim
     implementation(libs.orbital)
+    implementation(libs.androidx.compose.animation)
 }

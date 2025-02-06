@@ -7,8 +7,11 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -39,7 +42,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -67,8 +69,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -100,9 +100,9 @@ import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 import kotlin.math.abs
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
-fun DetailsScreen(
+fun SharedTransitionScope.DetailsScreen(
 	navController: NavController,
 	getErrorMessageFromErrorsList: (String) -> String?,
 	addError: (String, String) -> Unit,
@@ -124,6 +124,7 @@ fun DetailsScreen(
 	postCutouts: (Float, Float) -> Unit,
 	orientationWasChanged: MutableState<Boolean>,
 	postBars: (Float, Float) -> Unit,
+	animatedVisibilityScope: AnimatedVisibilityScope,
 )
 {
 	val itIsStartAnimationState = remember { mutableStateOf(true) }
@@ -169,14 +170,6 @@ fun DetailsScreen(
 		}
 	}
 	LaunchedEffect(animationIsRunningLocal.value) {
-		if(animationIsRunningLocal.value)
-		{
-			backgroundColor.value = color.copy(0.0001f)
-		}
-		else
-		{
-			backgroundColor.value = color
-		}
 	}
 	val value = state.value
 	val context = LocalContext.current
@@ -242,7 +235,6 @@ fun DetailsScreen(
 		}
 	}
 	Scaffold(
-		containerColor = backgroundColor.value,
 		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 		topBar = {
 			AppBar(
@@ -281,15 +273,16 @@ fun DetailsScreen(
 				animationIsRunning = animationIsRunningLocal,
 				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
 				animationHasBeenStarted = animationHasBeenStarted,
-				itIsStartAnimationState = itIsStartAnimationState
+				itIsStartAnimationState = itIsStartAnimationState,
+				animatedVisibilityScope = animatedVisibilityScope
 			)
 		}
 	)
 }
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
-fun ShowDetails(
+fun SharedTransitionScope.ShowDetails(
 	navController: NavController,
 	context: Context,
 	checkOnErrorExists: (String) -> String?,
@@ -310,6 +303,7 @@ fun ShowDetails(
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	animationHasBeenStarted: MutableState<Boolean>,
 	itIsStartAnimationState: MutableState<Boolean>,
+	animatedVisibilityScope: AnimatedVisibilityScope,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -354,7 +348,8 @@ fun ShowDetails(
 					animationIsRunning = animationIsRunning,
 					animationHasBeenStarted = animationHasBeenStarted,
 					checkOnErrorExists = checkOnErrorExists,
-					itIsStartAnimationState = itIsStartAnimationState
+					itIsStartAnimationState = itIsStartAnimationState,
+					animatedVisibilityScope = animatedVisibilityScope
 				)
 			}
 			if(isSharedImage)
@@ -485,9 +480,10 @@ fun ShowDetails(
 	}
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun ShowAsynchImage(
+fun SharedTransitionScope.ShowAsynchImage(
 	img: String,
 	addError: (String, String) -> Unit,
 	removeSpecialError: (String) -> Unit,
@@ -502,6 +498,7 @@ fun ShowAsynchImage(
 	animationHasBeenStarted: MutableState<Boolean>,
 	checkOnErrorExists: (String) -> String?,
 	itIsStartAnimationState: MutableState<Boolean>,
+	animatedVisibilityScope: AnimatedVisibilityScope,
 )
 {
 	val extraAnimationIsNeeded = remember { mutableStateOf(animationIsRunning.value) }
@@ -552,7 +549,7 @@ fun ShowAsynchImage(
 		Box(Modifier
 			.animateContentSize(animationSpec = tween(durationMillis = 500))
 			.align(Alignment.Center)
-			.height(if(extraAnimationIsNeeded.value) adaptiveSizeOfBoxForAnimation else Int.MAX_VALUE.dp)
+			.height(if(false) adaptiveSizeOfBoxForAnimation else Int.MAX_VALUE.dp)
 			.fillMaxWidth()
 		) {
 			val zoom = rememberZoomState(15f, Size.Zero)
@@ -564,68 +561,59 @@ fun ShowAsynchImage(
 					.build()
 			}
 			val mod = remember(animationIsRunning.value) { mutableStateOf(Modifier.fillMaxSize()) }
-			if(animationIsRunning.value)
-			{
-				mod.value = Modifier
-					.fillMaxSize()
-					.clip(RoundedCornerShape(8.dp))
-					.alpha(0.5f)
-					.align(Alignment.Center)
-			}
-			else
-			{
-				mod.value = Modifier
-					.fillMaxSize()
-					.zoomable(
-						zoomState = zoom,
-						enableOneFingerZoom = false,
-						onTap =
+
+			mod.value = Modifier
+				.fillMaxSize()
+				.zoomable(
+					zoomState = zoom,
+					enableOneFingerZoom = false,
+					onTap =
+					{
+						val visibility = state.value.barsAreVisible
+						changeBarsVisability(!visibility)
+					}
+				)
+				.pointerInput(Unit) {
+					awaitEachGesture {
+						val count = mutableListOf(0)
+						val countLastThree = mutableListOf(0)
+						while(true)
 						{
-							val visibility = state.value.barsAreVisible
-							changeBarsVisability(!visibility)
-						}
-					)
-					.pointerInput(Unit) {
-						awaitEachGesture {
-							val count = mutableListOf(0)
-							val countLastThree = mutableListOf(0)
-							while(true)
-							{
-								val event = awaitPointerEvent()
-								val changes = event.changes
-								val exit = !changes.any {
-									it.isConsumed
-								}
-								if(count.size >= 3)
-								{
-									val lastIndex = count.lastIndex
-									countLastThree.add(count[lastIndex])
-									countLastThree.add(count[lastIndex - 1])
-									countLastThree.add(count[lastIndex - 2])
-								}
-								if(changes.any { !it.pressed })
-								{
-									if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
-									{
-										navigateToHome(
-											changeBarsVisability = changeBarsVisability,
-											postUrl = postUrl,
-											navController = navController,
-											setImageSharedStateToFalse = setImageSharedStateToFalse,
-											animationIsRunning = animationIsRunning,
-											wasDeleted = false,
-											animationHasBeenStarted = animationHasBeenStarted,
-											state = state,
-											checkOnErrorExists = checkOnErrorExists
-										)
-									}
-								}
-								countLastThree.clear()
-								count.add(changes.size)
+							val event = awaitPointerEvent()
+							val changes = event.changes
+							val exit = !changes.any {
+								it.isConsumed
 							}
+							if(count.size >= 3)
+							{
+								val lastIndex = count.lastIndex
+								countLastThree.add(count[lastIndex])
+								countLastThree.add(count[lastIndex - 1])
+								countLastThree.add(count[lastIndex - 2])
+							}
+							if(changes.any { !it.pressed })
+							{
+								if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
+								{
+									navigateToHome(
+										changeBarsVisability = changeBarsVisability,
+										postUrl = postUrl,
+										navController = navController,
+										setImageSharedStateToFalse = setImageSharedStateToFalse,
+										animationIsRunning = animationIsRunning,
+										wasDeleted = false,
+										animationHasBeenStarted = animationHasBeenStarted,
+										state = state,
+										checkOnErrorExists = checkOnErrorExists
+									)
+								}
+							}
+							countLastThree.clear()
+							count.add(changes.size)
 						}
 					}
-			}
+				}
+
 			SubcomposeAsyncImage(
 				model = imgRequest,
 				contentDescription = null,
@@ -649,7 +637,8 @@ fun ShowAsynchImage(
 				},
 				modifier = mod.value
 					.align(Alignment.TopStart)
-			)
+					.sharedElement(rememberSharedContentState(key = img),
+						animatedVisibilityScope))
 		}
 	}
 }
@@ -734,92 +723,90 @@ fun AppBar(
 	Log.d("shared pic url", currentPicture)
 	val sharedImgCase = state.value.isSharedImage
 	Log.d("wahwah", "$screenWidth")
-	AnimatedVisibility(!animationIsRunning.value, enter = EnterTransition.None, exit = ExitTransition.None) {
-		AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
-			Box(
+	AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
+		Box(
+			modifier = Modifier
+				.background(MaterialTheme.colorScheme.background)
+				.height(
+					WindowInsets.systemBarsIgnoringVisibility
+						.asPaddingValues()
+						.calculateTopPadding() + 64.dp
+				)
+				.fillMaxWidth())
+		val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+			TopAppBar(
 				modifier = Modifier
-					.background(MaterialTheme.colorScheme.background)
-					.height(
-						WindowInsets.systemBarsIgnoringVisibility
-							.asPaddingValues()
-							.calculateTopPadding() + 64.dp
-					)
-					.fillMaxWidth())
-			val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-			CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-				TopAppBar(
-					modifier = Modifier
-						.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-						.wrapContentSize(),
-					title = {
-						val width = if(sharedImgCase)
-						{
-							screenWidth
-						}
-						else
-						{
-							screenWidth - 50.dp
-						}
-						Box(modifier = Modifier
-							.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-							.height(64.dp)
-							.width(width)
-							.clickable {
-								navBack.value = true
-							}) {
-							Text(
-								text = currentPicture,
-								fontSize = 18.sp,
-								maxLines = 2,
-								modifier = Modifier
-									.align(Alignment.Center),
-								overflow = TextOverflow.Ellipsis,
-							)
-						}
-					},
-					navigationIcon = {
+					.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+					.wrapContentSize(),
+				title = {
+					val width = if(sharedImgCase)
+					{
+						screenWidth
+					}
+					else
+					{
+						screenWidth - 50.dp
+					}
+					Box(modifier = Modifier
+						.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+						.height(64.dp)
+						.width(width)
+						.clickable {
+							navBack.value = true
+						}) {
+						Text(
+							text = currentPicture,
+							fontSize = 18.sp,
+							maxLines = 2,
+							modifier = Modifier
+								.align(Alignment.Center),
+							overflow = TextOverflow.Ellipsis,
+						)
+					}
+				},
+				navigationIcon = {
+					Box(modifier = Modifier
+						.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+						.height(64.dp)
+						.width(50.dp)
+						.clickable {
+							navBack.value = true
+						}) {
+						Icon(
+							imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+							contentDescription = "back",
+							modifier = Modifier
+								.align(Alignment.Center)
+						)
+					}
+				},
+				colors = TopAppBarDefaults.topAppBarColors(
+					titleContentColor = MaterialTheme.colorScheme.onPrimary,
+					navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+					actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+					containerColor = MaterialTheme.colorScheme.background
+				),
+				actions = {
+					AnimatedVisibility(!sharedImgCase) {
 						Box(modifier = Modifier
 							.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 							.height(64.dp)
 							.width(50.dp)
 							.clickable {
-								navBack.value = true
-							}) {
+								share(currentPicture)
+							}
+						) {
 							Icon(
-								imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-								contentDescription = "back",
-								modifier = Modifier
-									.align(Alignment.Center)
+								modifier = Modifier.align(Alignment.Center),
+								imageVector = Icons.Default.Share,
+								contentDescription = "share",
+								tint = MaterialTheme.colorScheme.onPrimary,
 							)
 						}
-					},
-					colors = TopAppBarDefaults.topAppBarColors(
-						titleContentColor = MaterialTheme.colorScheme.onPrimary,
-						navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-						actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-						containerColor = MaterialTheme.colorScheme.background
-					),
-					actions = {
-						AnimatedVisibility(!sharedImgCase) {
-							Box(modifier = Modifier
-								.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-								.height(64.dp)
-								.width(50.dp)
-								.clickable {
-									share(currentPicture)
-								}
-							) {
-								Icon(
-									modifier = Modifier.align(Alignment.Center),
-									imageVector = Icons.Default.Share,
-									contentDescription = "share",
-									tint = MaterialTheme.colorScheme.onPrimary,
-								)
-							}
-						}
 					}
-				)
-			}
+				}
+			)
 		}
 	}
 	if(navBack.value)
