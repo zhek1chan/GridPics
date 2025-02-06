@@ -132,7 +132,7 @@ fun DetailsScreen(
 	val conf = LocalConfiguration.current.orientation
 	val paddingForCutouts = if(cutouts.asPaddingValues() == PaddingValues(0.dp))
 	{
-		PaddingValues(600.dp)
+		PaddingValues(Int.MAX_VALUE.dp)
 	}
 	else
 	{

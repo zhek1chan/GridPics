@@ -639,7 +639,7 @@ class PicturesViewModel(
 		val newCuts = Pair(left, right)
 		if(needsCheckOnWasChanged)
 		{
-			if(left == right && left != 600f)
+			if(left == right && left != Float.MAX_VALUE)
 			{
 				calculatePosition(null)
 			}
