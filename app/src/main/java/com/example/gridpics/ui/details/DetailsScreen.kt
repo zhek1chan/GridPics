@@ -61,12 +61,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -558,7 +556,6 @@ fun ShowAsynchImage(
 			.fillMaxWidth()
 		) {
 			val zoom = rememberZoomState(15f, Size.Zero)
-			var imageSize by remember { mutableStateOf(Size.Zero) }
 			val imgRequest = remember(img) {
 				ImageRequest.Builder(context)
 					.data(img)
@@ -629,7 +626,6 @@ fun ShowAsynchImage(
 						}
 					}
 			}
-			val scope = rememberCoroutineScope()
 			SubcomposeAsyncImage(
 				model = imgRequest,
 				contentDescription = null,
@@ -638,7 +634,6 @@ fun ShowAsynchImage(
 					val resultImage = it.result.image
 					val widthImage = resultImage.width
 					val heightImage = resultImage.height
-					imageSize = Size(widthImage.toFloat(), heightImage.toFloat())
 					width.intValue = widthImage
 					height.intValue = heightImage
 					removeSpecialError(img)
@@ -655,10 +650,6 @@ fun ShowAsynchImage(
 				modifier = mod.value
 					.align(Alignment.TopStart)
 			)
-
-			scope.launch {
-				zoom.setContentSize(imageSize)
-			}
 		}
 	}
 }

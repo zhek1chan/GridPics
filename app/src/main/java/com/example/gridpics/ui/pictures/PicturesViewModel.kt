@@ -177,6 +177,7 @@ class PicturesViewModel(
 			screenHeight = k
 			if(sizeOfPicLocal != 0)
 			{
+				val screenWidth = screenWidth
 				cofConnectedWithOrientation.floatValue = sizeOfPicLocal.toFloat() / screenWidth.toFloat() + 0.03f
 				cofConnectedWithOrientationForExit.floatValue = sizeOfPicLocal.toFloat() / screenWidth.toFloat() + 0.03f
 			}
