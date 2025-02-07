@@ -151,6 +151,11 @@ fun SharedTransitionScope.DetailsScreen(
 		}
 		animationIsRunning.value = false
 	}
+	val addingForAnimControlBoolean = remember { mutableStateOf(false) }
+	LaunchedEffect(Unit) {
+		delay(32)
+		addingForAnimControlBoolean.value = true
+	}
 	BackHandler {
 		navigateToHome(
 			changeBarsVisability = changeBarsVisability,
@@ -223,7 +228,8 @@ fun SharedTransitionScope.DetailsScreen(
 				deleteCurrentPicture = deleteCurrentPicture,
 				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
 				animationIsRunning = animationIsRunning,
-				animatedVisibilityScope = animatedVisibilityScope
+				animatedVisibilityScope = animatedVisibilityScope,
+				addingForAnimControlBoolean = addingForAnimControlBoolean
 			)
 		}
 	)
@@ -251,6 +257,7 @@ fun SharedTransitionScope.ShowDetails(
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	animatedVisibilityScope: AnimatedVisibilityScope,
+	addingForAnimControlBoolean: MutableState<Boolean>,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -269,13 +276,19 @@ fun SharedTransitionScope.ShowDetails(
 		val url = list[page]
 		val errorMessage = checkOnErrorExists(url)
 		Log.d("checkUp", "is error $errorMessage")
-		Box(modifier = Modifier
-			.sharedElement(
-				rememberSharedContentState(key = pagerState.currentPage),
-				animatedVisibilityScope = animatedVisibilityScope
-			)
-			.fillMaxSize()
-			.background(Color.Transparent)) {
+		val mod = if(pagerState.isScrollInProgress) {
+			Modifier.fillMaxSize()
+				.background(Color.Transparent)
+		} else {
+			Modifier
+				.sharedElement(
+					rememberSharedContentState(key = pagerState.currentPage),
+					animatedVisibilityScope = animatedVisibilityScope
+				)
+				.fillMaxSize()
+				.background(Color.Transparent)
+		}
+		Box(modifier = mod) {
 			if(errorMessage != null)
 			{
 				ShowError(
@@ -380,7 +393,7 @@ fun SharedTransitionScope.ShowDetails(
 				) {
 					val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 					CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-						AnimatedVisibility(!animatedVisibilityScope.transition.isRunning , enter = EnterTransition.None, exit = ExitTransition.None) {
+						AnimatedVisibility(!animatedVisibilityScope.transition.isRunning && addingForAnimControlBoolean.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 							Button(
 								modifier = Modifier
 									.align(Alignment.CenterVertically)
