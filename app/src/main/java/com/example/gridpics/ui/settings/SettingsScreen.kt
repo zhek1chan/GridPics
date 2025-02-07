@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -56,7 +55,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.BottomNavigationBar
@@ -132,111 +130,98 @@ fun SettingsCompose(
 	Log.d("option", "got option $option")
 	var showDialog by remember { mutableStateOf(false) }
 	val context = LocalContext.current
-	ConstraintLayout {
-		val (settings, _) = createRefs()
-		Column(modifier = Modifier.constrainAs(settings) {
-			top.linkTo(parent.top)
-			start.linkTo(parent.start)
-			end.linkTo(parent.end)
-		}) {
-			val listOfThemeOptions = remember(LocalConfiguration) { mutableListOf<String>() }
-			if(listOfThemeOptions.isEmpty())
-			{
-				listOfThemeOptions.add(stringResource(R.string.light_theme))
-				listOfThemeOptions.add(stringResource(R.string.dark_theme))
-				listOfThemeOptions.add(stringResource(R.string.synch_with_sys))
-			}
-			val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option.value.themeState.intValue]) }
-			val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-			CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-				Column {
-					listOfThemeOptions.forEach { text ->
-						Row(
-							verticalAlignment = Alignment.CenterVertically,
-							modifier = Modifier
-								.fillMaxWidth()
-								.padding(18.dp, 10.dp, 18.dp, 0.dp)
-								.clickable {
-									if(text != selectedOption)
-									{
-										Log.d("i clicked on", "selected option $selectedOption")
-										onOptionSelected(text)
-										saveThemeState(context, listOfThemeOptions.indexOf(text))
-										changeTheme(listOfThemeOptions.indexOf(text))
-									}
-								}
-						) {
-							val painter = when(text)
+	val listOfThemeOptions = remember(LocalConfiguration) { mutableListOf<String>() }
+	if(listOfThemeOptions.isEmpty())
+	{
+		listOfThemeOptions.add(stringResource(R.string.light_theme))
+		listOfThemeOptions.add(stringResource(R.string.dark_theme))
+		listOfThemeOptions.add(stringResource(R.string.synch_with_sys))
+	}
+
+	val (selectedOption, onOptionSelected) = remember { mutableStateOf(listOfThemeOptions[option.value.themeState.intValue]) }
+	val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+
+	CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+		Column(
+			modifier = Modifier
+				.fillMaxSize()
+				.padding(16.dp)
+		) {
+			// Theme options
+			listOfThemeOptions.forEach { text ->
+				Row(
+					verticalAlignment = Alignment.CenterVertically,
+					modifier = Modifier
+						.fillMaxWidth()
+						.padding(2.dp, 10.dp, 18.dp, 0.dp)
+						.clickable {
+							if(text != selectedOption)
 							{
-								listOfThemeOptions[0] ->
-								{
-									rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_day))
-								}
-								listOfThemeOptions[1] ->
-								{
-									rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_night))
-								}
-								else ->
-								{
-									rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_sys_theme))
-								}
+								Log.d("i clicked on", "selected option $selectedOption")
+								onOptionSelected(text)
+								saveThemeState(context, listOfThemeOptions.indexOf(text))
+								changeTheme(listOfThemeOptions.indexOf(text))
 							}
-							Icon(
-								modifier = Modifier.padding(0.dp, 0.dp),
-								painter = painter,
-								contentDescription = "CommentIcon",
-								tint = MaterialTheme.colorScheme.onPrimary
-							)
-							Text(
-								text = text,
-								fontSize = 18.sp,
-								maxLines = 1,
-								overflow = TextOverflow.Ellipsis,
-								color = MaterialTheme.colorScheme.onPrimary,
-								modifier = Modifier
-									.padding(16.dp, 0.dp)
-									.width(250.dp)
-							)
-							Spacer(
-								Modifier
-									.weight(1f)
-									.fillMaxWidth()
-							)
-							RadioButton(
-								selected = (text == selectedOption),
-								onClick = {
-									if(text != selectedOption)
-									{
-										onOptionSelected(text)
-										saveThemeState(context, listOfThemeOptions.indexOf(text))
-										changeTheme(listOfThemeOptions.indexOf(text))
-									}
-								},
-								colors = RadioButtonColors(
-									Color.Green,
-									MaterialTheme.colorScheme.onSecondary,
-									MaterialTheme.colorScheme.error,
-									MaterialTheme.colorScheme.onSecondary
-								)
-							)
 						}
+				) {
+					val painter = when(text)
+					{
+						listOfThemeOptions[0] -> rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_day))
+						listOfThemeOptions[1] -> rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_night))
+						else -> rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_sys_theme))
 					}
+					Icon(
+						modifier = Modifier.padding(0.dp),
+						painter = painter,
+						contentDescription = "CommentIcon",
+						tint = MaterialTheme.colorScheme.onPrimary
+					)
+					Text(
+						text = text,
+						fontSize = 18.sp,
+						maxLines = 1,
+						overflow = TextOverflow.Ellipsis,
+						color = MaterialTheme.colorScheme.onPrimary,
+						modifier = Modifier.padding(16.dp, 0.dp)
+					)
+					Spacer(Modifier.weight(1f))
+					RadioButton(
+						selected = (text == selectedOption),
+						onClick = {
+							if(text != selectedOption)
+							{
+								onOptionSelected(text)
+								saveThemeState(context, listOfThemeOptions.indexOf(text))
+								changeTheme(listOfThemeOptions.indexOf(text))
+							}
+						},
+						colors = RadioButtonColors(
+							Color.Green,
+							MaterialTheme.colorScheme.onSecondary,
+							MaterialTheme.colorScheme.error,
+							MaterialTheme.colorScheme.onSecondary
+						)
+					)
 				}
 			}
-			HorizontalDivider(modifier = Modifier.padding(18.dp), color = MaterialTheme.colorScheme.onPrimary, thickness = 1.dp)
+			// Divider
+			HorizontalDivider(
+				modifier = Modifier.padding(vertical = 18.dp),
+				color = MaterialTheme.colorScheme.onPrimary,
+				thickness = 1.dp
+			)
+			// Clear cache option
 			Row(
 				verticalAlignment = Alignment.CenterVertically,
 				modifier = Modifier
 					.fillMaxWidth()
-					.padding(16.dp, 10.dp, 0.dp, 16.dp)
-					.clickable {
-						showDialog = true
-					}
+					.padding(2.dp, 10.dp, 0.dp, 16.dp)
+					.clickable { showDialog = true }
 			) {
 				Icon(
-					modifier = Modifier.padding(0.dp, 0.dp),
+					modifier = Modifier.padding(0.dp),
 					painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_delete)),
-					contentDescription = "CommentIcon",
+					contentDescription = "DeleteCacheIcon",
 					tint = MaterialTheme.colorScheme.onPrimary
 				)
 				Text(
@@ -245,11 +230,9 @@ fun SettingsCompose(
 					color = MaterialTheme.colorScheme.onPrimary,
 					modifier = Modifier.padding(16.dp, 0.dp)
 				)
-				Spacer(Modifier
-					.weight(1f)
-					.fillMaxWidth()
-				)
+				Spacer(Modifier.weight(1f))
 			}
+			// Confirmation dialog
 			if(showDialog)
 			{
 				AlertDialogMain(
@@ -263,7 +246,8 @@ fun SettingsCompose(
 					onDismissRequest = { showDialog = false },
 					icon = Icons.Default.Delete,
 					textButtonCancel = stringResource(R.string.cancel),
-					textButtonConfirm = stringResource(R.string.confirm))
+					textButtonConfirm = stringResource(R.string.confirm)
+				)
 			}
 		}
 	}

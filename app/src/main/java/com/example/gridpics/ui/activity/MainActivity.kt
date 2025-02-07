@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
@@ -19,19 +18,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -64,13 +54,6 @@ class MainActivity: AppCompatActivity()
 	private var navigation: NavHostController? = null
 	private var themePick: Int = 2
 	private var job: Job? = null
-	private var pairOfCof = Pair(4f, 10f)
-	private var pairOfCofForExit = Pair(4f, 10f)
-	private var mutableIsThemeBlackState = mutableStateOf(false)
-	private var cofConnectedWithOrientation = mutableFloatStateOf(0f)
-	private var cofConnectedWithOrientationForExit = mutableFloatStateOf(0f)
-	private var isSharedImage = mutableStateOf(false)
-	private var animationIsRunning = mutableStateOf(false)
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -113,14 +96,8 @@ class MainActivity: AppCompatActivity()
 		val detVM = detailsViewModel
 		val resources = resources
 		val orientation = resources.configuration.orientation
-		if(orientation == Configuration.ORIENTATION_PORTRAIT)
-		{
-			picVM.changeOrientation(isPortrait = true)
-		}
-		else
-		{
-			picVM.changeOrientation(isPortrait = false)
-		}
+		picVM.changeOrientation(isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT)
+		picVM.orientationWasChanged.value = false
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
@@ -150,285 +127,117 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-		val displayMetrics = resources.displayMetrics
-		val width = displayMetrics.widthPixels
-		val height = displayMetrics.heightPixels
-		val density = displayMetrics.density
-		picVM.postParamsOfScreen(calculateGridSpan(), width, height, density)
-
+		picVM.updateGridSpan(calculateGridSpan())
 		setContent {
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
 				navigation = navController
 				postValuesFromIntent(intent, listOfUrls, picVM)
 			}
-			ComposeTheme(isDarkTheme = mutableIsThemeBlackState.value) {
+			ComposeTheme(isDarkTheme = picVM.mutableIsThemeBlackState.value) {
 				NavigationSetup(navController = navController)
 			}
 		}
 	}
 
-	@SuppressLint("RestrictedApi")
+	@OptIn(ExperimentalSharedTransitionApi::class)
 	@Composable
 	fun NavigationSetup(navController: NavHostController)
 	{
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
-		val pivots = remember { mutableStateOf(picVM.getPivotsXandY()) }
-		Log.d("test 333", "new pivots $pivots")
-		val pairOfCof = pairOfCof
-		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
-		val isSharedImage = isSharedImage
-		var pValue = pivots.value
-		val enterTrans = if(pivots.value != Pair(12345f, 12345f))
-		{
-			scaleIn(
-				animationSpec = tween(400),
-				initialScale = 0.75f,
-				transformOrigin = TransformOrigin(pValue.first, pValue.second)
+		SharedTransitionLayout {
+			NavHost(
+				navController = navController,
+				startDestination = BottomNavItem.Home.route
 			)
-		}
-		else
-		{
-			EnterTransition.None
-		}
-		val enterTransForDetails = if(isSharedImage.value)
-		{
-			EnterTransition.None
-		}
-		else
-		{
-			scaleIn(
-				animationSpec = tween(5500),
-				initialScale = cofConnectedWithOrientationForExit.floatValue,
-				transformOrigin = TransformOrigin(
-					pValue.first / pairOfCof.first + 0.05f,
-					pValue.second / pairOfCof.second
-				)
-			) + expandVertically(expandFrom = Alignment.Top) { 20 }
-		}
-		val exitTransitionForDetails = if(isSharedImage.value)
-		{
-			ExitTransition.None
-		}
-		else
-		{
-			scaleOut(
-				animationSpec = tween(5500),
-				targetScale = cofConnectedWithOrientation.floatValue,
-				transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
-			)
-		}
-		val isExit = remember { mutableStateOf(false) }
-		val popExitTransitionForDetails = if(isSharedImage.value)
-		{
-			ExitTransition.None
-		}
-		else
-		{
-			var yForExit = if(pValue.second == 4.6f)
 			{
-				pValue.second - 0.19f
-			}
-			else if(pValue.second > 4.6f)
-			{
-				pValue.second - 0.4f
-			}
-			else if(pValue.second == 0.3f)
-			{
-				pValue.second + 0.43f
-			}
-			else if(pValue.second == 1.6f)
-			{
-				pValue.second + 0.36f
-			}
-			else
-			{
-				pValue.second
-			}
-			if(isExit.value)
-			{
-				if(cofConnectedWithOrientation.floatValue == 0.6f && yForExit < 2.09f)
-				{
-					yForExit -= 0.43f
-				}
-				else if(cofConnectedWithOrientation.floatValue == 0.6f && yForExit >= 2.09f)
-				{
-					yForExit -= 0.8f
-				}
-				if(pValue.first > -2f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 0.39f)
-				{
-					pValue = Pair(0.455555f, pValue.second)
-				}
-				else if(pValue.first > 4f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 7f)
-				{
-					pValue = Pair(pValue.first - 1.2f, pValue.second)
-				}
-				else if(pValue.first > 7f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 9f)
-				{
-					pValue = Pair(pValue.first - 2.4f, pValue.second)
-				}
-				else if(pValue.first > 9f && cofConnectedWithOrientation.floatValue == 0.6f && pValue.first < 11f)
-				{
-					pValue = Pair(pValue.first - 3.6f, pValue.second)
-				}
-				else if(pValue.first > 11f && cofConnectedWithOrientation.floatValue == 0.6f)
-				{
-					pValue = Pair(pValue.first - 4.7f, pValue.second)
-				}
-			}
-			Log.d("che za bred to", " to${pValue.first}, $yForExit")
-			Log.d("che za bred", "${pValue.first / pairOfCofForExit.first}, ${yForExit / pairOfCofForExit.second}")
-			scaleOut(
-				animationSpec = tween(5500),
-				targetScale = cofConnectedWithOrientation.floatValue,
-				transformOrigin = TransformOrigin(pValue.first / pairOfCofForExit.first, yForExit / pairOfCofForExit.second)
-			)
-		}
-		Log.d("exit test", "$pairOfCof")
-		NavHost(
-			navController = navController,
-			startDestination = BottomNavItem.Home.route,
-			popEnterTransition = {
-				scaleIn(
-					animationSpec = tween(5500),
-					initialScale = cofConnectedWithOrientation.floatValue,
-					transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
-				)
-			},
-			popExitTransition = {
-				scaleOut(
-					animationSpec = tween(5500),
-					targetScale = cofConnectedWithOrientation.floatValue,
-					transformOrigin = TransformOrigin(pValue.first / pairOfCof.first, pValue.second / 2.4f)
-				)
-			},
-			enterTransition = {
-				scaleIn(
-					animationSpec = tween(5400),
-					initialScale = cofConnectedWithOrientationForExit.floatValue,
-					transformOrigin = TransformOrigin(
-						pValue.first / pairOfCof.first,
-						pValue.second / pairOfCof.second
+				composable(
+					route = BottomNavItem.Home.route,
+				) {
+					detVM.postNewPic(null, null)
+					PicturesScreen(
+						navController = navController,
+						postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
+						getErrorMessageFromErrorsList = { str -> picVM.checkOnErrorExists(str) },
+						addError = { url, message -> picVM.addError(url, message) },
+						state = picState,
+						clearErrors = { picVM.clearErrors() },
+						postVisibleBarsState = { detVM.changeVisabilityState(true) },
+						currentPicture = { url, index, offset ->
+							picVM.clickOnPicture(index, offset)
+							detVM.postCurrentPicture(url)
+							navController.navigate(Screen.Details.route)
+						},
+						isValidUrl = { url -> picVM.isValidUrl(url) },
+						postSavedUrls = { urls ->
+							picVM.postSavedUrls(urls = urls)
+							detVM.firstSetOfListState(urls)
+						},
+						saveToSharedPrefs = { urls ->
+							saveToSharedPrefs(picVM.convertFromListToString(urls))
+						},
+						calculateGridSpan = { picVM.getGridSpan() },
+						postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum) },
+						animatedVisibilityScope = this@composable
 					)
-				) + expandVertically(expandFrom = Alignment.Top) { 20 }
-			},
-			exitTransition = {
-				scaleOut(
-					animationSpec = tween(5400),
-					targetScale = cofConnectedWithOrientation.floatValue,
-					transformOrigin = TransformOrigin(pValue.first * 0.47f, pValue.second / 2.4f)
-				)
-			}
-		)
-		{
-			composable(
-				route = BottomNavItem.Home.route,
-				enterTransition = {
-					enterTrans
-				},
-				exitTransition = { ExitTransition.None },
-				popEnterTransition = { EnterTransition.None }
-			) {
-				detVM.postNewPic(null, null)
-				PicturesScreen(
-					navController = navController,
-					postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
-					getErrorMessageFromErrorsList = { str -> picVM.checkOnErrorExists(str) },
-					addError = { url, message -> picVM.addError(url, message) },
-					state = picState,
-					clearErrors = { picVM.clearErrors() },
-					postVisibleBarsState = { detVM.changeVisabilityState(true) },
-					currentPicture = { url, index, offset ->
-						picVM.clickOnPicture(index, offset)
-						picVM.calculatePosition(url)
-						detVM.postCurrentPicture(url)
-						pivots.value = picVM.getPivotsXandY()
-						navController.navigate(Screen.Details.route)
-						isExit.value = false
-						lifecycleScope.launch {
-							delay(5500)
-							isExit.value = true
-						}
-					},
-					isValidUrl = { url -> picVM.isValidUrl(url) },
-					postSavedUrls = { urls ->
-						picVM.postSavedUrls(urls = urls)
-						detVM.firstSetOfListState(urls)
-					},
-					saveToSharedPrefs = { urls ->
-						saveToSharedPrefs(picVM.convertFromListToString(urls))
-					},
-					calculateGridSpan = { calculateGridSpan() },
-					postGridSize = { sizeInPx -> picVM.postGridSize(sizeInPx) },
-					animationIsRunning = animationIsRunning
-				)
-			}
-			composable(
-				route = BottomNavItem.Settings.route,
-				enterTransition = { EnterTransition.None },
-				exitTransition = { ExitTransition.None },
-				popExitTransition = { ExitTransition.None },
-				popEnterTransition = { EnterTransition.None }
-			) {
-				SettingsScreen(
-					navController = navController,
-					option = picVM.picturesUiState,
-					changeTheme = { int -> changeTheme(int) },
-					isScreenInPortraitState = picState,
-					clearImageCache = {
-						val imageLoader = this@MainActivity.imageLoader
-						imageLoader.diskCache?.clear()
-						imageLoader.memoryCache?.clear()
-						picVM.clearErrors()
-					},
-					postStartOfPager = { picVM.clickOnPicture(0, 0) }
-				)
-			}
-			composable(
-				route = Screen.Details.route,
-				enterTransition = { enterTransForDetails },
-				exitTransition = { exitTransitionForDetails },
-				popExitTransition = { popExitTransitionForDetails },
-				popEnterTransition = { EnterTransition.None }
-			) {
-				DetailsScreen(
-					navController = navController,
-					getErrorMessageFromErrorsList = { url -> picVM.checkOnErrorExists(url) },
-					addError = { url, message -> picVM.addError(url, message) },
-					state = detVM.uiState,
-					removeError = { str -> picVM.removeSpecialError(str) },
-					postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
-					isValidUrl = { url -> picVM.isValidUrl(url) },
-					changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
-					postNewBitmap = { url, strLoadingFromResources -> detVM.postImageBitmap(url, strLoadingFromResources) },
-					addPicture = { url ->
-						picVM.addPictureToUrls(url)
-						picVM.clickOnPicture(0, 0)
-						saveToSharedPrefs(picVM.returnStringOfList())
-					},
-					setImageSharedState = { isShared ->
-						detVM.isSharedImage(isShared)
-						isSharedImage.value = isShared
-					},
-					picsUiState = picVM.picturesUiState,
-					setCurrentPictureUrl = { url ->
-						picVM.calculateListPosition(url)
-						detVM.postCurrentPicture(url)
-						pivots.value = picVM.getPivotsXandY()
-					},
-					share = { url -> share(url) },
-					deleteCurrentPicture = { url ->
-						deletePicture(url)
-						detVM.postNewPic(null, null)
-					},
-					postWasSharedState = { detVM.setWasSharedFromNotification(false) },
-					setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
-					setInitialPage = { page -> picVM.postInitialPage(page) },
-					animationHasBeenStarted = animationIsRunning,
-					postPivot = { pivots.value = Pair(12345f, 12345f) }
-				)
+				}
+				composable(
+					route = BottomNavItem.Settings.route,
+					enterTransition = { null },
+					exitTransition = { null }
+				) {
+					SettingsScreen(
+						navController = navController,
+						option = picVM.picturesUiState,
+						changeTheme = { int -> changeTheme(int) },
+						isScreenInPortraitState = picState,
+						clearImageCache = {
+							val imageLoader = this@MainActivity.imageLoader
+							imageLoader.diskCache?.clear()
+							imageLoader.memoryCache?.clear()
+							picVM.clearErrors()
+						},
+						postStartOfPager = { picVM.clickOnPicture(0, 0) },
+					)
+				}
+				composable(
+					route = Screen.Details.route,
+				) {
+					DetailsScreen(
+						navController = navController,
+						getErrorMessageFromErrorsList = { url -> picVM.checkOnErrorExists(url) },
+						addError = { url, message -> picVM.addError(url, message) },
+						state = detVM.uiState,
+						removeError = { str -> picVM.removeSpecialError(str) },
+						postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
+						isValidUrl = { url -> picVM.isValidUrl(url) },
+						changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
+						postNewBitmap = { url, strLoadingFromResources -> detVM.postImageBitmap(url, strLoadingFromResources) },
+						addPicture = { url ->
+							picVM.addPictureToUrls(url)
+							picVM.clickOnPicture(0, 0)
+							saveToSharedPrefs(picVM.returnStringOfList())
+						},
+						setImageSharedState = { isShared ->
+							detVM.isSharedImage(isShared)
+						},
+						picsUiState = picVM.picturesUiState,
+						setCurrentPictureUrl = { url ->
+							detVM.postCurrentPicture(url)
+							picVM.postCurrentPicture(url)
+						},
+						share = { url -> share(url) },
+						deleteCurrentPicture = { url ->
+							deletePicture(url)
+							detVM.postNewPic(null, null)
+						},
+						postWasSharedState = { detVM.setWasSharedFromNotification(false) },
+						setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
+						animatedVisibilityScope = this@composable
+					)
+				}
 			}
 		}
 	}
@@ -575,7 +384,7 @@ class MainActivity: AppCompatActivity()
 		themePick = option
 		val blackColor = getColor(R.color.black)
 		val whiteColor = getColor(R.color.white)
-		mutableIsThemeBlackState.value = isDarkTheme
+		picVM.mutableIsThemeBlackState.value = isDarkTheme
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(lightScrim = whiteColor, darkScrim = blackColor, detectDarkMode = { isDarkTheme }),
 			navigationBarStyle = SystemBarStyle.auto(lightScrim = whiteColor, darkScrim = blackColor, detectDarkMode = { isDarkTheme })
@@ -658,12 +467,14 @@ class MainActivity: AppCompatActivity()
 						Log.d("Test111", "SHARE")
 						picVM.clickOnPicture(0, 0)
 						detVM.setWasSharedFromNotification(true)
+						nav?.popBackStack()
 						navAfterNewIntent(nav)
 					}
 					else if(intent.getBooleanExtra(SHOULD_WE_DELETE_THIS, false))
 					{
 						Log.d("Test111", "DELETE")
 						detVM.setWasDeletedFromNotification(true)
+						nav?.popBackStack()
 						navAfterNewIntent(nav)
 					}
 					else
@@ -680,7 +491,6 @@ class MainActivity: AppCompatActivity()
 					detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
 				}
 				detVM.isSharedImage(true)
-				isSharedImage.value = true
 				detVM.postCurrentPicture(sharedValue)
 				detVM.postCorrectList()
 				picVM.clickOnPicture(0, 0)
@@ -762,25 +572,9 @@ class MainActivity: AppCompatActivity()
 	{
 		val displayMetrics = this.resources.displayMetrics
 		val width = displayMetrics.widthPixels
-		val height = displayMetrics.heightPixels
-		val cofConnectedWithOrientation = cofConnectedWithOrientation
-		val cofConnectedWithOrientationForExit = cofConnectedWithOrientationForExit
-		pairOfCof = if(width > height)
-		{
-			cofConnectedWithOrientation.floatValue = 0.6f
-			cofConnectedWithOrientationForExit.floatValue = 0.35f
-			pairOfCofForExit = Pair(0.72f, 0.9f)
-			Pair(10.52f, 2.84f)
-		}
-		else
-		{
-			cofConnectedWithOrientation.floatValue = 0.33f
-			cofConnectedWithOrientationForExit.floatValue = 0.31f
-			pairOfCofForExit = Pair(3.4f, 3f)
-			Pair(3.84f, 6.5f)
-		}
 		val density = displayMetrics.density
-		return (width / density).toInt() / LENGTH_OF_PICTURE
+		val result = (width / density).toInt() / LENGTH_OF_PICTURE
+		return result
 	}
 
 	companion object
