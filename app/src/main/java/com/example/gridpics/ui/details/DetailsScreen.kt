@@ -78,7 +78,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
@@ -269,34 +268,32 @@ fun SharedTransitionScope.ShowDetails(
 		Box(modifier = Modifier
 			.fillMaxSize()
 			.background(Color.Transparent)) {
-			Box(modifier = Modifier.fillMaxSize().zIndex(0f)) {
-				if(errorMessage != null)
-				{
-					ShowError(
-						context = context,
-						currentUrl = url,
-						isValidUrl = isValidUrl,
-						removeSpecialError = removeSpecialError)
-				}
-				else
-				{
-					ShowAsynchImage(
-						img = url,
-						addError = addError,
-						removeSpecialError = removeSpecialError,
-						navController = navController,
-						state = state,
-						context = context,
-						changeBarsVisability = changeBarsVisability,
-						postUrl = postUrl,
-						isScreenInPortraitState = isScreenInPortraitState,
-						setImageSharedStateToFalse = setImageSharedState,
-						checkOnErrorExists = checkOnErrorExists,
-						animatedVisibilityScope = animatedVisibilityScope,
-						animationIsRunning = animationIsRunning,
-						rightUrl = list[pagerState.currentPage]
-					)
-				}
+			if(errorMessage != null)
+			{
+				ShowError(
+					context = context,
+					currentUrl = url,
+					isValidUrl = isValidUrl,
+					removeSpecialError = removeSpecialError)
+			}
+			else
+			{
+				ShowAsynchImage(
+					img = url,
+					addError = addError,
+					removeSpecialError = removeSpecialError,
+					navController = navController,
+					state = state,
+					context = context,
+					changeBarsVisability = changeBarsVisability,
+					postUrl = postUrl,
+					isScreenInPortraitState = isScreenInPortraitState,
+					setImageSharedStateToFalse = setImageSharedState,
+					checkOnErrorExists = checkOnErrorExists,
+					animatedVisibilityScope = animatedVisibilityScope,
+					animationIsRunning = animationIsRunning,
+					rightUrl = list[pagerState.currentPage]
+				)
 			}
 			if(isSharedImage)
 			{
@@ -438,7 +435,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 	checkOnErrorExists: (String) -> String?,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	animationIsRunning: MutableState<Boolean>,
-	rightUrl: String
+	rightUrl: String,
 )
 {
 	val width = remember { mutableIntStateOf(0) }
