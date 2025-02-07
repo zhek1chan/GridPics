@@ -67,7 +67,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -259,7 +258,6 @@ fun SharedTransitionScope.ShowDetails(
 	Log.d("checkCheck", "$isSharedImage")
 	val topBarHeight = 64.dp
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
-	val chto = remember { mutableStateOf(false) }
 	HorizontalPager(
 		state = pagerState,
 		pageSize = PageSize.Fill,
@@ -301,7 +299,6 @@ fun SharedTransitionScope.ShowDetails(
 					setImageSharedStateToFalse = setImageSharedState,
 					checkOnErrorExists = checkOnErrorExists,
 					animationIsRunning = animationIsRunning,
-					chto = chto
 				)
 			}
 			if(isSharedImage)
@@ -383,13 +380,9 @@ fun SharedTransitionScope.ShowDetails(
 				) {
 					val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 					CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-						AnimatedVisibility(!animatedVisibilityScope.transition.isRunning) {
+						AnimatedVisibility(!animatedVisibilityScope.transition.isRunning , enter = EnterTransition.None, exit = ExitTransition.None) {
 							Button(
 								modifier = Modifier
-									.drawWithContent {
-										chto.value
-										drawContent()
-									}
 									.align(Alignment.CenterVertically)
 									.size(130.dp, 60.dp),
 								onClick = {
@@ -448,7 +441,6 @@ fun ShowAsynchImage(
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	checkOnErrorExists: (String) -> String?,
 	animationIsRunning: MutableState<Boolean>,
-	chto: MutableState<Boolean>,
 )
 {
 	val width = remember { mutableIntStateOf(0) }
@@ -494,10 +486,6 @@ fun ShowAsynchImage(
 			navController.navigate(Screen.Details.route)
 		},
 		modifier = Modifier
-			.drawWithContent {
-				chto.value = !chto.value
-				drawContent()
-			}
 			.fillMaxSize()
 			.zoomable(
 				zoomState = zoom,
