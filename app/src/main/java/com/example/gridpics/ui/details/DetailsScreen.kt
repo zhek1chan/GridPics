@@ -67,6 +67,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -144,7 +145,11 @@ fun SharedTransitionScope.DetailsScreen(
 	val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
 	val animationIsRunning = remember { mutableStateOf(true) }
 	LaunchedEffect(Unit) {
-		delay(650) //время анимации
+		while(animatedVisibilityScope.transition.isRunning)
+		{
+			delay(100)
+			animationIsRunning.value = true
+		}
 		animationIsRunning.value = false
 	}
 	BackHandler {
@@ -254,6 +259,7 @@ fun SharedTransitionScope.ShowDetails(
 	Log.d("checkCheck", "$isSharedImage")
 	val topBarHeight = 64.dp
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
+	val chto = remember { mutableStateOf(false) }
 	HorizontalPager(
 		state = pagerState,
 		pageSize = PageSize.Fill,
@@ -266,6 +272,10 @@ fun SharedTransitionScope.ShowDetails(
 		val errorMessage = checkOnErrorExists(url)
 		Log.d("checkUp", "is error $errorMessage")
 		Box(modifier = Modifier
+			.sharedElement(
+				rememberSharedContentState(key = pagerState.currentPage),
+				animatedVisibilityScope = animatedVisibilityScope
+			)
 			.fillMaxSize()
 			.background(Color.Transparent)) {
 			if(errorMessage != null)
@@ -290,9 +300,8 @@ fun SharedTransitionScope.ShowDetails(
 					isScreenInPortraitState = isScreenInPortraitState,
 					setImageSharedStateToFalse = setImageSharedState,
 					checkOnErrorExists = checkOnErrorExists,
-					animatedVisibilityScope = animatedVisibilityScope,
 					animationIsRunning = animationIsRunning,
-					rightUrl = list[pagerState.currentPage]
+					chto = chto
 				)
 			}
 			if(isSharedImage)
@@ -374,17 +383,23 @@ fun SharedTransitionScope.ShowDetails(
 				) {
 					val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 					CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-						Button(
-							modifier = Modifier
-								.align(Alignment.CenterVertically)
-								.size(130.dp, 60.dp),
-							onClick = {
-								openDialog.value = true
-							},
-							border = BorderStroke(3.dp, Color.Red),
-							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
-						) {
-							Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
+						AnimatedVisibility(!animatedVisibilityScope.transition.isRunning) {
+							Button(
+								modifier = Modifier
+									.drawWithContent {
+										chto.value
+										drawContent()
+									}
+									.align(Alignment.CenterVertically)
+									.size(130.dp, 60.dp),
+								onClick = {
+									openDialog.value = true
+								},
+								border = BorderStroke(3.dp, Color.Red),
+								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+							) {
+								Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
+							}
 						}
 					}
 				}
@@ -418,10 +433,9 @@ fun SharedTransitionScope.ShowDetails(
 	}
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
-fun SharedTransitionScope.ShowAsynchImage(
+fun ShowAsynchImage(
 	img: String,
 	addError: (String, String) -> Unit,
 	removeSpecialError: (String) -> Unit,
@@ -433,9 +447,8 @@ fun SharedTransitionScope.ShowAsynchImage(
 	isScreenInPortraitState: Boolean,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	checkOnErrorExists: (String) -> String?,
-	animatedVisibilityScope: AnimatedVisibilityScope,
 	animationIsRunning: MutableState<Boolean>,
-	rightUrl: String,
+	chto: MutableState<Boolean>,
 )
 {
 	val width = remember { mutableIntStateOf(0) }
@@ -481,10 +494,10 @@ fun SharedTransitionScope.ShowAsynchImage(
 			navController.navigate(Screen.Details.route)
 		},
 		modifier = Modifier
-			.sharedElement(
-				rememberSharedContentState(key = rightUrl),
-				animatedVisibilityScope
-			)
+			.drawWithContent {
+				chto.value = !chto.value
+				drawContent()
+			}
 			.fillMaxSize()
 			.zoomable(
 				zoomState = zoom,

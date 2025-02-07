@@ -227,7 +227,7 @@ fun SharedTransitionScope.ItemsCard(
 		modifier = Modifier
 			.sharedElement(
 				state = rememberSharedContentState(
-					key = item
+					key = list.indexOf(item)
 				),
 				animatedVisibilityScope = animatedVisibilityScope,
 			)
