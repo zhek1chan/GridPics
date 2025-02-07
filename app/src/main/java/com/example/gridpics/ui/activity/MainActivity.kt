@@ -22,8 +22,6 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -149,8 +147,6 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
-		val orientationWasChangedCheck = picVM.orientationWasChanged
-		val isExit = remember { mutableStateOf(false) }
 		SharedTransitionLayout {
 			NavHost(
 				navController = navController,
@@ -172,13 +168,7 @@ class MainActivity: AppCompatActivity()
 						currentPicture = { url, index, offset ->
 							picVM.clickOnPicture(index, offset)
 							detVM.postCurrentPicture(url)
-							orientationWasChangedCheck.value = false
 							navController.navigate(Screen.Details.route)
-							isExit.value = false
-							lifecycleScope.launch {
-								delay(1000)
-								isExit.value = true
-							}
 						},
 						isValidUrl = { url -> picVM.isValidUrl(url) },
 						postSavedUrls = { urls ->
@@ -189,7 +179,7 @@ class MainActivity: AppCompatActivity()
 							saveToSharedPrefs(picVM.convertFromListToString(urls))
 						},
 						calculateGridSpan = { picVM.getGridSpan() },
-						postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum)},
+						postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum) },
 						animatedVisibilityScope = this@composable
 					)
 				}
