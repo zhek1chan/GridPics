@@ -147,10 +147,11 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
+		val detailsState = detVM.uiState
 		SharedTransitionLayout {
 			NavHost(
 				navController = navController,
-				startDestination = BottomNavItem.Home.route
+				startDestination = BottomNavItem.Home.route,
 			)
 			{
 				composable(
@@ -209,7 +210,7 @@ class MainActivity: AppCompatActivity()
 						navController = navController,
 						getErrorMessageFromErrorsList = { url -> picVM.checkOnErrorExists(url) },
 						addError = { url, message -> picVM.addError(url, message) },
-						state = detVM.uiState,
+						state = detailsState,
 						removeError = { str -> picVM.removeSpecialError(str) },
 						postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
 						isValidUrl = { url -> picVM.isValidUrl(url) },

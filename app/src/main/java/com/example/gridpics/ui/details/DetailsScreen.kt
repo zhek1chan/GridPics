@@ -90,7 +90,6 @@ import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.AlertDialogMain
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
@@ -121,8 +120,7 @@ fun SharedTransitionScope.DetailsScreen(
 )
 {
 	val value = state.value
-	val context = LocalContext.current
-	val currentPicture = value.currentPicture
+	val currentPicture = remember(Unit) { value.currentPicture }
 	var list = remember(state.value.isSharedImage) { state.value.picturesUrl }
 	var initialPage = list.indexOf(currentPicture)
 	val size: Int
@@ -141,27 +139,25 @@ fun SharedTransitionScope.DetailsScreen(
 	Log.d("index size of list", "$size")
 	val pagerState = rememberPagerState(initialPage = initialPage, initialPageOffsetFraction = 0f, pageCount = { size })
 	val currentPage = pagerState.currentPage
+	val context = LocalContext.current
 	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 	val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
-	val scope = rememberCoroutineScope()
 	val animationIsRunning = remember { mutableStateOf(true) }
 	LaunchedEffect(Unit) {
-		delay(700)
+		delay(650) //время анимации
 		animationIsRunning.value = false
 	}
 	BackHandler {
-			navigateToHome(
-				changeBarsVisability = changeBarsVisability,
-				postUrl = postUrl,
-				navController = navController,
-				setImageSharedStateToFalse = setImageSharedState,
-				wasDeleted = false,
-				state = state,
-				checkOnErrorExists = getErrorMessageFromErrorsList,
-				animationIsRunning = animationIsRunning,
-				scope = scope,
-				pagerState = pagerState
-			)
+		navigateToHome(
+			changeBarsVisability = changeBarsVisability,
+			postUrl = postUrl,
+			navController = navController,
+			setImageSharedStateToFalse = setImageSharedState,
+			wasDeleted = false,
+			state = state,
+			checkOnErrorExists = getErrorMessageFromErrorsList,
+			animationIsRunning = animationIsRunning
+		)
 	}
 	LaunchedEffect(currentPage) {
 		val pic = if(list.size >= currentPage)
@@ -200,9 +196,7 @@ fun SharedTransitionScope.DetailsScreen(
 				share = share,
 				postWasSharedState = postWasSharedState,
 				checkOnErrorExists = getErrorMessageFromErrorsList,
-				scope = scope,
-				animationIsRunning = animationIsRunning,
-				pagerState = pagerState
+				animationIsRunning = animationIsRunning
 			)
 		},
 		content = { padding ->
@@ -225,8 +219,7 @@ fun SharedTransitionScope.DetailsScreen(
 				deleteCurrentPicture = deleteCurrentPicture,
 				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
 				animationIsRunning = animationIsRunning,
-				animatedVisibilityScope = animatedVisibilityScope,
-				scope = scope
+				animatedVisibilityScope = animatedVisibilityScope
 			)
 		}
 	)
@@ -254,7 +247,6 @@ fun SharedTransitionScope.ShowDetails(
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	animatedVisibilityScope: AnimatedVisibilityScope,
-	scope: CoroutineScope
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -267,7 +259,8 @@ fun SharedTransitionScope.ShowDetails(
 		pageSize = PageSize.Fill,
 		contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
 		userScrollEnabled = !isSharedImage && !animationIsRunning.value,
-		pageSpacing = 10.dp
+		pageSpacing = 10.dp,
+		beyondViewportPageCount = 0
 	) { page ->
 		val url = list[page]
 		val errorMessage = checkOnErrorExists(url)
@@ -298,9 +291,8 @@ fun SharedTransitionScope.ShowDetails(
 					setImageSharedStateToFalse = setImageSharedState,
 					checkOnErrorExists = checkOnErrorExists,
 					animatedVisibilityScope = animatedVisibilityScope,
-					scope = scope,
 					animationIsRunning = animationIsRunning,
-					pagerState = pagerState
+					rightUrl = list[pagerState.currentPage]
 				)
 			}
 			if(isSharedImage)
@@ -329,9 +321,7 @@ fun SharedTransitionScope.ShowDetails(
 									wasDeleted = false,
 									state = state,
 									checkOnErrorExists = checkOnErrorExists,
-									scope = scope,
-									animationIsRunning = animationIsRunning,
-									pagerState = pagerState
+									animationIsRunning = animationIsRunning
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -357,9 +347,7 @@ fun SharedTransitionScope.ShowDetails(
 											wasDeleted = false,
 											state = state,
 											checkOnErrorExists = checkOnErrorExists,
-											scope = scope,
-											animationIsRunning = animationIsRunning,
-											pagerState = pagerState
+											animationIsRunning = animationIsRunning
 										)
 									}
 									setImageSharedState(false)
@@ -413,9 +401,7 @@ fun SharedTransitionScope.ShowDetails(
 								wasDeleted = true,
 								state = state,
 								checkOnErrorExists = checkOnErrorExists,
-								scope = scope,
-								animationIsRunning = animationIsRunning,
-								pagerState = pagerState
+								animationIsRunning = animationIsRunning
 							)
 							deleteCurrentPicture(url)
 						},
@@ -449,8 +435,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 	checkOnErrorExists: (String) -> String?,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	animationIsRunning: MutableState<Boolean>,
-	scope: CoroutineScope,
-	pagerState: PagerState
+	rightUrl: String
 )
 {
 	val width = remember { mutableIntStateOf(0) }
@@ -466,96 +451,90 @@ fun SharedTransitionScope.ShowAsynchImage(
 	{
 		getScale(isScreenInPortraitState, width.intValue, height.intValue)
 	}
-	Box(Modifier.fillMaxSize()) {
-		val zoom = rememberZoomState(15f, Size.Zero)
-		val imgRequest = remember(img) {
-			ImageRequest.Builder(context)
-				.data(img)
-				.error(R.drawable.error)
-				.diskCacheKey(img)
-				.build()
-		}
-
-		SubcomposeAsyncImage(
-			model = imgRequest,
-			contentDescription = null,
-			contentScale = scale,
-			onSuccess = {
-				val resultImage = it.result.image
-				val widthImage = resultImage.width
-				val heightImage = resultImage.height
-				width.intValue = widthImage
-				height.intValue = heightImage
-				removeSpecialError(img)
-			},
-			loading = {
-				Box(Modifier.fillMaxSize()) {
-					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-				}
-			},
-			onError = {
-				addError(img, it.result.throwable.message.toString())
-				navController.navigate(Screen.Details.route)
-			},
-			modifier = Modifier
-				.align(Alignment.TopStart)
-				.fillMaxSize()
-				.zoomable(
-					zoomState = zoom,
-					enableOneFingerZoom = false,
-					onTap =
-					{
-						val visibility = state.value.barsAreVisible
-						changeBarsVisability(!visibility)
-					}
-				)
-				.pointerInput(Unit) {
-					awaitEachGesture {
-						val count = mutableListOf(0)
-						val countLastThree = mutableListOf(0)
-						while(true)
-						{
-							val event = awaitPointerEvent()
-							val changes = event.changes
-							val exit = !changes.any {
-								it.isConsumed
-							}
-							if(count.size >= 3)
-							{
-								val lastIndex = count.lastIndex
-								countLastThree.add(count[lastIndex])
-								countLastThree.add(count[lastIndex - 1])
-								countLastThree.add(count[lastIndex - 2])
-							}
-							if(changes.any { !it.pressed })
-							{
-								if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
-								{
-									navigateToHome(
-										changeBarsVisability = changeBarsVisability,
-										postUrl = postUrl,
-										navController = navController,
-										setImageSharedStateToFalse = setImageSharedStateToFalse,
-										wasDeleted = false,
-										state = state,
-										checkOnErrorExists = checkOnErrorExists,
-										scope = scope,
-										animationIsRunning = animationIsRunning,
-										pagerState = pagerState
-									)
-								}
-							}
-							countLastThree.clear()
-							count.add(changes.size)
-						}
-					}
-				}
-				.sharedElement(
-					rememberSharedContentState(key = img),
-					animatedVisibilityScope
-				)
-		)
+	val zoom = rememberZoomState(15f, Size.Zero)
+	val imgRequest = remember(img) {
+		ImageRequest.Builder(context)
+			.data(img)
+			.error(R.drawable.error)
+			.diskCacheKey(img)
+			.build()
 	}
+	SubcomposeAsyncImage(
+		model = imgRequest,
+		contentDescription = null,
+		contentScale = scale,
+		onSuccess = {
+			val resultImage = it.result.image
+			val widthImage = resultImage.width
+			val heightImage = resultImage.height
+			width.intValue = widthImage
+			height.intValue = heightImage
+			removeSpecialError(img)
+		},
+		loading = {
+			Box(Modifier.fillMaxSize()) {
+				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+			}
+		},
+		onError = {
+			addError(img, it.result.throwable.message.toString())
+			navController.navigate(Screen.Details.route)
+		},
+		modifier = Modifier
+			.sharedElement(
+				rememberSharedContentState(key = rightUrl),
+				animatedVisibilityScope
+			)
+			.fillMaxSize()
+			.zoomable(
+				zoomState = zoom,
+				enableOneFingerZoom = false,
+				onTap =
+				{
+					val visibility = state.value.barsAreVisible
+					changeBarsVisability(!visibility)
+				}
+			)
+			.pointerInput(Unit) {
+				awaitEachGesture {
+					val count = mutableListOf(0)
+					val countLastThree = mutableListOf(0)
+					while(true)
+					{
+						val event = awaitPointerEvent()
+						val changes = event.changes
+						val exit = !changes.any {
+							it.isConsumed
+						}
+						if(count.size >= 3)
+						{
+							val lastIndex = count.lastIndex
+							countLastThree.add(count[lastIndex])
+							countLastThree.add(count[lastIndex - 1])
+							countLastThree.add(count[lastIndex - 2])
+						}
+						if(changes.any { !it.pressed })
+						{
+							if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
+							{
+								navigateToHome(
+									changeBarsVisability = changeBarsVisability,
+									postUrl = postUrl,
+									navController = navController,
+									setImageSharedStateToFalse = setImageSharedStateToFalse,
+									wasDeleted = false,
+									state = state,
+									checkOnErrorExists = checkOnErrorExists,
+									animationIsRunning = animationIsRunning
+								)
+							}
+						}
+						countLastThree.clear()
+						count.add(changes.size)
+					}
+				}
+			}
+	)
 }
 
 @Composable
@@ -625,8 +604,6 @@ fun AppBar(
 	postWasSharedState: () -> Unit,
 	checkOnErrorExists: (String) -> String?,
 	animationIsRunning: MutableState<Boolean>,
-	scope: CoroutineScope,
-	pagerState: PagerState
 )
 {
 	if(state.value.wasSharedFromNotification)
@@ -736,9 +713,7 @@ fun AppBar(
 			wasDeleted = false,
 			state = state,
 			checkOnErrorExists = checkOnErrorExists,
-			scope = scope,
-			animationIsRunning = animationIsRunning,
-			pagerState = pagerState
+			animationIsRunning = animationIsRunning
 		)
 	}
 }
@@ -751,18 +726,12 @@ fun navigateToHome(
 	wasDeleted: Boolean,
 	state: MutableState<DetailsScreenUiState>,
 	checkOnErrorExists: (String) -> String?,
-	scope: CoroutineScope,
 	animationIsRunning: MutableState<Boolean>,
-	pagerState: PagerState
 )
 {
-	scope.launch {
-		while(pagerState.isScrollInProgress)
-		{
-			delay(100)
-		}
+	if(!animationIsRunning.value)
+	{
 		Log.d("activated", "activated")
-		animationIsRunning.value = true
 		changeBarsVisability(true)
 		if(wasDeleted || state.value.isSharedImage || checkOnErrorExists(state.value.currentPicture) != null)
 		{

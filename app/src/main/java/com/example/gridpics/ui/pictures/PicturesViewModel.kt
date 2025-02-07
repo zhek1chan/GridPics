@@ -218,8 +218,9 @@ class PicturesViewModel(
 		val urls = value.picturesUrl
 		val index = value.index
 		val indexOfCurrentPic = urls.indexOf(url)
-		Log.d("proverka", "index = $index, indexOfCurrentPic = $indexOfCurrentPic, maxVisibleLinesNum = $maxVisibleLinesNum" )
-		if(abs(indexOfCurrentPic - index) >= maxVisibleLinesNum || (index>indexOfCurrentPic)) {
+		Log.d("proverka", "index = $index, indexOfCurrentPic = $indexOfCurrentPic, maxVisibleLinesNum = $maxVisibleLinesNum")
+		if(abs(indexOfCurrentPic - index) >= (maxVisibleLinesNum - gridQuantity.intValue) || (index > indexOfCurrentPic))
+		{
 			clickOnPicture(indexOfCurrentPic, 0)
 		}
 	}
