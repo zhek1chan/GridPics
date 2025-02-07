@@ -12,6 +12,7 @@ import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
@@ -24,6 +25,7 @@ class PicturesViewModel(
 	private var isOrientationPortrait = false
 	private var wasFirstVisibleIndex = 0
 	private var gridQuantity = mutableIntStateOf(0)
+	private var maxVisibleLinesNum = 0
 
 	init
 	{
@@ -209,5 +211,22 @@ class PicturesViewModel(
 	fun getGridSpan(): MutableState<Int>
 	{
 		return gridQuantity
+	}
+
+	fun postMaxVisibleLinesNum(num: Int)
+	{
+		maxVisibleLinesNum = num
+	}
+
+	fun postCurrentPicture(url: String)
+	{
+		val value = picturesUiState.value
+		val urls = value.picturesUrl
+		val index = value.index
+		val indexOfCurrentPic = urls.indexOf(url)
+		Log.d("proverka", "index = $index, indexOfCurrentPic = $indexOfCurrentPic, maxVisibleLinesNum = $maxVisibleLinesNum" )
+		if(abs(indexOfCurrentPic - index) >= maxVisibleLinesNum) {
+			clickOnPicture(indexOfCurrentPic, 0)
+		}
 	}
 }

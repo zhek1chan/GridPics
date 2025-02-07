@@ -99,6 +99,7 @@ fun SharedTransitionScope.PicturesScreen(
 	postSavedUrls: (List<String>) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
 	calculateGridSpan: () -> MutableState<Int>,
+	postMaxVisibleLinesNum: (Int) -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 )
 {
@@ -167,7 +168,8 @@ fun SharedTransitionScope.PicturesScreen(
 					index = index,
 					calculateGridSpan = calculatedGridSpan,
 					isPortraitOrientation = conf.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT,
-					animatedVisibilityScope = animatedVisibilityScope
+					postMaxVisibleLinesNum = postMaxVisibleLinesNum,
+					animatedVisibilityScope = animatedVisibilityScope,
 				)
 			}
 		}
@@ -344,6 +346,7 @@ fun SharedTransitionScope.ShowList(
 	index: Int,
 	calculateGridSpan: MutableState<Int>,
 	isPortraitOrientation: Boolean,
+	postMaxVisibleLinesNum: (Int) -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 )
 {
@@ -435,6 +438,7 @@ fun SharedTransitionScope.ShowList(
 		}
 	}
 	LaunchedEffect(Unit) {
+		postMaxVisibleLinesNum(listState.layoutInfo.visibleItemsInfo.size)
 		listState.scrollToItem(index, offset)
 		delay(1500)
 	}

@@ -190,6 +190,7 @@ class MainActivity: AppCompatActivity()
 							saveToSharedPrefs(picVM.convertFromListToString(urls))
 						},
 						calculateGridSpan = { picVM.getGridSpan() },
+						postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum)},
 						animatedVisibilityScope = this@composable
 					)
 				}
@@ -236,6 +237,7 @@ class MainActivity: AppCompatActivity()
 						picsUiState = picVM.picturesUiState,
 						setCurrentPictureUrl = { url ->
 							detVM.postCurrentPicture(url)
+							picVM.postCurrentPicture(url)
 						},
 						share = { url -> share(url) },
 						deleteCurrentPicture = { url ->
