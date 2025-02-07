@@ -18,24 +18,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideIn
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -49,7 +37,6 @@ import coil3.imageLoader
 import com.example.gridpics.R
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
-import com.example.gridpics.ui.details.DopDetailsScreen
 import com.example.gridpics.ui.pictures.PicturesScreen
 import com.example.gridpics.ui.pictures.PicturesViewModel
 import com.example.gridpics.ui.service.MainNotificationService
@@ -69,7 +56,6 @@ class MainActivity: AppCompatActivity()
 	private var navigation: NavHostController? = null
 	private var themePick: Int = 2
 	private var job: Job? = null
-	private var animationIsRunning = mutableStateOf(false)
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -143,12 +129,7 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-		val displayMetrics = resources.displayMetrics
-		val width = displayMetrics.widthPixels
-		val height = displayMetrics.heightPixels
-		val density = displayMetrics.density
-		picVM.postParamsOfScreen(calculateGridSpan(), width, height, density)
-
+		picVM.updateGridSpan(calculateGridSpan())
 		setContent {
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
@@ -168,53 +149,9 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
-		val pivots = picVM.pairOfPivotsXandY
-		Log.d("test 333", "new pivots $pivots")
-		val cofConnectedWithOrientation = picVM.cofConnectedWithOrientation
-		val isSharedImage = picVM.isSharedImage
 		val orientationWasChangedCheck = picVM.orientationWasChanged
-		val pValue = pivots.value
-		val isImageToShareOrDelete = picVM.isImageToShareOrDelete
-		val enterTransForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
-		{
-			EnterTransition.None
-		}
-		else
-		{
-			scaleIn(
-				animationSpec = tween(1000, easing = FastOutLinearInEasing),
-				initialScale = cofConnectedWithOrientation.floatValue,
-				transformOrigin = TransformOrigin(
-					pValue.first,
-					pValue.second
-				)
-			)
-		}
-		val exitTransitionForDetails = if(isSharedImage.value || isImageToShareOrDelete.value)
-		{
-			ExitTransition.None
-		}
-		else
-		{
-			scaleOut(
-				animationSpec = tween(1000, easing = LinearEasing),
-				targetScale = cofConnectedWithOrientation.floatValue,
-				transformOrigin = TransformOrigin(pValue.first, pValue.second)
-			)
-		}
 		val isExit = remember { mutableStateOf(false) }
-		// 1. Exit Transition:
-		// Это анимация, которая применяется, когда фрагмент покидает экран. То есть, когда фрагмент закрывается или заменяется другим фрагментом.
-		// 2. EnterTransition:
-		// Это анимация, которая применяется, когда фрагмент появляется на экране. То есть, когда новый фрагмент отображается вместо старого.
-		// 3. PopEnterTransition:
-		// Это анимация, которая применяется, когда фрагмент возвращается на экран из стека (при "поп-операции", т.е. возвращении фрагмента из стека).
-		// Например, когда вы вызывается рорBackStack(), чтобы вернуться к предыдущему фрагменту. Эта анимация применяется при переходе фрагмента из стека обратно в активное состояние.
-		// 4. PopExit Transition:
-		// Это анимация, которая применяется, когда фрагмент уходит со экрана при возврате к предыдущему фрагменту (при "поп-операции").
-		// То есть, когда фрагмент удаляется из экрана при возвращении назад через стек.
-		val animationIsRunning = animationIsRunning
-		SharedTransitionLayout() {
+		SharedTransitionLayout {
 			NavHost(
 				navController = navController,
 				startDestination = BottomNavItem.Home.route
@@ -222,9 +159,6 @@ class MainActivity: AppCompatActivity()
 			{
 				composable(
 					route = BottomNavItem.Home.route,
-					enterTransition = { EnterTransition.None },
-					exitTransition = { ExitTransition.None },
-					popEnterTransition = { EnterTransition.None }
 				) {
 					detVM.postNewPic(null, null)
 					PicturesScreen(
@@ -238,7 +172,6 @@ class MainActivity: AppCompatActivity()
 						currentPicture = { url, index, offset ->
 							picVM.saveUrlOfCurrentPic(index)
 							picVM.clickOnPicture(index, offset)
-							picVM.calculatePosition(url)
 							detVM.postCurrentPicture(url)
 							orientationWasChangedCheck.value = false
 							navController.navigate(Screen.Details.route)
@@ -257,24 +190,13 @@ class MainActivity: AppCompatActivity()
 							saveToSharedPrefs(picVM.convertFromListToString(urls))
 						},
 						calculateGridSpan = { picVM.getGridSpan() },
-						animationIsRunning = animationIsRunning,
-						postPosition = { url, position -> picVM.postPosition(url, position) },
-						postSizeOfPicAndGridMaxVisibleLines =
-						{ intSize, maxVisibleElementsNum ->
-							//picVM.postSizeOfPic(intSize, maxVisibleElementsNum)
-						},
-						postCutouts = { left, right -> picVM.postCutouts(left, right, true) },
-						postBars = { top, bottom -> picVM.postBars(top, bottom) },
-						postPictureSizeInPx = { width, height, maxVisibleElementsNum -> picVM.postSizeOfPic(width, height, maxVisibleElementsNum) },
 						animatedVisibilityScope = this@composable
 					)
 				}
 				composable(
 					route = BottomNavItem.Settings.route,
-					enterTransition = { EnterTransition.None },
-					exitTransition = { ExitTransition.None },
-					popExitTransition = { ExitTransition.None },
-					popEnterTransition = { EnterTransition.None }
+					enterTransition = { null },
+					exitTransition = { null }
 				) {
 					SettingsScreen(
 						navController = navController,
@@ -287,7 +209,7 @@ class MainActivity: AppCompatActivity()
 							imageLoader.memoryCache?.clear()
 							picVM.clearErrors()
 						},
-						postStartOfPager = { picVM.clickOnPicture(0, 0) }
+						postStartOfPager = { picVM.clickOnPicture(0, 0) },
 					)
 				}
 				composable(
@@ -310,20 +232,9 @@ class MainActivity: AppCompatActivity()
 						},
 						setImageSharedState = { isShared ->
 							detVM.isSharedImage(isShared)
-							isSharedImage.value = isShared
-							isImageToShareOrDelete.value = false
-							lifecycleScope.launch {
-								delay(50)
-								if(orientationWasChangedCheck.value)
-								{
-									animationIsRunning.value = false
-									orientationWasChangedCheck.value = false
-								}
-							}
 						},
 						picsUiState = picVM.picturesUiState,
 						setCurrentPictureUrl = { url ->
-							picVM.calculateListPosition(url)
 							detVM.postCurrentPicture(url)
 						},
 						share = { url -> share(url) },
@@ -333,22 +244,6 @@ class MainActivity: AppCompatActivity()
 						},
 						postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 						setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
-						animationHasBeenStarted = animationIsRunning,
-						postCutouts = { left, right ->
-							picVM.postCutouts(left, right, true)
-							Log.d("proverka2", "new cutouts")
-						},
-						orientationWasChanged = orientationWasChangedCheck,
-						postBars = { top, bottom -> picVM.postBars(top, bottom) },
-						animatedVisibilityScope = this@composable
-					)
-				}
-				composable(
-					route = Screen.DopDetails.route,
-				) {
-					DopDetailsScreen(
-						url = detVM.uiState.value.currentPicture,
-						isPortrait = picVM.picturesUiState.value.isPortraitOrientation,
 						animatedVisibilityScope = this@composable
 					)
 				}
@@ -461,7 +356,6 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
 		picVM.updateGridSpan(calculateGridSpan())
-		picVM.calculatePosition(null)
 		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
 		if(themePick == followSysTheme)
 		{
@@ -584,7 +478,6 @@ class MainActivity: AppCompatActivity()
 						detVM.setWasSharedFromNotification(true)
 						nav?.popBackStack()
 						navAfterNewIntent(nav)
-						picVM.isImageToShareOrDelete.value = true
 					}
 					else if(intent.getBooleanExtra(SHOULD_WE_DELETE_THIS, false))
 					{
@@ -592,7 +485,6 @@ class MainActivity: AppCompatActivity()
 						detVM.setWasDeletedFromNotification(true)
 						nav?.popBackStack()
 						navAfterNewIntent(nav)
-						picVM.isImageToShareOrDelete.value = true
 					}
 					else
 					{
@@ -608,7 +500,6 @@ class MainActivity: AppCompatActivity()
 					detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
 				}
 				detVM.isSharedImage(true)
-				picVM.isSharedImage.value = true
 				detVM.postCurrentPicture(sharedValue)
 				detVM.postCorrectList()
 				picVM.clickOnPicture(0, 0)

@@ -16,13 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
@@ -38,7 +35,6 @@ fun BottomNavigationBar(
 	}
 	val bottomBarState = remember { (mutableStateOf(true)) }
 	val navBackStackEntry by navController.currentBackStackEntryAsState()
-	val scope = rememberCoroutineScope()
 	val route = navBackStackEntry?.destination?.route
 	when(route)
 	{
@@ -56,10 +52,6 @@ fun BottomNavigationBar(
 		{
 			// Hide BottomBar and TopBar
 			bottomBarState.value = true
-			scope.launch {
-				delay(5500)
-				bottomBarState.value = false
-			}
 		}
 	}
 	AnimatedVisibility(
@@ -92,13 +84,6 @@ fun BottomNavigationBar(
 							launchSingleTop = true
 							// Restore state when re-selecting a previously selected item
 							restoreState = true
-
-							anim {
-								enter = 0
-								exit = 0
-								popEnter = 0
-								popExit = 0
-							}
 						}
 					}
 				)
