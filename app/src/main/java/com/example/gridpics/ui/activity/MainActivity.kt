@@ -170,7 +170,6 @@ class MainActivity: AppCompatActivity()
 						clearErrors = { picVM.clearErrors() },
 						postVisibleBarsState = { detVM.changeVisabilityState(true) },
 						currentPicture = { url, index, offset ->
-							picVM.saveUrlOfCurrentPic(index)
 							picVM.clickOnPicture(index, offset)
 							detVM.postCurrentPicture(url)
 							orientationWasChangedCheck.value = false

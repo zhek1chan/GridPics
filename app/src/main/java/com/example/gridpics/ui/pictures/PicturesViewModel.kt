@@ -23,7 +23,6 @@ class PicturesViewModel(
 	var orientationWasChanged = mutableStateOf(false)
 	var mutableIsThemeBlackState = mutableStateOf(false)
 	private var isOrientationPortrait = false
-	private var wasFirstVisibleIndex = 0
 	private var gridQuantity = mutableIntStateOf(0)
 	private var maxVisibleLinesNum = 0
 
@@ -195,11 +194,6 @@ class PicturesViewModel(
 	private fun compareAndCombineLists(list1: List<String>, list2: List<String>): List<String>
 	{
 		return list1.filterNot { it in list2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
-	}
-
-	fun saveUrlOfCurrentPic(index: Int)
-	{
-		wasFirstVisibleIndex = index
 	}
 
 	fun updateGridSpan(newSpan: Int)
