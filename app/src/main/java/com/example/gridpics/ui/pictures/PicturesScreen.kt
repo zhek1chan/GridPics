@@ -231,7 +231,7 @@ fun SharedTransitionScope.ItemsCard(
 				),
 				animatedVisibilityScope = animatedVisibilityScope,
 			)
-			.padding(5.dp)
+			.padding(8.dp)
 			.aspectRatio(1f)
 			.clickable {
 				if(isError)
@@ -242,6 +242,7 @@ fun SharedTransitionScope.ItemsCard(
 				{
 					scope.launch {
 						Log.d("current", item)
+						//можно улучшить
 						val firstVisibleIndex = lazyState.firstVisibleItemIndex
 						val offsetOfList = lazyState.firstVisibleItemScrollOffset
 						if(offsetOfList != 0 && list.indexOf(item) < lazyState.firstVisibleItemIndex + gridNum)
@@ -253,6 +254,9 @@ fun SharedTransitionScope.ItemsCard(
 							lazyState.animateScrollToItem(firstVisibleIndex+gridNum, 0)
 							currentPicture(item, firstVisibleIndex+gridNum, lazyState.firstVisibleItemScrollOffset)
 							delay(100)
+						} else
+						{
+							currentPicture(item, firstVisibleIndex, lazyState.firstVisibleItemScrollOffset)
 						}
 						openAlertDialog.value = false
 					}
