@@ -165,7 +165,8 @@ fun SharedTransitionScope.DetailsScreen(
 			wasDeleted = false,
 			state = state,
 			checkOnErrorExists = getErrorMessageFromErrorsList,
-			animationIsRunning = animationIsRunning
+			animationIsRunning = animationIsRunning,
+			pagerState = pagerState
 		)
 	}
 	LaunchedEffect(currentPage) {
@@ -205,7 +206,8 @@ fun SharedTransitionScope.DetailsScreen(
 				share = share,
 				postWasSharedState = postWasSharedState,
 				checkOnErrorExists = getErrorMessageFromErrorsList,
-				animationIsRunning = animationIsRunning
+				animationIsRunning = animationIsRunning,
+				pagerState = pagerState
 			)
 		},
 		content = { padding ->
@@ -276,10 +278,14 @@ fun SharedTransitionScope.ShowDetails(
 		val url = list[page]
 		val errorMessage = checkOnErrorExists(url)
 		Log.d("checkUp", "is error $errorMessage")
-		val mod = if(pagerState.isScrollInProgress) {
-			Modifier.fillMaxSize()
+		val mod = if(pagerState.isScrollInProgress || errorMessage != null)
+		{
+			Modifier
+				.fillMaxSize()
 				.background(Color.Transparent)
-		} else {
+		}
+		else
+		{
 			Modifier
 				.sharedElement(
 					rememberSharedContentState(key = pagerState.currentPage),
@@ -312,6 +318,7 @@ fun SharedTransitionScope.ShowDetails(
 					setImageSharedStateToFalse = setImageSharedState,
 					checkOnErrorExists = checkOnErrorExists,
 					animationIsRunning = animationIsRunning,
+					pagerState = pagerState
 				)
 			}
 			if(isSharedImage)
@@ -340,7 +347,8 @@ fun SharedTransitionScope.ShowDetails(
 									wasDeleted = false,
 									state = state,
 									checkOnErrorExists = checkOnErrorExists,
-									animationIsRunning = animationIsRunning
+									animationIsRunning = animationIsRunning,
+									pagerState = pagerState
 								)
 							},
 							border = BorderStroke(3.dp, Color.Red),
@@ -366,7 +374,8 @@ fun SharedTransitionScope.ShowDetails(
 											wasDeleted = false,
 											state = state,
 											checkOnErrorExists = checkOnErrorExists,
-											animationIsRunning = animationIsRunning
+											animationIsRunning = animationIsRunning,
+											pagerState = pagerState
 										)
 									}
 									setImageSharedState(false)
@@ -422,7 +431,8 @@ fun SharedTransitionScope.ShowDetails(
 								wasDeleted = true,
 								state = state,
 								checkOnErrorExists = checkOnErrorExists,
-								animationIsRunning = animationIsRunning
+								animationIsRunning = animationIsRunning,
+								pagerState = pagerState
 							)
 							deleteCurrentPicture(url)
 						},
@@ -454,6 +464,7 @@ fun ShowAsynchImage(
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	checkOnErrorExists: (String) -> String?,
 	animationIsRunning: MutableState<Boolean>,
+	pagerState: PagerState,
 )
 {
 	val width = remember { mutableIntStateOf(0) }
@@ -539,7 +550,8 @@ fun ShowAsynchImage(
 									wasDeleted = false,
 									state = state,
 									checkOnErrorExists = checkOnErrorExists,
-									animationIsRunning = animationIsRunning
+									animationIsRunning = animationIsRunning,
+									pagerState = pagerState
 								)
 							}
 						}
@@ -618,6 +630,7 @@ fun AppBar(
 	postWasSharedState: () -> Unit,
 	checkOnErrorExists: (String) -> String?,
 	animationIsRunning: MutableState<Boolean>,
+	pagerState: PagerState,
 )
 {
 	if(state.value.wasSharedFromNotification)
@@ -727,7 +740,8 @@ fun AppBar(
 			wasDeleted = false,
 			state = state,
 			checkOnErrorExists = checkOnErrorExists,
-			animationIsRunning = animationIsRunning
+			animationIsRunning = animationIsRunning,
+			pagerState = pagerState
 		)
 	}
 }
@@ -741,9 +755,10 @@ fun navigateToHome(
 	state: MutableState<DetailsScreenUiState>,
 	checkOnErrorExists: (String) -> String?,
 	animationIsRunning: MutableState<Boolean>,
+	pagerState: PagerState,
 )
 {
-	if(!animationIsRunning.value)
+	if(!animationIsRunning.value && !pagerState.isScrollInProgress)
 	{
 		Log.d("activated", "activated")
 		changeBarsVisability(true)
