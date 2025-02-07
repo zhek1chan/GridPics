@@ -2,7 +2,6 @@
 
 package com.example.gridpics.ui.pictures
 
-import android.annotation.SuppressLint
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -71,7 +70,6 @@ import androidx.navigation.NavController
 import coil3.compose.SubcomposeAsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
-import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.error
 import coil3.request.placeholder
@@ -177,7 +175,6 @@ fun SharedTransitionScope.PicturesScreen(
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
-@SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
 fun SharedTransitionScope.ItemsCard(
 	item: String,
@@ -186,7 +183,6 @@ fun SharedTransitionScope.ItemsCard(
 	isValidUrl: (String) -> Boolean,
 	lazyState: LazyGridState,
 	addError: (String, String) -> Unit,
-	index: Int,
 	scope: CoroutineScope,
 	isScreenInPortrait: Boolean,
 	animatedVisibilityScope: AnimatedVisibilityScope,
@@ -218,7 +214,6 @@ fun SharedTransitionScope.ItemsCard(
 			.data(data)
 			.httpHeaders(headers)
 			.placeholder(placeholder)
-			.memoryCachePolicy(CachePolicy.WRITE_ONLY)
 			.error(R.drawable.error)
 			.build()
 	}
@@ -244,20 +239,7 @@ fun SharedTransitionScope.ItemsCard(
 				}
 				else
 				{
-					val maxVisibleElements = lazyState.layoutInfo.visibleItemsInfo.size
 					scope.launch {
-						if(lazyState.layoutInfo.totalItemsCount - index > maxVisibleElements)
-						{
-							lazyState.scrollToItem(lazyState.firstVisibleItemIndex, 0)
-							//Это решает проблему с доворотом списка, если сверху видно только часть картинок в строке,
-							// а не целиком всю строку картинок, то список прокрутится наверх
-						}
-						else
-						{
-							lazyState.scrollToItem(lazyState.firstVisibleItemIndex + 3, 0)
-							//Это решает ту же проблему, только для конца списка, когда поднять список не имеет возможности,
-							// потому что могут скрыться нужные элементы снизу, на которые мы нажали
-						}
 						Log.d("current", item)
 						currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
 						openAlertDialog.value = false
@@ -381,7 +363,6 @@ fun SharedTransitionScope.ShowList(
 							isValidUrl = isValidUrl,
 							lazyState = listState,
 							addError = addError,
-							index = list.indexOf(it),
 							scope = scope,
 							isScreenInPortrait = isPortraitOrientation,
 							animatedVisibilityScope = animatedVisibilityScope
@@ -429,7 +410,6 @@ fun SharedTransitionScope.ShowList(
 					isValidUrl = isValidUrl,
 					lazyState = listState,
 					addError = addError,
-					index = imagesUrlsSP.indexOf(it),
 					scope = scope,
 					isScreenInPortrait = isPortraitOrientation,
 					animatedVisibilityScope = animatedVisibilityScope

@@ -219,7 +219,7 @@ class PicturesViewModel(
 		val index = value.index
 		val indexOfCurrentPic = urls.indexOf(url)
 		Log.d("proverka", "index = $index, indexOfCurrentPic = $indexOfCurrentPic, maxVisibleLinesNum = $maxVisibleLinesNum" )
-		if(abs(indexOfCurrentPic - index) >= maxVisibleLinesNum) {
+		if(abs(indexOfCurrentPic - index) >= maxVisibleLinesNum || (index>indexOfCurrentPic)) {
 			clickOnPicture(indexOfCurrentPic, 0)
 		}
 	}
