@@ -181,7 +181,7 @@ class MainActivity: AppCompatActivity()
 						},
 						calculateGridSpan = { picVM.getGridSpan() },
 						postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum) },
-						animatedVisibilityScope = this@composable
+						animatedVisibilityScope = this@composable,
 					)
 				}
 				composable(

@@ -12,6 +12,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -69,9 +70,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -231,12 +232,13 @@ fun SharedTransitionScope.DetailsScreen(
 				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
 				animationIsRunning = animationIsRunning,
 				animatedVisibilityScope = animatedVisibilityScope,
-				addingForAnimControlBoolean = addingForAnimControlBoolean
+				addingForAnimControlBoolean = addingForAnimControlBoolean,
 			)
 		}
 	)
 }
 
+@SuppressLint("CoroutineCreationDuringComposition", "RestrictedApi")
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.ShowDetails(
@@ -265,184 +267,189 @@ fun SharedTransitionScope.ShowDetails(
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
 	val isSharedImage = state.value.isSharedImage
 	Log.d("checkCheck", "$isSharedImage")
+	val wasDeleted = remember(pagerState.currentPage) { mutableStateOf(false) }
 	val topBarHeight = 64.dp
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
-	HorizontalPager(
-		state = pagerState,
-		pageSize = PageSize.Fill,
-		contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
-		userScrollEnabled = !isSharedImage && !animationIsRunning.value,
-		pageSpacing = 10.dp,
-		beyondViewportPageCount = 0
-	) { page ->
-		val url = list[page]
-		val errorMessage = checkOnErrorExists(url)
-		Log.d("checkUp", "is error $errorMessage")
-		val mod = if(pagerState.isScrollInProgress || errorMessage != null)
-		{
-			Modifier
-				.fillMaxSize()
-				.background(Color.Transparent)
-		}
-		else
-		{
-			Modifier
-				.sharedElement(
-					rememberSharedContentState(key = pagerState.currentPage),
-					animatedVisibilityScope = animatedVisibilityScope
-				)
-				.fillMaxSize()
-				.background(Color.Transparent)
-		}
-		Box(modifier = mod) {
-			if(errorMessage != null)
+	AnimatedVisibility(!wasDeleted.value) {
+		HorizontalPager(
+			state = pagerState,
+			pageSize = PageSize.Fill,
+			contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
+			userScrollEnabled = !isSharedImage && !animationIsRunning.value,
+			pageSpacing = 10.dp,
+			beyondViewportPageCount = 0
+		) { page ->
+			val url = list[page]
+			val errorMessage = checkOnErrorExists(url)
+			val mod = if(errorMessage != null || isSharedImage || pagerState.isScrollInProgress || wasDeleted.value)
 			{
-				ShowError(
-					context = context,
-					currentUrl = url,
-					isValidUrl = isValidUrl,
-					removeSpecialError = removeSpecialError)
+				Modifier
+					.fillMaxSize()
+					.background(Color.Transparent)
 			}
 			else
 			{
-				ShowAsynchImage(
-					img = url,
-					addError = addError,
-					removeSpecialError = removeSpecialError,
-					navController = navController,
-					state = state,
-					context = context,
-					changeBarsVisability = changeBarsVisability,
-					postUrl = postUrl,
-					isScreenInPortraitState = isScreenInPortraitState,
-					setImageSharedStateToFalse = setImageSharedState,
-					checkOnErrorExists = checkOnErrorExists,
-					animationIsRunning = animationIsRunning,
-					pagerState = pagerState
-				)
+				Modifier
+					.sharedElement(
+						rememberSharedContentState(key = pagerState.currentPage),
+						placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize,
+						animatedVisibilityScope = animatedVisibilityScope
+					)
+					.fillMaxSize()
+					.background(Color.Transparent)
 			}
-			if(isSharedImage)
-			{
-				val addString = stringResource(R.string.add)
-				val cancelString = stringResource(R.string.cancel)
-				Log.d("case shared", "show buttons")
-				Row(
-					modifier = Modifier
-						.height(80.dp)
-						.padding(0.dp, 0.dp, 0.dp, 0.dp)
-						.align(Alignment.BottomCenter)
-				) {
-					val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-					CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-						Button(
-							modifier = Modifier
-								.align(Alignment.CenterVertically)
-								.size(130.dp, 60.dp),
-							onClick = {
-								navigateToHome(
-									changeBarsVisability = changeBarsVisability,
-									postUrl = postUrl,
-									navController = navController,
-									setImageSharedStateToFalse = setImageSharedState,
-									wasDeleted = false,
-									state = state,
-									checkOnErrorExists = checkOnErrorExists,
-									animationIsRunning = animationIsRunning,
-									pagerState = pagerState
-								)
-							},
-							border = BorderStroke(3.dp, Color.Red),
-							colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
-						) {
-							Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
-						}
-						if(errorMessage == null)
-						{
-							Button(
-								modifier = Modifier
-									.align(Alignment.CenterVertically)
-									.padding(30.dp, 0.dp, 0.dp, 0.dp)
-									.size(130.dp, 60.dp),
-								onClick = {
-									if(pagerState.pageCount == 1)
-									{
-										navigateToHome(
-											changeBarsVisability = changeBarsVisability,
-											postUrl = postUrl,
-											navController = navController,
-											setImageSharedStateToFalse = setImageSharedState,
-											wasDeleted = false,
-											state = state,
-											checkOnErrorExists = checkOnErrorExists,
-											animationIsRunning = animationIsRunning,
-											pagerState = pagerState
-										)
-									}
-									setImageSharedState(false)
-									addPicture(url)
-								},
-								border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
-								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
-							) {
-								Text(text = addString, color = MaterialTheme.colorScheme.primary)
-							}
-						}
-					}
+			Box(modifier = mod) {
+				if(errorMessage != null)
+				{
+					ShowError(
+						context = context,
+						currentUrl = url,
+						isValidUrl = isValidUrl,
+						removeSpecialError = removeSpecialError)
 				}
-			}
-			else
-			{
-				val openDialog = remember { mutableStateOf(state.value.wasDeletedFromNotification) }
-				val cancelString = stringResource(R.string.delete_picture)
-				Row(
-					modifier = Modifier
-						.height(80.dp)
-						.padding(0.dp, 0.dp, 0.dp, 0.dp)
-						.align(Alignment.BottomCenter)
-				) {
-					val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-					CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-						AnimatedVisibility(!animatedVisibilityScope.transition.isRunning && addingForAnimControlBoolean.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+				else
+				{
+					ShowAsynchImage(
+						img = url,
+						addError = addError,
+						removeSpecialError = removeSpecialError,
+						navController = navController,
+						state = state,
+						context = context,
+						changeBarsVisability = changeBarsVisability,
+						postUrl = postUrl,
+						isScreenInPortraitState = isScreenInPortraitState,
+						setImageSharedStateToFalse = setImageSharedState,
+						checkOnErrorExists = checkOnErrorExists,
+						animationIsRunning = animationIsRunning,
+						pagerState = pagerState
+					)
+				}
+				if(isSharedImage)
+				{
+					val addString = stringResource(R.string.add)
+					val cancelString = stringResource(R.string.cancel)
+					Log.d("case shared", "show buttons")
+					Row(
+						modifier = Modifier
+							.height(80.dp)
+							.padding(0.dp, 0.dp, 0.dp, 0.dp)
+							.align(Alignment.BottomCenter)
+					) {
+						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+						CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 							Button(
 								modifier = Modifier
 									.align(Alignment.CenterVertically)
 									.size(130.dp, 60.dp),
 								onClick = {
-									openDialog.value = true
+									navigateToHome(
+										changeBarsVisability = changeBarsVisability,
+										postUrl = postUrl,
+										navController = navController,
+										setImageSharedStateToFalse = setImageSharedState,
+										wasDeleted = false,
+										state = state,
+										checkOnErrorExists = checkOnErrorExists,
+										animationIsRunning = animationIsRunning,
+										pagerState = pagerState
+									)
 								},
 								border = BorderStroke(3.dp, Color.Red),
 								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
 							) {
 								Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
 							}
+							if(errorMessage == null)
+							{
+								Button(
+									modifier = Modifier
+										.align(Alignment.CenterVertically)
+										.padding(30.dp, 0.dp, 0.dp, 0.dp)
+										.size(130.dp, 60.dp),
+									onClick = {
+										if(pagerState.pageCount == 1)
+										{
+											navigateToHome(
+												changeBarsVisability = changeBarsVisability,
+												postUrl = postUrl,
+												navController = navController,
+												setImageSharedStateToFalse = setImageSharedState,
+												wasDeleted = false,
+												state = state,
+												checkOnErrorExists = checkOnErrorExists,
+												animationIsRunning = animationIsRunning,
+												pagerState = pagerState
+											)
+										}
+										setImageSharedState(false)
+										addPicture(url)
+									},
+									border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
+									colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+								) {
+									Text(text = addString, color = MaterialTheme.colorScheme.primary)
+								}
+							}
 						}
 					}
 				}
-				AnimatedVisibility(openDialog.value) {
-					AlertDialogMain(
-						dialogText = null,
-						dialogTitle = stringResource(R.string.do_you_really_want_to_delete_it),
-						onConfirmation = {
-							navigateToHome(
-								changeBarsVisability = changeBarsVisability,
-								postUrl = postUrl,
-								navController = navController,
-								setImageSharedStateToFalse = setImageSharedState,
-								wasDeleted = true,
-								state = state,
-								checkOnErrorExists = checkOnErrorExists,
-								animationIsRunning = animationIsRunning,
-								pagerState = pagerState
-							)
-							deleteCurrentPicture(url)
-						},
-						onDismissRequest = {
-							openDialog.value = false
-							setFalseToWasDeletedFromNotification()
-						},
-						icon = Icons.Default.Delete,
-						textButtonCancel = stringResource(R.string.cancel),
-						textButtonConfirm = stringResource(R.string.confirm))
+				else
+				{
+					val openDialog = remember { mutableStateOf(state.value.wasDeletedFromNotification) }
+					val cancelString = stringResource(R.string.delete_picture)
+					Row(
+						modifier = Modifier
+							.height(80.dp)
+							.padding(0.dp, 0.dp, 0.dp, 0.dp)
+							.align(Alignment.BottomCenter)
+					) {
+						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+						CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
+							AnimatedVisibility(!animatedVisibilityScope.transition.isRunning && addingForAnimControlBoolean.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+								Button(
+									modifier = Modifier
+										.align(Alignment.CenterVertically)
+										.size(130.dp, 60.dp),
+									onClick = {
+										openDialog.value = true
+									},
+									border = BorderStroke(3.dp, Color.Red),
+									colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+								) {
+									Text(text = cancelString, color = Color.Red, textAlign = TextAlign.Center)
+								}
+							}
+						}
+					}
+					AnimatedVisibility(openDialog.value) {
+						AlertDialogMain(
+							dialogText = null,
+							dialogTitle = stringResource(R.string.do_you_really_want_to_delete_it),
+							onConfirmation = {
+								wasDeleted.value = true
+								deleteCurrentPicture(url)
+								navigateToHome(
+									changeBarsVisability = changeBarsVisability,
+									postUrl = postUrl,
+									navController = navController,
+									setImageSharedStateToFalse = setImageSharedState,
+									wasDeleted = true,
+									state = state,
+									checkOnErrorExists = checkOnErrorExists,
+									animationIsRunning = animationIsRunning,
+									pagerState = pagerState
+								)
+								openDialog.value = false
+							},
+							onDismissRequest = {
+								openDialog.value = false
+								setFalseToWasDeletedFromNotification()
+							},
+							icon = Icons.Default.Delete,
+							textButtonCancel = stringResource(R.string.cancel),
+							textButtonConfirm = stringResource(R.string.confirm))
+					}
 				}
 			}
 		}
@@ -490,6 +497,7 @@ fun ShowAsynchImage(
 	}
 	SubcomposeAsyncImage(
 		model = imgRequest,
+		filterQuality = FilterQuality.Medium,
 		contentDescription = null,
 		contentScale = scale,
 		onSuccess = {
@@ -501,8 +509,16 @@ fun ShowAsynchImage(
 			removeSpecialError(img)
 		},
 		loading = {
-			Box(Modifier.fillMaxSize()) {
-				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+			val showLoading = remember { mutableStateOf(false) }
+			LaunchedEffect(Unit) {
+				delay(500)
+				if(it.painter != null)
+					showLoading.value = true
+			}
+			AnimatedVisibility(visibleState = MutableTransitionState(showLoading.value), enter = EnterTransition.None, exit = ExitTransition.None) {
+				Box(Modifier.fillMaxSize()) {
+					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+				}
 			}
 		},
 		onError = {
@@ -639,10 +655,8 @@ fun AppBar(
 		postWasSharedState()
 	}
 	val navBack = remember { mutableStateOf(false) }
-	val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 	Log.d("shared pic url", currentPicture)
 	val sharedImgCase = state.value.isSharedImage
-	Log.d("wahwah", "$screenWidth")
 	AnimatedVisibility(visible = isVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(
 			modifier = Modifier
@@ -660,18 +674,10 @@ fun AppBar(
 					.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 					.wrapContentSize(),
 				title = {
-					val width = if(sharedImgCase)
-					{
-						screenWidth
-					}
-					else
-					{
-						screenWidth - 50.dp
-					}
 					Box(modifier = Modifier
 						.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 						.height(64.dp)
-						.width(width)
+						.fillMaxWidth()
 						.clickable {
 							navBack.value = true
 						}) {
@@ -760,8 +766,8 @@ fun navigateToHome(
 {
 	if(!animationIsRunning.value && !pagerState.isScrollInProgress)
 	{
+		changeBarsVisability(false)
 		Log.d("activated", "activated")
-		changeBarsVisability(true)
 		if(wasDeleted || state.value.isSharedImage || checkOnErrorExists(state.value.currentPicture) != null)
 		{
 			setImageSharedStateToFalse(false)
@@ -772,6 +778,7 @@ fun navigateToHome(
 			setImageSharedStateToFalse(false)
 			navController.navigateUp()
 		}
+		changeBarsVisability(true)
 		postUrl(null, null)
 	}
 }

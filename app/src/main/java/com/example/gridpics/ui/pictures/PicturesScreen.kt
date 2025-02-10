@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -57,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -108,7 +110,7 @@ fun SharedTransitionScope.PicturesScreen(
 		postPressOnBackButton()
 	}
 	val calculatedGridSpan = calculateGridSpan()
-	val statusBars = WindowInsets.statusBarsIgnoringVisibility
+	val statusBars = WindowInsets.systemBarsIgnoringVisibility
 	val cutouts = WindowInsets.displayCutout
 	val value = state.value
 	val windowInsets = cutouts.union(statusBars)
@@ -128,7 +130,7 @@ fun SharedTransitionScope.PicturesScreen(
 				verticalAlignment = Alignment.CenterVertically,
 				modifier = Modifier
 					.fillMaxWidth()
-					.windowInsetsPadding(windowInsets)
+					.windowInsetsPadding(cutouts.union(WindowInsets.statusBarsIgnoringVisibility))
 					.padding(16.dp, 0.dp)
 					.height(60.dp)
 			) {
@@ -187,7 +189,7 @@ fun SharedTransitionScope.ItemsCard(
 	isScreenInPortrait: Boolean,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	list: List<String>,
-	gridNum: Int
+	gridNum: Int,
 )
 {
 	val width = remember { mutableIntStateOf(0) }
@@ -217,18 +219,22 @@ fun SharedTransitionScope.ItemsCard(
 			.httpHeaders(headers)
 			.placeholder(placeholder)
 			.error(R.drawable.error)
+			.diskCacheKey(item)
 			.build()
 	}
 	val scale = remember { mutableStateOf(ContentScale.FillHeight) }
-
+	val renderInOverlayDuringTransitionValue = remember { mutableStateOf(true) }
+	renderInOverlayDuringTransitionValue.value = isScreenInPortrait
 	SubcomposeAsyncImage(
 		model = (imgRequest),
+		filterQuality = FilterQuality.Low,
 		contentDescription = item,
 		modifier = Modifier
 			.sharedElement(
 				state = rememberSharedContentState(
 					key = list.indexOf(item)
 				),
+				//renderInOverlayDuringTransition = renderInOverlayDuringTransitionValue.value,
 				animatedVisibilityScope = animatedVisibilityScope,
 			)
 			.padding(8.dp)
@@ -250,11 +256,14 @@ fun SharedTransitionScope.ItemsCard(
 							lazyState.animateScrollToItem(firstVisibleIndex, 0)
 							delay(100)
 							currentPicture(item, firstVisibleIndex, lazyState.firstVisibleItemScrollOffset)
-						} else if (offsetOfList != 0 && list.indexOf(item) < lazyState.firstVisibleItemIndex + lazyState.layoutInfo.visibleItemsInfo.size) {
-							lazyState.animateScrollToItem(firstVisibleIndex+gridNum, 0)
-							currentPicture(item, firstVisibleIndex+gridNum, lazyState.firstVisibleItemScrollOffset)
+						}
+						else if(offsetOfList != 0 && list.indexOf(item) < lazyState.firstVisibleItemIndex + lazyState.layoutInfo.visibleItemsInfo.size)
+						{
+							lazyState.animateScrollToItem(firstVisibleIndex + gridNum, 0)
+							currentPicture(item, firstVisibleIndex + gridNum, lazyState.firstVisibleItemScrollOffset)
 							delay(100)
-						} else
+						}
+						else
 						{
 							currentPicture(item, firstVisibleIndex, lazyState.firstVisibleItemScrollOffset)
 						}

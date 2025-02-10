@@ -29,14 +29,13 @@ class App: Application(), KoinComponent, SingletonImageLoader.Factory
 				viewModelModule
 			)
 		}
-
 		SingletonImageLoader.setSafe {
 			ImageLoader.Builder(this)
 				.allowHardware(false)
 				.networkCachePolicy(CachePolicy.ENABLED)
 				.memoryCachePolicy(CachePolicy.ENABLED)
 				.diskCachePolicy(CachePolicy.ENABLED)
-				.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(4))
+				.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(15))
 				.interceptorCoroutineContext(Dispatchers.IO.limitedParallelism(4))
 				.coroutineContext(Dispatchers.IO.limitedParallelism(4))
 				.diskCache {
@@ -54,7 +53,6 @@ class App: Application(), KoinComponent, SingletonImageLoader.Factory
 			.diskCache {
 				DiskCache.Builder()
 					.directory(context.cacheDir.resolve("image_cache"))
-					.maxSizePercent(0.3)
 					.build()
 			}
 			.build()
