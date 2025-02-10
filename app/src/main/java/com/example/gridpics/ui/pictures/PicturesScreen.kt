@@ -219,6 +219,7 @@ fun SharedTransitionScope.ItemsCard(
 			.httpHeaders(headers)
 			.placeholder(placeholder)
 			.error(R.drawable.error)
+			.memoryCacheKey(item)
 			.diskCacheKey(item)
 			.build()
 	}
@@ -230,6 +231,7 @@ fun SharedTransitionScope.ItemsCard(
 		filterQuality = FilterQuality.Low,
 		contentDescription = item,
 		modifier = Modifier
+			.padding(8.dp)
 			.sharedElement(
 				state = rememberSharedContentState(
 					key = list.indexOf(item)
@@ -237,7 +239,6 @@ fun SharedTransitionScope.ItemsCard(
 				//renderInOverlayDuringTransition = renderInOverlayDuringTransitionValue.value,
 				animatedVisibilityScope = animatedVisibilityScope,
 			)
-			.padding(8.dp)
 			.aspectRatio(1f)
 			.clickable {
 				if(isError)
