@@ -51,13 +51,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -72,7 +73,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
@@ -195,13 +196,11 @@ fun SharedTransitionScope.ItemsCard(
 	gridNum: Int,
 )
 {
-	val width = remember { mutableIntStateOf(0) }
-	val height = remember { mutableIntStateOf(0) }
 	var isError by remember { mutableStateOf(false) }
 	val context = LocalContext.current
 	val openAlertDialog = remember { mutableStateOf(false) }
 	val errorMessage = remember { mutableStateOf("") }
-	var placeholder = R.drawable.loading
+	var placeholder = R.color.white
 	var data = item
 	val errorMessageFromErrorsList = getErrorMessageFromErrorsList(item)
 	if(errorMessageFromErrorsList != null)
@@ -221,97 +220,105 @@ fun SharedTransitionScope.ItemsCard(
 			.data(data)
 			.httpHeaders(headers)
 			.placeholder(placeholder)
-			.placeholderMemoryCacheKey(data)
 			.error(R.drawable.error)
+			.placeholderMemoryCacheKey(data)
 			.memoryCacheKey(item)
-			.diskCacheKey(item)
+			.diskCacheKey(item).defaults(ImageRequest.Defaults.DEFAULT)
 			.build()
 	}
-	val scale = remember { mutableStateOf(ContentScale.FillHeight) }
-	SubcomposeAsyncImage(
-		model = (imgRequest),
-		filterQuality = FilterQuality.Low,
-		contentDescription = item,
-		modifier = Modifier
-			.padding(8.dp)
-			.sharedElement(
-				state = rememberSharedContentState(
-					key = list.indexOf(item)
-				),
-				animatedVisibilityScope = animatedVisibilityScope)
-			.fillMaxSize()
-
-			.aspectRatio(1f)
-			.clickable {
-				if(isError)
-				{
-					openAlertDialog.value = true
-				}
-				else
-				{
-					scope.launch {
-						Log.d("current", item)
-						val firstVisibleIndex = lazyState.firstVisibleItemIndex
-						val offsetOfList = lazyState.firstVisibleItemScrollOffset
-						if(offsetOfList != 0 && list.indexOf(item) < lazyState.firstVisibleItemIndex + gridNum)
-						{
-							lazyState.animateScrollToItem(firstVisibleIndex, 0)
-							delay(100)
-							currentPicture(item, firstVisibleIndex, lazyState.firstVisibleItemScrollOffset)
-						}
-						else if(offsetOfList != 0 && list.indexOf(item) < lazyState.firstVisibleItemIndex + lazyState.layoutInfo.visibleItemsInfo.size)
-						{
-							lazyState.animateScrollToItem(firstVisibleIndex + gridNum, 0)
-							currentPicture(item, firstVisibleIndex + gridNum, lazyState.firstVisibleItemScrollOffset)
-							delay(100)
-						}
-						else
-						{
-							currentPicture(item, firstVisibleIndex, lazyState.firstVisibleItemScrollOffset)
-						}
-						openAlertDialog.value = false
+	val showLoading = remember { mutableStateOf(false) }
+	val scale = if(isScreenInPortrait)
+	{
+		ContentScale.FillWidth
+	}
+	else
+	{
+		ContentScale.FillHeight
+	}
+	val magicAlpha = remember { mutableFloatStateOf(1f) }
+	Box(Modifier
+		.fillMaxSize()
+		.aspectRatio(1f)) {
+		AsyncImage(
+			model = (imgRequest),
+			filterQuality = FilterQuality.Low,
+			contentDescription = item,
+			modifier = Modifier
+				.padding(8.dp)
+				.sharedElement(
+					state = rememberSharedContentState(
+						key = list.indexOf(item)
+					),
+					animatedVisibilityScope = animatedVisibilityScope)
+				.clip(RoundedCornerShape(8.dp))
+				.fillMaxSize()
+				.alpha(magicAlpha.floatValue)
+				.clickable {
+					if(isError)
+					{
+						openAlertDialog.value = true
 					}
-				}
+					else
+					{
+						scope.launch {
+							Log.d("current", item)
+							val firstVisibleIndex = lazyState.firstVisibleItemIndex
+							val offsetOfList = lazyState.firstVisibleItemScrollOffset
+							if(offsetOfList != 0 && list.indexOf(item) < lazyState.firstVisibleItemIndex + gridNum)
+							{
+								lazyState.animateScrollToItem(firstVisibleIndex, 0)
+								delay(100)
+								currentPicture(item, firstVisibleIndex, lazyState.firstVisibleItemScrollOffset)
+							}
+							else if(offsetOfList != 0 && list.indexOf(item) < lazyState.firstVisibleItemIndex + lazyState.layoutInfo.visibleItemsInfo.size)
+							{
+								lazyState.animateScrollToItem(firstVisibleIndex + gridNum, 0)
+								currentPicture(item, firstVisibleIndex + gridNum, lazyState.firstVisibleItemScrollOffset)
+								delay(100)
+							}
+							else
+							{
+								currentPicture(item, firstVisibleIndex, lazyState.firstVisibleItemScrollOffset)
+							}
+							openAlertDialog.value = false
+						}
+					}
+				},
+			contentScale = scale,
+			onLoading = {
+				showLoading.value = true
 			},
-		contentScale = ContentScale.Fit,
-		loading = {
-			val showLoading = remember { mutableStateOf(false) }
-			showLoading.value = true
-			AnimatedVisibility(visible = showLoading.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+			onError = {
+				magicAlpha.floatValue = 1f
+				showLoading.value = false
+				isError = true
+				addError(item, it.result.throwable.message.toString())
+			},
+			onSuccess = {
+				magicAlpha.floatValue = 1f
+				showLoading.value = false
+				isError = false
+			}
+		)
+		if(showLoading.value)
+		{
+			val show = remember { mutableStateOf(false) }
+			LaunchedEffect(Unit) {
+				delay(200)
+				show.value = true
+			}
+			AnimatedVisibility(visible = true, enter = EnterTransition.None, exit = ExitTransition.None) {
 				Box(Modifier
 					.fillMaxSize()) {
-					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+					magicAlpha.floatValue = 0f
+					CircularProgressIndicator(modifier = Modifier
+						.fillMaxSize()
+						.align(Alignment.Center)
+						.padding(30.dp))
 				}
 			}
-		},
-		onError = {
-			isError = true
-			addError(item, it.result.throwable.message.toString())
-		},
-		onSuccess = {
-			isError = false
-			val image = it.result.image
-			width.intValue = image.width
-			height.intValue = image.height
-			val widthLocal = width.intValue
-			val heightLocal = height.intValue
-
-			scale.value =
-				if(widthLocal < heightLocal && (!isScreenInPortrait || heightLocal - widthLocal > 0))
-				{
-					ContentScale.FillHeight
-				}
-				else if(widthLocal > heightLocal)
-				{
-					ContentScale.FillWidth
-				}
-				else
-				{
-					ContentScale.Crop
-				}
 		}
-	)
-
+	}
 	if(openAlertDialog.value)
 	{
 		if(isValidUrl(item))

@@ -2,6 +2,7 @@ package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.provider.Settings
 import android.util.Log
@@ -26,7 +27,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,6 +42,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -63,17 +64,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -83,7 +85,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
-import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
@@ -93,7 +95,6 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.AlertDialogMain
-import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
@@ -113,7 +114,6 @@ fun SharedTransitionScope.DetailsScreen(
 	postNewBitmap: (String, String) -> Unit,
 	addPicture: (String) -> Unit,
 	setImageSharedState: (Boolean) -> Unit,
-	picsUiState: MutableState<PicturesScreenUiState>,
 	setCurrentPictureUrl: (String) -> Unit,
 	share: (String) -> Unit,
 	deleteCurrentPicture: (String) -> Unit,
@@ -229,7 +229,6 @@ fun SharedTransitionScope.DetailsScreen(
 				postUrl = postUrl,
 				addPicture = addPicture,
 				setImageSharedState = setImageSharedState,
-				picturesState = picsUiState,
 				pagerState = pagerState,
 				list = list.toMutableList(),
 				deleteCurrentPicture = deleteCurrentPicture,
@@ -258,7 +257,6 @@ fun SharedTransitionScope.ShowDetails(
 	postUrl: (String?, Bitmap?) -> Unit,
 	addPicture: (String) -> Unit,
 	setImageSharedState: (Boolean) -> Unit,
-	picturesState: MutableState<PicturesScreenUiState>,
 	pagerState: PagerState,
 	list: MutableList<String>,
 	deleteCurrentPicture: (String) -> Unit,
@@ -268,7 +266,6 @@ fun SharedTransitionScope.ShowDetails(
 	isExit: MutableState<Boolean>,
 )
 {
-	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
 	val isSharedImage = state.value.isSharedImage
 	Log.d("checkCheck", "$isSharedImage")
 	val wasDeleted = remember(pagerState.currentPage) { mutableStateOf(false) }
@@ -306,14 +303,13 @@ fun SharedTransitionScope.ShowDetails(
 						state = state,
 						changeBarsVisability = changeBarsVisability,
 						postUrl = postUrl,
-						isScreenInPortraitState = isScreenInPortraitState,
 						setImageSharedStateToFalse = setImageSharedState,
 						checkOnErrorExists = checkOnErrorExists,
 						animationIsRunning = animationIsRunning,
-						pagerState = pagerState,
-						animatedVisibilityScope = animatedVisibilityScope,
-						page = page,
 						wasDeleted = wasDeleted,
+						pagerState = pagerState,
+						page = page,
+						animatedVisibilityScope = animatedVisibilityScope,
 						isExit = isExit
 					)
 				}
@@ -460,7 +456,6 @@ fun SharedTransitionScope.ShowAsynchImage(
 	state: MutableState<DetailsScreenUiState>,
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String?, Bitmap?) -> Unit,
-	isScreenInPortraitState: Boolean,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	checkOnErrorExists: (String) -> String?,
 	animationIsRunning: MutableState<Boolean>,
@@ -471,19 +466,8 @@ fun SharedTransitionScope.ShowAsynchImage(
 	isExit: MutableState<Boolean>,
 )
 {
-	val width = remember { mutableIntStateOf(0) }
-	val height = remember { mutableIntStateOf(0) }
 	// если в портретном режиме картинка длинная или в горизонтальном положении картинка широкая, то включаем доп анимацию
 	//Изменение параметров изображения
-	val scale = if(state.value.isMultiWindowed)
-	{
-		ContentScale.Fit
-	}
-	// если идёт анимация перехода (стандартная не дополнительная)
-	else
-	{
-		getScale(isScreenInPortraitState, width.intValue, height.intValue)
-	}
 	val zoom = rememberZoomState(15f, Size.Zero)
 	val context = LocalContext.current
 	val headers = remember {
@@ -501,6 +485,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.diskCacheKey(img)
 			.build()
 	}
+	val showLoading = remember { mutableStateOf(false) }
 	val value = state.value
 	Box(Modifier.fillMaxSize()) {
 		val mod = if(value.isSharedImage || wasDeleted.value || page != pagerState.currentPage)
@@ -518,29 +503,32 @@ fun SharedTransitionScope.ShowAsynchImage(
 						key = pagerState.currentPage
 					),
 					animatedVisibilityScope = animatedVisibilityScope)
+				.clip(RoundedCornerShape(8.dp))
 				.align(Alignment.Center)
-				.fillMaxHeight()
+				.fillMaxSize()
 		}
-		SubcomposeAsyncImage(
+		val scale = if(LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT)
+		{
+			ContentScale.FillWidth
+		}
+		else
+		{
+			ContentScale.FillHeight
+		}
+		AsyncImage(
 			model = imgRequest,
 			filterQuality = FilterQuality.Low,
 			contentDescription = null,
 			contentScale = scale,
 			onSuccess = {
-				val resultImage = it.result.image
-				val widthImage = resultImage.width
-				val heightImage = resultImage.height
-				width.intValue = widthImage
-				height.intValue = heightImage
+				showLoading.value = false
 				removeSpecialError(img)
 			},
-			loading = {
-				Box(Modifier
-					.fillMaxSize()) {
-					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-				}
+			onLoading = {
+				showLoading.value = true
 			},
 			onError = {
+				showLoading.value = false
 				addError(img, it.result.throwable.message.toString())
 				navController.navigate(Screen.Details.route)
 			},
@@ -595,6 +583,13 @@ fun SharedTransitionScope.ShowAsynchImage(
 					}
 				}
 		)
+		if(showLoading.value)
+		{
+			Box(Modifier
+				.fillMaxSize()) {
+				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+			}
+		}
 	}
 }
 
@@ -782,44 +777,23 @@ fun navigateToHome(
 	isExit: MutableState<Boolean>,
 )
 {
-	animationIsRunning.value = true
-	isExit.value = true
-	Log.d("activated", "activated")
+	if(!animationIsRunning.value)
+	{
+		isExit.value = true
+		Log.d("activated", "activated")
 
-	if(wasDeleted || state.value.isSharedImage || checkOnErrorExists(state.value.currentPicture) != null)
-	{
-		navController.navigate(Screen.Home.route)
-	}
-	else
-	{
-		navController.navigateUp()
-	}
-	setImageSharedStateToFalse(false)
-	changeBarsVisability(true)
-	postUrl(null, null)
-}
-
-fun getScale(isScreenInPortraitState: Boolean, width: Int, height: Int): ContentScale
-{
-	//вариант для вертикальной ориентации
-	return if(isScreenInPortraitState)
-	{
-		ContentScale.Fit
-	}
-	//вариант для горизонтальной ориентации
-	else
-	{
-		if(width > height)
+		if(wasDeleted || state.value.isSharedImage || checkOnErrorExists(state.value.currentPicture) != null)
 		{
-			ContentScale.Fit
-		}
-		else if(width < height)
-		{
-			ContentScale.FillHeight
+			animationIsRunning.value = true
+			navController.navigate(Screen.Home.route)
 		}
 		else
 		{
-			ContentScale.Fit
+			animationIsRunning.value = true
+			navController.navigateUp()
 		}
+		setImageSharedStateToFalse(false)
+		changeBarsVisability(true)
+		postUrl(null, null)
 	}
 }
