@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import android.widget.Toast
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -146,7 +147,13 @@ fun SharedTransitionScope.DetailsScreen(
 	val animationIsRunning = remember { mutableStateOf(true) }
 	LaunchedEffect(Unit) {
 		animationIsRunning.value = true
-		delay(animatedVisibilityScope.transition.totalDurationNanos / 1000000) //перевод в милисекунды
+		val animatorScale = Settings.Global.getFloat(
+			context.contentResolver,
+			Settings.Global.ANIMATOR_DURATION_SCALE,
+			1f
+		)
+		Log.d("animation is running", "${animatedVisibilityScope.transition.totalDurationNanos} $animatorScale")
+		delay((animatedVisibilityScope.transition.totalDurationNanos.toFloat() * animatorScale / 1000000).toLong()) //перевод в милисекунды
 		animationIsRunning.value = false
 	}
 	val exitIsStarted = remember { mutableStateOf(false) }
