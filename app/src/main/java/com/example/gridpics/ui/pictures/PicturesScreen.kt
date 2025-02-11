@@ -180,7 +180,6 @@ fun SharedTransitionScope.PicturesScreen(
 	)
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.ItemsCard(
 	item: String,
