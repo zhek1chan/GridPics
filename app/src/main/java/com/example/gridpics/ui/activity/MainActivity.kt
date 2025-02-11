@@ -18,6 +18,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
@@ -469,20 +471,19 @@ class MainActivity: AppCompatActivity()
 						picVM.clickOnPicture(0, 0)
 						detVM.setWasSharedFromNotification(true)
 						nav?.popBackStack()
-						navAfterNewIntent(nav)
 					}
 					else if(intent.getBooleanExtra(SHOULD_WE_DELETE_THIS, false))
 					{
 						Log.d("Test111", "DELETE")
 						detVM.setWasDeletedFromNotification(true)
 						nav?.popBackStack()
-						navAfterNewIntent(nav)
 					}
 					else
 					{
 						picVM.clickOnPicture(0, 0)
-						navAfterNewIntent(nav)
 					}
+					detVM.postCurrentPicture(oldString)
+					navAfterNewIntent(nav)
 				}
 			}
 			else

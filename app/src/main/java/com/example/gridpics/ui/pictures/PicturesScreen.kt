@@ -5,7 +5,10 @@ package com.example.gridpics.ui.pictures
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
@@ -218,14 +221,13 @@ fun SharedTransitionScope.ItemsCard(
 			.data(data)
 			.httpHeaders(headers)
 			.placeholder(placeholder)
+			.placeholderMemoryCacheKey(data)
 			.error(R.drawable.error)
 			.memoryCacheKey(item)
 			.diskCacheKey(item)
 			.build()
 	}
 	val scale = remember { mutableStateOf(ContentScale.FillHeight) }
-	val renderInOverlayDuringTransitionValue = remember { mutableStateOf(true) }
-	renderInOverlayDuringTransitionValue.value = isScreenInPortrait
 	SubcomposeAsyncImage(
 		model = (imgRequest),
 		filterQuality = FilterQuality.Low,
@@ -236,9 +238,9 @@ fun SharedTransitionScope.ItemsCard(
 				state = rememberSharedContentState(
 					key = list.indexOf(item)
 				),
-				//renderInOverlayDuringTransition = renderInOverlayDuringTransitionValue.value,
-				animatedVisibilityScope = animatedVisibilityScope,
-			)
+				animatedVisibilityScope = animatedVisibilityScope)
+			.fillMaxSize()
+
 			.aspectRatio(1f)
 			.clickable {
 				if(isError)
@@ -249,7 +251,6 @@ fun SharedTransitionScope.ItemsCard(
 				{
 					scope.launch {
 						Log.d("current", item)
-						//можно улучшить
 						val firstVisibleIndex = lazyState.firstVisibleItemIndex
 						val offsetOfList = lazyState.firstVisibleItemScrollOffset
 						if(offsetOfList != 0 && list.indexOf(item) < lazyState.firstVisibleItemIndex + gridNum)
@@ -274,8 +275,13 @@ fun SharedTransitionScope.ItemsCard(
 			},
 		contentScale = ContentScale.Fit,
 		loading = {
-			Box(Modifier.fillMaxSize()) {
-				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+			val showLoading = remember { mutableStateOf(false) }
+			showLoading.value = true
+			AnimatedVisibility(visible = showLoading.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+				Box(Modifier
+					.fillMaxSize()) {
+					CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+				}
 			}
 		},
 		onError = {
