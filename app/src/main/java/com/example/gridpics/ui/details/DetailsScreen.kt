@@ -144,27 +144,12 @@ fun SharedTransitionScope.DetailsScreen(
 	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 	val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
 	val animationIsRunning = remember { mutableStateOf(true) }
-
 	LaunchedEffect(Unit) {
-		while(animatedVisibilityScope.transition.isRunning)
-		{
-			delay(100)
-			animationIsRunning.value = true
-		}
+		animationIsRunning.value = true
+		delay(animatedVisibilityScope.transition.totalDurationNanos / 1000000) //перевод в милисекунды
 		animationIsRunning.value = false
 	}
-	//:todo как отслеживать идёт ли анимация
-	val addingForAnimControlBoolean = remember { mutableStateOf(false) }
 	val exitIsStarted = remember { mutableStateOf(false) }
-	LaunchedEffect(Unit) {
-		delay(32)
-		addingForAnimControlBoolean.value = true
-	}//:todo пропадёт при правильном isRunning
-	val controlScrollConstant = remember { mutableStateOf(false) }
-	LaunchedEffect(Unit) {
-		//delay(600)
-		controlScrollConstant.value = true
-	}
 	BackHandler {
 		navigateToHome(
 			changeBarsVisability = changeBarsVisability,
@@ -238,9 +223,7 @@ fun SharedTransitionScope.DetailsScreen(
 				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
 				animationIsRunning = animationIsRunning,
 				animatedVisibilityScope = animatedVisibilityScope,
-				addingForAnimControlBoolean = addingForAnimControlBoolean,
 				exitIsStarted = exitIsStarted,
-				controlScrollConstant = controlScrollConstant
 			)
 		}
 	)
@@ -269,9 +252,7 @@ fun SharedTransitionScope.ShowDetails(
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	animatedVisibilityScope: AnimatedVisibilityScope,
-	addingForAnimControlBoolean: MutableState<Boolean>,
 	exitIsStarted: MutableState<Boolean>,
-	controlScrollConstant: MutableState<Boolean>,
 )
 {
 	val isScreenInPortraitState = picturesState.value.isPortraitOrientation
@@ -285,7 +266,7 @@ fun SharedTransitionScope.ShowDetails(
 			state = pagerState,
 			pageSize = PageSize.Fill,
 			contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
-			userScrollEnabled = controlScrollConstant.value && !isSharedImage && !animationIsRunning.value && addingForAnimControlBoolean.value && !exitIsStarted.value,
+			userScrollEnabled = !isSharedImage && !animationIsRunning.value && !exitIsStarted.value,
 			pageSpacing = 10.dp,
 			beyondViewportPageCount = 0
 		) { page ->
@@ -301,7 +282,7 @@ fun SharedTransitionScope.ShowDetails(
 			{
 				Modifier
 					.sharedElement(
-						rememberSharedContentState(key = pagerState.currentPage), //:todo проверить бывают ли разные currentPages
+						state = rememberSharedContentState(key = pagerState.currentPage),
 						placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize,
 						animatedVisibilityScope = animatedVisibilityScope
 					)
@@ -412,7 +393,7 @@ fun SharedTransitionScope.ShowDetails(
 					) {
 						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 						CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-							AnimatedVisibility(!animatedVisibilityScope.transition.isRunning && addingForAnimControlBoolean.value && !exitIsStarted.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+							AnimatedVisibility(!animatedVisibilityScope.transition.isRunning && !exitIsStarted.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 								Button(
 									modifier = Modifier
 										.align(Alignment.CenterVertically)
@@ -796,10 +777,12 @@ fun getScale(isScreenInPortraitState: Boolean, width: Int, height: Int): Content
 		{
 			ContentScale.FillWidth
 		}
-		else if (height - width > 50)
+		else if(height - width > 50)
 		{
 			ContentScale.FillHeight
-		} else {
+		}
+		else
+		{
 			ContentScale.Fit
 		}
 	}
