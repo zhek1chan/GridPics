@@ -2,12 +2,20 @@ package com.example.gridpics
 
 import android.app.Application
 import android.content.Context
+import android.graphics.Bitmap
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
+import coil3.bitmapFactoryMaxParallelism
 import coil3.disk.DiskCache
 import coil3.disk.directory
-import coil3.request.CachePolicy
-import coil3.request.allowHardware
+import coil3.request.addLastModifiedToFileCacheKey
+import coil3.request.allowRgb565
+import coil3.request.bitmapConfig
+import coil3.request.crossfade
+import coil3.request.transitionFactory
+import coil3.serviceLoaderEnabled
+import coil3.size.Precision
+import coil3.transition.Transition
 import com.example.gridpics.di.dataModule
 import com.example.gridpics.di.domainModule
 import com.example.gridpics.di.viewModelModule
@@ -29,16 +37,21 @@ class App: Application(), KoinComponent, SingletonImageLoader.Factory
 				viewModelModule
 			)
 		}
-
 		SingletonImageLoader.setSafe {
 			ImageLoader.Builder(this)
-				.allowHardware(false)
-				.networkCachePolicy(CachePolicy.ENABLED)
-				.memoryCachePolicy(CachePolicy.ENABLED)
-				.diskCachePolicy(CachePolicy.ENABLED)
-				.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(4))
-				.interceptorCoroutineContext(Dispatchers.IO.limitedParallelism(4))
-				.coroutineContext(Dispatchers.IO.limitedParallelism(4))
+				.fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(15))
+				.interceptorCoroutineContext(Dispatchers.IO.limitedParallelism(5))
+				.coroutineContext(Dispatchers.IO.limitedParallelism(5))
+				.decoderCoroutineContext(Dispatchers.IO.limitedParallelism(15))
+				.serviceLoaderEnabled(true)
+				.addLastModifiedToFileCacheKey(false)
+				.bitmapFactoryMaxParallelism(30)
+				.coroutineContext(Dispatchers.IO.limitedParallelism(5))
+				.precision(Precision.INEXACT)
+				.bitmapConfig(Bitmap.Config.RGB_565)
+				.crossfade(false)
+				.transitionFactory(Transition.Factory.NONE)
+				.allowRgb565(true)
 				.diskCache {
 					DiskCache.Builder()
 						.directory(this.cacheDir.resolve("image_cache"))
@@ -54,7 +67,6 @@ class App: Application(), KoinComponent, SingletonImageLoader.Factory
 			.diskCache {
 				DiskCache.Builder()
 					.directory(context.cacheDir.resolve("image_cache"))
-					.maxSizePercent(0.3)
 					.build()
 			}
 			.build()

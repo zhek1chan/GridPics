@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -38,7 +39,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -47,7 +47,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -67,7 +67,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
@@ -108,19 +108,11 @@ fun SharedTransitionScope.PicturesScreen(
 		postPressOnBackButton()
 	}
 	val calculatedGridSpan = calculateGridSpan()
-	val statusBars = WindowInsets.statusBarsIgnoringVisibility
+	val statusBars = WindowInsets.systemBarsIgnoringVisibility
 	val cutouts = WindowInsets.displayCutout
 	val value = state.value
 	val windowInsets = cutouts.union(statusBars)
 	val conf = LocalConfiguration.current
-	val mod = if(value.isPortraitOrientation)
-	{
-		Modifier.fillMaxWidth()
-	}
-	else
-	{
-		Modifier.height(400.dp)
-	}
 	Scaffold(
 		contentWindowInsets = windowInsets,
 		topBar = {
@@ -128,7 +120,7 @@ fun SharedTransitionScope.PicturesScreen(
 				verticalAlignment = Alignment.CenterVertically,
 				modifier = Modifier
 					.fillMaxWidth()
-					.windowInsetsPadding(windowInsets)
+					.windowInsetsPadding(cutouts.union(WindowInsets.statusBarsIgnoringVisibility))
 					.padding(16.dp, 0.dp)
 					.height(60.dp)
 			) {
@@ -143,7 +135,7 @@ fun SharedTransitionScope.PicturesScreen(
 		bottomBar = { BottomNavigationBar(navController) },
 		content = { padding ->
 			Box(
-				modifier = mod
+				modifier = Modifier
 					.padding(padding)
 					.consumeWindowInsets(padding)
 					.fillMaxSize()
@@ -167,14 +159,13 @@ fun SharedTransitionScope.PicturesScreen(
 					calculateGridSpan = calculatedGridSpan,
 					isPortraitOrientation = conf.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT,
 					postMaxVisibleLinesNum = postMaxVisibleLinesNum,
-					animatedVisibilityScope = animatedVisibilityScope,
+					animatedVisibilityScope = animatedVisibilityScope
 				)
 			}
 		}
 	)
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.ItemsCard(
 	item: String,
@@ -186,10 +177,10 @@ fun SharedTransitionScope.ItemsCard(
 	scope: CoroutineScope,
 	isScreenInPortrait: Boolean,
 	animatedVisibilityScope: AnimatedVisibilityScope,
+	list: List<String>,
+	gridNum: Int,
 )
 {
-	val width = remember { mutableIntStateOf(0) }
-	val height = remember { mutableIntStateOf(0) }
 	var isError by remember { mutableStateOf(false) }
 	val context = LocalContext.current
 	val openAlertDialog = remember { mutableStateOf(false) }
@@ -215,72 +206,77 @@ fun SharedTransitionScope.ItemsCard(
 			.httpHeaders(headers)
 			.placeholder(placeholder)
 			.error(R.drawable.error)
+			.placeholderMemoryCacheKey(data)
+			.memoryCacheKey(item)
+			.diskCacheKey(item).defaults(ImageRequest.Defaults.DEFAULT)
 			.build()
 	}
-	val modifier = remember { mutableStateOf(Modifier.fillMaxSize()) }
-	val scale = remember { mutableStateOf(ContentScale.FillHeight) }
-
-	SubcomposeAsyncImage(
-		model = (imgRequest),
-		contentDescription = item,
-		modifier = modifier.value
-			.padding(10.dp)
-			.sharedElement(
-				state = rememberSharedContentState(
-					key = item
-				),
-				animatedVisibilityScope = animatedVisibilityScope,
-			)
-			.aspectRatio(1f)
-			.clickable {
-				if(isError)
-				{
-					openAlertDialog.value = true
-				}
-				else
-				{
-					scope.launch {
-						Log.d("current", item)
-						currentPicture(item, lazyState.firstVisibleItemIndex, lazyState.firstVisibleItemScrollOffset)
-						openAlertDialog.value = false
+	val scale = if(isScreenInPortrait)
+	{
+		ContentScale.FillWidth
+	}
+	else
+	{
+		ContentScale.FillHeight
+	}
+	Box(Modifier
+		.fillMaxSize()
+		.aspectRatio(1f)) {
+		AsyncImage(
+			model = (imgRequest),
+			filterQuality = FilterQuality.Low,
+			contentDescription = item,
+			modifier = Modifier
+				.padding(8.dp)
+				.sharedElement(
+					state = rememberSharedContentState(
+						key = list.indexOf(item)
+					),
+					animatedVisibilityScope = animatedVisibilityScope)
+				.clip(RoundedCornerShape(8.dp))
+				.fillMaxSize()
+				.clickable {
+					if(isError)
+					{
+						openAlertDialog.value = true
 					}
-				}
+					else
+					{
+						scope.launch {
+							Log.d("current", item)
+							val firstVisibleIndex = lazyState.firstVisibleItemIndex
+							val offsetOfList = lazyState.firstVisibleItemScrollOffset
+							if(offsetOfList != 0 && list.indexOf(item) < lazyState.firstVisibleItemIndex + gridNum)
+							{
+								lazyState.animateScrollToItem(firstVisibleIndex, 0)
+								delay(100)
+								currentPicture(item, firstVisibleIndex, lazyState.firstVisibleItemScrollOffset)
+							}
+							else if(list.indexOf(item) - lazyState.firstVisibleItemIndex >= lazyState.layoutInfo.visibleItemsInfo.size - gridNum && list.indexOf(item) < lazyState.firstVisibleItemIndex + lazyState.layoutInfo
+									.visibleItemsInfo.size)
+							{
+								lazyState.animateScrollToItem(firstVisibleIndex + gridNum, 0)
+								currentPicture(item, firstVisibleIndex + gridNum, lazyState.firstVisibleItemScrollOffset)
+								delay(100)
+							}
+							else
+							{
+								currentPicture(item, firstVisibleIndex, lazyState.firstVisibleItemScrollOffset)
+							}
+							openAlertDialog.value = false
+						}
+					}
+				},
+			contentScale = scale,
+			onError = {
+				isError = true
+				addError(item, it.result.throwable.message.toString())
+			},
+			onSuccess = {
+				isError = false
 			}
-			.clip(RoundedCornerShape(8.dp)),
-		contentScale = scale.value,
-		loading = {
-			Box(Modifier.fillMaxSize()) {
-				CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-			}
-		},
-		onError = {
-			isError = true
-			addError(item, it.result.throwable.message.toString())
-		},
-		onSuccess = {
-			isError = false
-			val image = it.result.image
-			width.intValue = image.width
-			height.intValue = image.height
-			val widthLocal = width.intValue
-			val heightLocal = height.intValue
-
-			scale.value =
-				if(widthLocal < heightLocal && (!isScreenInPortrait || heightLocal - widthLocal > 50))
-				{
-					ContentScale.FillHeight
-				}
-				else if(widthLocal > heightLocal)
-				{
-					ContentScale.FillWidth
-				}
-				else
-				{
-					ContentScale.Crop
-				}
-		}
-	)
-
+		)
+	}
 	if(openAlertDialog.value)
 	{
 		if(isValidUrl(item))
@@ -354,6 +350,7 @@ fun SharedTransitionScope.ShowList(
 					state = listState,
 					modifier = Modifier
 						.fillMaxSize(),
+					userScrollEnabled = !animatedVisibilityScope.transition.isRunning,
 					columns = GridCells.Fixed(count = calculateGridSpan.value)) {
 					items(items = list) {
 						ItemsCard(
@@ -365,7 +362,9 @@ fun SharedTransitionScope.ShowList(
 							addError = addError,
 							scope = scope,
 							isScreenInPortrait = isPortraitOrientation,
-							animatedVisibilityScope = animatedVisibilityScope
+							animatedVisibilityScope = animatedVisibilityScope,
+							gridNum = calculateGridSpan.value,
+							list = list
 						)
 					}
 				}
@@ -400,6 +399,7 @@ fun SharedTransitionScope.ShowList(
 			state = listState,
 			modifier = Modifier
 				.fillMaxSize(),
+			userScrollEnabled = !animatedVisibilityScope.transition.isRunning,
 			columns = GridCells.Fixed(count = calculateGridSpan.value)) {
 			Log.d("PicturesFragment", "$imagesUrlsSP")
 			items(items = imagesUrlsSP) {
@@ -412,7 +412,9 @@ fun SharedTransitionScope.ShowList(
 					addError = addError,
 					scope = scope,
 					isScreenInPortrait = isPortraitOrientation,
-					animatedVisibilityScope = animatedVisibilityScope
+					animatedVisibilityScope = animatedVisibilityScope,
+					gridNum = calculateGridSpan.value,
+					list = imagesUrlsSP
 				)
 			}
 		}
@@ -420,7 +422,6 @@ fun SharedTransitionScope.ShowList(
 	LaunchedEffect(Unit) {
 		postMaxVisibleLinesNum(listState.layoutInfo.visibleItemsInfo.size)
 		listState.scrollToItem(index, offset)
-		delay(1500)
 	}
 }
 

@@ -33,6 +33,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil3.imageLoader
 import com.example.gridpics.R
+import com.example.gridpics.domain.model.PicturesDataForNotification
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
@@ -41,8 +42,10 @@ import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -86,6 +89,7 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
+	@OptIn(FlowPreview::class)
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
@@ -116,17 +120,21 @@ class MainActivity: AppCompatActivity()
 		themePick = theme
 
 		lifecycleScope.launch {
-			detVM.observeUrlFlow().collect {
+			detVM.observeUrlFlow().sample(500).collect {
 				if(ContextCompat.checkSelfPermission(
 						this@MainActivity,
 						Manifest.permission.POST_NOTIFICATIONS,
 					) == PackageManager.PERMISSION_GRANTED)
 				{
 					Log.d("service", "data $it")
-					mainNotificationService?.putValues(it)
+					if (it.bitmap != null)
+					{
+						mainNotificationService?.putValues(it)
+					}
 				}
 			}
 		}
+
 		picVM.updateGridSpan(calculateGridSpan())
 		setContent {
 			val navController = rememberNavController()
@@ -147,16 +155,17 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
+		val detailsState = detVM.uiState
 		SharedTransitionLayout {
 			NavHost(
 				navController = navController,
-				startDestination = BottomNavItem.Home.route
+				startDestination = BottomNavItem.Home.route,
 			)
 			{
 				composable(
 					route = BottomNavItem.Home.route,
 				) {
-					detVM.postNewPic(null, null)
+					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
 					PicturesScreen(
 						navController = navController,
 						postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
@@ -180,7 +189,7 @@ class MainActivity: AppCompatActivity()
 						},
 						calculateGridSpan = { picVM.getGridSpan() },
 						postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum) },
-						animatedVisibilityScope = this@composable
+						animatedVisibilityScope = this@composable,
 					)
 				}
 				composable(
@@ -190,7 +199,7 @@ class MainActivity: AppCompatActivity()
 				) {
 					SettingsScreen(
 						navController = navController,
-						option = picVM.picturesUiState,
+						option = picState,
 						changeTheme = { int -> changeTheme(int) },
 						isScreenInPortraitState = picState,
 						clearImageCache = {
@@ -209,7 +218,7 @@ class MainActivity: AppCompatActivity()
 						navController = navController,
 						getErrorMessageFromErrorsList = { url -> picVM.checkOnErrorExists(url) },
 						addError = { url, message -> picVM.addError(url, message) },
-						state = detVM.uiState,
+						state = detailsState,
 						removeError = { str -> picVM.removeSpecialError(str) },
 						postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
 						isValidUrl = { url -> picVM.isValidUrl(url) },
@@ -223,7 +232,6 @@ class MainActivity: AppCompatActivity()
 						setImageSharedState = { isShared ->
 							detVM.isSharedImage(isShared)
 						},
-						picsUiState = picVM.picturesUiState,
 						setCurrentPictureUrl = { url ->
 							detVM.postCurrentPicture(url)
 							picVM.postCurrentPicture(url)
@@ -360,6 +368,7 @@ class MainActivity: AppCompatActivity()
 		Log.d("theme option", "theme option: $option")
 		val picVM = picturesViewModel
 		var isDarkTheme = false
+		themePick = option
 		when(option)
 		{
 			ThemePick.LIGHT_THEME.intValue ->
@@ -381,7 +390,6 @@ class MainActivity: AppCompatActivity()
 				isDarkTheme = isDarkThemeAfterSystemChangedTheme()
 			}
 		}
-		themePick = option
 		val blackColor = getColor(R.color.black)
 		val whiteColor = getColor(R.color.white)
 		picVM.mutableIsThemeBlackState.value = isDarkTheme
@@ -468,20 +476,20 @@ class MainActivity: AppCompatActivity()
 						picVM.clickOnPicture(0, 0)
 						detVM.setWasSharedFromNotification(true)
 						nav?.popBackStack()
-						navAfterNewIntent(nav)
 					}
 					else if(intent.getBooleanExtra(SHOULD_WE_DELETE_THIS, false))
 					{
 						Log.d("Test111", "DELETE")
 						detVM.setWasDeletedFromNotification(true)
 						nav?.popBackStack()
-						navAfterNewIntent(nav)
 					}
 					else
 					{
+						nav?.popBackStack()
 						picVM.clickOnPicture(0, 0)
-						navAfterNewIntent(nav)
 					}
+					detVM.postCurrentPicture(oldString)
+					navAfterNewIntent(nav)
 				}
 			}
 			else
