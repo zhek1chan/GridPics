@@ -126,8 +126,7 @@ class MainNotificationService: Service()
 			resultIntent.putExtra(SAVED_URL_FROM_SCREEN_DETAILS, description)
 			val resultPendingIntent = PendingIntent.getActivity(this@MainNotificationService, 100, resultIntent,
 				PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
-			builder
-				.setContentIntent(resultPendingIntent)
+			builder.setContentIntent(resultPendingIntent)
 			if(showButtons)
 			{
 				resultIntent.putExtra(SHOULD_WE_DELETE_THIS, true)

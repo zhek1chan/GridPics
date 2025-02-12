@@ -33,6 +33,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil3.imageLoader
 import com.example.gridpics.R
+import com.example.gridpics.domain.model.PicturesDataForNotification
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
 import com.example.gridpics.ui.pictures.PicturesScreen
@@ -41,8 +42,10 @@ import com.example.gridpics.ui.service.MainNotificationService
 import com.example.gridpics.ui.settings.SettingsScreen
 import com.example.gridpics.ui.settings.ThemePick
 import com.example.gridpics.ui.themes.ComposeTheme
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -86,6 +89,7 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
+	@OptIn(FlowPreview::class)
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
@@ -116,17 +120,21 @@ class MainActivity: AppCompatActivity()
 		themePick = theme
 
 		lifecycleScope.launch {
-			detVM.observeUrlFlow().collect {
+			detVM.observeUrlFlow().sample(500).collect {
 				if(ContextCompat.checkSelfPermission(
 						this@MainActivity,
 						Manifest.permission.POST_NOTIFICATIONS,
 					) == PackageManager.PERMISSION_GRANTED)
 				{
 					Log.d("service", "data $it")
-					mainNotificationService?.putValues(it)
+					if (it.bitmap != null)
+					{
+						mainNotificationService?.putValues(it)
+					}
 				}
 			}
 		}
+
 		picVM.updateGridSpan(calculateGridSpan())
 		setContent {
 			val navController = rememberNavController()
@@ -157,7 +165,7 @@ class MainActivity: AppCompatActivity()
 				composable(
 					route = BottomNavItem.Home.route,
 				) {
-					detVM.postNewPic(null, null)
+					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
 					PicturesScreen(
 						navController = navController,
 						postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
@@ -477,6 +485,7 @@ class MainActivity: AppCompatActivity()
 					}
 					else
 					{
+						nav?.popBackStack()
 						picVM.clickOnPicture(0, 0)
 					}
 					detVM.postCurrentPicture(oldString)
