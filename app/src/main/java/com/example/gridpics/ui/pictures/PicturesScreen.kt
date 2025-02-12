@@ -313,7 +313,7 @@ fun SharedTransitionScope.ItemsCard(
 					CircularProgressIndicator(modifier = Modifier
 						.fillMaxSize()
 						.align(Alignment.Center)
-						.padding(30.dp))
+						.padding(40.dp))
 				}
 			}
 		}

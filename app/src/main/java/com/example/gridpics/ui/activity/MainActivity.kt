@@ -360,6 +360,7 @@ class MainActivity: AppCompatActivity()
 		Log.d("theme option", "theme option: $option")
 		val picVM = picturesViewModel
 		var isDarkTheme = false
+		themePick = option
 		when(option)
 		{
 			ThemePick.LIGHT_THEME.intValue ->
@@ -381,7 +382,6 @@ class MainActivity: AppCompatActivity()
 				isDarkTheme = isDarkThemeAfterSystemChangedTheme()
 			}
 		}
-		themePick = option
 		val blackColor = getColor(R.color.black)
 		val whiteColor = getColor(R.color.white)
 		picVM.mutableIsThemeBlackState.value = isDarkTheme
