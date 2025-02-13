@@ -63,8 +63,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -481,6 +483,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.diskCacheKey(img)
 			.build()
 	}
+	var imageSize by remember { mutableStateOf(Size.Zero) }
 	val value = state.value
 	Box(Modifier.fillMaxSize().zoomable(
 		zoomState = zoom,
@@ -567,6 +570,9 @@ fun SharedTransitionScope.ShowAsynchImage(
 			contentScale = scale,
 			onSuccess = {
 				removeSpecialError(img)
+				val resultImage = it.result.image
+				imageSize = Size(resultImage.width.toFloat(), resultImage.height.toFloat())
+				removeSpecialError(img)
 			},
 			onError = {
 				addError(img, it.result.throwable.message.toString())
@@ -574,6 +580,9 @@ fun SharedTransitionScope.ShowAsynchImage(
 			},
 			modifier = mod
 		)
+	}
+	LaunchedEffect(Unit) {
+		zoom.setContentSize(imageSize)
 	}
 }
 
