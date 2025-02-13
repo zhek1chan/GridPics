@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
@@ -164,6 +165,7 @@ class MainActivity: AppCompatActivity()
 			{
 				composable(
 					route = BottomNavItem.Home.route,
+					exitTransition = { fadeOut(targetAlpha = 1f) }
 				) {
 					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
 					PicturesScreen(
@@ -213,6 +215,7 @@ class MainActivity: AppCompatActivity()
 				}
 				composable(
 					route = Screen.Details.route,
+					exitTransition = { fadeOut(targetAlpha = 1f) }
 				) {
 					DetailsScreen(
 						navController = navController,

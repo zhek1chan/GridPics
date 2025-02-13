@@ -63,8 +63,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +77,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -95,7 +99,11 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.AlertDialogMain
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
@@ -463,7 +471,13 @@ fun SharedTransitionScope.ShowAsynchImage(
 {
 	// если в портретном режиме картинка длинная или в горизонтальном положении картинка широкая, то включаем доп анимацию
 	//Изменение параметров изображения
-	val zoom = rememberZoomState(15f, Size.Zero)
+	val zoom = rememberZoomState(5f, Size.Zero)
+	if(isExit.value)
+	{
+		LaunchedEffect(Unit) {
+			zoom.reset()
+		}
+	}
 	val context = LocalContext.current
 	val headers = remember {
 		NetworkHeaders.Builder()
@@ -481,16 +495,26 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.diskCacheKey(img)
 			.build()
 	}
-	val value = state.value
-	Box(Modifier.fillMaxSize().zoomable(
-		zoomState = zoom,
-		enableOneFingerZoom = false,
-		onTap =
+	var imageSize by remember { mutableStateOf(Size.Zero) }
+	LaunchedEffect(imageSize) {
+		if(imageSize != Size.Zero && imageSize.width >= 0 && imageSize.height >= 0)
 		{
-			val visibility = state.value.barsAreVisible
-			changeBarsVisability(!visibility)
+			zoom.setContentSize(imageSize)
+			Log.d("imageSize 2", "$imageSize")
 		}
-	)
+	}
+	val value = state.value
+	Box(Modifier
+		.fillMaxSize()
+		.zoomable(
+			zoomState = zoom,
+			enableOneFingerZoom = false,
+			onTap =
+			{
+				val visibility = state.value.barsAreVisible
+				changeBarsVisability(!visibility)
+			}
+		)
 		.pointerInput(Unit) {
 			awaitEachGesture {
 				val count = mutableListOf(0)
@@ -534,7 +558,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 		{
 			Modifier
 				.fillMaxSize()
-				.padding(8.dp,64.dp,8.dp,8.dp)
+				.padding(8.dp, 64.dp, 8.dp, 8.dp)
 				.clip(RoundedCornerShape(8.dp))
 				.align(Alignment.Center)
 				.background(Color.Transparent)
@@ -542,7 +566,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 		else
 		{
 			Modifier
-				.padding(8.dp,64.dp,8.dp,8.dp)
+				.padding(8.dp, 64.dp, 8.dp, 8.dp)
 				.sharedElement(
 					state = rememberSharedContentState(
 						key = pagerState.currentPage
@@ -560,6 +584,8 @@ fun SharedTransitionScope.ShowAsynchImage(
 		{
 			ContentScale.FillHeight
 		}
+		val width = remember { mutableFloatStateOf(0f) }
+		val height = remember { mutableFloatStateOf(0f) }
 		AsyncImage(
 			model = imgRequest,
 			filterQuality = FilterQuality.Low,
@@ -567,12 +593,36 @@ fun SharedTransitionScope.ShowAsynchImage(
 			contentScale = scale,
 			onSuccess = {
 				removeSpecialError(img)
+				width.floatValue = it.result.image.width.toFloat()
+				height.floatValue = it.result.image.height.toFloat()
 			},
 			onError = {
 				addError(img, it.result.throwable.message.toString())
 				navController.navigate(Screen.Details.route)
 			},
 			modifier = mod
+				.onGloballyPositioned { layoutCoordinates ->
+					run {
+						var w = layoutCoordinates.size.width.toFloat()
+						var h = layoutCoordinates.size.height.toFloat()
+						if(h > w)
+						{
+							h = height.floatValue * w / width.floatValue
+							imageSize = Size(
+								layoutCoordinates.size.width.toFloat(),
+								h
+							)
+						}
+						else
+						{
+							w = width.floatValue * h / height.floatValue
+							imageSize = Size(
+								w,
+								layoutCoordinates.size.height.toFloat()
+							)
+						}
+					}
+				}
 		)
 	}
 }
@@ -742,6 +792,7 @@ fun AppBar(
 	}
 }
 
+@OptIn(DelicateCoroutinesApi::class)
 fun navigateToHome(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String?, Bitmap?) -> Unit,
@@ -753,18 +804,22 @@ fun navigateToHome(
 	isExit: MutableState<Boolean>,
 )
 {
-	if(!animationIsRunning.value)
-	{
-		if(state.value.isSharedImage)
+	GlobalScope.launch(Dispatchers.Main) {
+		if(!animationIsRunning.value)
 		{
-			wasDeleted.value = true
+			isExit.value = true
+			delay(100)
+			if(state.value.isSharedImage)
+			{
+				wasDeleted.value = true
+			}
+			isExit.value = true
+			Log.d("activated", "activated")
+			animationIsRunning.value = true
+			navController.navigate(Screen.Home.route)
+			setImageSharedStateToFalse(false)
+			changeBarsVisability(true)
+			postUrl(null, null)
 		}
-		isExit.value = true
-		Log.d("activated", "activated")
-		animationIsRunning.value = true
-		navController.navigate(Screen.Home.route)
-		setImageSharedStateToFalse(false)
-		changeBarsVisability(true)
-		postUrl(null, null)
 	}
 }
