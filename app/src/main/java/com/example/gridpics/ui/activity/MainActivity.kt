@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -165,6 +166,7 @@ class MainActivity: AppCompatActivity()
 			{
 				composable(
 					route = BottomNavItem.Home.route,
+					enterTransition = { fadeIn(initialAlpha = 0f) },
 					exitTransition = { fadeOut(targetAlpha = 1f) }
 				) {
 					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
@@ -196,8 +198,8 @@ class MainActivity: AppCompatActivity()
 				}
 				composable(
 					route = BottomNavItem.Settings.route,
-					enterTransition = { null },
-					exitTransition = { null }
+					enterTransition = { fadeIn(initialAlpha = 0f) },
+					exitTransition = { fadeOut(targetAlpha = 1f) },
 				) {
 					SettingsScreen(
 						navController = navController,
