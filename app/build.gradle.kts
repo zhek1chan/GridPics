@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
     id("kotlin-kapt")
 }
 
@@ -12,7 +13,7 @@ android {
         applicationId = "com.example.gridpics"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
+        versionCode = 2
         versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -41,22 +42,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.0"
-    }
-
-    android {
-        packagingOptions {
-            exclude("META-INF/DEPENDENCIES")
-            exclude("META-INF/LICENSE")
-            exclude("META-INF/LICENSE.txt")
-            exclude("META-INF/license.txt")
-            exclude("META-INF/NOTICE")
-            exclude("META-INF/NOTICE.txt")
-            exclude("META-INF/notice.txt")
-            exclude("META-INF/ASL2.0")
-            exclude("META-INF/*.kotlin_module")
-            resources.excludes.add("META-INF/*")
-        }
+        kotlinCompilerExtensionVersion = "2.0.0"
     }
 }
 

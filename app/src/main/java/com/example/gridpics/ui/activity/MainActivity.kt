@@ -18,6 +18,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
@@ -127,7 +129,7 @@ class MainActivity: AppCompatActivity()
 					) == PackageManager.PERMISSION_GRANTED)
 				{
 					Log.d("service", "data $it")
-					if (it.bitmap != null)
+					if(it.bitmap != null)
 					{
 						mainNotificationService?.putValues(it)
 					}
@@ -160,6 +162,10 @@ class MainActivity: AppCompatActivity()
 			NavHost(
 				navController = navController,
 				startDestination = BottomNavItem.Home.route,
+				enterTransition = { EnterTransition.None },
+				exitTransition = { ExitTransition.None },
+				popExitTransition = { ExitTransition.None },
+				popEnterTransition = { EnterTransition.None }
 			)
 			{
 				composable(
