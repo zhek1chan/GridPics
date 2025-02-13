@@ -271,13 +271,12 @@ fun SharedTransitionScope.ShowDetails(
 {
 	val isSharedImage = state.value.isSharedImage
 	Log.d("checkCheck", "$isSharedImage")
-	val topBarHeight = 64.dp
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
 	AnimatedVisibility(!wasDeleted.value) {
 		HorizontalPager(
 			state = pagerState,
 			pageSize = PageSize.Fill,
-			contentPadding = PaddingValues(0.dp, statusBarHeightFixed + topBarHeight, 0.dp, padding.calculateBottomPadding()),
+			contentPadding = PaddingValues(0.dp, statusBarHeightFixed, 0.dp, padding.calculateBottomPadding()),
 			userScrollEnabled = !isSharedImage && !animationIsRunning.value,
 			pageSpacing = 10.dp,
 			beyondViewportPageCount = 0
@@ -483,12 +482,59 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.build()
 	}
 	val value = state.value
-	Box(Modifier.fillMaxSize()) {
+	Box(Modifier.fillMaxSize().zoomable(
+		zoomState = zoom,
+		enableOneFingerZoom = false,
+		onTap =
+		{
+			val visibility = state.value.barsAreVisible
+			changeBarsVisability(!visibility)
+		}
+	)
+		.pointerInput(Unit) {
+			awaitEachGesture {
+				val count = mutableListOf(0)
+				val countLastThree = mutableListOf(0)
+				while(true)
+				{
+					val event = awaitPointerEvent()
+					val changes = event.changes
+					val exit = !changes.any {
+						it.isConsumed
+					}
+					if(count.size >= 3)
+					{
+						val lastIndex = count.lastIndex
+						countLastThree.add(count[lastIndex])
+						countLastThree.add(count[lastIndex - 1])
+						countLastThree.add(count[lastIndex - 2])
+					}
+					if(changes.any { !it.pressed })
+					{
+						if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
+						{
+							navigateToHome(
+								changeBarsVisability = changeBarsVisability,
+								postUrl = postUrl,
+								navController = navController,
+								setImageSharedStateToFalse = setImageSharedStateToFalse,
+								state = state,
+								wasDeleted = wasDeleted,
+								animationIsRunning = animationIsRunning,
+								isExit = isExit
+							)
+						}
+					}
+					countLastThree.clear()
+					count.add(changes.size)
+				}
+			}
+		}) {
 		val mod = if(value.isSharedImage || wasDeleted.value || page != pagerState.currentPage)
 		{
 			Modifier
 				.fillMaxSize()
-				.padding(8.dp)
+				.padding(8.dp,64.dp,8.dp,8.dp)
 				.clip(RoundedCornerShape(8.dp))
 				.align(Alignment.Center)
 				.background(Color.Transparent)
@@ -496,7 +542,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 		else
 		{
 			Modifier
-				.padding(8.dp)
+				.padding(8.dp,64.dp,8.dp,8.dp)
 				.sharedElement(
 					state = rememberSharedContentState(
 						key = pagerState.currentPage
@@ -527,54 +573,6 @@ fun SharedTransitionScope.ShowAsynchImage(
 				navController.navigate(Screen.Details.route)
 			},
 			modifier = mod
-				.zoomable(
-					zoomState = zoom,
-					enableOneFingerZoom = false,
-					onTap =
-					{
-						val visibility = state.value.barsAreVisible
-						changeBarsVisability(!visibility)
-					}
-				)
-				.pointerInput(Unit) {
-					awaitEachGesture {
-						val count = mutableListOf(0)
-						val countLastThree = mutableListOf(0)
-						while(true)
-						{
-							val event = awaitPointerEvent()
-							val changes = event.changes
-							val exit = !changes.any {
-								it.isConsumed
-							}
-							if(count.size >= 3)
-							{
-								val lastIndex = count.lastIndex
-								countLastThree.add(count[lastIndex])
-								countLastThree.add(count[lastIndex - 1])
-								countLastThree.add(count[lastIndex - 2])
-							}
-							if(changes.any { !it.pressed })
-							{
-								if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
-								{
-									navigateToHome(
-										changeBarsVisability = changeBarsVisability,
-										postUrl = postUrl,
-										navController = navController,
-										setImageSharedStateToFalse = setImageSharedStateToFalse,
-										state = state,
-										wasDeleted = wasDeleted,
-										animationIsRunning = animationIsRunning,
-										isExit = isExit
-									)
-								}
-							}
-							countLastThree.clear()
-							count.add(changes.size)
-						}
-					}
-				}
 		)
 	}
 }
@@ -651,15 +649,15 @@ fun AppBar(
 	val navBack = remember { mutableStateOf(false) }
 	Log.d("shared pic url", currentPicture)
 	val sharedImgCase = state.value.isSharedImage
-	Box(modifier = Modifier
-		.background(MaterialTheme.colorScheme.background)
-		.height(
-			WindowInsets.systemBarsIgnoringVisibility
-				.asPaddingValues()
-				.calculateTopPadding() + 64.dp
-		)
-		.fillMaxWidth())
 	AnimatedVisibility(visible = isVisible && !animationIsRunning.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+		Box(modifier = Modifier
+			.background(MaterialTheme.colorScheme.background)
+			.height(
+				WindowInsets.systemBarsIgnoringVisibility
+					.asPaddingValues()
+					.calculateTopPadding() + 64.dp
+			)
+			.fillMaxWidth())
 		val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 			TopAppBar(
