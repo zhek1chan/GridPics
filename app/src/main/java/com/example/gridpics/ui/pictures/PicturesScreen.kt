@@ -244,24 +244,27 @@ fun SharedTransitionScope.ItemsCard(
 					{
 						scope.launch {
 							Log.d("current", item)
+							//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
 							val firstVisibleIndex = lazyState.firstVisibleItemIndex
 							val offsetOfList = lazyState.firstVisibleItemScrollOffset
-							if(offsetOfList != 0 && list.indexOf(item) < lazyState.firstVisibleItemIndex + gridNum)
+							val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
+							if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
 							{
 								lazyState.animateScrollToItem(firstVisibleIndex, 0)
 								delay(100)
-								currentPicture(item, firstVisibleIndex, lazyState.firstVisibleItemScrollOffset)
+								currentPicture(item, firstVisibleIndex, offsetOfList)
 							}
-							else if(list.indexOf(item) - lazyState.firstVisibleItemIndex >= lazyState.layoutInfo.visibleItemsInfo.size - gridNum && list.indexOf(item) < lazyState.firstVisibleItemIndex + lazyState.layoutInfo
-									.visibleItemsInfo.size)
+							else if(
+								list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
+								&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
 							{
 								lazyState.animateScrollToItem(firstVisibleIndex + gridNum, 0)
-								currentPicture(item, firstVisibleIndex + gridNum, lazyState.firstVisibleItemScrollOffset)
+								currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
 								delay(100)
 							}
 							else
 							{
-								currentPicture(item, firstVisibleIndex, lazyState.firstVisibleItemScrollOffset)
+								currentPicture(item, firstVisibleIndex, offsetOfList)
 							}
 							openAlertDialog.value = false
 						}

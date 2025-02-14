@@ -363,7 +363,6 @@ class MainActivity: AppCompatActivity()
 		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
 		if(themePick == followSysTheme)
 		{
-			Log.d("themka pomenyalas", "poshlo-poehalo")
 			changeTheme(followSysTheme)
 		}
 	}
@@ -520,13 +519,13 @@ class MainActivity: AppCompatActivity()
 			if(jobLocal == null || !jobLocal.isActive)
 			{
 				job = lifecycleScope.launch {
-					var navv = nav
-					while(navv == null)
+					var navAdding = nav
+					while(navAdding == null)
 					{
 						delay(100)
-						navv = navigation
+						navAdding = navigation
 					}
-					navv.navigate(Screen.Details.route)
+					navAdding.navigate(Screen.Details.route)
 
 					job = null
 				}

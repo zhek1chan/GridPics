@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalRippleConfiguration
@@ -73,6 +74,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.input.pointer.pointerInput
@@ -80,9 +82,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -251,7 +255,6 @@ fun SharedTransitionScope.DetailsScreen(
 	)
 }
 
-@SuppressLint("CoroutineCreationDuringComposition", "RestrictedApi")
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.ShowDetails(
@@ -469,8 +472,6 @@ fun SharedTransitionScope.ShowAsynchImage(
 	isExit: MutableState<Boolean>,
 )
 {
-	// если в портретном режиме картинка длинная или в горизонтальном положении картинка широкая, то включаем доп анимацию
-	//Изменение параметров изображения
 	val zoom = rememberZoomState(5f, Size.Zero)
 	if(isExit.value)
 	{
@@ -603,23 +604,20 @@ fun SharedTransitionScope.ShowAsynchImage(
 			modifier = mod
 				.onGloballyPositioned { layoutCoordinates ->
 					run {
-						var w = layoutCoordinates.size.width.toFloat()
-						var h = layoutCoordinates.size.height.toFloat()
+						val size = layoutCoordinates.size
+						var w = size.width.toFloat()
+						var h = size.height.toFloat()
+						val heightLocal = height.floatValue
+						val widthLocal = width.floatValue
 						if(h > w)
 						{
-							h = height.floatValue * w / width.floatValue
-							imageSize = Size(
-								layoutCoordinates.size.width.toFloat(),
-								h
-							)
+							h = heightLocal * w / widthLocal
+							imageSize = Size(w, h)
 						}
 						else
 						{
-							w = width.floatValue * h / height.floatValue
-							imageSize = Size(
-								w,
-								layoutCoordinates.size.height.toFloat()
-							)
+							w = widthLocal * h / heightLocal
+							imageSize = Size(w, h)
 						}
 					}
 				}
@@ -661,15 +659,57 @@ fun ShowError(
 		if(errorMessage != linkIsNotValid)
 		{
 			Log.d("TEST111", "error")
-			Button(
-				onClick =
-				{
-					Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
-				},
-				colors = ButtonColors(Color.LightGray, Color.Black, Color.Black, Color.White))
-			{
-				Text(text = stringResource(R.string.update_loading))
-			}
+			val color = colorResource(R.color.orange)
+			val gradientColor = remember { listOf(color, Color.Yellow) }
+			GradientButton(
+				gradientColors = gradientColor,
+				cornerRadius = 30.dp,
+				nameButton = stringResource(R.string.try_again),
+				roundedCornerShape = RoundedCornerShape(topStart = 20.dp, bottomEnd = 20.dp),
+				context = context
+			)
+		}
+	}
+}
+
+@Composable
+fun GradientButton(
+	gradientColors: List<Color>,
+	cornerRadius: Dp,
+	nameButton: String,
+	roundedCornerShape: RoundedCornerShape,
+	context: Context
+)
+{
+	Button(
+		modifier = Modifier
+			.fillMaxWidth()
+			.padding(start = 32.dp, end = 32.dp),
+		onClick = {
+			Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
+		},
+		colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+		shape = RoundedCornerShape(cornerRadius)
+	)
+	{
+		Box(modifier = Modifier
+			.fillMaxWidth()
+			.background(
+				brush = Brush.horizontalGradient(colors = gradientColors),
+				shape = roundedCornerShape
+			)
+			.clip(roundedCornerShape)
+			.background(
+				brush = Brush.linearGradient(colors = gradientColors),
+				shape = RoundedCornerShape(cornerRadius)
+			)
+			.padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center)
+		{
+			Text(
+				text = nameButton,
+				fontSize = 20.sp,
+				color = Color.White
+			)
 		}
 	}
 }

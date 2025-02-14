@@ -28,7 +28,6 @@ class PicturesViewModel(
 
 	init
 	{
-		Log.d("lifecycle", "vm is recreated")
 		val flow = picturesUiState
 		viewModelScope.launch {
 			interactor.getPics().collect { urls ->
@@ -36,8 +35,9 @@ class PicturesViewModel(
 				{
 					is Resource.Data ->
 					{
-						val savedUrls = flow.value.picturesUrl
-						val deletedUrls = flow.value.deletedUrls
+						val value = flow.value
+						val savedUrls = value.picturesUrl
+						val deletedUrls = value.deletedUrls
 						val urlsFromNet = convertToListFromString(urls.value)
 						val urlsToAdd = if(savedUrls.isNotEmpty())
 						{
