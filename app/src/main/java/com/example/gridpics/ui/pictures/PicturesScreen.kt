@@ -3,7 +3,6 @@
 package com.example.gridpics.ui.pictures
 
 import android.content.Intent
-import android.content.res.Configuration
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -70,7 +69,6 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -125,7 +123,6 @@ fun SharedTransitionScope.PicturesScreen(
 	val cutouts = WindowInsets.displayCutout
 	val value = state.value
 	val windowInsets = cutouts.union(statusBars)
-	val conf = LocalConfiguration.current
 	val context = LocalContext.current
 	Scaffold(
 		contentWindowInsets = windowInsets,
@@ -204,7 +201,6 @@ fun SharedTransitionScope.PicturesScreen(
 					offset = offset,
 					index = index,
 					calculateGridSpan = calculatedGridSpan,
-					isPortraitOrientation = conf.orientation == Configuration.ORIENTATION_PORTRAIT,
 					postMaxVisibleLinesNum = postMaxVisibleLinesNum,
 					animatedVisibilityScope = animatedVisibilityScope
 				)
@@ -222,7 +218,6 @@ fun SharedTransitionScope.ItemsCard(
 	lazyState: LazyGridState,
 	addError: (String, String) -> Unit,
 	scope: CoroutineScope,
-	isScreenInPortrait: Boolean,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	list: List<String>,
 	gridNum: Int,
@@ -257,14 +252,6 @@ fun SharedTransitionScope.ItemsCard(
 			.memoryCacheKey(item)
 			.diskCacheKey(item).defaults(ImageRequest.Defaults.DEFAULT)
 			.build()
-	}
-	val scale = if(isScreenInPortrait)
-	{
-		ContentScale.FillWidth
-	}
-	else
-	{
-		ContentScale.FillHeight
 	}
 	Box(Modifier
 		.fillMaxSize()
@@ -317,7 +304,7 @@ fun SharedTransitionScope.ItemsCard(
 						}
 					}
 				},
-			contentScale = scale,
+			contentScale = ContentScale.Fit,
 			onError = {
 				isError = true
 				addError(item, it.result.throwable.message.toString())
@@ -373,7 +360,6 @@ fun SharedTransitionScope.ShowList(
 	offset: Int,
 	index: Int,
 	calculateGridSpan: MutableState<Int>,
-	isPortraitOrientation: Boolean,
 	postMaxVisibleLinesNum: (Int) -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 )
@@ -411,10 +397,9 @@ fun SharedTransitionScope.ShowList(
 							lazyState = listState,
 							addError = addError,
 							scope = scope,
-							isScreenInPortrait = isPortraitOrientation,
 							animatedVisibilityScope = animatedVisibilityScope,
-							gridNum = calculateGridSpan.value,
-							list = list
+							list = list,
+							gridNum = calculateGridSpan.value
 						)
 					}
 				}
@@ -461,10 +446,9 @@ fun SharedTransitionScope.ShowList(
 					lazyState = listState,
 					addError = addError,
 					scope = scope,
-					isScreenInPortrait = isPortraitOrientation,
 					animatedVisibilityScope = animatedVisibilityScope,
-					gridNum = calculateGridSpan.value,
-					list = imagesUrlsSP
+					list = imagesUrlsSP,
+					gridNum = calculateGridSpan.value
 				)
 			}
 		}

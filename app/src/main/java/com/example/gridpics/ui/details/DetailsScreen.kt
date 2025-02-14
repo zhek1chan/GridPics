@@ -2,7 +2,6 @@ package com.example.gridpics.ui.details
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.provider.Settings
 import android.util.Log
@@ -80,7 +79,6 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
@@ -577,21 +575,14 @@ fun SharedTransitionScope.ShowAsynchImage(
 				.align(Alignment.Center)
 				.fillMaxSize()
 		}
-		val scale = if(LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT)
-		{
-			ContentScale.FillWidth
-		}
-		else
-		{
-			ContentScale.FillHeight
-		}
 		val width = remember { mutableFloatStateOf(0f) }
 		val height = remember { mutableFloatStateOf(0f) }
+
 		AsyncImage(
 			model = imgRequest,
 			filterQuality = FilterQuality.Low,
 			contentDescription = null,
-			contentScale = scale,
+			contentScale = ContentScale.Fit,
 			onSuccess = {
 				removeSpecialError(img)
 				width.floatValue = it.result.image.width.toFloat()
@@ -678,7 +669,7 @@ fun GradientButton(
 	cornerRadius: Dp,
 	nameButton: String,
 	roundedCornerShape: RoundedCornerShape,
-	context: Context
+	context: Context,
 )
 {
 	Button(
