@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
@@ -103,7 +104,6 @@ class MainActivity: AppCompatActivity()
 		val resources = resources
 		val orientation = resources.configuration.orientation
 		picVM.changeOrientation(isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT)
-		picVM.orientationWasChanged.value = false
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
@@ -166,10 +166,13 @@ class MainActivity: AppCompatActivity()
 			{
 				composable(
 					route = BottomNavItem.Home.route,
-					enterTransition = { fadeIn(initialAlpha = 0f) },
-					exitTransition = { fadeOut(targetAlpha = 1f) }
+					enterTransition = { fadeIn(initialAlpha = 0f, animationSpec = tween(700)) },
+					exitTransition = { fadeOut(targetAlpha = 1f, animationSpec = tween(700)) },
+					popEnterTransition = { fadeIn(initialAlpha = 0f, animationSpec = tween(100)) },
+					popExitTransition = { fadeOut(targetAlpha = 1f, animationSpec = tween(100)) }
 				) {
 					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
+					changeBarsVisability(visible = true, fromDetailsScreen = true)
 					PicturesScreen(
 						navController = navController,
 						postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
@@ -194,12 +197,23 @@ class MainActivity: AppCompatActivity()
 						calculateGridSpan = { picVM.getGridSpan() },
 						postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum) },
 						animatedVisibilityScope = this@composable,
+						picWasLoadedFromMediaPicker = { uri ->
+							detVM.isSharedImage(true)
+							detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
+							detVM.isSharedImage(true)
+							detVM.postCurrentPicture(uri.toString())
+							detVM.postCorrectList()
+							picVM.clickOnPicture(0, 0)
+							navAfterNewIntent(navController)
+						}
 					)
 				}
 				composable(
 					route = BottomNavItem.Settings.route,
-					enterTransition = { fadeIn(initialAlpha = 0f) },
-					exitTransition = { fadeOut(targetAlpha = 1f) },
+					enterTransition = { fadeIn(initialAlpha = 0f, animationSpec = tween(100)) },
+					exitTransition = { fadeOut(targetAlpha = 1f, animationSpec = tween(100)) },
+					popEnterTransition = { fadeIn(initialAlpha = 0f, animationSpec = tween(100)) },
+					popExitTransition = { fadeOut(targetAlpha = 1f, animationSpec = tween(100)) }
 				) {
 					SettingsScreen(
 						navController = navController,
@@ -217,7 +231,7 @@ class MainActivity: AppCompatActivity()
 				}
 				composable(
 					route = Screen.Details.route,
-					exitTransition = { fadeOut(targetAlpha = 1f) }
+					exitTransition = { fadeOut(targetAlpha = 1f, animationSpec = tween(700)) }
 				) {
 					DetailsScreen(
 						navController = navController,
@@ -358,6 +372,8 @@ class MainActivity: AppCompatActivity()
 		detailsViewModel.changeMultiWindowState(isInMultiWindowMode || isInPictureInPictureMode)
 		val orientation = newConfig.orientation
 		val picVM = picturesViewModel
+		val value = detailsViewModel.uiState.value
+		picVM.clickOnPicture(value.picturesUrl.indexOf(value.currentPicture), 0)
 		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
 		picVM.updateGridSpan(calculateGridSpan())
 		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
@@ -394,8 +410,8 @@ class MainActivity: AppCompatActivity()
 				isDarkTheme = isDarkThemeAfterSystemChangedTheme()
 			}
 		}
-		val blackColor = getColor(R.color.black)
-		val whiteColor = getColor(R.color.white)
+		val blackColor = ContextCompat.getColor(this, R.color.black)
+		val whiteColor = ContextCompat.getColor(this, R.color.white)
 		picVM.mutableIsThemeBlackState.value = isDarkTheme
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(lightScrim = whiteColor, darkScrim = blackColor, detectDarkMode = { isDarkTheme }),
@@ -451,7 +467,7 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	override fun onNewIntent(intent: Intent?)
+	override fun onNewIntent(intent: Intent)
 	{
 		super.onNewIntent(intent)
 		val picVM = picturesViewModel

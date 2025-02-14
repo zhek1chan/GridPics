@@ -731,7 +731,7 @@ fun AppBar(
 	wasDeleted: MutableState<Boolean>,
 )
 {
-	if(state.value.wasSharedFromNotification)
+	if(state.value.wasSharedFromNotification && !currentPicture.startsWith("content://"))
 	{
 		share(currentPicture)
 		postWasSharedState()
@@ -795,7 +795,7 @@ fun AppBar(
 					containerColor = MaterialTheme.colorScheme.background
 				),
 				actions = {
-					AnimatedVisibility(!sharedImgCase) {
+					AnimatedVisibility(!sharedImgCase && !currentPicture.startsWith("content://")) {
 						Box(modifier = Modifier
 							.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 							.height(64.dp)

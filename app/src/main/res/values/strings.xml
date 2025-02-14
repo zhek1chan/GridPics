@@ -33,4 +33,7 @@
 	<string name="share">Поделиться</string>
 	<string name="please_wait_the_pic_is_loading">Картинка ещё грузится, пожалуйста подождите</string>
 	<string name="do_you_really_want_to_delete_it">Вы уверены, что хотите\nудалить изображение?</string>
+	<string name="this_feature_is_not_available">Данная функция недоступна</string>
+	<string name="something_went_wrong">Что-то пошло не так</string>
+	<string name="no_needed_app">У вас нет нужного приложения</string>
 </resources>

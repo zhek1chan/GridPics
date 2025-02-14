@@ -2,9 +2,15 @@
 
 package com.example.gridpics.ui.pictures
 
+import android.content.Intent
+import android.content.res.Configuration
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -17,16 +23,19 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -34,6 +43,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -58,12 +68,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -99,6 +111,7 @@ fun SharedTransitionScope.PicturesScreen(
 	calculateGridSpan: () -> MutableState<Int>,
 	postMaxVisibleLinesNum: (Int) -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
+	picWasLoadedFromMediaPicker: (Uri) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -113,31 +126,65 @@ fun SharedTransitionScope.PicturesScreen(
 	val value = state.value
 	val windowInsets = cutouts.union(statusBars)
 	val conf = LocalConfiguration.current
+	val context = LocalContext.current
 	Scaffold(
 		contentWindowInsets = windowInsets,
 		topBar = {
 			Row(
-				verticalAlignment = Alignment.CenterVertically,
 				modifier = Modifier
 					.fillMaxWidth()
+					.wrapContentHeight()
 					.windowInsetsPadding(cutouts.union(WindowInsets.statusBarsIgnoringVisibility))
 					.padding(16.dp, 0.dp)
-					.height(60.dp)
 			) {
-				Text(
-					textAlign = TextAlign.Center,
-					text = stringResource(R.string.gridpics),
-					fontSize = 21.sp,
-					color = MaterialTheme.colorScheme.onPrimary
-				)
+				val somethingWentWrong = stringResource(R.string.something_went_wrong)
+				val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) { uri ->
+					if(uri != null)
+					{
+						context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+						picWasLoadedFromMediaPicker(uri)
+					}
+					else
+					{
+						Toast.makeText(context, somethingWentWrong, Toast.LENGTH_SHORT).show()
+					}
+				}
+
+				Box(Modifier
+					.fillMaxWidth()
+					.padding(0.dp, 16.dp, 0.dp)) {
+					Text(
+						modifier = Modifier.wrapContentSize(),
+						textAlign = TextAlign.Center,
+						text = stringResource(R.string.gridpics),
+						fontSize = 21.sp,
+						color = MaterialTheme.colorScheme.onPrimary,
+					)
+					Button(
+						modifier = Modifier
+							.size(60.dp, 30.dp)
+							.align(Alignment.TopEnd),
+						onClick = {
+							launcher.launch(PickVisualMediaRequest(
+								mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
+							))
+						},
+					) {
+						val ic = rememberVectorPainter(Icons.Default.AddCircle)
+						Icon(
+							painter = ic,
+							tint = Color.White,
+							contentDescription = "AddIcon",
+							modifier = Modifier.fillMaxSize())
+					}
+				}
 			}
 		},
 		bottomBar = { BottomNavigationBar(navController) },
 		content = { padding ->
 			Box(
 				modifier = Modifier
-					.padding(padding)
-					.consumeWindowInsets(padding)
+					.padding(padding.calculateStartPadding(LayoutDirection.Ltr), 100.dp, padding.calculateEndPadding(LayoutDirection.Rtl), padding.calculateBottomPadding())
 					.fillMaxSize()
 			) {
 				val urls = value.picturesUrl
@@ -157,7 +204,7 @@ fun SharedTransitionScope.PicturesScreen(
 					offset = offset,
 					index = index,
 					calculateGridSpan = calculatedGridSpan,
-					isPortraitOrientation = conf.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT,
+					isPortraitOrientation = conf.orientation == Configuration.ORIENTATION_PORTRAIT,
 					postMaxVisibleLinesNum = postMaxVisibleLinesNum,
 					animatedVisibilityScope = animatedVisibilityScope
 				)

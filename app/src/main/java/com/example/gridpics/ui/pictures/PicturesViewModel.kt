@@ -20,7 +20,6 @@ class PicturesViewModel(
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM, emptyList()))
 	private val errorsMap: MutableMap<String, String> = mutableMapOf()
-	var orientationWasChanged = mutableStateOf(false)
 	var mutableIsThemeBlackState = mutableStateOf(false)
 	private var isOrientationPortrait = false
 	private var gridQuantity = mutableIntStateOf(0)

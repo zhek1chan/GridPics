@@ -7,6 +7,13 @@
 	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+	<queries>
+		<package android:name="com.example.background" />
+		<intent>
+			<action android:name="android.intent.action.VIEW" />
+			<data android:mimeType="image/png"/>
+		</intent>
+	</queries>
 
 	<application
 		android:name=".App"
@@ -25,7 +32,16 @@
 			android:exported="false"
 			android:foregroundServiceType="specialUse">
 		</service>
-
+		<!--suppress AndroidDomInspection -->
+		<service android:name="com.google.android.gms.metadata.ModuleDependencies"
+				 android:enabled="false"
+				 android:exported="false"
+				 tools:ignore="MissingClass">
+			<intent-filter>
+				<action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES" />
+			</intent-filter>
+			<meta-data android:name="photopicker_activity:0:required" android:value="" />
+		</service>
 		<activity
 			android:name=".ui.activity.MainActivity"
 			android:configChanges="screenSize|screenLayout|colorMode|orientation|uiMode"
@@ -44,6 +60,7 @@
 				<data android:mimeType="text/plain" />
 			</intent-filter>
 		</activity>
+
 	</application>
 
 </manifest>
