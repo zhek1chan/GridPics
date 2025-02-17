@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -119,10 +118,10 @@ fun SharedTransitionScope.PicturesScreen(
 		postPressOnBackButton()
 	}
 	val calculatedGridSpan = calculateGridSpan()
-	val statusBars = WindowInsets.systemBarsIgnoringVisibility
+	val sysBars = WindowInsets.systemBarsIgnoringVisibility
 	val cutouts = WindowInsets.displayCutout
 	val value = state.value
-	val windowInsets = cutouts.union(statusBars)
+	val windowInsets = cutouts.union(sysBars)
 	val context = LocalContext.current
 	Scaffold(
 		contentWindowInsets = windowInsets,
@@ -131,7 +130,7 @@ fun SharedTransitionScope.PicturesScreen(
 				modifier = Modifier
 					.fillMaxWidth()
 					.wrapContentHeight()
-					.windowInsetsPadding(cutouts.union(WindowInsets.statusBarsIgnoringVisibility))
+					.windowInsetsPadding(windowInsets)
 					.padding(16.dp, 0.dp)
 			) {
 				val somethingWentWrong = stringResource(R.string.something_went_wrong)
