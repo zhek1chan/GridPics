@@ -53,7 +53,7 @@ class MainNotificationService: Service()
 
 	private fun createNotificationChannel()
 	{
-		if(Build.VERSION.SDK_INT >= VERSION_CODES.R)
+		if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
 		{
 			val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 			if(notificationManager.getNotificationChannel(CHANNEL_NOTIFICATIONS_ID) == null)

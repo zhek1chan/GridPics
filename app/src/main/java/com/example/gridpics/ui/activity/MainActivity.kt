@@ -18,6 +18,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.tween
@@ -159,6 +161,40 @@ class MainActivity: AppCompatActivity()
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
 		val detailsState = detVM.uiState
+		val isSharedImage = detailsState.value.isSharedImage
+		Log.d("casecase", "isShared = $isSharedImage")
+		val enterTransition = if(isSharedImage)
+		{
+			EnterTransition.None
+		}
+		else
+		{
+			fadeIn(initialAlpha = 0f, animationSpec = tween(700))
+		}
+		val popEnterTransition = if(isSharedImage)
+		{
+			EnterTransition.None
+		}
+		else
+		{
+			fadeIn(initialAlpha = 0f, animationSpec = tween(100))
+		}
+		val exitTransition = if(isSharedImage)
+		{
+			ExitTransition.None
+		}
+		else
+		{
+			fadeOut(targetAlpha = 1f, animationSpec = tween(700))
+		}
+		val popExitTransition = if(isSharedImage)
+		{
+			ExitTransition.None
+		}
+		else
+		{
+			fadeOut(targetAlpha = 1f, animationSpec = tween(100))
+		}
 		SharedTransitionLayout {
 			NavHost(
 				navController = navController,
@@ -167,10 +203,10 @@ class MainActivity: AppCompatActivity()
 			{
 				composable(
 					route = BottomNavItem.Home.route,
-					enterTransition = { fadeIn(initialAlpha = 0f, animationSpec = tween(700)) },
-					exitTransition = { fadeOut(targetAlpha = 1f, animationSpec = tween(700)) },
-					popEnterTransition = { fadeIn(initialAlpha = 0f, animationSpec = tween(100)) },
-					popExitTransition = { fadeOut(targetAlpha = 1f, animationSpec = tween(100)) }
+					enterTransition = { enterTransition },
+					exitTransition = { exitTransition },
+					popEnterTransition = { popEnterTransition },
+					popExitTransition = { popExitTransition }
 				) {
 					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
 					changeBarsVisability(visible = true, fromDetailsScreen = true)
@@ -232,7 +268,7 @@ class MainActivity: AppCompatActivity()
 				}
 				composable(
 					route = Screen.Details.route,
-					exitTransition = { fadeOut(targetAlpha = 1f, animationSpec = tween(700)) }
+					exitTransition = { exitTransition },
 				) {
 					DetailsScreen(
 						navController = navController,
@@ -603,8 +639,8 @@ class MainActivity: AppCompatActivity()
 		val width = displayMetrics.widthPixels
 		val height = displayMetrics.heightPixels
 		val density = displayMetrics.density
-		val minParam = min(width,height)
-		val result = if(minParam < 600*density)
+		val minParam = min(width, height)
+		val result = if(minParam < 600 * density)
 		{
 			(width / density).toInt() / LENGTH_OF_PICTURE
 		}

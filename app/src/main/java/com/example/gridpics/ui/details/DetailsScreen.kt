@@ -555,6 +555,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 		}) {
 		val mod = if(value.isSharedImage || wasDeleted.value || page != pagerState.currentPage)
 		{
+			Log.d("casecase", "it is simple mod")
 			Modifier
 				.fillMaxSize()
 				.padding(8.dp, 64.dp, 8.dp, 8.dp)
@@ -564,6 +565,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 		}
 		else
 		{
+			Log.d("casecase", "it is sharedElement")
 			Modifier
 				.padding(8.dp, 64.dp, 8.dp, 8.dp)
 				.sharedElement(
@@ -848,9 +850,10 @@ fun navigateToHome(
 			Log.d("activated", "activated")
 			animationIsRunning.value = true
 			navController.navigate(Screen.Home.route)
-			setImageSharedStateToFalse(false)
 			changeBarsVisability(true)
 			postUrl(null, null)
+			delay(500)
+			setImageSharedStateToFalse(false)
 		}
 	}
 }
