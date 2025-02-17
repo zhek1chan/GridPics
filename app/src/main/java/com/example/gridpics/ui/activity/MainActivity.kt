@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.app.ComponentCaller
 import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
@@ -650,11 +649,6 @@ class MainActivity: AppCompatActivity()
 			(width / density).toInt() / LENGTH_OF_PICTURE_FOR_BIG_SCREENS
 		}
 		return result
-	}
-
-	override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?, caller: ComponentCaller)
-	{
-		super.onActivityResult(requestCode, resultCode, data, caller)
 	}
 
 	companion object
