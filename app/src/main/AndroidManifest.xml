@@ -32,7 +32,6 @@
 			android:exported="false"
 			android:foregroundServiceType="specialUse">
 		</service>
-		<!--suppress AndroidDomInspection -->
 		<service android:name="com.google.android.gms.metadata.ModuleDependencies"
 				 android:enabled="false"
 				 android:exported="false"

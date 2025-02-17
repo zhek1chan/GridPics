@@ -152,7 +152,7 @@ fun SettingsCompose(
 					verticalAlignment = Alignment.CenterVertically,
 					modifier = Modifier
 						.fillMaxWidth()
-						.padding(2.dp, 10.dp, 18.dp, 0.dp)
+						.padding(2.dp, 10.dp, 0.dp, 0.dp)
 						.clickable {
 							if(text != selectedOption)
 							{
