@@ -4,6 +4,7 @@ package com.example.gridpics.ui.pictures
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -134,17 +135,20 @@ fun SharedTransitionScope.PicturesScreen(
 					.padding(16.dp, 0.dp)
 			) {
 				val somethingWentWrong = stringResource(R.string.something_went_wrong)
-				val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) { uri ->
+				val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia(), onResult = { uri ->
 					if(uri != null)
 					{
-						context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+						{
+							context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+						}
 						picWasLoadedFromMediaPicker(uri)
 					}
 					else
 					{
 						Toast.makeText(context, somethingWentWrong, Toast.LENGTH_SHORT).show()
 					}
-				}
+				})
 
 				Box(Modifier
 					.fillMaxWidth()
