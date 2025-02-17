@@ -51,6 +51,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import kotlin.math.min
 
 class MainActivity: AppCompatActivity()
 {
@@ -600,8 +601,17 @@ class MainActivity: AppCompatActivity()
 	{
 		val displayMetrics = this.resources.displayMetrics
 		val width = displayMetrics.widthPixels
+		val height = displayMetrics.heightPixels
 		val density = displayMetrics.density
-		val result = (width / density).toInt() / LENGTH_OF_PICTURE
+		val smallestWidth = min(width, height)
+		val result = if(smallestWidth < 600)
+		{
+			(width / density).toInt() / LENGTH_OF_PICTURE
+		}
+		else
+		{
+			(width / density).toInt() / LENGTH_OF_PICTURE_FOR_BIG_SCREENS
+		}
 		return result
 	}
 
@@ -609,6 +619,7 @@ class MainActivity: AppCompatActivity()
 	{
 		const val RESULT_SUCCESS = 100
 		const val LENGTH_OF_PICTURE = 110
+		const val LENGTH_OF_PICTURE_FOR_BIG_SCREENS = 190
 		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337
 		const val SHOULD_WE_SHARE_THIS = "SHOULD_WE_SHARE_THIS"
