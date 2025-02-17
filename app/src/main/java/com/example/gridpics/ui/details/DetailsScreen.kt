@@ -344,12 +344,11 @@ fun SharedTransitionScope.ShowDetails(
 										postUrl = postUrl,
 										navController = navController,
 										setImageSharedStateToFalse = setImageSharedState,
+										wasDeleted = wasDeleted,
 										state = state,
 										animationIsRunning = animationIsRunning,
-										isExit = isExit,
-										wasDeleted = wasDeleted
+										isExit = isExit
 									)
-									wasDeleted.value = true
 								},
 								border = BorderStroke(3.dp, Color.Red),
 								colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
@@ -503,6 +502,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 		}
 	}
 	val value = state.value
+	val isSharedImage = value.isSharedImage
 	Box(Modifier
 		.fillMaxSize()
 		.zoomable(
@@ -515,47 +515,49 @@ fun SharedTransitionScope.ShowAsynchImage(
 			}
 		)
 		.pointerInput(Unit) {
-			awaitEachGesture {
-				val count = mutableListOf(0)
-				val countLastThree = mutableListOf(0)
-				while(true)
-				{
-					val event = awaitPointerEvent()
-					val changes = event.changes
-					val exit = !changes.any {
-						it.isConsumed
-					}
-					if(count.size >= 3)
+			if(!isSharedImage)
+			{
+				awaitEachGesture {
+					val count = mutableListOf(0)
+					val countLastThree = mutableListOf(0)
+					while(true)
 					{
-						val lastIndex = count.lastIndex
-						countLastThree.add(count[lastIndex])
-						countLastThree.add(count[lastIndex - 1])
-						countLastThree.add(count[lastIndex - 2])
-					}
-					if(changes.any { !it.pressed })
-					{
-						if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
-						{
-							navigateToHome(
-								changeBarsVisability = changeBarsVisability,
-								postUrl = postUrl,
-								navController = navController,
-								setImageSharedStateToFalse = setImageSharedStateToFalse,
-								state = state,
-								wasDeleted = wasDeleted,
-								animationIsRunning = animationIsRunning,
-								isExit = isExit
-							)
+						val event = awaitPointerEvent()
+						val changes = event.changes
+						val exit = !changes.any {
+							it.isConsumed
 						}
+						if(count.size >= 3)
+						{
+							val lastIndex = count.lastIndex
+							countLastThree.add(count[lastIndex])
+							countLastThree.add(count[lastIndex - 1])
+							countLastThree.add(count[lastIndex - 2])
+						}
+						if(changes.any { !it.pressed })
+						{
+							if(zoom.scale < 0.92.toFloat() && exit && countLastThree.max() == 2)
+							{
+								navigateToHome(
+									changeBarsVisability = changeBarsVisability,
+									postUrl = postUrl,
+									navController = navController,
+									setImageSharedStateToFalse = setImageSharedStateToFalse,
+									state = state,
+									wasDeleted = wasDeleted,
+									animationIsRunning = animationIsRunning,
+									isExit = isExit
+								)
+							}
+						}
+						countLastThree.clear()
+						count.add(changes.size)
 					}
-					countLastThree.clear()
-					count.add(changes.size)
 				}
 			}
 		}) {
-		val mod = if(value.isSharedImage || wasDeleted.value || page != pagerState.currentPage)
+		val mod = if(isSharedImage || wasDeleted.value || page != pagerState.currentPage)
 		{
-			Log.d("casecase", "it is simple mod")
 			Modifier
 				.fillMaxSize()
 				.padding(8.dp, 64.dp, 8.dp, 8.dp)
@@ -565,7 +567,6 @@ fun SharedTransitionScope.ShowAsynchImage(
 		}
 		else
 		{
-			Log.d("casecase", "it is sharedElement")
 			Modifier
 				.padding(8.dp, 64.dp, 8.dp, 8.dp)
 				.sharedElement(
