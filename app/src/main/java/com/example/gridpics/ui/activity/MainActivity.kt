@@ -603,8 +603,8 @@ class MainActivity: AppCompatActivity()
 		val width = displayMetrics.widthPixels
 		val height = displayMetrics.heightPixels
 		val density = displayMetrics.density
-		val smallestWidth = min(width, height)
-		val result = if(smallestWidth < 600)
+		val minParam = min(width,height)
+		val result = if(minParam < 600*density)
 		{
 			(width / density).toInt() / LENGTH_OF_PICTURE
 		}
