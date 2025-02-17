@@ -280,6 +280,7 @@ fun SharedTransitionScope.ShowDetails(
 {
 	val isSharedImage = state.value.isSharedImage
 	Log.d("checkCheck", "$isSharedImage")
+	val wasCalledDelete = remember { mutableStateOf(false) }
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
 	AnimatedVisibility(!wasDeleted.value) {
 		HorizontalPager(
@@ -321,7 +322,7 @@ fun SharedTransitionScope.ShowDetails(
 						isExit = isExit
 					)
 				}
-				if(isSharedImage)
+				if(isSharedImage && !wasCalledDelete.value)
 				{
 					val addString = stringResource(R.string.add)
 					val cancelString = stringResource(R.string.cancel)
@@ -416,12 +417,13 @@ fun SharedTransitionScope.ShowDetails(
 							}
 						}
 					}
+
 					AnimatedVisibility(openDialog.value) {
 						AlertDialogMain(
 							dialogText = null,
 							dialogTitle = stringResource(R.string.do_you_really_want_to_delete_it),
 							onConfirmation = {
-								wasDeleted.value = true
+								wasCalledDelete.value = true
 								deleteCurrentPicture(url)
 								navigateToHome(
 									changeBarsVisability = changeBarsVisability,
@@ -433,6 +435,7 @@ fun SharedTransitionScope.ShowDetails(
 									isExit = isExit,
 									wasDeleted = wasDeleted
 								)
+								setImageSharedState(true)
 								openDialog.value = false
 							},
 							onDismissRequest = {
