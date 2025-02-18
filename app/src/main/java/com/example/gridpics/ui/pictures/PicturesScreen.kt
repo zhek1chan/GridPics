@@ -289,7 +289,7 @@ fun SharedTransitionScope.ItemsCard(
 							{
 								lazyState.animateScrollToItem(firstVisibleIndex, 0)
 								delay(100)
-								currentPicture(item, firstVisibleIndex, offsetOfList)
+								currentPicture(item, firstVisibleIndex, 0)
 							}
 							else if(
 								list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
