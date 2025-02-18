@@ -3,19 +3,19 @@ package com.example.gridpics
 import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Build.VERSION.SDK_INT
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.bitmapFactoryMaxParallelism
 import coil3.disk.DiskCache
 import coil3.disk.directory
+import coil3.gif.AnimatedImageDecoder
+import coil3.gif.GifDecoder
 import coil3.request.addLastModifiedToFileCacheKey
 import coil3.request.allowRgb565
 import coil3.request.bitmapConfig
 import coil3.request.crossfade
-import coil3.request.transitionFactory
 import coil3.serviceLoaderEnabled
-import coil3.size.Precision
-import coil3.transition.Transition
 import com.example.gridpics.di.dataModule
 import com.example.gridpics.di.domainModule
 import com.example.gridpics.di.viewModelModule
@@ -46,10 +46,15 @@ class App: Application(), KoinComponent, SingletonImageLoader.Factory
 				.serviceLoaderEnabled(true)
 				.addLastModifiedToFileCacheKey(false)
 				.bitmapFactoryMaxParallelism(30)
-				.precision(Precision.INEXACT)
 				.bitmapConfig(Bitmap.Config.RGB_565)
 				.crossfade(false)
-				.transitionFactory(Transition.Factory.NONE)
+				.components {
+					if (SDK_INT >= 28) {
+						add(AnimatedImageDecoder.Factory())
+					} else {
+						add(GifDecoder.Factory())
+					}
+				}
 				.allowRgb565(true)
 				.diskCache {
 					DiskCache.Builder()

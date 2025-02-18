@@ -26,6 +26,7 @@ android {
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
+
             )
         }
     }
@@ -49,8 +50,6 @@ android {
 dependencies {
     implementation(libs.androidx.work.runtime.ktx.v2100)
     implementation(libs.material)
-    //coil
-    implementation(libs.coil)
     //retrofit
     implementation(libs.retrofit)
     implementation(libs.retrofit.v230)
@@ -97,4 +96,6 @@ dependencies {
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.activity.ktx.v171)
     implementation(libs.play.services.base)
+    //gif coil
+    implementation(libs.coil.gif)
 }

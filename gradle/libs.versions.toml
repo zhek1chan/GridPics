@@ -1,9 +1,9 @@
 [versions]
 activityKtx = "1.10.0"
-activityKtxVersion = "1.7.1"
+activityKtxVersion = "1.10.0"
 agp = "8.6.1"
-coil = "2.7.0"
-coilCompose = "3.0.0-rc01"
+coilCompose = "3.1.0"
+coilGif = "3.1.0"
 coreSplashscreen = "1.0.1"
 gson = "2.11.0"
 koinAndroidxCompose = "3.5.3"
@@ -44,8 +44,8 @@ androidx-paging-compose = { module = "androidx.paging:paging-compose", version.r
 androidx-ui = { module = "androidx.compose.ui:ui", version.ref = "uiGraphicsAndroid" }
 androidx-ui-v100 = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 androidx-work-runtime-ktx-v2100 = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtxVersion" }
-coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
+coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coilGif" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofitVersion" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
