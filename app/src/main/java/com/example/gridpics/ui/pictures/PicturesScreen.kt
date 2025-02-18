@@ -256,6 +256,7 @@ fun SharedTransitionScope.ItemsCard(
 			.diskCacheKey(item).defaults(ImageRequest.Defaults.DEFAULT)
 			.build()
 	}
+	Log.d("recompose", "picture $item")
 	Box(Modifier
 		.fillMaxSize()
 		.aspectRatio(1f)) {

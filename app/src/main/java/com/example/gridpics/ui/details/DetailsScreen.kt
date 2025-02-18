@@ -513,7 +513,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 			enableOneFingerZoom = false,
 			onTap =
 			{
-				val visibility = value.barsAreVisible
+				val visibility = state.value.barsAreVisible
 				changeBarsVisability(!visibility)
 			}
 		)
@@ -583,7 +583,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 		}
 		val width = remember { mutableFloatStateOf(0f) }
 		val height = remember { mutableFloatStateOf(0f) }
-
+		Log.d("recompose", "details $img")
 		AsyncImage(
 			model = imgRequest,
 			filterQuality = FilterQuality.Low,
