@@ -10,6 +10,7 @@
 - Kotlin Coroutines
 - Koin Compose
 - Zoomable
+- Flow
 - ComposeAnimation
 - NavigationCompose
 - SharedPreferences
