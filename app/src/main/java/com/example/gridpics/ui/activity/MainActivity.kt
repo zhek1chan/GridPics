@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
@@ -18,8 +19,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
@@ -35,6 +39,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil3.imageLoader
 import com.example.gridpics.R
+import com.example.gridpics.R.bool.is_sw600dp
 import com.example.gridpics.domain.model.PicturesDataForNotification
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
@@ -103,7 +108,6 @@ class MainActivity: AppCompatActivity()
 		val resources = resources
 		val orientation = resources.configuration.orientation
 		picVM.changeOrientation(isPortrait = orientation == Configuration.ORIENTATION_PORTRAIT)
-		picVM.orientationWasChanged.value = false
 		val sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		// Здесь происходит получение всех кэшированных картинок,точнее их url,
 		// чтобы их можно было "достать" из кэша и отобразить с помощью библиотеки Coil
@@ -158,6 +162,41 @@ class MainActivity: AppCompatActivity()
 		val detVM = detailsViewModel
 		val picState = picVM.picturesUiState
 		val detailsState = detVM.uiState
+		val isSharedImage = detailsState.value.isSharedImage
+		Log.d("casecase", "isShared = $isSharedImage")
+		//logic to avoid showing animation when the picture is shared
+		val enterTransition = if(isSharedImage)
+		{
+			EnterTransition.None
+		}
+		else
+		{
+			fadeIn(initialAlpha = 0f, animationSpec = tween(700))
+		}
+		val popEnterTransition = if(isSharedImage)
+		{
+			EnterTransition.None
+		}
+		else
+		{
+			fadeIn(initialAlpha = 0f, animationSpec = tween(100))
+		}
+		val exitTransition = if(isSharedImage)
+		{
+			ExitTransition.None
+		}
+		else
+		{
+			fadeOut(targetAlpha = 1f, animationSpec = tween(700))
+		}
+		val popExitTransition = if(isSharedImage)
+		{
+			ExitTransition.None
+		}
+		else
+		{
+			fadeOut(targetAlpha = 1f, animationSpec = tween(100))
+		}
 		SharedTransitionLayout {
 			NavHost(
 				navController = navController,
@@ -166,10 +205,13 @@ class MainActivity: AppCompatActivity()
 			{
 				composable(
 					route = BottomNavItem.Home.route,
-					enterTransition = { fadeIn(initialAlpha = 0f) },
-					exitTransition = { fadeOut(targetAlpha = 1f) }
+					enterTransition = { enterTransition },
+					exitTransition = { exitTransition },
+					popEnterTransition = { popEnterTransition },
+					popExitTransition = { popExitTransition }
 				) {
 					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
+					changeBarsVisability(visible = true, fromDetailsScreen = true)
 					PicturesScreen(
 						navController = navController,
 						postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
@@ -194,12 +236,23 @@ class MainActivity: AppCompatActivity()
 						calculateGridSpan = { picVM.getGridSpan() },
 						postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum) },
 						animatedVisibilityScope = this@composable,
+						picWasLoadedFromMediaPicker = { uri ->
+							detVM.isSharedImage(true)
+							detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
+							detVM.isSharedImage(true)
+							detVM.postCurrentPicture(uri.toString())
+							detVM.postCorrectList()
+							picVM.clickOnPicture(0, 0)
+							navAfterNewIntent(navController)
+						}
 					)
 				}
 				composable(
 					route = BottomNavItem.Settings.route,
-					enterTransition = { fadeIn(initialAlpha = 0f) },
-					exitTransition = { fadeOut(targetAlpha = 1f) },
+					enterTransition = { fadeIn(initialAlpha = 0f, animationSpec = tween(100)) },
+					exitTransition = { fadeOut(targetAlpha = 1f, animationSpec = tween(100)) },
+					popEnterTransition = { fadeIn(initialAlpha = 0f, animationSpec = tween(100)) },
+					popExitTransition = { fadeOut(targetAlpha = 1f, animationSpec = tween(100)) }
 				) {
 					SettingsScreen(
 						navController = navController,
@@ -217,7 +270,7 @@ class MainActivity: AppCompatActivity()
 				}
 				composable(
 					route = Screen.Details.route,
-					exitTransition = { fadeOut(targetAlpha = 1f) }
+					exitTransition = { exitTransition },
 				) {
 					DetailsScreen(
 						navController = navController,
@@ -358,12 +411,13 @@ class MainActivity: AppCompatActivity()
 		detailsViewModel.changeMultiWindowState(isInMultiWindowMode || isInPictureInPictureMode)
 		val orientation = newConfig.orientation
 		val picVM = picturesViewModel
+		val value = detailsViewModel.uiState.value
+		picVM.clickOnPicture(value.picturesUrl.indexOf(value.currentPicture), 0)
 		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
 		picVM.updateGridSpan(calculateGridSpan())
 		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
 		if(themePick == followSysTheme)
 		{
-			Log.d("themka pomenyalas", "poshlo-poehalo")
 			changeTheme(followSysTheme)
 		}
 	}
@@ -395,8 +449,8 @@ class MainActivity: AppCompatActivity()
 				isDarkTheme = isDarkThemeAfterSystemChangedTheme()
 			}
 		}
-		val blackColor = getColor(R.color.black)
-		val whiteColor = getColor(R.color.white)
+		val blackColor = ContextCompat.getColor(this, R.color.black)
+		val whiteColor = ContextCompat.getColor(this, R.color.white)
 		picVM.mutableIsThemeBlackState.value = isDarkTheme
 		enableEdgeToEdge(
 			statusBarStyle = SystemBarStyle.auto(lightScrim = whiteColor, darkScrim = blackColor, detectDarkMode = { isDarkTheme }),
@@ -452,7 +506,7 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	override fun onNewIntent(intent: Intent?)
+	override fun onNewIntent(intent: Intent)
 	{
 		super.onNewIntent(intent)
 		val picVM = picturesViewModel
@@ -520,13 +574,13 @@ class MainActivity: AppCompatActivity()
 			if(jobLocal == null || !jobLocal.isActive)
 			{
 				job = lifecycleScope.launch {
-					var navv = nav
-					while(navv == null)
+					var navAdding = nav
+					while(navAdding == null)
 					{
 						delay(100)
-						navv = navigation
+						navAdding = navigation
 					}
-					navv.navigate(Screen.Details.route)
+					navAdding.navigate(Screen.Details.route)
 
 					job = null
 				}
@@ -581,12 +635,34 @@ class MainActivity: AppCompatActivity()
 		return uiModeManager.nightMode == UiModeManager.MODE_NIGHT_YES
 	}
 
+	@SuppressLint("InternalInsetResource", "DiscouragedApi")
 	private fun calculateGridSpan(): Int
 	{
-		val displayMetrics = this.resources.displayMetrics
-		val width = displayMetrics.widthPixels
+		val resources = resources
+		val displayMetrics = resources.displayMetrics
+		var width = displayMetrics.widthPixels
+		val sBar = resources.getDimensionPixelSize(resources.getIdentifier("status_bar_height", "dimen", "android"))
+		val nBar = resources.getDimensionPixelSize(resources.getIdentifier("navigation_bar_height", "dimen", "android"))
+		var height = displayMetrics.heightPixels
 		val density = displayMetrics.density
-		val result = (width / density).toInt() / LENGTH_OF_PICTURE
+		if(width > height)
+		{
+			width += sBar + nBar
+		}
+		else
+		{
+			height += sBar + nBar
+		}
+		val isSw600dp = resources.getBoolean(is_sw600dp)
+		val result = if(isSw600dp)
+		{
+			(width / density).toInt() / LENGTH_OF_PICTURE_FOR_BIG_SCREENS
+		}
+		else
+		{
+			(width / density).toInt() / LENGTH_OF_PICTURE
+		}
+		Log.d("check Params", "is sw600dp = $isSw600dp")
 		return result
 	}
 
@@ -594,6 +670,7 @@ class MainActivity: AppCompatActivity()
 	{
 		const val RESULT_SUCCESS = 100
 		const val LENGTH_OF_PICTURE = 110
+		const val LENGTH_OF_PICTURE_FOR_BIG_SCREENS = 190
 		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337
 		const val SHOULD_WE_SHARE_THIS = "SHOULD_WE_SHARE_THIS"

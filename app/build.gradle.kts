@@ -91,4 +91,10 @@ dependencies {
     //anim
     implementation(libs.orbital)
     implementation(libs.androidx.compose.animation)
+    //For rememberLauncherForActivityResult()
+    implementation(libs.androidx.activity.compose)
+    //For PickVisualMedia contract
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.activity.ktx.v171)
+    implementation(libs.play.services.base)
 }

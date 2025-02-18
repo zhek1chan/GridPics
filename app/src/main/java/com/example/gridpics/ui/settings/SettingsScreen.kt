@@ -10,13 +10,12 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -79,11 +78,11 @@ fun SettingsScreen(
 	}
 	val windowInsets = if(isScreenInPortraitState.value.isPortraitOrientation)
 	{
-		WindowInsets.statusBarsIgnoringVisibility
+		WindowInsets.systemBarsIgnoringVisibility
 	}
 	else
 	{
-		WindowInsets.displayCutout.union(WindowInsets.statusBarsIgnoringVisibility)
+		WindowInsets.displayCutout.union(WindowInsets.systemBarsIgnoringVisibility)
 	}
 	Scaffold(
 		contentWindowInsets = windowInsets,
@@ -106,10 +105,10 @@ fun SettingsScreen(
 			}
 		},
 		content = { padding ->
+			Log.d("nothing", "$padding")
 			Column(
 				modifier = Modifier
-					.padding(padding)
-					.consumeWindowInsets(padding)
+					.windowInsetsPadding(windowInsets)
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
@@ -145,7 +144,7 @@ fun SettingsCompose(
 		Column(
 			modifier = Modifier
 				.fillMaxSize()
-				.padding(16.dp)
+				.padding(16.dp, 50.dp, 16.dp, 16.dp)
 		) {
 			// Theme options
 			listOfThemeOptions.forEach { text ->
@@ -153,7 +152,7 @@ fun SettingsCompose(
 					verticalAlignment = Alignment.CenterVertically,
 					modifier = Modifier
 						.fillMaxWidth()
-						.padding(2.dp, 10.dp, 18.dp, 0.dp)
+						.padding(2.dp, 10.dp, 0.dp, 0.dp)
 						.clickable {
 							if(text != selectedOption)
 							{

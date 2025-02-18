@@ -15,6 +15,7 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.Builder
+import androidx.core.content.ContextCompat
 import com.example.gridpics.R
 import com.example.gridpics.domain.model.PicturesDataForNotification
 import com.example.gridpics.ui.activity.MainActivity
@@ -52,7 +53,7 @@ class MainNotificationService: Service()
 
 	private fun createNotificationChannel()
 	{
-		if(Build.VERSION.SDK_INT >= VERSION_CODES.R)
+		if(Build.VERSION.SDK_INT >= VERSION_CODES.O)
 		{
 			val notificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 			if(notificationManager.getNotificationChannel(CHANNEL_NOTIFICATIONS_ID) == null)
@@ -106,7 +107,7 @@ class MainNotificationService: Service()
 
 	private fun createLogic(description: String?, bitmap: Bitmap?, showButtons: Boolean, useSound: Boolean)
 	{
-		val color = getColor(R.color.green)
+		val color = ContextCompat.getColor(this@MainNotificationService, R.color.green)
 		val gridPics = this@MainNotificationService.getString(R.string.gridpics)
 		val defaultText = description ?: this@MainNotificationService.getString(R.string.notification_content_text)
 		val builder = Builder(this@MainNotificationService, CHANNEL_NOTIFICATIONS_ID)
@@ -133,10 +134,17 @@ class MainNotificationService: Service()
 				val pendingIntent1 = PendingIntent.getActivity(this@MainNotificationService, 105, resultIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 				resultIntent.putExtra(SHOULD_WE_SHARE_THIS, true)
 				val pendingIntent2 = PendingIntent.getActivity(this@MainNotificationService, 110, resultIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
-				builder
-					.addAction(R.drawable.ic_delete, this@MainNotificationService.getString(R.string.delete_picture), pendingIntent1)
-					.addAction(R.drawable.ic_share, this@MainNotificationService.getString(R.string.share), pendingIntent2)
+				if (!description.startsWith("content://"))
+				{
+					builder
+						.addAction(R.drawable.ic_delete, this@MainNotificationService.getString(R.string.delete_picture), pendingIntent1)
+						.addAction(R.drawable.ic_share, this@MainNotificationService.getString(R.string.share), pendingIntent2)
+				} else {
+					builder
+						.addAction(R.drawable.ic_delete, this@MainNotificationService.getString(R.string.delete_picture), pendingIntent1)
+				}
 			}
+
 		}
 		if(bitmap != null)
 		{

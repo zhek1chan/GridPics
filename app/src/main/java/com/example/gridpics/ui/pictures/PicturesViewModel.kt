@@ -20,7 +20,6 @@ class PicturesViewModel(
 {
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM, emptyList()))
 	private val errorsMap: MutableMap<String, String> = mutableMapOf()
-	var orientationWasChanged = mutableStateOf(false)
 	var mutableIsThemeBlackState = mutableStateOf(false)
 	private var isOrientationPortrait = false
 	private var gridQuantity = mutableIntStateOf(0)
@@ -28,7 +27,6 @@ class PicturesViewModel(
 
 	init
 	{
-		Log.d("lifecycle", "vm is recreated")
 		val flow = picturesUiState
 		viewModelScope.launch {
 			interactor.getPics().collect { urls ->
@@ -36,8 +34,9 @@ class PicturesViewModel(
 				{
 					is Resource.Data ->
 					{
-						val savedUrls = flow.value.picturesUrl
-						val deletedUrls = flow.value.deletedUrls
+						val value = flow.value
+						val savedUrls = value.picturesUrl
+						val deletedUrls = value.deletedUrls
 						val urlsFromNet = convertToListFromString(urls.value)
 						val urlsToAdd = if(savedUrls.isNotEmpty())
 						{

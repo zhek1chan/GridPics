@@ -1,9 +1,8 @@
 package com.example.gridpics.ui.activity
 
-import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.Icon
@@ -19,9 +18,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 
-@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun BottomNavigationBar(
 	navController: NavController,
@@ -33,7 +32,7 @@ fun BottomNavigationBar(
 			BottomNavItem.Settings
 		)
 	}
-	val bottomBarState = remember { (mutableStateOf(true)) }
+	val bottomBarState = remember(Unit) { mutableStateOf(true) }
 	val navBackStackEntry by navController.currentBackStackEntryAsState()
 	val route = navBackStackEntry?.destination?.route
 	when(route)
@@ -51,11 +50,11 @@ fun BottomNavigationBar(
 		Screen.Details.route ->
 		{
 			// Hide BottomBar and TopBar
-			bottomBarState.value = true
+			bottomBarState.value = false
 		}
 	}
 	AnimatedVisibility(
-		visible = bottomBarState.value, enter = slideInVertically(initialOffsetY = { it }), exit = ExitTransition.None
+		visible = bottomBarState.value, enter = EnterTransition.None, exit = ExitTransition.None
 	) {
 		NavigationBar(windowInsets = WindowInsets.navigationBars, containerColor = MaterialTheme.colorScheme.background) {
 			items.forEach { item ->
@@ -72,18 +71,15 @@ fun BottomNavigationBar(
 					selected = route == item.route,
 					onClick = {
 						navController.navigate(item.route) {
-							// Pop up to the start destination of the graph to
-							// avoid building up a large stack of destinations
-							// on the back stack as users select items
-							navController.graph.startDestinationRoute?.let { route ->
-								popUpTo(route) {
-									saveState = true
-								}
+							popUpTo(navController.graph.findStartDestination().id) {
+								inclusive = false
+								saveState = true
 							}
-							// Avoid multiple copies of the same destination when re-selecting the same item
-							launchSingleTop = true
-							// Restore state when re-selecting a previously selected item
+							// Avoid multiple copies of the same destination when
+							// reselecting the same item
 							restoreState = true
+							launchSingleTop = true
+							// Restore state when reselecting a previously selected item
 						}
 					}
 				)
