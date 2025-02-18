@@ -11,7 +11,7 @@
 		<package android:name="com.example.background" />
 		<intent>
 			<action android:name="android.intent.action.VIEW" />
-			<data android:mimeType="image/png"/>
+			<data android:mimeType="image/png" />
 		</intent>
 	</queries>
 
@@ -32,6 +32,7 @@
 			android:exported="false"
 			android:foregroundServiceType="specialUse">
 		</service>
+		<!--suppress AndroidDomInspection -->
 		<service android:name="com.google.android.gms.metadata.ModuleDependencies"
 				 android:enabled="false"
 				 android:exported="false"
@@ -39,7 +40,8 @@
 			<intent-filter>
 				<action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES" />
 			</intent-filter>
-			<meta-data android:name="photopicker_activity:0:required" android:value="" />
+			<meta-data android:name="photopicker_activity:0:required"
+					   android:value="" />
 		</service>
 		<activity
 			android:name=".ui.activity.MainActivity"

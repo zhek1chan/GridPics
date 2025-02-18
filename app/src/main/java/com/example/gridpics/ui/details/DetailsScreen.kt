@@ -1,6 +1,5 @@
 package com.example.gridpics.ui.details
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.provider.Settings
@@ -133,7 +132,7 @@ fun SharedTransitionScope.DetailsScreen(
 {
 	val value = state.value
 	val currentPicture = remember(Unit) { value.currentPicture }
-	var list = remember(state.value.isSharedImage) { state.value.picturesUrl }
+	var list = remember(value.isSharedImage) { value.picturesUrl }
 	var initialPage = list.indexOf(currentPicture)
 	val size: Int
 	if(initialPage >= 0)
@@ -155,6 +154,7 @@ fun SharedTransitionScope.DetailsScreen(
 	val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
 	val animationIsRunning = remember { mutableStateOf(true) }
 	val isExit = remember { mutableStateOf(false) }
+	// setting up the right time of animation
 	LaunchedEffect(Unit) {
 		if(!value.isSharedImage && !value.wasDeletedFromNotification && !value.wasSharedFromNotification)
 		{
@@ -453,7 +453,6 @@ fun SharedTransitionScope.ShowDetails(
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
-@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun SharedTransitionScope.ShowAsynchImage(
 	img: String,
@@ -496,6 +495,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.diskCacheKey(img)
 			.build()
 	}
+	//setting up the size of zoomable space on screen to avoid zooming in empty places
 	var imageSize by remember { mutableStateOf(Size.Zero) }
 	LaunchedEffect(imageSize) {
 		if(imageSize != Size.Zero && imageSize.width >= 0 && imageSize.height >= 0)
@@ -513,7 +513,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 			enableOneFingerZoom = false,
 			onTap =
 			{
-				val visibility = state.value.barsAreVisible
+				val visibility = value.barsAreVisible
 				changeBarsVisability(!visibility)
 			}
 		)
@@ -591,8 +591,9 @@ fun SharedTransitionScope.ShowAsynchImage(
 			contentScale = ContentScale.Fit,
 			onSuccess = {
 				removeSpecialError(img)
-				width.floatValue = it.result.image.width.toFloat()
-				height.floatValue = it.result.image.height.toFloat()
+				val image = it.result.image
+				width.floatValue = image.width.toFloat()
+				height.floatValue = image.height.toFloat()
 			},
 			onError = {
 				addError(img, it.result.throwable.message.toString())
@@ -728,14 +729,15 @@ fun AppBar(
 	wasDeleted: MutableState<Boolean>,
 )
 {
-	if(state.value.wasSharedFromNotification && !currentPicture.startsWith("content://"))
+	val value = state.value
+	if(value.wasSharedFromNotification && !currentPicture.startsWith("content://"))
 	{
 		share(currentPicture)
 		postWasSharedState()
 	}
 	val navBack = remember { mutableStateOf(false) }
 	Log.d("shared pic url", currentPicture)
-	val sharedImgCase = state.value.isSharedImage
+	val sharedImgCase = value.isSharedImage
 	AnimatedVisibility(visible = isVisible && !animationIsRunning.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(modifier = Modifier
 			.background(MaterialTheme.colorScheme.background)

@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
@@ -38,6 +39,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil3.imageLoader
 import com.example.gridpics.R
+import com.example.gridpics.R.bool.is_sw600dp
 import com.example.gridpics.domain.model.PicturesDataForNotification
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
@@ -53,7 +55,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import kotlin.math.min
 
 class MainActivity: AppCompatActivity()
 {
@@ -163,6 +164,7 @@ class MainActivity: AppCompatActivity()
 		val detailsState = detVM.uiState
 		val isSharedImage = detailsState.value.isSharedImage
 		Log.d("casecase", "isShared = $isSharedImage")
+		//logic to avoid showing animation when the picture is shared
 		val enterTransition = if(isSharedImage)
 		{
 			EnterTransition.None
@@ -633,21 +635,34 @@ class MainActivity: AppCompatActivity()
 		return uiModeManager.nightMode == UiModeManager.MODE_NIGHT_YES
 	}
 
+	@SuppressLint("InternalInsetResource", "DiscouragedApi")
 	private fun calculateGridSpan(): Int
 	{
-		val displayMetrics = this.resources.displayMetrics
-		val width = displayMetrics.widthPixels
-		val height = displayMetrics.heightPixels
+		val resources = resources
+		val displayMetrics = resources.displayMetrics
+		var width = displayMetrics.widthPixels
+		val sBar = resources.getDimensionPixelSize(resources.getIdentifier("status_bar_height", "dimen", "android"))
+		val nBar = resources.getDimensionPixelSize(resources.getIdentifier("navigation_bar_height", "dimen", "android"))
+		var height = displayMetrics.heightPixels
 		val density = displayMetrics.density
-		val minParam = min(width, height)
-		val result = if(minParam < 600 * density)
+		if(width > height)
 		{
-			(width / density).toInt() / LENGTH_OF_PICTURE
+			width += sBar + nBar
 		}
 		else
 		{
+			height += sBar + nBar
+		}
+		val isSw600dp = resources.getBoolean(is_sw600dp)
+		val result = if(isSw600dp)
+		{
 			(width / density).toInt() / LENGTH_OF_PICTURE_FOR_BIG_SCREENS
 		}
+		else
+		{
+			(width / density).toInt() / LENGTH_OF_PICTURE
+		}
+		Log.d("check Params", "is sw600dp = $isSw600dp")
 		return result
 	}
 
