@@ -37,7 +37,6 @@ class DetailsViewModel(
 		Log.d("Description posted", "desc was posted")
 		viewModelScope.launch {
 			Log.d("description job is active", "${job.isActive}")
-			job.cancelChildren()
 			imageFlow.emit(PicturesDataForNotification(stringFromRes, null, false))
 			val bitmap = interactor.getPictureBitmap(url, job)
 			if(uiState.value.isSharedImage)

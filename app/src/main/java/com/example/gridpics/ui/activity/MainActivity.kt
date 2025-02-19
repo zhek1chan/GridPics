@@ -28,6 +28,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -52,6 +54,7 @@ import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -64,6 +67,7 @@ class MainActivity: AppCompatActivity()
 	private var navigation: NavHostController? = null
 	private var themePick: Int = 2
 	private var job: Job? = null
+	private var fromNotification = mutableStateOf(false)
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -126,7 +130,7 @@ class MainActivity: AppCompatActivity()
 		themePick = theme
 
 		lifecycleScope.launch {
-			detVM.observeUrlFlow().sample(500).collect {
+			detVM.observeUrlFlow().sample(1000).collectLatest {
 				if(ContextCompat.checkSelfPermission(
 						this@MainActivity,
 						Manifest.permission.POST_NOTIFICATIONS,
@@ -164,8 +168,9 @@ class MainActivity: AppCompatActivity()
 		val detailsState = detVM.uiState
 		val isSharedImage = detailsState.value.isSharedImage
 		Log.d("casecase", "isShared = $isSharedImage")
+		val fromNotification = fromNotification
 		//logic to avoid showing animation when the picture is shared
-		val enterTransition = if(isSharedImage)
+		val enterTransition = if(isSharedImage || fromNotification.value)
 		{
 			EnterTransition.None
 		}
@@ -173,7 +178,7 @@ class MainActivity: AppCompatActivity()
 		{
 			fadeIn(initialAlpha = 0f, animationSpec = tween(700))
 		}
-		val popEnterTransition = if(isSharedImage)
+		val popEnterTransition = if(isSharedImage || fromNotification.value)
 		{
 			EnterTransition.None
 		}
@@ -181,7 +186,7 @@ class MainActivity: AppCompatActivity()
 		{
 			fadeIn(initialAlpha = 0f, animationSpec = tween(100))
 		}
-		val exitTransition = if(isSharedImage)
+		val exitTransition = if(isSharedImage || fromNotification.value)
 		{
 			ExitTransition.None
 		}
@@ -189,7 +194,7 @@ class MainActivity: AppCompatActivity()
 		{
 			fadeOut(targetAlpha = 1f, animationSpec = tween(700))
 		}
-		val popExitTransition = if(isSharedImage)
+		val popExitTransition = if(isSharedImage || fromNotification.value)
 		{
 			ExitTransition.None
 		}
@@ -197,6 +202,7 @@ class MainActivity: AppCompatActivity()
 		{
 			fadeOut(targetAlpha = 1f, animationSpec = tween(100))
 		}
+		val animationIsRunning = remember { mutableStateOf(false) }
 		SharedTransitionLayout {
 			NavHost(
 				navController = navController,
@@ -212,6 +218,7 @@ class MainActivity: AppCompatActivity()
 				) {
 					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
 					changeBarsVisability(visible = true, fromDetailsScreen = true)
+					fromNotification.value = false
 					PicturesScreen(
 						navController = navController,
 						postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
@@ -245,6 +252,8 @@ class MainActivity: AppCompatActivity()
 							picVM.clickOnPicture(0, 0)
 							navAfterNewIntent(navController)
 						},
+						isMultiWindowed = detailsState.value.isMultiWindowed,
+						animationIsRunning = animationIsRunning
 					)
 				}
 				composable(
@@ -301,7 +310,9 @@ class MainActivity: AppCompatActivity()
 						},
 						postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 						setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
-						animatedVisibilityScope = this@composable
+						animatedVisibilityScope = this@composable,
+						fromNotification = fromNotification,
+						animationIsRunning = animationIsRunning
 					)
 				}
 			}
@@ -529,6 +540,7 @@ class MainActivity: AppCompatActivity()
 				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
 				if(!oldString.isNullOrEmpty() && picUrls.contains(oldString))
 				{
+					fromNotification.value = true
 					val needsToBeShared = intent.getBooleanExtra(SHOULD_WE_SHARE_THIS, false)
 					if(needsToBeShared)
 					{

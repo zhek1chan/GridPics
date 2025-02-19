@@ -5,6 +5,7 @@ import android.content.Context.MODE_PRIVATE
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -87,28 +89,10 @@ fun SettingsScreen(
 	Scaffold(
 		contentWindowInsets = windowInsets,
 		bottomBar = { BottomNavigationBar(navController) },
-		topBar = {
-			Row(
-				verticalAlignment = Alignment.CenterVertically,
-				modifier = Modifier
-					.fillMaxWidth()
-					.windowInsetsPadding(windowInsets)
-					.padding(16.dp, 0.dp)
-					.height(60.dp)
-			) {
-				Text(
-					textAlign = TextAlign.Center,
-					text = stringResource(R.string.settings),
-					fontSize = 21.sp,
-					color = MaterialTheme.colorScheme.onPrimary
-				)
-			}
-		},
 		content = { padding ->
 			Log.d("nothing", "$padding")
 			Column(
 				modifier = Modifier
-					.windowInsetsPadding(windowInsets)
 					.verticalScroll(rememberScrollState())
 					.fillMaxSize()
 			) {
@@ -118,7 +102,7 @@ fun SettingsScreen(
 	)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsCompose(
 	option: MutableState<PicturesScreenUiState>,
@@ -143,16 +127,35 @@ fun SettingsCompose(
 	CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 		Column(
 			modifier = Modifier
-				.fillMaxSize()
-				.padding(16.dp, 50.dp, 16.dp, 16.dp)
+				.fillMaxWidth()
+				.height(500.dp)
+				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+				.verticalScroll(rememberScrollState())
+				.padding(16.dp, 0.dp, 16.dp, 16.dp)
 		) {
+			Row(
+				verticalAlignment = Alignment.CenterVertically,
+				modifier = Modifier
+					.fillMaxWidth()
+					.height(60.dp)
+			) {
+				Text(
+					textAlign = TextAlign.Center,
+					text = stringResource(R.string.settings),
+					fontSize = 21.sp,
+					color = MaterialTheme.colorScheme.onPrimary
+				)
+			}
 			// Theme options
+			Row(modifier = Modifier
+				.fillMaxWidth()
+				.height(30.dp)) { }
 			listOfThemeOptions.forEach { text ->
 				Row(
 					verticalAlignment = Alignment.CenterVertically,
 					modifier = Modifier
 						.fillMaxWidth()
-						.padding(2.dp, 10.dp, 0.dp, 0.dp)
+						.padding(2.dp, 0.dp, 0.dp, 10.dp)
 						.clickable {
 							if(text != selectedOption)
 							{
@@ -169,38 +172,43 @@ fun SettingsCompose(
 						listOfThemeOptions[1] -> rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_night))
 						else -> rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_sys_theme))
 					}
+
 					Icon(
-						modifier = Modifier.padding(0.dp),
+						modifier = Modifier.wrapContentSize(),
 						painter = painter,
 						contentDescription = "CommentIcon",
 						tint = MaterialTheme.colorScheme.onPrimary
 					)
-					Text(
-						text = text,
-						fontSize = 18.sp,
-						maxLines = 1,
-						overflow = TextOverflow.Ellipsis,
-						color = MaterialTheme.colorScheme.onPrimary,
-						modifier = Modifier.padding(16.dp, 0.dp)
-					)
-					Spacer(Modifier.weight(1f))
-					RadioButton(
-						selected = (text == selectedOption),
-						onClick = {
-							if(text != selectedOption)
-							{
-								onOptionSelected(text)
-								saveThemeState(context, listOfThemeOptions.indexOf(text))
-								changeTheme(listOfThemeOptions.indexOf(text))
-							}
-						},
-						colors = RadioButtonColors(
-							Color.Green,
-							MaterialTheme.colorScheme.onSecondary,
-							MaterialTheme.colorScheme.error,
-							MaterialTheme.colorScheme.onSecondary
+					Box(modifier = Modifier.fillMaxWidth()) {
+						Text(
+							text = text,
+							fontSize = 18.sp,
+							maxLines = 1,
+							overflow = TextOverflow.Ellipsis,
+							color = MaterialTheme.colorScheme.onPrimary,
+							modifier = Modifier
+								.padding(start = 16.dp, end = 70.dp)
+								.align(Alignment.CenterStart)
 						)
-					)
+						RadioButton(
+							modifier = Modifier.align(Alignment.CenterEnd),
+							selected = (text == selectedOption),
+							onClick = {
+								if(text != selectedOption)
+								{
+									onOptionSelected(text)
+									saveThemeState(context, listOfThemeOptions.indexOf(text))
+									changeTheme(listOfThemeOptions.indexOf(text))
+								}
+							},
+							colors = RadioButtonColors(
+								Color.Green,
+								MaterialTheme.colorScheme.onSecondary,
+								MaterialTheme.colorScheme.error,
+								MaterialTheme.colorScheme.onSecondary
+							)
+						)
+					}
 				}
 			}
 			// Divider
@@ -227,7 +235,7 @@ fun SettingsCompose(
 					text = stringResource(id = R.string.clear_cache),
 					fontSize = 18.sp,
 					color = MaterialTheme.colorScheme.onPrimary,
-					modifier = Modifier.padding(16.dp, 0.dp)
+					modifier = Modifier.padding(start = 16.dp)
 				)
 				Spacer(Modifier.weight(1f))
 			}

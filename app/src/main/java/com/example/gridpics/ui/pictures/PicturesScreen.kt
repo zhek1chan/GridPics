@@ -5,6 +5,7 @@ package com.example.gridpics.ui.pictures
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -107,6 +108,8 @@ fun SharedTransitionScope.PicturesScreen(
 	postMaxVisibleLinesNum: (Int) -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	picWasLoadedFromMediaPicker: (Uri) -> Unit,
+	isMultiWindowed: Boolean,
+	animationIsRunning: MutableState<Boolean>
 )
 {
 	LaunchedEffect(Unit) {
@@ -205,6 +208,8 @@ fun SharedTransitionScope.PicturesScreen(
 					calculateGridSpan = calculatedGridSpan,
 					postMaxVisibleLinesNum = postMaxVisibleLinesNum,
 					animatedVisibilityScope = animatedVisibilityScope,
+					isMultiWindowed = isMultiWindowed,
+					animationIsRunning = animationIsRunning
 				)
 			}
 		}
@@ -222,6 +227,8 @@ fun SharedTransitionScope.ItemsCard(
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	list: List<String>,
 	gridNum: Int,
+	isMultiWindowed: Boolean,
+	animationIsRunning: MutableState<Boolean>,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -280,7 +287,7 @@ fun SharedTransitionScope.ItemsCard(
 					animatedVisibilityScope = animatedVisibilityScope)
 				.clip(RoundedCornerShape(8.dp))
 				.fillMaxSize()
-				.clickable {
+				.clickable(!animationIsRunning.value) {
 					if(isError)
 					{
 						openAlertDialog.value = true
@@ -292,7 +299,11 @@ fun SharedTransitionScope.ItemsCard(
 						val firstVisibleIndex = lazyState.firstVisibleItemIndex
 						val offsetOfList = lazyState.firstVisibleItemScrollOffset
 						val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
-						if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
+						if(isMultiWindowed)
+						{
+							currentPicture(item, list.indexOf(item), 0)
+						}
+						else if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
 						{
 							Log.d("check listScroll", "firstVisibleIndex")
 							currentPicture(item, firstVisibleIndex, 0)
@@ -371,14 +382,27 @@ fun SharedTransitionScope.ShowList(
 	calculateGridSpan: MutableState<Int>,
 	postMaxVisibleLinesNum: (Int) -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
+	isMultiWindowed: Boolean,
+	animationIsRunning: MutableState<Boolean>
 )
 {
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
+	val context = LocalContext.current
+	LaunchedEffect(Unit) {
+		animationIsRunning.value = true
+		val animatorScale = Settings.Global.getFloat(
+			context.contentResolver,
+			Settings.Global.ANIMATOR_DURATION_SCALE,
+			1f
+		)
+		Log.d("animation is running", "${animatedVisibilityScope.transition.totalDurationNanos} $animatorScale")
+		delay((animatedVisibilityScope.transition.totalDurationNanos.toFloat() * animatorScale / 1000000).toLong()) //перевод в милисекунды
+		animationIsRunning.value = false
+	}
 	val listState = remember(LocalConfiguration.current.orientation) { LazyGridState() }
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
-		val context = LocalContext.current
 		when(state)
 		{
 			is PicturesState.SearchIsOk ->
@@ -407,6 +431,8 @@ fun SharedTransitionScope.ShowList(
 							animatedVisibilityScope = animatedVisibilityScope,
 							list = list,
 							gridNum = calculateGridSpan.value,
+							isMultiWindowed = isMultiWindowed,
+							animationIsRunning = animationIsRunning
 						)
 					}
 				}
@@ -455,6 +481,8 @@ fun SharedTransitionScope.ShowList(
 					animatedVisibilityScope = animatedVisibilityScope,
 					list = imagesUrlsSP,
 					gridNum = calculateGridSpan.value,
+					isMultiWindowed = isMultiWindowed,
+					animationIsRunning = animationIsRunning
 				)
 			}
 		}

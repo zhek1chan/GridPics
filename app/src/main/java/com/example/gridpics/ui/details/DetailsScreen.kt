@@ -128,6 +128,8 @@ fun SharedTransitionScope.DetailsScreen(
 	postWasSharedState: () -> Unit,
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
+	fromNotification: MutableState<Boolean>,
+	animationIsRunning: MutableState<Boolean>
 )
 {
 	val value = state.value
@@ -152,7 +154,6 @@ fun SharedTransitionScope.DetailsScreen(
 	val context = LocalContext.current
 	val errorPicture = remember(Unit) { ContextCompat.getDrawable(context, R.drawable.error)?.toBitmap() }
 	val pleaseWaitString = stringResource(R.string.please_wait_the_pic_is_loading)
-	val animationIsRunning = remember { mutableStateOf(true) }
 	val isExit = remember { mutableStateOf(false) }
 	// setting up the right time of animation
 	LaunchedEffect(Unit) {
@@ -183,8 +184,9 @@ fun SharedTransitionScope.DetailsScreen(
 		)
 	}
 
-	LaunchedEffect(pagerState) {
+	LaunchedEffect(Unit) {
 		snapshotFlow { pagerState.currentPage }.collect { page ->
+			Log.d("checkMa", "send")
 			val pic = if(list.size >= page)
 			{
 				list[page]
@@ -223,7 +225,8 @@ fun SharedTransitionScope.DetailsScreen(
 				postWasSharedState = postWasSharedState,
 				animationIsRunning = animationIsRunning,
 				isExit = isExit,
-				wasDeleted = wasDeleted
+				wasDeleted = wasDeleted,
+				fromNotification = fromNotification
 			)
 		},
 		content = { padding ->
@@ -247,7 +250,8 @@ fun SharedTransitionScope.DetailsScreen(
 				animationIsRunning = animationIsRunning,
 				animatedVisibilityScope = animatedVisibilityScope,
 				isExit = isExit,
-				wasDeleted = wasDeleted
+				wasDeleted = wasDeleted,
+				fromNotification = fromNotification
 			)
 		}
 	)
@@ -276,6 +280,7 @@ fun SharedTransitionScope.ShowDetails(
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	isExit: MutableState<Boolean>,
 	wasDeleted: MutableState<Boolean>,
+	fromNotification: MutableState<Boolean>,
 )
 {
 	val isSharedImage = state.value.isSharedImage
@@ -401,7 +406,7 @@ fun SharedTransitionScope.ShowDetails(
 					) {
 						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 						CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-							AnimatedVisibility(!animationIsRunning.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+							AnimatedVisibility(visible = !animationIsRunning.value || fromNotification.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 								Button(
 									modifier = Modifier
 										.align(Alignment.CenterVertically)
@@ -485,10 +490,12 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.build()
 	}
 	var placeHolder = R.drawable.loading
-	if (img.contains(".gif")) {
+	if(img.contains(".gif"))
+	{
 		placeHolder = R.drawable.empty
 		LaunchedEffect(Unit) {
-			while(animationIsRunning.value) {
+			while(animationIsRunning.value)
+			{
 				delay(100)
 			}
 			placeHolder = R.drawable.loading
@@ -520,6 +527,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 		.fillMaxSize()
 		.zoomable(
 			zoomState = zoom,
+			zoomEnabled = !animationIsRunning.value,
 			enableOneFingerZoom = false,
 			onTap =
 			{
@@ -737,6 +745,7 @@ fun AppBar(
 	animationIsRunning: MutableState<Boolean>,
 	isExit: MutableState<Boolean>,
 	wasDeleted: MutableState<Boolean>,
+	fromNotification: MutableState<Boolean>,
 )
 {
 	val value = state.value
@@ -748,7 +757,7 @@ fun AppBar(
 	val navBack = remember { mutableStateOf(false) }
 	Log.d("shared pic url", currentPicture)
 	val sharedImgCase = value.isSharedImage
-	AnimatedVisibility(visible = isVisible && !animationIsRunning.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+	AnimatedVisibility(visible = (isVisible && !animationIsRunning.value) || fromNotification.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(modifier = Modifier
 			.background(MaterialTheme.colorScheme.background)
 			.height(
