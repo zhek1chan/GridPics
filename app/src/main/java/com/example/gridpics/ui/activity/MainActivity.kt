@@ -412,9 +412,10 @@ class MainActivity: AppCompatActivity()
 		val orientation = newConfig.orientation
 		val picVM = picturesViewModel
 		val value = detailsViewModel.uiState.value
-		picVM.clickOnPicture(value.picturesUrl.indexOf(value.currentPicture), 0)
-		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
 		picVM.updateGridSpan(calculateGridSpan())
+		picVM.clickOnPicture(value.picturesUrl.indexOf(value.currentPicture), 0)
+		Log.d("was set", "${value.picturesUrl.indexOf(value.currentPicture)}")
+		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
 		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
 		if(themePick == followSysTheme)
 		{
