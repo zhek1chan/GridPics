@@ -50,7 +50,7 @@ fun BottomNavigationBar(
 		Screen.Details.route ->
 		{
 			// Hide BottomBar and TopBar
-			bottomBarState.value = false
+			bottomBarState.value = true
 		}
 	}
 	AnimatedVisibility(

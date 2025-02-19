@@ -220,6 +220,7 @@ class PicturesViewModel(
 		Log.d("proverka", "index = $index, indexOfCurrentPic = $indexOfCurrentPic, maxVisibleLinesNum = $maxVisibleLinesNum")
 		if(abs(indexOfCurrentPic - index) >= (maxVisibleLinesNum - gridQuantity.intValue) || (index > indexOfCurrentPic))
 		{
+			Log.d("check listScroll", "to 0 offset")
 			clickOnPicture(indexOfCurrentPic, 0)
 		}
 	}

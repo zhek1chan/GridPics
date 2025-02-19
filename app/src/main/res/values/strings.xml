@@ -36,4 +36,5 @@
 	<string name="this_feature_is_not_available">Данная функция недоступна</string>
 	<string name="something_went_wrong">Что-то пошло не так</string>
 	<string name="no_needed_app">У вас нет нужного приложения</string>
+	<string name="error_was_catched">Произошла ошибка: %1$s</string>
 </resources>

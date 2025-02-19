@@ -244,7 +244,7 @@ class MainActivity: AppCompatActivity()
 							detVM.postCorrectList()
 							picVM.clickOnPicture(0, 0)
 							navAfterNewIntent(navController)
-						}
+						},
 					)
 				}
 				composable(

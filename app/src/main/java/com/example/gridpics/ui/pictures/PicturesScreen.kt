@@ -58,7 +58,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,9 +87,7 @@ import com.example.gridpics.ui.activity.BottomNavigationBar
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -134,7 +131,6 @@ fun SharedTransitionScope.PicturesScreen(
 					.windowInsetsPadding(windowInsets)
 					.padding(16.dp, 0.dp)
 			) {
-				val somethingWentWrong = stringResource(R.string.something_went_wrong)
 				val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia(), onResult = { uri ->
 					if(uri != null)
 					{
@@ -144,12 +140,7 @@ fun SharedTransitionScope.PicturesScreen(
 						}
 						picWasLoadedFromMediaPicker(uri)
 					}
-					else
-					{
-						Toast.makeText(context, somethingWentWrong, Toast.LENGTH_SHORT).show()
-					}
 				})
-
 				Box(Modifier
 					.fillMaxWidth()
 					.padding(0.dp, 16.dp, 0.dp)) {
@@ -165,9 +156,17 @@ fun SharedTransitionScope.PicturesScreen(
 							.size(60.dp, 30.dp)
 							.align(Alignment.TopEnd),
 						onClick = {
-							launcher.launch(PickVisualMediaRequest(
-								mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
-							))
+							try
+							{
+								launcher.launch(PickVisualMediaRequest(
+									mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
+								))
+							}
+							catch(e: Exception)
+							{
+								Log.d("runtime error", "${e.message}, ${e.printStackTrace()}")
+								Toast.makeText(context, context.getString(R.string.error_was_catched, e.message), Toast.LENGTH_SHORT).show()
+							}
 						},
 					) {
 						val ic = rememberVectorPainter(Icons.Default.AddCircle)
@@ -205,7 +204,7 @@ fun SharedTransitionScope.PicturesScreen(
 					index = index,
 					calculateGridSpan = calculatedGridSpan,
 					postMaxVisibleLinesNum = postMaxVisibleLinesNum,
-					animatedVisibilityScope = animatedVisibilityScope
+					animatedVisibilityScope = animatedVisibilityScope,
 				)
 			}
 		}
@@ -220,7 +219,6 @@ fun SharedTransitionScope.ItemsCard(
 	isValidUrl: (String) -> Boolean,
 	lazyState: LazyGridState,
 	addError: (String, String) -> Unit,
-	scope: CoroutineScope,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	list: List<String>,
 	gridNum: Int,
@@ -239,6 +237,15 @@ fun SharedTransitionScope.ItemsCard(
 		placeholder = R.drawable.error
 		isError = true
 		errorMessage.value = errorMessageFromErrorsList
+	}
+	if(item.contains(".gif") && errorMessageFromErrorsList == null)
+	{
+		placeholder = R.drawable.empty
+		LaunchedEffect(Unit) {
+			delay(150)
+
+			placeholder = R.drawable.loading
+		}
 	}
 	val headers = remember {
 		NetworkHeaders.Builder()
@@ -280,32 +287,30 @@ fun SharedTransitionScope.ItemsCard(
 					}
 					else
 					{
-						scope.launch {
-							Log.d("current", item)
-							//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
-							val firstVisibleIndex = lazyState.firstVisibleItemIndex
-							val offsetOfList = lazyState.firstVisibleItemScrollOffset
-							val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
-							if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
-							{
-								lazyState.animateScrollToItem(firstVisibleIndex, 0)
-								delay(100)
-								currentPicture(item, firstVisibleIndex, 0)
-							}
-							else if(
-								list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
-								&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
-							{
-								lazyState.animateScrollToItem(firstVisibleIndex + gridNum, 0)
-								currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
-								delay(100)
-							}
-							else
-							{
-								currentPicture(item, firstVisibleIndex, offsetOfList)
-							}
-							openAlertDialog.value = false
+						Log.d("current", item)
+						//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
+						val firstVisibleIndex = lazyState.firstVisibleItemIndex
+						val offsetOfList = lazyState.firstVisibleItemScrollOffset
+						val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
+						if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
+						{
+							Log.d("check listScroll", "firstVisibleIndex")
+							currentPicture(item, firstVisibleIndex, 0)
 						}
+						else if(
+							(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
+								&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
+							&& (lazyState.layoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
+						{
+							Log.d("check listScroll", "firstVisible +gridnum")
+							currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
+						}
+						else
+						{
+							Log.d("check listScroll", "just click $firstVisibleIndex, $offsetOfList")
+							currentPicture(item, firstVisibleIndex, offsetOfList)
+						}
+						openAlertDialog.value = false
 					}
 				},
 			contentScale = ContentScale.Fit,
@@ -368,13 +373,12 @@ fun SharedTransitionScope.ShowList(
 	animatedVisibilityScope: AnimatedVisibilityScope,
 )
 {
-	val context = LocalContext.current
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
-	val scope = rememberCoroutineScope()
 	val listState = rememberLazyGridState()
 	if(imagesUrlsSP.isNullOrEmpty())
 	{
+		val context = LocalContext.current
 		when(state)
 		{
 			is PicturesState.SearchIsOk ->
@@ -386,7 +390,7 @@ fun SharedTransitionScope.ShowList(
 					saveToSharedPrefs(list)
 				}
 				LazyVerticalGrid(
-					horizontalArrangement = Arrangement.End,
+					horizontalArrangement = Arrangement.Center,
 					state = listState,
 					modifier = Modifier
 						.fillMaxSize(),
@@ -400,10 +404,9 @@ fun SharedTransitionScope.ShowList(
 							isValidUrl = isValidUrl,
 							lazyState = listState,
 							addError = addError,
-							scope = scope,
 							animatedVisibilityScope = animatedVisibilityScope,
 							list = list,
-							gridNum = calculateGridSpan.value
+							gridNum = calculateGridSpan.value,
 						)
 					}
 				}
@@ -434,7 +437,7 @@ fun SharedTransitionScope.ShowList(
 			postSavedUrls(imagesUrlsSP)
 		}
 		LazyVerticalGrid(
-			horizontalArrangement = Arrangement.End,
+			horizontalArrangement = Arrangement.Absolute.Center,
 			state = listState,
 			modifier = Modifier
 				.fillMaxSize(),
@@ -449,16 +452,16 @@ fun SharedTransitionScope.ShowList(
 					isValidUrl = isValidUrl,
 					lazyState = listState,
 					addError = addError,
-					scope = scope,
 					animatedVisibilityScope = animatedVisibilityScope,
 					list = imagesUrlsSP,
-					gridNum = calculateGridSpan.value
+					gridNum = calculateGridSpan.value,
 				)
 			}
 		}
 	}
 	LaunchedEffect(Unit) {
 		postMaxVisibleLinesNum(listState.layoutInfo.visibleItemsInfo.size)
+		Log.d("check listScroll", "scrolled $index, $offset")
 		listState.scrollToItem(index, offset)
 	}
 }

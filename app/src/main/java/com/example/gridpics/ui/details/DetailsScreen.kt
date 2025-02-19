@@ -484,6 +484,16 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
 			.build()
 	}
+	var placeHolder = R.drawable.loading
+	if (img.contains(".gif")) {
+		placeHolder = R.drawable.empty
+		LaunchedEffect(Unit) {
+			while(animationIsRunning.value) {
+				delay(100)
+			}
+			placeHolder = R.drawable.loading
+		}
+	}
 	val imgRequest = remember(img) {
 		ImageRequest.Builder(context)
 			.data(img)
@@ -491,7 +501,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.error(R.drawable.error)
 			.memoryCacheKey(img)
 			.placeholderMemoryCacheKey(img)
-			.placeholder(R.drawable.loading)
+			.placeholder(placeHolder)
 			.diskCacheKey(img)
 			.build()
 	}
