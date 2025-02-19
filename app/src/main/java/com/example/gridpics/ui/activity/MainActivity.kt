@@ -253,7 +253,14 @@ class MainActivity: AppCompatActivity()
 							navAfterNewIntent(navController)
 						},
 						isMultiWindowed = detailsState.value.isMultiWindowed,
-						animationIsRunning = animationIsRunning
+						animationIsRunning = animationIsRunning,
+						picWasLoadedButAlreadyWasInTheApp = { uri ->
+							detVM.isSharedImage(false)
+							Toast.makeText(this@MainActivity, getString(R.string.pic_was_already_in_the_app), Toast.LENGTH_LONG).show()
+							picVM.clickOnPicture(0, 0)
+							detVM.postCurrentPicture(uri.toString())
+							navController.navigate(Screen.Details.route)
+						}
 					)
 				}
 				composable(
@@ -570,11 +577,20 @@ class MainActivity: AppCompatActivity()
 				{
 					detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
 				}
-				detVM.isSharedImage(true)
-				detVM.postCurrentPicture(sharedValue)
-				detVM.postCorrectList()
-				picVM.clickOnPicture(0, 0)
-				navAfterNewIntent(nav)
+				if (picUrls[0] == sharedValue) {
+					detVM.isSharedImage(false)
+					Toast.makeText(this@MainActivity, getString(R.string.pic_was_already_in_the_app), Toast.LENGTH_SHORT).show()
+					picVM.clickOnPicture(0, 0)
+					detVM.postCurrentPicture(sharedValue)
+					navAfterNewIntent(nav)
+				} else
+				{
+					detVM.isSharedImage(true)
+					detVM.postCurrentPicture(sharedValue)
+					detVM.postCorrectList()
+					picVM.clickOnPicture(0, 0)
+					navAfterNewIntent(nav)
+				}
 			}
 		}
 	}

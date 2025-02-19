@@ -12,15 +12,19 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
@@ -54,8 +58,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -71,6 +77,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -109,7 +116,8 @@ fun SharedTransitionScope.PicturesScreen(
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	picWasLoadedFromMediaPicker: (Uri) -> Unit,
 	isMultiWindowed: Boolean,
-	animationIsRunning: MutableState<Boolean>
+	animationIsRunning: MutableState<Boolean>,
+	picWasLoadedButAlreadyWasInTheApp: (Uri) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -126,6 +134,43 @@ fun SharedTransitionScope.PicturesScreen(
 	val context = LocalContext.current
 	Scaffold(
 		contentWindowInsets = windowInsets,
+		floatingActionButton = {
+			AnimatedVisibility(visible = true) {
+				Box(modifier = Modifier.size(100.dp, 100.dp)) {
+					Button(
+						contentPadding = PaddingValues(0.dp),
+						modifier = Modifier
+							.size(65.dp, 65.dp)
+							.align(Alignment.CenterStart),
+						colors = ButtonColors(contentColor = Color.White,
+							containerColor = Color.Blue,
+							disabledContainerColor = Color.Blue,
+							disabledContentColor = Color.White), onClick = {}) {
+						Icon(
+							modifier = Modifier.size(35.dp,35.dp),
+							painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.compare_arrows_24)),
+							contentDescription = "CommentIcon",
+						)
+					}
+					Button(
+						modifier = Modifier
+							.size(40.dp, 40.dp)
+							.align(Alignment.TopEnd),
+						colors = ButtonColors(contentColor = Color.White,
+							containerColor = Color.Red,
+							disabledContainerColor = Color.Red,
+							disabledContentColor = Color.White),
+						onClick = {}) {
+						Icon(
+							modifier = Modifier.size(30.dp, 30.dp),
+							painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.compare_arrows_24)),
+							contentDescription = "CommentIcon",
+							tint = Color.White
+						)
+					}
+				}
+			}
+		},
 		topBar = {
 			Row(
 				modifier = Modifier
@@ -141,9 +186,17 @@ fun SharedTransitionScope.PicturesScreen(
 						{
 							context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
 						}
-						picWasLoadedFromMediaPicker(uri)
+						if(value.picturesUrl.contains(uri.toString()))
+						{
+							picWasLoadedButAlreadyWasInTheApp(uri)
+						}
+						else
+						{
+							picWasLoadedFromMediaPicker(uri)
+						}
 					}
 				})
+
 				Box(Modifier
 					.fillMaxWidth()
 					.padding(0.dp, 16.dp, 0.dp)) {
@@ -216,6 +269,7 @@ fun SharedTransitionScope.PicturesScreen(
 	)
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SharedTransitionScope.ItemsCard(
 	item: String,
@@ -229,6 +283,8 @@ fun SharedTransitionScope.ItemsCard(
 	gridNum: Int,
 	isMultiWindowed: Boolean,
 	animationIsRunning: MutableState<Boolean>,
+	selectedCounter: MutableIntState,
+	selectedList: MutableList<String>,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -271,6 +327,7 @@ fun SharedTransitionScope.ItemsCard(
 			.build()
 	}
 	Log.d("recompose", "picture $item")
+	val imageIsSelected = remember(item) { mutableStateOf(selectedList.contains(item)) }
 	Box(Modifier
 		.fillMaxSize()
 		.aspectRatio(1f)) {
@@ -285,45 +342,63 @@ fun SharedTransitionScope.ItemsCard(
 						key = list.indexOf(item)
 					),
 					animatedVisibilityScope = animatedVisibilityScope)
-				.clip(RoundedCornerShape(8.dp))
-				.fillMaxSize()
-				.clickable(!animationIsRunning.value) {
-					if(isError)
-					{
-						openAlertDialog.value = true
-					}
-					else
-					{
-						Log.d("current", item)
-						//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
-						val firstVisibleIndex = lazyState.firstVisibleItemIndex
-						val offsetOfList = lazyState.firstVisibleItemScrollOffset
-						val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
-						if(isMultiWindowed)
+				.combinedClickable(
+					onClick = {
+						if(!animationIsRunning.value)
 						{
-							currentPicture(item, list.indexOf(item), 0)
+							if(isError)
+							{
+								openAlertDialog.value = true
+							}
+							else
+							{
+								Log.d("current", item)
+								//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
+								val firstVisibleIndex = lazyState.firstVisibleItemIndex
+								val offsetOfList = lazyState.firstVisibleItemScrollOffset
+								val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
+								if(isMultiWindowed)
+								{
+									currentPicture(item, list.indexOf(item), 0)
+								}
+								else if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
+								{
+									Log.d("check listScroll", "firstVisibleIndex")
+									currentPicture(item, firstVisibleIndex, 0)
+								}
+								else if(
+									(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
+										&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
+									&& (lazyState.layoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
+								{
+									Log.d("check listScroll", "firstVisible +gridnum")
+									currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
+								}
+								else
+								{
+									Log.d("check listScroll", "just click $firstVisibleIndex, $offsetOfList")
+									currentPicture(item, firstVisibleIndex, offsetOfList)
+								}
+								openAlertDialog.value = false
+							}
 						}
-						else if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
+					},
+					onLongClick = {
+						imageIsSelected.value = !imageIsSelected.value
+						if(imageIsSelected.value)
 						{
-							Log.d("check listScroll", "firstVisibleIndex")
-							currentPicture(item, firstVisibleIndex, 0)
-						}
-						else if(
-							(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
-								&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
-							&& (lazyState.layoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
-						{
-							Log.d("check listScroll", "firstVisible +gridnum")
-							currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
+							selectedCounter.intValue += 1
+							selectedList.add(item)
 						}
 						else
 						{
-							Log.d("check listScroll", "just click $firstVisibleIndex, $offsetOfList")
-							currentPicture(item, firstVisibleIndex, offsetOfList)
+							selectedCounter.intValue -= 1
+							selectedList.remove(item)
 						}
-						openAlertDialog.value = false
 					}
-				},
+				)
+				.clip(RoundedCornerShape(8.dp))
+				.fillMaxSize(),
 			contentScale = ContentScale.Fit,
 			onError = {
 				isError = true
@@ -333,6 +408,16 @@ fun SharedTransitionScope.ItemsCard(
 				isError = false
 			}
 		)
+		AnimatedVisibility(visible = imageIsSelected.value) {
+			Icon(
+				modifier = Modifier
+					.size(40.dp, 40.dp)
+					.align(Alignment.CenterStart),
+				painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.icon_check)),
+				contentDescription = "CheckIcon",
+				tint = MaterialTheme.colorScheme.primary
+			)
+		}
 	}
 	if(openAlertDialog.value)
 	{
@@ -383,11 +468,13 @@ fun SharedTransitionScope.ShowList(
 	postMaxVisibleLinesNum: (Int) -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	isMultiWindowed: Boolean,
-	animationIsRunning: MutableState<Boolean>
+	animationIsRunning: MutableState<Boolean>,
 )
 {
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
+	val selectedCounter = remember { mutableIntStateOf(0) }
+	val selectedList = remember { mutableListOf<String>() }
 	val context = LocalContext.current
 	LaunchedEffect(Unit) {
 		animationIsRunning.value = true
@@ -400,97 +487,104 @@ fun SharedTransitionScope.ShowList(
 		delay((animatedVisibilityScope.transition.totalDurationNanos.toFloat() * animatorScale / 1000000).toLong()) //перевод в милисекунды
 		animationIsRunning.value = false
 	}
-	val listState = remember(LocalConfiguration.current.orientation) { LazyGridState() }
-	if(imagesUrlsSP.isNullOrEmpty())
-	{
-		when(state)
+	Box(modifier = Modifier.fillMaxSize()) {
+		val listState = remember(LocalConfiguration.current.orientation) { LazyGridState() }
+		if(imagesUrlsSP.isNullOrEmpty())
 		{
-			is PicturesState.SearchIsOk ->
+			when(state)
 			{
-				Log.d("Now state is", "Search Is Ok")
-				val list = state.data
-				LaunchedEffect(Unit) {
-					Toast.makeText(context, R.string.loading_has_been_started, Toast.LENGTH_SHORT).show()
-					saveToSharedPrefs(list)
+				is PicturesState.SearchIsOk ->
+				{
+					Log.d("Now state is", "Search Is Ok")
+					val list = state.data
+					LaunchedEffect(Unit) {
+						Toast.makeText(context, R.string.loading_has_been_started, Toast.LENGTH_SHORT).show()
+						saveToSharedPrefs(list)
+					}
+					LazyVerticalGrid(
+						horizontalArrangement = Arrangement.Center,
+						state = listState,
+						modifier = Modifier
+							.fillMaxSize(),
+						userScrollEnabled = !animatedVisibilityScope.transition.isRunning,
+						columns = GridCells.Fixed(count = calculateGridSpan.value)) {
+						items(items = list) {
+							ItemsCard(
+								item = it,
+								getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
+								currentPicture = currentPicture,
+								isValidUrl = isValidUrl,
+								lazyState = listState,
+								addError = addError,
+								animatedVisibilityScope = animatedVisibilityScope,
+								list = list,
+								gridNum = calculateGridSpan.value,
+								isMultiWindowed = isMultiWindowed,
+								animationIsRunning = animationIsRunning,
+								selectedCounter = selectedCounter,
+								selectedList = selectedList
+							)
+						}
+					}
 				}
-				LazyVerticalGrid(
-					horizontalArrangement = Arrangement.Center,
-					state = listState,
-					modifier = Modifier
-						.fillMaxSize(),
-					userScrollEnabled = !animatedVisibilityScope.transition.isRunning,
-					columns = GridCells.Fixed(count = calculateGridSpan.value)) {
-					items(items = list) {
-						ItemsCard(
-							item = it,
-							getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
-							currentPicture = currentPicture,
-							isValidUrl = isValidUrl,
-							lazyState = listState,
-							addError = addError,
-							animatedVisibilityScope = animatedVisibilityScope,
-							list = list,
-							gridNum = calculateGridSpan.value,
-							isMultiWindowed = isMultiWindowed,
-							animationIsRunning = animationIsRunning
+				is PicturesState.ConnectionError ->
+				{
+					Log.d("Net", "No internet")
+					Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize()) {
+						NoInternetScreen()
+						val gradientColor = remember { listOf(Color.Green, Color.Yellow) }
+						GradientButton(
+							gradientColors = gradientColor,
+							cornerRadius = 16.dp,
+							nameButton = stringResource(R.string.try_again),
+							roundedCornerShape = RoundedCornerShape(topStart = 30.dp, bottomEnd = 30.dp),
+							clearErrors = clearErrors
 						)
 					}
 				}
+				is PicturesState.NothingFound -> Unit
 			}
-			is PicturesState.ConnectionError ->
-			{
-				Log.d("Net", "No internet")
-				Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize()) {
-					NoInternetScreen()
-					val gradientColor = remember { listOf(Color.Green, Color.Yellow) }
-					GradientButton(
-						gradientColors = gradientColor,
-						cornerRadius = 16.dp,
-						nameButton = stringResource(R.string.try_again),
-						roundedCornerShape = RoundedCornerShape(topStart = 30.dp, bottomEnd = 30.dp),
-						clearErrors = clearErrors
+		}
+		else
+		{
+			Log.d("Now state is", "Loaded from sp")
+			LaunchedEffect(Unit) {
+				saveToSharedPrefs(imagesUrlsSP)
+				postSavedUrls(imagesUrlsSP)
+			}
+			LazyVerticalGrid(
+				horizontalArrangement = Arrangement.Absolute.Center,
+				state = listState,
+				modifier = Modifier
+					.fillMaxSize(),
+				userScrollEnabled = !animatedVisibilityScope.transition.isRunning,
+				columns = GridCells.Fixed(count = calculateGridSpan.value)) {
+				Log.d("PicturesFragment", "$imagesUrlsSP")
+				items(items = imagesUrlsSP) {
+					ItemsCard(
+						item = it,
+						getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
+						currentPicture = currentPicture,
+						isValidUrl = isValidUrl,
+						lazyState = listState,
+						addError = addError,
+						animatedVisibilityScope = animatedVisibilityScope,
+						list = imagesUrlsSP,
+						gridNum = calculateGridSpan.value,
+						isMultiWindowed = isMultiWindowed,
+						animationIsRunning = animationIsRunning,
+						selectedCounter = selectedCounter,
+						selectedList = selectedList
 					)
 				}
 			}
-			is PicturesState.NothingFound -> Unit
 		}
-	}
-	else
-	{
-		Log.d("Now state is", "Loaded from sp")
+
 		LaunchedEffect(Unit) {
-			saveToSharedPrefs(imagesUrlsSP)
-			postSavedUrls(imagesUrlsSP)
+			postMaxVisibleLinesNum(listState.layoutInfo.visibleItemsInfo.size)
+			Log.d("check listScroll", "scrolled $index, $offset")
+			listState.scrollToItem(index, offset)
 		}
-		LazyVerticalGrid(
-			horizontalArrangement = Arrangement.Absolute.Center,
-			state = listState,
-			modifier = Modifier
-				.fillMaxSize(),
-			userScrollEnabled = !animatedVisibilityScope.transition.isRunning,
-			columns = GridCells.Fixed(count = calculateGridSpan.value)) {
-			Log.d("PicturesFragment", "$imagesUrlsSP")
-			items(items = imagesUrlsSP) {
-				ItemsCard(
-					item = it,
-					getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
-					currentPicture = currentPicture,
-					isValidUrl = isValidUrl,
-					lazyState = listState,
-					addError = addError,
-					animatedVisibilityScope = animatedVisibilityScope,
-					list = imagesUrlsSP,
-					gridNum = calculateGridSpan.value,
-					isMultiWindowed = isMultiWindowed,
-					animationIsRunning = animationIsRunning
-				)
-			}
-		}
-	}
-	LaunchedEffect(Unit) {
-		postMaxVisibleLinesNum(listState.layoutInfo.visibleItemsInfo.size)
-		Log.d("check listScroll", "scrolled $index, $offset")
-		listState.scrollToItem(index, offset)
 	}
 }
 
