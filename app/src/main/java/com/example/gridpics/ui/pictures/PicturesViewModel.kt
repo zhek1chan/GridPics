@@ -230,4 +230,17 @@ class PicturesViewModel(
 			clickOnPicture(indexOfCurrentPic, 0)
 		}
 	}
+
+	fun swapPictures(fPic: String, sPic: String)
+	{
+		val state = picturesUiState
+		val value = state.value
+		val list = value.picturesUrl.toMutableList()
+		val fIndex = list.indexOf(fPic)
+		val sIndex = list.indexOf(sPic)
+		val temp = list[fIndex]
+		list[fIndex] = list[sIndex]
+		list[sIndex] = temp
+		state.value = value.copy(picturesUrl = list)
+	}
 }

@@ -260,6 +260,17 @@ class MainActivity: AppCompatActivity()
 							picVM.clickOnPicture(0, 0)
 							detVM.postCurrentPicture(uri.toString())
 							navController.navigate(Screen.Details.route)
+						},
+						swapPictures = { fPic, sPic ->
+							picVM.swapPictures(fPic, sPic)
+							saveToSharedPrefs(picVM.returnStringOfList())
+							Toast.makeText(this@MainActivity, getString(R.string.elements_were_swiped), Toast.LENGTH_SHORT).show() },
+						deletePictures = { list ->
+							for(element in list)
+							{
+								deletePicture(element)
+							}
+							Toast.makeText(this@MainActivity, getString(R.string.pics_were_deleted), Toast.LENGTH_SHORT).show()
 						}
 					)
 				}
@@ -314,6 +325,7 @@ class MainActivity: AppCompatActivity()
 						deleteCurrentPicture = { url ->
 							deletePicture(url)
 							detVM.postNewPic(null, null)
+							Toast.makeText(this@MainActivity, getString(R.string.pic_was_deleted), Toast.LENGTH_SHORT).show()
 						},
 						postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 						setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
@@ -577,13 +589,15 @@ class MainActivity: AppCompatActivity()
 				{
 					detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
 				}
-				if (picUrls[0] == sharedValue) {
+				if(picUrls[0] == sharedValue)
+				{
 					detVM.isSharedImage(false)
 					Toast.makeText(this@MainActivity, getString(R.string.pic_was_already_in_the_app), Toast.LENGTH_SHORT).show()
 					picVM.clickOnPicture(0, 0)
 					detVM.postCurrentPicture(sharedValue)
 					navAfterNewIntent(nav)
-				} else
+				}
+				else
 				{
 					detVM.isSharedImage(true)
 					detVM.postCurrentPicture(sharedValue)
@@ -655,7 +669,6 @@ class MainActivity: AppCompatActivity()
 		picVM.postSavedUrls(urls)
 		detailsViewModel.setWasDeletedFromNotification(false)
 		imageLoader.diskCache?.remove(url)
-		Toast.makeText(this@MainActivity, getString(R.string.pic_was_deleted), Toast.LENGTH_SHORT).show()
 	}
 
 	private fun isDarkThemeAfterSystemChangedTheme(): Boolean

@@ -129,7 +129,7 @@ fun SharedTransitionScope.DetailsScreen(
 	setFalseToWasDeletedFromNotification: () -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	fromNotification: MutableState<Boolean>,
-	animationIsRunning: MutableState<Boolean>
+	animationIsRunning: MutableState<Boolean>,
 )
 {
 	val value = state.value
@@ -405,8 +405,8 @@ fun SharedTransitionScope.ShowDetails(
 							.align(Alignment.BottomCenter)
 					) {
 						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-						CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-							AnimatedVisibility(visible = !animationIsRunning.value || fromNotification.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+						AnimatedVisibility(visible = !animationIsRunning.value || fromNotification.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+							CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 								Button(
 									modifier = Modifier
 										.align(Alignment.CenterVertically)

@@ -16,8 +16,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -48,15 +48,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
@@ -97,7 +102,7 @@ import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SharedTransitionScope.PicturesScreen(
 	navController: NavController,
@@ -118,6 +123,8 @@ fun SharedTransitionScope.PicturesScreen(
 	isMultiWindowed: Boolean,
 	animationIsRunning: MutableState<Boolean>,
 	picWasLoadedButAlreadyWasInTheApp: (Uri) -> Unit,
+	swapPictures: (String, String) -> Unit,
+	deletePictures: (List<String>) -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
@@ -132,41 +139,62 @@ fun SharedTransitionScope.PicturesScreen(
 	val value = state.value
 	val windowInsets = cutouts.union(sysBars)
 	val context = LocalContext.current
+	val selectedList = remember { mutableListOf<String>() }
+	val showSwapButton = remember { mutableStateOf(false) }
+	val showDeleteButton = remember { mutableStateOf(false) }
+	val buttonWasPressed = remember { mutableStateOf(false) }
 	Scaffold(
 		contentWindowInsets = windowInsets,
 		floatingActionButton = {
-			AnimatedVisibility(visible = true) {
+			val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+			CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 				Box(modifier = Modifier.size(100.dp, 100.dp)) {
-					Button(
-						contentPadding = PaddingValues(0.dp),
-						modifier = Modifier
-							.size(65.dp, 65.dp)
-							.align(Alignment.CenterStart),
-						colors = ButtonColors(contentColor = Color.White,
-							containerColor = Color.Blue,
-							disabledContainerColor = Color.Blue,
-							disabledContentColor = Color.White), onClick = {}) {
-						Icon(
-							modifier = Modifier.size(35.dp,35.dp),
-							painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.compare_arrows_24)),
-							contentDescription = "CommentIcon",
-						)
+					AnimatedVisibility(visible = showSwapButton.value) {
+						Button(
+							contentPadding = PaddingValues(0.dp),
+							modifier = Modifier
+								.size(65.dp, 65.dp)
+								.align(Alignment.CenterStart),
+							colors = ButtonColors(
+								contentColor = Color.White,
+								containerColor = Color.Blue,
+								disabledContainerColor = Color.Blue,
+								disabledContentColor = Color.White),
+							border = BorderStroke(3.dp, Color.LightGray),
+							onClick = {
+								swapPictures(selectedList[0], selectedList[1])
+								buttonWasPressed.value = true
+							}) {
+							Icon(
+								modifier = Modifier.size(35.dp, 35.dp),
+								painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.compare_arrows_24)),
+								contentDescription = "SwapIcon",
+							)
+						}
 					}
-					Button(
-						modifier = Modifier
-							.size(40.dp, 40.dp)
-							.align(Alignment.TopEnd),
-						colors = ButtonColors(contentColor = Color.White,
-							containerColor = Color.Red,
-							disabledContainerColor = Color.Red,
-							disabledContentColor = Color.White),
-						onClick = {}) {
-						Icon(
-							modifier = Modifier.size(30.dp, 30.dp),
-							painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.compare_arrows_24)),
-							contentDescription = "CommentIcon",
-							tint = Color.White
-						)
+					AnimatedVisibility(visible = showDeleteButton.value) {
+						Button(
+							contentPadding = PaddingValues(0.dp),
+							modifier = Modifier
+								.padding(start = 50.dp)
+								.size(50.dp, 50.dp)
+								.align(Alignment.TopEnd),
+							colors = ButtonColors(
+								contentColor = Color.White,
+								containerColor = Color.Red,
+								disabledContainerColor = Color.Red,
+								disabledContentColor = Color.White),
+							border = BorderStroke(3.dp, Color.LightGray),
+							onClick = {
+								deletePictures(selectedList)
+								buttonWasPressed.value = true
+							}) {
+							Icon(
+								modifier = Modifier.size(25.dp, 25.dp),
+								painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_delete)),
+								contentDescription = "DeleteIcon"
+							)
+						}
 					}
 				}
 			}
@@ -262,7 +290,11 @@ fun SharedTransitionScope.PicturesScreen(
 					postMaxVisibleLinesNum = postMaxVisibleLinesNum,
 					animatedVisibilityScope = animatedVisibilityScope,
 					isMultiWindowed = isMultiWindowed,
-					animationIsRunning = animationIsRunning
+					animationIsRunning = animationIsRunning,
+					selectedList = selectedList,
+					showSwapButton = showSwapButton,
+					showDeleteButton = showDeleteButton,
+					buttonWasPressed = buttonWasPressed
 				)
 			}
 		}
@@ -409,14 +441,19 @@ fun SharedTransitionScope.ItemsCard(
 			}
 		)
 		AnimatedVisibility(visible = imageIsSelected.value) {
-			Icon(
-				modifier = Modifier
-					.size(40.dp, 40.dp)
-					.align(Alignment.CenterStart),
-				painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.icon_check)),
-				contentDescription = "CheckIcon",
-				tint = MaterialTheme.colorScheme.primary
-			)
+			Box(modifier = Modifier
+				.clip(RoundedCornerShape(30.dp))
+				.background(MaterialTheme.colorScheme.primary)) {
+				Icon(
+					modifier = Modifier
+						.size(40.dp, 40.dp)
+						.clip(RoundedCornerShape(8.dp))
+						.align(Alignment.CenterStart),
+					painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.icon_check)),
+					contentDescription = "CheckIcon",
+					tint = Color.White
+				)
+			}
 		}
 	}
 	if(openAlertDialog.value)
@@ -469,12 +506,23 @@ fun SharedTransitionScope.ShowList(
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	isMultiWindowed: Boolean,
 	animationIsRunning: MutableState<Boolean>,
+	selectedList: MutableList<String>,
+	showDeleteButton: MutableState<Boolean>,
+	showSwapButton: MutableState<Boolean>,
+	buttonWasPressed: MutableState<Boolean>,
 )
 {
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
 	val selectedCounter = remember { mutableIntStateOf(0) }
-	val selectedList = remember { mutableListOf<String>() }
+	if(buttonWasPressed.value)
+	{
+		selectedCounter.intValue = 0
+		selectedList.removeAll(selectedList)
+		buttonWasPressed.value = false
+	}
+	showDeleteButton.value = selectedCounter.intValue > 0
+	showSwapButton.value = selectedCounter.intValue == 2
 	val context = LocalContext.current
 	LaunchedEffect(Unit) {
 		animationIsRunning.value = true
