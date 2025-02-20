@@ -1,5 +1,6 @@
 package com.example.gridpics.ui.service
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -110,10 +111,14 @@ class MainNotificationService: Service()
 		val color = ContextCompat.getColor(this@MainNotificationService, R.color.green)
 		val gridPics = this@MainNotificationService.getString(R.string.gridpics)
 		val defaultText = description ?: this@MainNotificationService.getString(R.string.notification_content_text)
+
+		@Suppress("DEPRECATION")
 		val builder = Builder(this@MainNotificationService, CHANNEL_NOTIFICATIONS_ID)
 			.setAutoCancel(true)
 			.setOngoing(true)
 			.setSilent(!useSound)
+			.setPriority(Notification.PRIORITY_MAX)
+			.setWhen(0)
 			.setSmallIcon(R.mipmap.ic_launcher)
 			.setColor(color)
 			.setContentTitle(gridPics)
@@ -134,17 +139,18 @@ class MainNotificationService: Service()
 				val pendingIntent1 = PendingIntent.getActivity(this@MainNotificationService, 105, resultIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 				resultIntent.putExtra(SHOULD_WE_SHARE_THIS, true)
 				val pendingIntent2 = PendingIntent.getActivity(this@MainNotificationService, 110, resultIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
-				if (!description.startsWith("content://"))
+				if(!description.startsWith("content://"))
 				{
 					builder
 						.addAction(R.drawable.ic_delete, this@MainNotificationService.getString(R.string.delete_picture), pendingIntent1)
 						.addAction(R.drawable.ic_share, this@MainNotificationService.getString(R.string.share), pendingIntent2)
-				} else {
+				}
+				else
+				{
 					builder
 						.addAction(R.drawable.ic_delete, this@MainNotificationService.getString(R.string.delete_picture), pendingIntent1)
 				}
 			}
-
 		}
 		if(bitmap != null)
 		{

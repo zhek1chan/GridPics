@@ -324,7 +324,8 @@ fun SharedTransitionScope.ShowDetails(
 						pagerState = pagerState,
 						page = page,
 						animatedVisibilityScope = animatedVisibilityScope,
-						isExit = isExit
+						isExit = isExit,
+						fromNotification = fromNotification
 					)
 				}
 				if(isSharedImage && !wasCalledDelete.value)
@@ -474,6 +475,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 	page: Int,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	isExit: MutableState<Boolean>,
+	fromNotification: MutableState<Boolean>
 )
 {
 	val zoom = rememberZoomState(5f, Size.Zero)
@@ -577,7 +579,10 @@ fun SharedTransitionScope.ShowAsynchImage(
 				}
 			}
 		}) {
-		val mod = if(isSharedImage || wasDeleted.value || page != pagerState.currentPage)
+		if(isExit.value) {
+			fromNotification.value = false
+		}
+		val mod = if(isSharedImage || wasDeleted.value || page != pagerState.currentPage || fromNotification.value)
 		{
 			Modifier
 				.fillMaxSize()

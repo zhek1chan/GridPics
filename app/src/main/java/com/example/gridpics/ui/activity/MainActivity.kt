@@ -54,7 +54,6 @@ import com.example.gridpics.ui.themes.ComposeTheme
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -130,7 +129,7 @@ class MainActivity: AppCompatActivity()
 		themePick = theme
 
 		lifecycleScope.launch {
-			detVM.observeUrlFlow().sample(1000).collectLatest {
+			detVM.observeUrlFlow().sample(500).collect {
 				if(ContextCompat.checkSelfPermission(
 						this@MainActivity,
 						Manifest.permission.POST_NOTIFICATIONS,
@@ -139,6 +138,8 @@ class MainActivity: AppCompatActivity()
 					Log.d("service", "data $it")
 					if(it.bitmap != null)
 					{
+						mainNotificationService?.putValues(it)
+						delay(500)
 						mainNotificationService?.putValues(it)
 					}
 				}
@@ -264,13 +265,22 @@ class MainActivity: AppCompatActivity()
 						swapPictures = { fPic, sPic ->
 							picVM.swapPictures(fPic, sPic)
 							saveToSharedPrefs(picVM.returnStringOfList())
-							Toast.makeText(this@MainActivity, getString(R.string.elements_were_swiped), Toast.LENGTH_SHORT).show() },
+							Toast.makeText(this@MainActivity, getString(R.string.elements_were_swiped), Toast.LENGTH_SHORT).show()
+						},
 						deletePictures = { list ->
 							for(element in list)
 							{
 								deletePicture(element)
 							}
-							Toast.makeText(this@MainActivity, getString(R.string.pics_were_deleted), Toast.LENGTH_SHORT).show()
+							val strForToast = if(list.size == 1)
+							{
+								getString(R.string.pic_was_deleted)
+							}
+							else
+							{
+								getString(R.string.pics_were_deleted)
+							}
+							Toast.makeText(this@MainActivity, strForToast, Toast.LENGTH_SHORT).show()
 						}
 					)
 				}
