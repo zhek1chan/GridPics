@@ -175,8 +175,9 @@ class MainActivity: AppCompatActivity()
 		val isSharedImage = detailsState.value.isSharedImage
 		Log.d("casecase", "isShared = $isSharedImage")
 		val fromNotification = fromNotification
+		val changeAnimation = remember { mutableStateOf(false) }
 		//logic to avoid showing animation when the picture is shared
-		val enterTransition = if(isSharedImage || fromNotification.value)
+		val enterTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
 		{
 			EnterTransition.None
 		}
@@ -184,7 +185,7 @@ class MainActivity: AppCompatActivity()
 		{
 			fadeIn(initialAlpha = 0f, animationSpec = tween(700))
 		}
-		val popEnterTransition = if(isSharedImage || fromNotification.value)
+		val popEnterTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
 		{
 			EnterTransition.None
 		}
@@ -192,7 +193,7 @@ class MainActivity: AppCompatActivity()
 		{
 			fadeIn(initialAlpha = 0f, animationSpec = tween(100))
 		}
-		val exitTransition = if(isSharedImage || fromNotification.value)
+		val exitTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
 		{
 			ExitTransition.None
 		}
@@ -200,7 +201,7 @@ class MainActivity: AppCompatActivity()
 		{
 			fadeOut(targetAlpha = 1f, animationSpec = tween(700))
 		}
-		val popExitTransition = if(isSharedImage || fromNotification.value)
+		val popExitTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
 		{
 			ExitTransition.None
 		}
@@ -371,7 +372,8 @@ class MainActivity: AppCompatActivity()
 						setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
 						animatedVisibilityScope = this@composable,
 						fromNotification = fromNotification,
-						animationIsRunning = animationIsRunning
+						animationIsRunning = animationIsRunning,
+						changeAnimation = changeAnimation
 					)
 				}
 			}

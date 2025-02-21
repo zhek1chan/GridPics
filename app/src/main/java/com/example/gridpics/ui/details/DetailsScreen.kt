@@ -133,8 +133,10 @@ fun SharedTransitionScope.DetailsScreen(
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	fromNotification: MutableState<Boolean>,
 	animationIsRunning: MutableState<Boolean>,
+	changeAnimation: MutableState<Boolean>
 )
 {
+	changeAnimation.value = false
 	val scope = rememberCoroutineScope()
 	val value = state.value
 	val currentPicture = remember(Unit) { value.currentPicture }
@@ -261,7 +263,8 @@ fun SharedTransitionScope.DetailsScreen(
 				wasDeleted = wasDeleted,
 				fromNotification = fromNotification,
 				updatePicture = updatePicture,
-				scope = scope
+				scope = scope,
+				changeAnimation = changeAnimation
 			)
 		}
 	)
@@ -293,6 +296,7 @@ fun SharedTransitionScope.ShowDetails(
 	fromNotification: MutableState<Boolean>,
 	updatePicture: MutableState<Boolean>,
 	scope: CoroutineScope,
+	changeAnimation: MutableState<Boolean>
 )
 {
 	val value = state.value
@@ -383,6 +387,7 @@ fun SharedTransitionScope.ShowDetails(
 									.align(Alignment.CenterVertically)
 									.size(130.dp, 60.dp),
 								onClick = {
+									changeAnimation.value = true
 									wasCalledDelete.value = true
 									setImageSharedState(false)
 									navigateToHome(
@@ -475,8 +480,7 @@ fun SharedTransitionScope.ShowDetails(
 							onConfirmation = {
 								scope.launch {
 									wasCalledDelete.value = true
-									delay(100)
-									deleteCurrentPicture(url)
+									changeAnimation.value = true
 									navigateToHome(
 										changeBarsVisability = changeBarsVisability,
 										postUrl = postUrl,
@@ -489,6 +493,7 @@ fun SharedTransitionScope.ShowDetails(
 										scope = scope
 									)
 									openDialog.value = false
+									deleteCurrentPicture(url)
 								}
 							},
 							onDismissRequest = {
