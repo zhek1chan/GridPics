@@ -227,7 +227,7 @@ fun SettingsCompose(
 					}
 				}
 				// Clear cache option
-				HorizontalDivider(modifier = Modifier.padding(vertical = 3.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.onPrimary, thickness = 0.5.dp)
+				HorizontalDivider(modifier = Modifier.padding(bottom = 3.dp, start = 16.dp, end = 16.dp), color = MaterialTheme.colorScheme.onPrimary, thickness = 0.5.dp)
 				Row(
 					verticalAlignment = Alignment.CenterVertically,
 					modifier = Modifier

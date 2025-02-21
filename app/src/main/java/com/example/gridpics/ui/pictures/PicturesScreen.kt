@@ -36,8 +36,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -212,6 +214,7 @@ fun SharedTransitionScope.PicturesScreen(
 			Row(
 				modifier = Modifier
 					.fillMaxWidth()
+					.wrapContentHeight()
 					.padding(windowInsets.asPaddingValues())
 			) {
 				val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia(), onResult = { uri ->
@@ -287,7 +290,8 @@ fun SharedTransitionScope.PicturesScreen(
 		content = { padding ->
 			Box(
 				modifier = Modifier
-					.padding(padding.calculateStartPadding(LayoutDirection.Ltr), 100.dp, padding.calculateEndPadding(LayoutDirection.Rtl), padding.calculateBottomPadding())
+					.padding(padding.calculateStartPadding(LayoutDirection.Ltr), WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding() + 55.dp, padding.calculateEndPadding(LayoutDirection.Rtl), padding
+						.calculateBottomPadding())
 					.fillMaxSize()
 			) {
 				val urls = value.picturesUrl

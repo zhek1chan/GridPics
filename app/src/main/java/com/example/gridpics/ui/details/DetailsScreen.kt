@@ -317,10 +317,20 @@ fun SharedTransitionScope.ShowDetails(
 				}
 				updatePicture.value = false
 			}
-			Box(modifier = Modifier
-				.fillMaxSize()
-				.clipToBounds()
-				.background(Color.Transparent)) {
+			val mod = if(value.barsAreVisible)
+			{
+				Modifier
+					.fillMaxSize()
+					.clipToBounds()
+					.background(Color.Transparent)
+			}
+			else
+			{
+				Modifier
+					.fillMaxSize()
+					.background(Color.Transparent)
+			}
+			Box(modifier = mod) {
 				if(errorMessage != null)
 				{
 					ShowError(
@@ -824,78 +834,83 @@ fun AppBar(
 			.fillMaxWidth())
 		val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-			TopAppBar(
-				modifier = Modifier
-					.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-					.wrapContentSize(),
-				title = {
-					Box(modifier = Modifier
-						.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-						.height(64.dp)
-						.fillMaxWidth()
-						.clickable {
-							navBack.value = true
-						}) {
-						Text(
-							text = currentPicture,
-							fontSize = 18.sp,
-							maxLines = 2,
-							modifier = Modifier
-								.align(Alignment.Center),
-							overflow = TextOverflow.Ellipsis,
-						)
-					}
-				},
-				navigationIcon = {
-					Box(modifier = Modifier
-						.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
-						.height(64.dp)
-						.width(50.dp)
-						.clickable {
-							navBack.value = true
-						}) {
-						Icon(
-							imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-							contentDescription = "back",
-							modifier = Modifier
-								.align(Alignment.Center)
-						)
-					}
-				},
-				colors = TopAppBarDefaults.topAppBarColors(
-					titleContentColor = MaterialTheme.colorScheme.onPrimary,
-					navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-					actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-					containerColor = MaterialTheme.colorScheme.background
-				),
-				actions = {
-					AnimatedVisibility(!sharedImgCase && !currentPicture.startsWith("content://")) {
+			Box(modifier = Modifier
+				.wrapContentSize()
+				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))) {
+				TopAppBar(
+					modifier = Modifier
+						.align(Alignment.Center)
+						.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+						.wrapContentSize(),
+					title = {
+						Box(modifier = Modifier
+							.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+							.height(64.dp)
+							.fillMaxWidth()
+							.clickable {
+								navBack.value = true
+							}) {
+							Text(
+								text = currentPicture,
+								fontSize = 18.sp,
+								maxLines = 2,
+								modifier = Modifier
+									.align(Alignment.Center),
+								overflow = TextOverflow.Ellipsis,
+							)
+						}
+					},
+					navigationIcon = {
 						Box(modifier = Modifier
 							.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
 							.height(64.dp)
 							.width(50.dp)
 							.clickable {
-								share(currentPicture)
-							}
-						) {
+								navBack.value = true
+							}) {
 							Icon(
-								modifier = Modifier.align(Alignment.Center),
-								imageVector = Icons.Default.Share,
-								contentDescription = "share",
-								tint = MaterialTheme.colorScheme.onPrimary,
+								imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+								contentDescription = "back",
+								modifier = Modifier
+									.align(Alignment.Center)
 							)
 						}
+					},
+					colors = TopAppBarDefaults.topAppBarColors(
+						titleContentColor = MaterialTheme.colorScheme.onPrimary,
+						navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+						actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+						containerColor = MaterialTheme.colorScheme.background
+					),
+					actions = {
+						AnimatedVisibility(!sharedImgCase && !currentPicture.startsWith("content://")) {
+							Box(modifier = Modifier
+								.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+								.height(64.dp)
+								.width(50.dp)
+								.clickable {
+									share(currentPicture)
+								}
+							) {
+								Icon(
+									modifier = Modifier.align(Alignment.Center),
+									imageVector = Icons.Default.Share,
+									contentDescription = "share",
+									tint = MaterialTheme.colorScheme.onPrimary,
+								)
+							}
+						}
 					}
-				}
-			)
+				)
+				HorizontalDivider(
+					modifier = Modifier
+						.fillMaxWidth()
+						.align(Alignment.BottomCenter),
+					color = MaterialTheme.colorScheme.onPrimary,
+					thickness = 1.5.dp
+				)
+			}
 		}
-		HorizontalDivider(
-			modifier = Modifier
-				.fillMaxWidth()
-				.padding(top = 110.dp),
-			color = MaterialTheme.colorScheme.onPrimary,
-			thickness = 1.5.dp
-		)
 	}
 	if(navBack.value)
 	{
