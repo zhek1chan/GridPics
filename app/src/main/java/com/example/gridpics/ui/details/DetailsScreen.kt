@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
@@ -762,7 +763,7 @@ fun GradientButton(
 {
 	Button(
 		modifier = Modifier
-			.fillMaxWidth()
+			.widthIn(max = 600.dp)
 			.padding(start = 32.dp, end = 32.dp),
 		onClick = {
 			removeError(url)
