@@ -26,10 +26,15 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -203,7 +208,9 @@ class MainActivity: AppCompatActivity()
 		{
 			fadeOut(targetAlpha = 1f, animationSpec = tween(100))
 		}
+		var text by remember { mutableStateOf("foo") }
 		val animationIsRunning = remember { mutableStateOf(false) }
+		val listState = remember(LocalConfiguration.current.orientation) { LazyGridState() }
 		SharedTransitionLayout {
 			NavHost(
 				navController = navController,
@@ -220,69 +227,91 @@ class MainActivity: AppCompatActivity()
 					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
 					changeBarsVisability(visible = true, fromDetailsScreen = true)
 					fromNotification.value = false
-					PicturesScreen(
-						navController = navController,
-						postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
-						getErrorMessageFromErrorsList = { str -> picVM.checkOnErrorExists(str) },
-						addError = { url, message -> picVM.addError(url, message) },
-						state = picState,
-						clearErrors = { picVM.clearErrors() },
-						postVisibleBarsState = { detVM.changeVisabilityState(true) },
-						currentPicture = { url, index, offset ->
-							picVM.clickOnPicture(index, offset)
-							detVM.postCurrentPicture(url)
-							navController.navigate(Screen.Details.route)
-						},
-						isValidUrl = { url -> picVM.isValidUrl(url) },
-						postSavedUrls = { urls ->
-							picVM.postSavedUrls(urls = urls)
-							detVM.firstSetOfListState(urls)
-						},
-						saveToSharedPrefs = { urls ->
-							saveToSharedPrefs(picVM.convertFromListToString(urls))
-						},
-						calculateGridSpan = { picVM.getGridSpan() },
-						postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum) },
-						animatedVisibilityScope = this@composable,
-						picWasLoadedFromMediaPicker = { uri ->
-							detVM.isSharedImage(true)
-							detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
-							detVM.isSharedImage(true)
-							detVM.postCurrentPicture(uri.toString())
-							detVM.postCorrectList()
-							picVM.clickOnPicture(0, 0)
-							navAfterNewIntent(navController)
-						},
-						isMultiWindowed = detailsState.value.isMultiWindowed,
-						animationIsRunning = animationIsRunning,
-						picWasLoadedButAlreadyWasInTheApp = { uri ->
-							detVM.isSharedImage(false)
-							Toast.makeText(this@MainActivity, getString(R.string.pic_was_already_in_the_app), Toast.LENGTH_LONG).show()
-							picVM.clickOnPicture(0, 0)
-							detVM.postCurrentPicture(uri.toString())
-							navController.navigate(Screen.Details.route)
-						},
-						swapPictures = { fPic, sPic ->
-							picVM.swapPictures(fPic, sPic)
-							saveToSharedPrefs(picVM.returnStringOfList())
-							Toast.makeText(this@MainActivity, getString(R.string.elements_were_swiped), Toast.LENGTH_SHORT).show()
-						},
-						deletePictures = { list ->
-							for(element in list)
-							{
-								deletePicture(element)
+					key(text) {
+						PicturesScreen(
+							navController = navController,
+							postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
+							getErrorMessageFromErrorsList = { str -> picVM.checkOnErrorExists(str) },
+							addError = { url, message -> picVM.addError(url, message) },
+							state = picState,
+							removeCurrentError = { url ->
+								if(url == "")
+								{
+									picVM.clearErrors()
+								}
+								else
+								{
+									picVM.removeSpecialError(url)
+								}
+								picVM.clickOnPicture(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+								text = Math.random().toString()
+							},
+							postVisibleBarsState = { detVM.changeVisabilityState(true) },
+							currentPicture = { url, index, offset ->
+								picVM.clickOnPicture(index, offset)
+								detVM.postCurrentPicture(url)
+								navController.navigate(Screen.Details.route)
+							},
+							isValidUrl = { url -> picVM.isValidUrl(url) },
+							postSavedUrls = { urls ->
+								picVM.postSavedUrls(urls = urls)
+								detVM.firstSetOfListState(urls)
+							},
+							saveToSharedPrefs = { urls ->
+								saveToSharedPrefs(picVM.convertFromListToString(urls))
+							},
+							calculateGridSpan = { picVM.getGridSpan() },
+							postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum) },
+							animatedVisibilityScope = this@composable,
+							picWasLoadedFromMediaPicker = { uri ->
+								detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
+								detVM.isSharedImage(true)
+								detVM.postCurrentPicture(uri.toString())
+								detVM.postCorrectList()
+								picVM.clickOnPicture(0, 0)
+								navAfterNewIntent(navController)
+							},
+							isMultiWindowed = detailsState.value.isMultiWindowed,
+							animationIsRunning = animationIsRunning,
+							picWasLoadedButAlreadyWasInTheApp = { uri ->
+								detVM.isSharedImage(false)
+								Toast.makeText(this@MainActivity, getString(R.string.pic_was_already_in_the_app), Toast.LENGTH_LONG).show()
+								picVM.clickOnPicture(0, 0)
+								detVM.postCurrentPicture(uri.toString())
+								navController.navigate(Screen.Details.route)
+							},
+							swapPictures = { fPic, sPic ->
+								picVM.clickOnPicture(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+								picVM.swapPictures(fPic, sPic)
+								saveToSharedPrefs(picVM.returnStringOfList())
+								text = Math.random().toString()
+								Toast.makeText(this@MainActivity, getString(R.string.elements_were_swiped), Toast.LENGTH_SHORT).show()
+							},
+							deletePictures = { list ->
+								picVM.clickOnPicture(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+								for(element in list)
+								{
+									deletePicture(element)
+								}
+								val strForToast = if(list.size == 1)
+								{
+									getString(R.string.pic_was_deleted)
+								}
+								else
+								{
+									getString(R.string.pics_were_deleted)
+								}
+								text = Math.random().toString()
+								Toast.makeText(this@MainActivity, strForToast, Toast.LENGTH_SHORT).show()
+							},
+							listState = listState,
+							cancelAllCheckedPics = {
+								picVM.clickOnPicture(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+								text = Math.random().toString()
+								Toast.makeText(this@MainActivity, getString(R.string.you_canceled_pick), Toast.LENGTH_SHORT).show()
 							}
-							val strForToast = if(list.size == 1)
-							{
-								getString(R.string.pic_was_deleted)
-							}
-							else
-							{
-								getString(R.string.pics_were_deleted)
-							}
-							Toast.makeText(this@MainActivity, strForToast, Toast.LENGTH_SHORT).show()
-						}
-					)
+						)
+					}
 				}
 				composable(
 					route = BottomNavItem.Settings.route,
@@ -314,7 +343,9 @@ class MainActivity: AppCompatActivity()
 						getErrorMessageFromErrorsList = { url -> picVM.checkOnErrorExists(url) },
 						addError = { url, message -> picVM.addError(url, message) },
 						state = detailsState,
-						removeError = { str -> picVM.removeSpecialError(str) },
+						removeError = { str ->
+							picVM.removeSpecialError(str)
+						},
 						postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
 						isValidUrl = { url -> picVM.isValidUrl(url) },
 						changeBarsVisability = { visability -> changeBarsVisability(visability, true) },

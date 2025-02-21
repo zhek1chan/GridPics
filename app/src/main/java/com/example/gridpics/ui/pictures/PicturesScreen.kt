@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -79,7 +80,6 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -110,7 +110,7 @@ fun SharedTransitionScope.PicturesScreen(
 	getErrorMessageFromErrorsList: (String) -> String?,
 	addError: (String, String) -> Unit,
 	state: MutableState<PicturesScreenUiState>,
-	clearErrors: () -> Unit,
+	removeCurrentError: (String) -> Unit,
 	postVisibleBarsState: () -> Unit,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
@@ -125,13 +125,12 @@ fun SharedTransitionScope.PicturesScreen(
 	picWasLoadedButAlreadyWasInTheApp: (Uri) -> Unit,
 	swapPictures: (String, String) -> Unit,
 	deletePictures: (List<String>) -> Unit,
+	listState: LazyGridState,
+	cancelAllCheckedPics: () -> Unit,
 )
 {
 	LaunchedEffect(Unit) {
 		postVisibleBarsState()
-	}
-	BackHandler {
-		postPressOnBackButton()
 	}
 	val calculatedGridSpan = calculateGridSpan()
 	val sysBars = WindowInsets.systemBarsIgnoringVisibility
@@ -146,9 +145,20 @@ fun SharedTransitionScope.PicturesScreen(
 	Scaffold(
 		contentWindowInsets = windowInsets,
 		floatingActionButton = {
+			val paddingTopValue = if(isMultiWindowed)
+			{
+				40.dp
+			}
+			else
+			{
+				0.dp
+			}
 			val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
 			CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
-				Box(modifier = Modifier.size(100.dp, 100.dp)) {
+				Box(modifier = Modifier
+					.wrapContentSize()
+					.padding(top = paddingTopValue, end = windowInsets.asPaddingValues().calculateRightPadding(LayoutDirection.Ltr))
+				) {
 					AnimatedVisibility(visible = showSwapButton.value) {
 						Button(
 							contentPadding = PaddingValues(0.dp),
@@ -176,7 +186,7 @@ fun SharedTransitionScope.PicturesScreen(
 						Button(
 							contentPadding = PaddingValues(0.dp),
 							modifier = Modifier
-								.padding(start = 50.dp)
+								.padding(top = 50.dp, start = 25.dp)
 								.size(50.dp, 50.dp)
 								.align(Alignment.TopEnd),
 							colors = ButtonColors(
@@ -279,7 +289,7 @@ fun SharedTransitionScope.PicturesScreen(
 					getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
 					addError = addError,
 					state = loadingState,
-					clearErrors = clearErrors,
+					removeCurrentError = removeCurrentError,
 					currentPicture = currentPicture,
 					isValidUrl = isValidUrl,
 					postSavedUrls = postSavedUrls,
@@ -294,7 +304,10 @@ fun SharedTransitionScope.PicturesScreen(
 					selectedList = selectedList,
 					showSwapButton = showSwapButton,
 					showDeleteButton = showDeleteButton,
-					buttonWasPressed = buttonWasPressed
+					buttonWasPressed = buttonWasPressed,
+					listState = listState,
+					postPressOnBackButton = postPressOnBackButton,
+					cancelAllCheckedPics = cancelAllCheckedPics
 				)
 			}
 		}
@@ -317,6 +330,7 @@ fun SharedTransitionScope.ItemsCard(
 	animationIsRunning: MutableState<Boolean>,
 	selectedCounter: MutableIntState,
 	selectedList: MutableList<String>,
+	removeCurrentError: (String) -> Unit,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -376,57 +390,64 @@ fun SharedTransitionScope.ItemsCard(
 					animatedVisibilityScope = animatedVisibilityScope)
 				.combinedClickable(
 					onClick = {
-						if(!animationIsRunning.value)
+						if(selectedCounter.intValue == 0)
 						{
-							if(isError)
+							if(!animationIsRunning.value)
 							{
-								openAlertDialog.value = true
-							}
-							else
-							{
-								Log.d("current", item)
-								//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
-								val firstVisibleIndex = lazyState.firstVisibleItemIndex
-								val offsetOfList = lazyState.firstVisibleItemScrollOffset
-								val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
-								if(isMultiWindowed)
+								if(isError)
 								{
-									currentPicture(item, list.indexOf(item), 0)
-								}
-								else if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
-								{
-									Log.d("check listScroll", "firstVisibleIndex")
-									currentPicture(item, firstVisibleIndex, 0)
-								}
-								else if(
-									(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
-										&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
-									&& (lazyState.layoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
-								{
-									Log.d("check listScroll", "firstVisible +gridnum")
-									currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
+									openAlertDialog.value = true
 								}
 								else
 								{
-									Log.d("check listScroll", "just click $firstVisibleIndex, $offsetOfList")
-									currentPicture(item, firstVisibleIndex, offsetOfList)
+									Log.d("current", item)
+									//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
+									val firstVisibleIndex = lazyState.firstVisibleItemIndex
+									val offsetOfList = lazyState.firstVisibleItemScrollOffset
+									val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
+									if(isMultiWindowed)
+									{
+										currentPicture(item, list.indexOf(item), 0)
+									}
+									else if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
+									{
+										Log.d("check listScroll", "firstVisibleIndex")
+										currentPicture(item, firstVisibleIndex, 0)
+									}
+									else if(
+										(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
+											&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
+										&& (lazyState.layoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
+									{
+										Log.d("check listScroll", "firstVisible +gridnum")
+										currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
+									}
+									else
+									{
+										Log.d("check listScroll", "just click $firstVisibleIndex, $offsetOfList")
+										currentPicture(item, firstVisibleIndex, offsetOfList)
+									}
+									openAlertDialog.value = false
 								}
-								openAlertDialog.value = false
 							}
-						}
-					},
-					onLongClick = {
-						imageIsSelected.value = !imageIsSelected.value
-						if(imageIsSelected.value)
-						{
-							selectedCounter.intValue += 1
-							selectedList.add(item)
 						}
 						else
 						{
-							selectedCounter.intValue -= 1
-							selectedList.remove(item)
+							onLongPictureClick(
+								imageIsSelected = imageIsSelected,
+								selectedCounter = selectedCounter,
+								selectedList = selectedList,
+								item = item
+							)
 						}
+					},
+					onLongClick = {
+						onLongPictureClick(
+							imageIsSelected = imageIsSelected,
+							selectedCounter = selectedCounter,
+							selectedList = selectedList,
+							item = item
+						)
 					}
 				)
 				.clip(RoundedCornerShape(8.dp))
@@ -465,6 +486,7 @@ fun SharedTransitionScope.ItemsCard(
 				onDismissRequest = { openAlertDialog.value = false },
 				onConfirmation =
 				{
+					removeCurrentError(item)
 					openAlertDialog.value = false
 					println("Confirmation registered")
 					Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
@@ -494,7 +516,7 @@ fun SharedTransitionScope.ShowList(
 	getErrorMessageFromErrorsList: (String) -> String?,
 	addError: (String, String) -> Unit,
 	state: PicturesState,
-	clearErrors: () -> Unit,
+	removeCurrentError: (String) -> Unit,
 	currentPicture: (String, Int, Int) -> Unit,
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (List<String>) -> Unit,
@@ -510,6 +532,9 @@ fun SharedTransitionScope.ShowList(
 	showDeleteButton: MutableState<Boolean>,
 	showSwapButton: MutableState<Boolean>,
 	buttonWasPressed: MutableState<Boolean>,
+	listState: LazyGridState,
+	postPressOnBackButton: () -> Unit,
+	cancelAllCheckedPics: () -> Unit,
 )
 {
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
@@ -531,12 +556,10 @@ fun SharedTransitionScope.ShowList(
 			Settings.Global.ANIMATOR_DURATION_SCALE,
 			1f
 		)
-		Log.d("animation is running", "${animatedVisibilityScope.transition.totalDurationNanos} $animatorScale")
 		delay((animatedVisibilityScope.transition.totalDurationNanos.toFloat() * animatorScale / 1000000).toLong()) //перевод в милисекунды
 		animationIsRunning.value = false
 	}
 	Box(modifier = Modifier.fillMaxSize()) {
-		val listState = remember(LocalConfiguration.current.orientation) { LazyGridState() }
 		if(imagesUrlsSP.isNullOrEmpty())
 		{
 			when(state)
@@ -546,7 +569,6 @@ fun SharedTransitionScope.ShowList(
 					Log.d("Now state is", "Search Is Ok")
 					val list = state.data
 					LaunchedEffect(Unit) {
-						Toast.makeText(context, R.string.loading_has_been_started, Toast.LENGTH_SHORT).show()
 						saveToSharedPrefs(list)
 					}
 					LazyVerticalGrid(
@@ -554,7 +576,7 @@ fun SharedTransitionScope.ShowList(
 						state = listState,
 						modifier = Modifier
 							.fillMaxSize(),
-						userScrollEnabled = !animatedVisibilityScope.transition.isRunning,
+						userScrollEnabled = !animationIsRunning.value,
 						columns = GridCells.Fixed(count = calculateGridSpan.value)) {
 						items(items = list) {
 							ItemsCard(
@@ -570,7 +592,8 @@ fun SharedTransitionScope.ShowList(
 								isMultiWindowed = isMultiWindowed,
 								animationIsRunning = animationIsRunning,
 								selectedCounter = selectedCounter,
-								selectedList = selectedList
+								selectedList = selectedList,
+								removeCurrentError = removeCurrentError
 							)
 						}
 					}
@@ -586,7 +609,8 @@ fun SharedTransitionScope.ShowList(
 							cornerRadius = 16.dp,
 							nameButton = stringResource(R.string.try_again),
 							roundedCornerShape = RoundedCornerShape(topStart = 30.dp, bottomEnd = 30.dp),
-							clearErrors = clearErrors
+							removeCurrentError = removeCurrentError,
+							url = ""
 						)
 					}
 				}
@@ -605,7 +629,7 @@ fun SharedTransitionScope.ShowList(
 				state = listState,
 				modifier = Modifier
 					.fillMaxSize(),
-				userScrollEnabled = !animatedVisibilityScope.transition.isRunning,
+				userScrollEnabled = !animationIsRunning.value,
 				columns = GridCells.Fixed(count = calculateGridSpan.value)) {
 				Log.d("PicturesFragment", "$imagesUrlsSP")
 				items(items = imagesUrlsSP) {
@@ -622,7 +646,8 @@ fun SharedTransitionScope.ShowList(
 						isMultiWindowed = isMultiWindowed,
 						animationIsRunning = animationIsRunning,
 						selectedCounter = selectedCounter,
-						selectedList = selectedList
+						selectedList = selectedList,
+						removeCurrentError = removeCurrentError
 					)
 				}
 			}
@@ -633,6 +658,17 @@ fun SharedTransitionScope.ShowList(
 			Log.d("check listScroll", "scrolled $index, $offset")
 			listState.scrollToItem(index, offset)
 		}
+		BackHandler {
+			if(selectedList.size > 0)
+			{
+				buttonWasPressed.value = true
+				cancelAllCheckedPics()
+			}
+			else
+			{
+				postPressOnBackButton()
+			}
+		}
 	}
 }
 
@@ -642,7 +678,8 @@ fun GradientButton(
 	cornerRadius: Dp,
 	nameButton: String,
 	roundedCornerShape: RoundedCornerShape,
-	clearErrors: () -> Unit,
+	removeCurrentError: (String) -> Unit,
+	url: String,
 )
 {
 	Button(
@@ -650,7 +687,7 @@ fun GradientButton(
 			.fillMaxWidth()
 			.padding(start = 32.dp, end = 32.dp),
 		onClick = {
-			clearErrors()
+			removeCurrentError(url)
 		},
 		colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
 		shape = RoundedCornerShape(cornerRadius)
@@ -740,4 +777,19 @@ fun AlertDialogSecondary(
 			Text(stringResource(R.string.okey))
 		}
 	})
+}
+
+fun onLongPictureClick(imageIsSelected: MutableState<Boolean>, selectedCounter: MutableIntState, selectedList: MutableList<String>, item: String)
+{
+	imageIsSelected.value = !imageIsSelected.value
+	if(imageIsSelected.value)
+	{
+		selectedCounter.intValue += 1
+		selectedList.add(item)
+	}
+	else
+	{
+		selectedCounter.intValue -= 1
+		selectedList.remove(item)
+	}
 }

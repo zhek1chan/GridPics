@@ -64,8 +64,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -183,8 +185,9 @@ fun SharedTransitionScope.DetailsScreen(
 			wasDeleted = wasDeleted
 		)
 	}
+	val updatePicture = remember { mutableStateOf(false) }
 
-	LaunchedEffect(Unit) {
+	LaunchedEffect(updatePicture.value) {
 		snapshotFlow { pagerState.currentPage }.collect { page ->
 			Log.d("checkMa", "send")
 			val pic = if(list.size >= page)
@@ -251,7 +254,8 @@ fun SharedTransitionScope.DetailsScreen(
 				animatedVisibilityScope = animatedVisibilityScope,
 				isExit = isExit,
 				wasDeleted = wasDeleted,
-				fromNotification = fromNotification
+				fromNotification = fromNotification,
+				updatePicture = updatePicture
 			)
 		}
 	)
@@ -281,6 +285,7 @@ fun SharedTransitionScope.ShowDetails(
 	isExit: MutableState<Boolean>,
 	wasDeleted: MutableState<Boolean>,
 	fromNotification: MutableState<Boolean>,
+	updatePicture: MutableState<Boolean>,
 )
 {
 	val isSharedImage = state.value.isSharedImage
@@ -297,7 +302,14 @@ fun SharedTransitionScope.ShowDetails(
 			beyondViewportPageCount = 0
 		) { page ->
 			val url = list[page]
-			val errorMessage = checkOnErrorExists(url)
+			var errorMessage = checkOnErrorExists(url)
+			if(updatePicture.value)
+			{
+				LaunchedEffect(Unit) {
+					errorMessage = checkOnErrorExists(url)
+				}
+				updatePicture.value = false
+			}
 			Box(modifier = Modifier
 				.fillMaxSize()
 				.background(Color.Transparent)) {
@@ -306,7 +318,10 @@ fun SharedTransitionScope.ShowDetails(
 					ShowError(
 						context = context,
 						currentUrl = url,
-						isValidUrl = isValidUrl)
+						isValidUrl = isValidUrl,
+						removeError = removeSpecialError,
+						updatePicture = updatePicture
+					)
 				}
 				else
 				{
@@ -325,11 +340,13 @@ fun SharedTransitionScope.ShowDetails(
 						page = page,
 						animatedVisibilityScope = animatedVisibilityScope,
 						isExit = isExit,
-						fromNotification = fromNotification
+						fromNotification = fromNotification,
+						updatePicture = updatePicture
 					)
 				}
 				if(isSharedImage && !wasCalledDelete.value)
 				{
+					val scope = rememberCoroutineScope()
 					val addString = stringResource(R.string.add)
 					val cancelString = stringResource(R.string.cancel)
 					Log.d("case shared", "show buttons")
@@ -370,21 +387,24 @@ fun SharedTransitionScope.ShowDetails(
 										.padding(30.dp, 0.dp, 0.dp, 0.dp)
 										.size(130.dp, 60.dp),
 									onClick = {
-										if(pagerState.pageCount == 1)
-										{
-											navigateToHome(
-												changeBarsVisability = changeBarsVisability,
-												postUrl = postUrl,
-												navController = navController,
-												setImageSharedStateToFalse = setImageSharedState,
-												state = state,
-												animationIsRunning = animationIsRunning,
-												isExit = isExit,
-												wasDeleted = wasDeleted
-											)
+										scope.launch {
+											if(pagerState.pageCount == 1)
+											{
+												navigateToHome(
+													changeBarsVisability = changeBarsVisability,
+													postUrl = postUrl,
+													navController = navController,
+													setImageSharedStateToFalse = setImageSharedState,
+													state = state,
+													animationIsRunning = animationIsRunning,
+													isExit = isExit,
+													wasDeleted = wasDeleted
+												)
+											}
+											addPicture(url)
+											delay(200)
+											setImageSharedState(false)
 										}
-										setImageSharedState(false)
-										addPicture(url)
 									},
 									border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
 									colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
@@ -475,7 +495,8 @@ fun SharedTransitionScope.ShowAsynchImage(
 	page: Int,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	isExit: MutableState<Boolean>,
-	fromNotification: MutableState<Boolean>
+	fromNotification: MutableState<Boolean>,
+	updatePicture: MutableState<Boolean>,
 )
 {
 	val zoom = rememberZoomState(5f, Size.Zero)
@@ -491,29 +512,28 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.set("Cache-Control", "max-age=604800, must-revalidate, stale-while-revalidate=86400")
 			.build()
 	}
-	var placeHolder = R.drawable.loading
+	val placeHolderM = remember { mutableIntStateOf(R.drawable.loading) }
 	if(img.contains(".gif"))
 	{
-		placeHolder = R.drawable.empty
+		placeHolderM.intValue = R.drawable.empty
 		LaunchedEffect(Unit) {
 			while(animationIsRunning.value)
 			{
-				delay(100)
+				delay(200)
 			}
-			placeHolder = R.drawable.loading
+			placeHolderM.intValue = R.drawable.loading
 		}
 	}
-	val imgRequest = remember(img) {
+	val imgRequest =
 		ImageRequest.Builder(context)
 			.data(img)
 			.httpHeaders(headers)
 			.error(R.drawable.error)
 			.memoryCacheKey(img)
 			.placeholderMemoryCacheKey(img)
-			.placeholder(placeHolder)
+			.placeholder(placeHolderM.intValue)
 			.diskCacheKey(img)
 			.build()
-	}
 	//setting up the size of zoomable space on screen to avoid zooming in empty places
 	var imageSize by remember { mutableStateOf(Size.Zero) }
 	LaunchedEffect(imageSize) {
@@ -579,7 +599,8 @@ fun SharedTransitionScope.ShowAsynchImage(
 				}
 			}
 		}) {
-		if(isExit.value) {
+		if(isExit.value)
+		{
 			fromNotification.value = false
 		}
 		val mod = if(isSharedImage || wasDeleted.value || page != pagerState.currentPage || fromNotification.value)
@@ -620,7 +641,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 			},
 			onError = {
 				addError(img, it.result.throwable.message.toString())
-				navController.navigate(Screen.Details.route)
+				updatePicture.value = true
 			},
 			modifier = mod
 				.onGloballyPositioned { layoutCoordinates ->
@@ -651,6 +672,8 @@ fun ShowError(
 	context: Context,
 	currentUrl: String,
 	isValidUrl: (String) -> Boolean,
+	removeError: (String) -> Unit,
+	updatePicture: MutableState<Boolean>,
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
@@ -687,7 +710,10 @@ fun ShowError(
 				cornerRadius = 30.dp,
 				nameButton = stringResource(R.string.try_again),
 				roundedCornerShape = RoundedCornerShape(topStart = 20.dp, bottomEnd = 20.dp),
-				context = context
+				context = context,
+				url = currentUrl,
+				removeError = removeError,
+				updatePicture = updatePicture
 			)
 		}
 	}
@@ -700,6 +726,9 @@ fun GradientButton(
 	nameButton: String,
 	roundedCornerShape: RoundedCornerShape,
 	context: Context,
+	url: String,
+	removeError: (String) -> Unit,
+	updatePicture: MutableState<Boolean>,
 )
 {
 	Button(
@@ -707,6 +736,8 @@ fun GradientButton(
 			.fillMaxWidth()
 			.padding(start = 32.dp, end = 32.dp),
 		onClick = {
+			removeError(url)
+			updatePicture.value = true
 			Toast.makeText(context, R.string.reload_pic, Toast.LENGTH_LONG).show()
 		},
 		colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
