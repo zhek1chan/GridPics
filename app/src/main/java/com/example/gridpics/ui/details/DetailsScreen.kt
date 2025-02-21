@@ -214,6 +214,7 @@ fun SharedTransitionScope.DetailsScreen(
 		}
 	}
 	Scaffold(
+		modifier = Modifier.wrapContentSize(),
 		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
 		topBar = {
 			AppBar(
@@ -367,6 +368,8 @@ fun SharedTransitionScope.ShowDetails(
 									.align(Alignment.CenterVertically)
 									.size(130.dp, 60.dp),
 								onClick = {
+									wasCalledDelete.value = true
+									setImageSharedState(false)
 									navigateToHome(
 										changeBarsVisability = changeBarsVisability,
 										postUrl = postUrl,
@@ -507,7 +510,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 	fromNotification: MutableState<Boolean>,
 	updatePicture: MutableState<Boolean>,
 	scope: CoroutineScope,
-	wasDeletedCalled: MutableState<Boolean>
+	wasDeletedCalled: MutableState<Boolean>,
 )
 {
 	val zoom = rememberZoomState(5f, Size.Zero)

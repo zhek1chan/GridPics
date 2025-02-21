@@ -4,7 +4,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -12,18 +17,23 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 
 @Composable
 fun BottomNavigationBar(
 	navController: NavController,
+	screenUiState: MutableState<PicturesScreenUiState>,
 )
 {
 	val items = remember {
@@ -53,10 +63,29 @@ fun BottomNavigationBar(
 			bottomBarState.value = true
 		}
 	}
+	val isPortrait = screenUiState.value.isPortraitOrientation
+	val maxHeight = if(isPortrait)
+	{
+		110.dp
+	}
+	else
+	{
+		95.dp
+	}
 	AnimatedVisibility(
 		visible = bottomBarState.value, enter = EnterTransition.None, exit = ExitTransition.None
 	) {
-		NavigationBar(windowInsets = WindowInsets.navigationBars, containerColor = MaterialTheme.colorScheme.background) {
+		val mod = if(isPortrait)
+		{
+			Modifier.fillMaxWidth()
+		}
+		else
+		{
+			Modifier
+				.fillMaxWidth()
+				.windowInsetsPadding(WindowInsets.displayCutout)
+		}
+		NavigationBar(mod.heightIn(max = maxHeight), windowInsets = WindowInsets.navigationBars, containerColor = MaterialTheme.colorScheme.background) {
 			items.forEach { item ->
 				NavigationBarItem(
 					colors = NavigationBarItemColors(MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary, Color.Gray, MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary,
@@ -85,5 +114,10 @@ fun BottomNavigationBar(
 				)
 			}
 		}
+		HorizontalDivider(
+			modifier = mod,
+			color = MaterialTheme.colorScheme.onPrimary,
+			thickness = 3.dp
+		)
 	}
 }

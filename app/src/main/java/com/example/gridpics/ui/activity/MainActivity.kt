@@ -324,7 +324,6 @@ class MainActivity: AppCompatActivity()
 						navController = navController,
 						option = picState,
 						changeTheme = { int -> changeTheme(int) },
-						isScreenInPortraitState = picState,
 						clearImageCache = {
 							val imageLoader = this@MainActivity.imageLoader
 							imageLoader.diskCache?.clear()
@@ -366,7 +365,6 @@ class MainActivity: AppCompatActivity()
 						deleteCurrentPicture = { url ->
 							deletePicture(url)
 							detVM.postNewPic(null, null)
-							detVM.isSharedImage(false)
 							Toast.makeText(this@MainActivity, getString(R.string.pic_was_deleted), Toast.LENGTH_SHORT).show()
 						},
 						postWasSharedState = { detVM.setWasSharedFromNotification(false) },

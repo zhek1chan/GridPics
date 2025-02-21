@@ -34,12 +34,11 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -55,6 +54,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
@@ -213,9 +213,7 @@ fun SharedTransitionScope.PicturesScreen(
 			Row(
 				modifier = Modifier
 					.fillMaxWidth()
-					.wrapContentHeight()
-					.windowInsetsPadding(windowInsets)
-					.padding(16.dp, 0.dp)
+					.padding(windowInsets.asPaddingValues())
 			) {
 				val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia(), onResult = { uri ->
 					if(uri != null)
@@ -237,18 +235,22 @@ fun SharedTransitionScope.PicturesScreen(
 
 				Box(Modifier
 					.fillMaxWidth()
-					.padding(0.dp, 16.dp, 0.dp)) {
+					.padding(0.dp, 16.dp, 0.dp, 0.dp)) {
 					Text(
-						modifier = Modifier.wrapContentSize(),
+						modifier = Modifier
+							.padding(start = 16.dp)
+							.height(30.dp),
 						textAlign = TextAlign.Center,
 						text = stringResource(R.string.gridpics),
 						fontSize = 21.sp,
 						color = MaterialTheme.colorScheme.onPrimary,
 					)
 					Button(
+						contentPadding = PaddingValues(0.dp),
 						modifier = Modifier
-							.size(60.dp, 30.dp)
-							.align(Alignment.TopEnd),
+							.size(80.dp, 40.dp)
+							.align(Alignment.TopEnd)
+							.padding(bottom = 15.dp, end = 16.dp),
 						onClick = {
 							try
 							{
@@ -268,12 +270,19 @@ fun SharedTransitionScope.PicturesScreen(
 							painter = ic,
 							tint = Color.White,
 							contentDescription = "AddIcon",
-							modifier = Modifier.fillMaxSize())
+							modifier = Modifier.size(25.dp, 25.dp))
 					}
+					HorizontalDivider(
+						modifier = Modifier
+							.align(Alignment.BottomCenter)
+							.fillMaxWidth(),
+						color = MaterialTheme.colorScheme.onPrimary,
+						thickness = 3.dp
+					)
 				}
 			}
 		},
-		bottomBar = { BottomNavigationBar(navController) },
+		bottomBar = { BottomNavigationBar(navController, state) },
 		content = { padding ->
 			Box(
 				modifier = Modifier
