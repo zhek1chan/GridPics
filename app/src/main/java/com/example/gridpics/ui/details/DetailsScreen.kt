@@ -50,6 +50,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
@@ -73,6 +74,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -292,7 +294,8 @@ fun SharedTransitionScope.ShowDetails(
 	scope: CoroutineScope,
 )
 {
-	val isSharedImage = state.value.isSharedImage
+	val value = state.value
+	val isSharedImage = value.isSharedImage
 	Log.d("checkCheck", "$isSharedImage")
 	val wasCalledDelete = remember { mutableStateOf(false) }
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
@@ -316,6 +319,7 @@ fun SharedTransitionScope.ShowDetails(
 			}
 			Box(modifier = Modifier
 				.fillMaxSize()
+				.clipToBounds()
 				.background(Color.Transparent)) {
 				if(errorMessage != null)
 				{
@@ -435,7 +439,7 @@ fun SharedTransitionScope.ShowDetails(
 							.align(Alignment.BottomCenter)
 					) {
 						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-						AnimatedVisibility(visible = !animationIsRunning.value || fromNotification.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+						AnimatedVisibility(visible = (!animationIsRunning.value || fromNotification.value) && value.barsAreVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
 							CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 								Button(
 									modifier = Modifier
@@ -885,6 +889,13 @@ fun AppBar(
 				}
 			)
 		}
+		HorizontalDivider(
+			modifier = Modifier
+				.fillMaxWidth()
+				.padding(top = 110.dp),
+			color = MaterialTheme.colorScheme.onPrimary,
+			thickness = 1.5.dp
+		)
 	}
 	if(navBack.value)
 	{
@@ -924,7 +935,6 @@ fun navigateToHome(
 			{
 				wasDeleted.value = true
 			}
-			isExit.value = true
 			Log.d("activated", "activated")
 			animationIsRunning.value = true
 			navController.navigate(Screen.Home.route)

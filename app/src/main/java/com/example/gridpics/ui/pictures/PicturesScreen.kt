@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
@@ -239,13 +238,14 @@ fun SharedTransitionScope.PicturesScreen(
 					Text(
 						modifier = Modifier
 							.padding(start = 16.dp)
-							.height(30.dp),
+							.wrapContentSize(),
 						textAlign = TextAlign.Center,
 						text = stringResource(R.string.gridpics),
 						fontSize = 21.sp,
 						color = MaterialTheme.colorScheme.onPrimary,
 					)
 					Button(
+						border = BorderStroke(1.dp, MaterialTheme.colorScheme.onPrimary),
 						contentPadding = PaddingValues(0.dp),
 						modifier = Modifier
 							.size(80.dp, 40.dp)
@@ -275,9 +275,10 @@ fun SharedTransitionScope.PicturesScreen(
 					HorizontalDivider(
 						modifier = Modifier
 							.align(Alignment.BottomCenter)
-							.fillMaxWidth(),
+							.fillMaxWidth()
+							.padding(bottom = 2.dp),
 						color = MaterialTheme.colorScheme.onPrimary,
-						thickness = 3.dp
+						thickness = 1.5.dp
 					)
 				}
 			}

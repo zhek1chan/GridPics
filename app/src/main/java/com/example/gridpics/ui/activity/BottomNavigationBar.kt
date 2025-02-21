@@ -22,12 +22,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.gridpics.R
 import com.example.gridpics.ui.pictures.state.PicturesScreenUiState
 
 @Composable
@@ -85,10 +87,11 @@ fun BottomNavigationBar(
 				.fillMaxWidth()
 				.windowInsetsPadding(WindowInsets.displayCutout)
 		}
+		val color = colorResource(R.color.grey_light)
 		NavigationBar(mod.heightIn(max = maxHeight), windowInsets = WindowInsets.navigationBars, containerColor = MaterialTheme.colorScheme.background) {
 			items.forEach { item ->
 				NavigationBarItem(
-					colors = NavigationBarItemColors(MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary, Color.Gray, MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary,
+					colors = NavigationBarItemColors(MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary, color, MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary,
 						MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary),
 					icon = {
 						Icon(
@@ -96,7 +99,7 @@ fun BottomNavigationBar(
 							contentDescription = stringResource(id = item.titleResId)
 						)
 					},
-					label = { Text(text = stringResource(id = item.titleResId)) },
+					label = { Text(text = stringResource(id = item.titleResId), fontSize = 12.sp) },
 					selected = route == item.route,
 					onClick = {
 						navController.navigate(item.route) {
@@ -117,7 +120,7 @@ fun BottomNavigationBar(
 		HorizontalDivider(
 			modifier = mod,
 			color = MaterialTheme.colorScheme.onPrimary,
-			thickness = 3.dp
+			thickness = 1.5.dp
 		)
 	}
 }
