@@ -102,9 +102,7 @@ import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
 import com.example.gridpics.ui.details.state.DetailsScreenUiState
 import com.example.gridpics.ui.pictures.AlertDialogMain
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
@@ -134,6 +132,7 @@ fun SharedTransitionScope.DetailsScreen(
 	animationIsRunning: MutableState<Boolean>,
 )
 {
+	val scope = rememberCoroutineScope()
 	val value = state.value
 	val currentPicture = remember(Unit) { value.currentPicture }
 	var list = remember(value.isSharedImage) { value.picturesUrl }
@@ -182,7 +181,8 @@ fun SharedTransitionScope.DetailsScreen(
 			state = state,
 			animationIsRunning = animationIsRunning,
 			isExit = isExit,
-			wasDeleted = wasDeleted
+			wasDeleted = wasDeleted,
+			scope = scope
 		)
 	}
 	val updatePicture = remember { mutableStateOf(false) }
@@ -229,7 +229,8 @@ fun SharedTransitionScope.DetailsScreen(
 				animationIsRunning = animationIsRunning,
 				isExit = isExit,
 				wasDeleted = wasDeleted,
-				fromNotification = fromNotification
+				fromNotification = fromNotification,
+				scope = scope
 			)
 		},
 		content = { padding ->
@@ -255,7 +256,8 @@ fun SharedTransitionScope.DetailsScreen(
 				isExit = isExit,
 				wasDeleted = wasDeleted,
 				fromNotification = fromNotification,
-				updatePicture = updatePicture
+				updatePicture = updatePicture,
+				scope = scope
 			)
 		}
 	)
@@ -286,6 +288,7 @@ fun SharedTransitionScope.ShowDetails(
 	wasDeleted: MutableState<Boolean>,
 	fromNotification: MutableState<Boolean>,
 	updatePicture: MutableState<Boolean>,
+	scope: CoroutineScope,
 )
 {
 	val isSharedImage = state.value.isSharedImage
@@ -341,12 +344,13 @@ fun SharedTransitionScope.ShowDetails(
 						animatedVisibilityScope = animatedVisibilityScope,
 						isExit = isExit,
 						fromNotification = fromNotification,
-						updatePicture = updatePicture
+						updatePicture = updatePicture,
+						scope = scope,
+						wasDeletedCalled = wasCalledDelete
 					)
 				}
 				if(isSharedImage && !wasCalledDelete.value)
 				{
-					val scope = rememberCoroutineScope()
 					val addString = stringResource(R.string.add)
 					val cancelString = stringResource(R.string.cancel)
 					Log.d("case shared", "show buttons")
@@ -371,7 +375,8 @@ fun SharedTransitionScope.ShowDetails(
 										wasDeleted = wasDeleted,
 										state = state,
 										animationIsRunning = animationIsRunning,
-										isExit = isExit
+										isExit = isExit,
+										scope = scope
 									)
 								},
 								border = BorderStroke(3.dp, Color.Red),
@@ -398,7 +403,8 @@ fun SharedTransitionScope.ShowDetails(
 													state = state,
 													animationIsRunning = animationIsRunning,
 													isExit = isExit,
-													wasDeleted = wasDeleted
+													wasDeleted = wasDeleted,
+													scope = scope
 												)
 											}
 											addPicture(url)
@@ -449,20 +455,23 @@ fun SharedTransitionScope.ShowDetails(
 							dialogText = null,
 							dialogTitle = stringResource(R.string.do_you_really_want_to_delete_it),
 							onConfirmation = {
-								wasCalledDelete.value = true
-								deleteCurrentPicture(url)
-								navigateToHome(
-									changeBarsVisability = changeBarsVisability,
-									postUrl = postUrl,
-									navController = navController,
-									setImageSharedStateToFalse = setImageSharedState,
-									state = state,
-									animationIsRunning = animationIsRunning,
-									isExit = isExit,
-									wasDeleted = wasDeleted
-								)
-								setImageSharedState(true)
-								openDialog.value = false
+								scope.launch {
+									wasCalledDelete.value = true
+									delay(100)
+									deleteCurrentPicture(url)
+									navigateToHome(
+										changeBarsVisability = changeBarsVisability,
+										postUrl = postUrl,
+										navController = navController,
+										setImageSharedStateToFalse = setImageSharedState,
+										state = state,
+										animationIsRunning = animationIsRunning,
+										isExit = isExit,
+										wasDeleted = wasDeleted,
+										scope = scope
+									)
+									openDialog.value = false
+								}
 							},
 							onDismissRequest = {
 								openDialog.value = false
@@ -497,6 +506,8 @@ fun SharedTransitionScope.ShowAsynchImage(
 	isExit: MutableState<Boolean>,
 	fromNotification: MutableState<Boolean>,
 	updatePicture: MutableState<Boolean>,
+	scope: CoroutineScope,
+	wasDeletedCalled: MutableState<Boolean>
 )
 {
 	val zoom = rememberZoomState(5f, Size.Zero)
@@ -589,7 +600,8 @@ fun SharedTransitionScope.ShowAsynchImage(
 									state = state,
 									wasDeleted = wasDeleted,
 									animationIsRunning = animationIsRunning,
-									isExit = isExit
+									isExit = isExit,
+									scope = scope
 								)
 							}
 						}
@@ -603,7 +615,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 		{
 			fromNotification.value = false
 		}
-		val mod = if(isSharedImage || wasDeleted.value || page != pagerState.currentPage || fromNotification.value)
+		val mod = if(isSharedImage || wasDeleted.value || page != pagerState.currentPage || fromNotification.value || wasDeletedCalled.value)
 		{
 			Modifier
 				.fillMaxSize()
@@ -782,6 +794,7 @@ fun AppBar(
 	isExit: MutableState<Boolean>,
 	wasDeleted: MutableState<Boolean>,
 	fromNotification: MutableState<Boolean>,
+	scope: CoroutineScope,
 )
 {
 	val value = state.value
@@ -881,12 +894,12 @@ fun AppBar(
 			wasDeleted = wasDeleted,
 			state = state,
 			animationIsRunning = animationIsRunning,
-			isExit = isExit
+			isExit = isExit,
+			scope = scope
 		)
 	}
 }
 
-@OptIn(DelicateCoroutinesApi::class)
 fun navigateToHome(
 	changeBarsVisability: (Boolean) -> Unit,
 	postUrl: (String?, Bitmap?) -> Unit,
@@ -896,9 +909,10 @@ fun navigateToHome(
 	wasDeleted: MutableState<Boolean>,
 	animationIsRunning: MutableState<Boolean>,
 	isExit: MutableState<Boolean>,
+	scope: CoroutineScope,
 )
 {
-	GlobalScope.launch(Dispatchers.Main) {
+	scope.launch {
 		if(!animationIsRunning.value)
 		{
 			isExit.value = true
