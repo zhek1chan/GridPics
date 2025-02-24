@@ -133,7 +133,7 @@ fun SharedTransitionScope.DetailsScreen(
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	fromNotification: MutableState<Boolean>,
 	animationIsRunning: MutableState<Boolean>,
-	changeAnimation: MutableState<Boolean>
+	changeAnimation: MutableState<Boolean>,
 )
 {
 	changeAnimation.value = false
@@ -177,7 +177,14 @@ fun SharedTransitionScope.DetailsScreen(
 		animationIsRunning.value = false
 	}
 	val wasDeleted = remember(pagerState.currentPage) { mutableStateOf(false) }
+	val wasCalledDelete = remember { mutableStateOf(false) }
 	BackHandler {
+		if(value.isSharedImage)
+		{
+			changeAnimation.value = true
+			wasCalledDelete.value = true
+			setImageSharedState(false)
+		}
 		navigateToHome(
 			changeBarsVisability = changeBarsVisability,
 			postUrl = postUrl,
@@ -191,7 +198,6 @@ fun SharedTransitionScope.DetailsScreen(
 		)
 	}
 	val updatePicture = remember { mutableStateOf(false) }
-
 	LaunchedEffect(updatePicture.value) {
 		snapshotFlow { pagerState.currentPage }.collect { page ->
 			Log.d("checkMa", "send")
@@ -236,7 +242,10 @@ fun SharedTransitionScope.DetailsScreen(
 				isExit = isExit,
 				wasDeleted = wasDeleted,
 				fromNotification = fromNotification,
-				scope = scope
+				scope = scope,
+				wasCalledDelete = wasCalledDelete,
+				changeAnimation = changeAnimation,
+				setImageSharedState = setImageSharedState
 			)
 		},
 		content = { padding ->
@@ -264,7 +273,8 @@ fun SharedTransitionScope.DetailsScreen(
 				fromNotification = fromNotification,
 				updatePicture = updatePicture,
 				scope = scope,
-				changeAnimation = changeAnimation
+				changeAnimation = changeAnimation,
+				wasCalledDelete = wasCalledDelete
 			)
 		}
 	)
@@ -296,13 +306,13 @@ fun SharedTransitionScope.ShowDetails(
 	fromNotification: MutableState<Boolean>,
 	updatePicture: MutableState<Boolean>,
 	scope: CoroutineScope,
-	changeAnimation: MutableState<Boolean>
+	changeAnimation: MutableState<Boolean>,
+	wasCalledDelete: MutableState<Boolean>,
 )
 {
 	val value = state.value
 	val isSharedImage = value.isSharedImage
 	Log.d("checkCheck", "$isSharedImage")
-	val wasCalledDelete = remember { mutableStateOf(false) }
 	val statusBarHeightFixed = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
 	AnimatedVisibility(!wasDeleted.value) {
 		HorizontalPager(
@@ -818,6 +828,9 @@ fun AppBar(
 	wasDeleted: MutableState<Boolean>,
 	fromNotification: MutableState<Boolean>,
 	scope: CoroutineScope,
+	changeAnimation: MutableState<Boolean>,
+	wasCalledDelete: MutableState<Boolean>,
+	setImageSharedState: (Boolean) -> Unit,
 )
 {
 	val value = state.value
@@ -920,6 +933,12 @@ fun AppBar(
 	}
 	if(navBack.value)
 	{
+		if(value.isSharedImage)
+		{
+			changeAnimation.value = true
+			wasCalledDelete.value = true
+			setImageSharedState(false)
+		}
 		navBack.value = false
 		navigateToHome(
 			changeBarsVisability = changeBarsVisability,
