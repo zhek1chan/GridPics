@@ -74,6 +74,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Size
@@ -320,7 +321,6 @@ fun SharedTransitionScope.ShowDetails(
 			pageSize = PageSize.Fill,
 			contentPadding = PaddingValues(0.dp, statusBarHeightFixed, 0.dp, padding.calculateBottomPadding()),
 			userScrollEnabled = !isSharedImage && !animationIsRunning.value,
-			pageSpacing = 10.dp,
 			beyondViewportPageCount = 0
 		) { page ->
 			val url = list[page]
@@ -924,6 +924,7 @@ fun AppBar(
 				HorizontalDivider(
 					modifier = Modifier
 						.fillMaxWidth()
+						.alpha(0.12f)
 						.align(Alignment.BottomCenter),
 					color = MaterialTheme.colorScheme.onPrimary,
 					thickness = 1.5.dp

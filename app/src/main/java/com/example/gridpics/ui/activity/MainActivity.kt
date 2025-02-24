@@ -310,7 +310,8 @@ class MainActivity: AppCompatActivity()
 								picVM.clickOnPicture(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
 								text = Math.random().toString()
 								Toast.makeText(this@MainActivity, getString(R.string.you_canceled_pick), Toast.LENGTH_SHORT).show()
-							}
+							},
+							getPrevClickedItem = { detailsState.value.currentPicture }
 						)
 					}
 				}

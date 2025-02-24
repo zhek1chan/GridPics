@@ -44,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -151,7 +152,9 @@ fun SettingsCompose(
 					)
 				}
 				HorizontalDivider(
-					modifier = Modifier.fillMaxWidth(),
+					modifier = Modifier
+						.fillMaxWidth()
+						.alpha(0.12f),
 					color = MaterialTheme.colorScheme.onPrimary,
 					thickness = 1.5.dp
 				)
@@ -227,7 +230,7 @@ fun SettingsCompose(
 					}
 				}
 				// Clear cache option
-				HorizontalDivider(modifier = Modifier.padding(bottom = 3.dp, start = 16.dp, end = 16.dp), color = MaterialTheme.colorScheme.onPrimary, thickness = 0.5.dp)
+				HorizontalDivider(modifier = Modifier.padding(bottom = 3.dp, start = 16.dp, end = 16.dp).alpha(0.12f), color = MaterialTheme.colorScheme.onPrimary, thickness = 0.5.dp)
 				Row(
 					verticalAlignment = Alignment.CenterVertically,
 					modifier = Modifier

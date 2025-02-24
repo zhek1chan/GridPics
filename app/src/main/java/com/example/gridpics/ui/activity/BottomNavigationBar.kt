@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -47,24 +48,6 @@ fun BottomNavigationBar(
 	val bottomBarState = remember(Unit) { mutableStateOf(true) }
 	val navBackStackEntry by navController.currentBackStackEntryAsState()
 	val route = navBackStackEntry?.destination?.route
-	when(route)
-	{
-		BottomNavItem.Home.route ->
-		{
-			// Show BottomBar and TopBar
-			bottomBarState.value = true
-		}
-		BottomNavItem.Settings.route ->
-		{
-			// Show BottomBar and TopBar
-			bottomBarState.value = true
-		}
-		Screen.Details.route ->
-		{
-			// Hide BottomBar and TopBar
-			bottomBarState.value = true
-		}
-	}
 	val isPortrait = screenUiState.value.isPortraitOrientation
 	val maxHeight = if(isPortrait)
 	{
@@ -118,7 +101,8 @@ fun BottomNavigationBar(
 			}
 		}
 		HorizontalDivider(
-			modifier = mod,
+			modifier = mod
+				.alpha(0.12f),
 			color = MaterialTheme.colorScheme.onPrimary,
 			thickness = 1.5.dp
 		)

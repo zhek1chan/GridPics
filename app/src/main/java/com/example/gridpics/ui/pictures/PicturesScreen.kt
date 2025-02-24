@@ -16,6 +16,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -74,6 +75,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -128,6 +130,7 @@ fun SharedTransitionScope.PicturesScreen(
 	deletePictures: (List<String>) -> Unit,
 	listState: LazyGridState,
 	cancelAllCheckedPics: () -> Unit,
+	getPrevClickedItem: () -> String,
 )
 {
 	LaunchedEffect(Unit) {
@@ -143,6 +146,8 @@ fun SharedTransitionScope.PicturesScreen(
 	val showSwapButton = remember { mutableStateOf(false) }
 	val showDeleteButton = remember { mutableStateOf(false) }
 	val buttonWasPressed = remember { mutableStateOf(false) }
+	val isClicked = remember { mutableStateOf(false) }
+	val animatedAlpha: Float by animateFloatAsState(if(!isClicked.value) 1f else 0f, label = "alpha")
 	Scaffold(
 		contentWindowInsets = windowInsets,
 		floatingActionButton = {
@@ -279,6 +284,7 @@ fun SharedTransitionScope.PicturesScreen(
 						modifier = Modifier
 							.align(Alignment.BottomCenter)
 							.fillMaxWidth()
+							.alpha(0.12f)
 							.padding(bottom = 2.dp),
 						color = MaterialTheme.colorScheme.onPrimary,
 						thickness = 1.5.dp
@@ -286,7 +292,13 @@ fun SharedTransitionScope.PicturesScreen(
 				}
 			}
 		},
-		bottomBar = { BottomNavigationBar(navController, state) },
+		bottomBar = {
+			Box(modifier = Modifier
+				.alpha(animatedAlpha)
+				.renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)) {
+				BottomNavigationBar(navController, state)
+			}
+		},
 		content = { padding ->
 			Box(
 				modifier = Modifier
@@ -321,7 +333,9 @@ fun SharedTransitionScope.PicturesScreen(
 					buttonWasPressed = buttonWasPressed,
 					listState = listState,
 					postPressOnBackButton = postPressOnBackButton,
-					cancelAllCheckedPics = cancelAllCheckedPics
+					cancelAllCheckedPics = cancelAllCheckedPics,
+					getPrevClickedItem = getPrevClickedItem,
+					isClicked = isClicked
 				)
 			}
 		}
@@ -341,10 +355,12 @@ fun SharedTransitionScope.ItemsCard(
 	list: List<String>,
 	gridNum: Int,
 	isMultiWindowed: Boolean,
-	animationIsRunning: MutableState<Boolean>,
 	selectedCounter: MutableIntState,
 	selectedList: MutableList<String>,
 	removeCurrentError: (String) -> Unit,
+	isClicked: MutableState<Boolean>,
+	currentClickedItem: MutableState<String>,
+	getPrevClickedItem: () -> String,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -388,6 +404,21 @@ fun SharedTransitionScope.ItemsCard(
 	}
 	Log.d("recompose", "picture $item")
 	val imageIsSelected = remember(item) { mutableStateOf(selectedList.contains(item)) }
+	val mod = if(isClicked.value && item == getPrevClickedItem() && item != currentClickedItem.value)
+	{
+		Modifier.padding(8.dp)
+	}
+	else
+	{
+		Modifier
+			.padding(8.dp)
+			.sharedElement(
+				state = rememberSharedContentState(
+					key = list.indexOf(item)
+				),
+				animatedVisibilityScope = animatedVisibilityScope
+			)
+	}
 	Box(Modifier
 		.fillMaxSize()
 		.aspectRatio(1f)) {
@@ -395,18 +426,12 @@ fun SharedTransitionScope.ItemsCard(
 			model = (imgRequest),
 			filterQuality = FilterQuality.Low,
 			contentDescription = item,
-			modifier = Modifier
-				.padding(8.dp)
-				.sharedElement(
-					state = rememberSharedContentState(
-						key = list.indexOf(item)
-					),
-					animatedVisibilityScope = animatedVisibilityScope)
+			modifier = mod
 				.combinedClickable(
 					onClick = {
 						if(selectedCounter.intValue == 0)
 						{
-							if(!animationIsRunning.value)
+							if(!isClicked.value)
 							{
 								if(isError)
 								{
@@ -414,6 +439,8 @@ fun SharedTransitionScope.ItemsCard(
 								}
 								else
 								{
+									currentClickedItem.value = item
+									isClicked.value = true
 									Log.d("current", item)
 									//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
 									val firstVisibleIndex = lazyState.firstVisibleItemIndex
@@ -549,11 +576,14 @@ fun SharedTransitionScope.ShowList(
 	listState: LazyGridState,
 	postPressOnBackButton: () -> Unit,
 	cancelAllCheckedPics: () -> Unit,
+	getPrevClickedItem: () -> String,
+	isClicked: MutableState<Boolean>,
 )
 {
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
 	Log.d("We got:", "$imagesUrlsSP")
 	val selectedCounter = remember { mutableIntStateOf(0) }
+	val currentClickedItem = remember { mutableStateOf("") }
 	if(buttonWasPressed.value)
 	{
 		selectedCounter.intValue = 0
@@ -604,10 +634,12 @@ fun SharedTransitionScope.ShowList(
 								list = list,
 								gridNum = calculateGridSpan.value,
 								isMultiWindowed = isMultiWindowed,
-								animationIsRunning = animationIsRunning,
 								selectedCounter = selectedCounter,
 								selectedList = selectedList,
-								removeCurrentError = removeCurrentError
+								removeCurrentError = removeCurrentError,
+								isClicked = isClicked,
+								currentClickedItem = currentClickedItem,
+								getPrevClickedItem = getPrevClickedItem
 							)
 						}
 					}
@@ -658,10 +690,12 @@ fun SharedTransitionScope.ShowList(
 						list = imagesUrlsSP,
 						gridNum = calculateGridSpan.value,
 						isMultiWindowed = isMultiWindowed,
-						animationIsRunning = animationIsRunning,
 						selectedCounter = selectedCounter,
 						selectedList = selectedList,
-						removeCurrentError = removeCurrentError
+						removeCurrentError = removeCurrentError,
+						isClicked = isClicked,
+						currentClickedItem = currentClickedItem,
+						getPrevClickedItem = getPrevClickedItem
 					)
 				}
 			}
