@@ -419,43 +419,6 @@ fun SharedTransitionScope.ItemsCard(
 	Log.d("0", prevClickedItem)
 	//логика настройки модификатора у картинки, чтобы можно было отменять анимацию по клику на другую картинку или ту же самую и
 	//запускать другую анимацию
-	val mod = if(item != currentClickedItem.value)
-	{
-		Modifier
-			.padding(8.dp)
-			.sharedElement(
-				state = rememberSharedContentState(
-					key = list.indexOf(item)
-				),
-				animatedVisibilityScope = animatedVisibilityScope,
-				renderInOverlayDuringTransition = true,
-				zIndexInOverlay = 0f
-			)
-	}
-	else if(prevClickedItem == item)
-	{
-		Modifier
-			.padding(8.dp)
-			.sharedElement(
-				state = rememberSharedContentState(
-					key = list.indexOf(item)
-				),
-				animatedVisibilityScope = animatedVisibilityScope,
-				renderInOverlayDuringTransition = true,
-				zIndexInOverlay = 1f
-			)
-	}
-	else
-	{
-		Modifier
-			.padding(8.dp)
-			.sharedElement(
-				state = rememberSharedContentState(
-					key = list.indexOf(item)
-				),
-				animatedVisibilityScope = animatedVisibilityScope
-			)
-	}
 	Box(Modifier
 		.fillMaxSize()
 		.aspectRatio(1f)) {
@@ -463,7 +426,14 @@ fun SharedTransitionScope.ItemsCard(
 			model = (imgRequest),
 			filterQuality = FilterQuality.Low,
 			contentDescription = item,
-			modifier = mod
+			modifier = Modifier
+				.padding(8.dp)
+				.sharedElement(
+					state = rememberSharedContentState(
+						key = list.indexOf(item)
+					),
+					animatedVisibilityScope = animatedVisibilityScope
+				)
 				.combinedClickable(
 					onClick = {
 						if(selectedCounter.intValue == 0)
