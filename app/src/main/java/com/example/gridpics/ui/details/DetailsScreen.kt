@@ -1,5 +1,6 @@
 package com.example.gridpics.ui.details
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.provider.Settings
@@ -92,6 +93,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
@@ -112,6 +114,7 @@ import kotlinx.coroutines.launch
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
+@SuppressLint("RestrictedApi")
 @OptIn(ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.DetailsScreen(
@@ -135,6 +138,7 @@ fun SharedTransitionScope.DetailsScreen(
 	fromNotification: MutableState<Boolean>,
 	animationIsRunning: MutableState<Boolean>,
 	changeAnimation: MutableState<Boolean>,
+	disposable: MutableState<Boolean>,
 )
 {
 	changeAnimation.value = false
@@ -172,7 +176,6 @@ fun SharedTransitionScope.DetailsScreen(
 				Settings.Global.ANIMATOR_DURATION_SCALE,
 				1f
 			)
-			Log.d("animation is running", "${animatedVisibilityScope.transition.totalDurationNanos} $animatorScale")
 			delay((animatedVisibilityScope.transition.totalDurationNanos.toFloat() * animatorScale / 1000000).toLong()) //перевод в милисекунды
 		}
 		animationIsRunning.value = false
@@ -195,7 +198,8 @@ fun SharedTransitionScope.DetailsScreen(
 			animationIsRunning = animationIsRunning,
 			isExit = isExit,
 			wasDeleted = wasDeleted,
-			scope = scope
+			scope = scope,
+			disposable = disposable
 		)
 	}
 	val updatePicture = remember { mutableStateOf(false) }
@@ -246,7 +250,8 @@ fun SharedTransitionScope.DetailsScreen(
 				scope = scope,
 				wasCalledDelete = wasCalledDelete,
 				changeAnimation = changeAnimation,
-				setImageSharedState = setImageSharedState
+				setImageSharedState = setImageSharedState,
+				disposable = disposable
 			)
 		},
 		content = { padding ->
@@ -275,7 +280,8 @@ fun SharedTransitionScope.DetailsScreen(
 				updatePicture = updatePicture,
 				scope = scope,
 				changeAnimation = changeAnimation,
-				wasCalledDelete = wasCalledDelete
+				wasCalledDelete = wasCalledDelete,
+				disposable = disposable
 			)
 		}
 	)
@@ -309,6 +315,7 @@ fun SharedTransitionScope.ShowDetails(
 	scope: CoroutineScope,
 	changeAnimation: MutableState<Boolean>,
 	wasCalledDelete: MutableState<Boolean>,
+	disposable: MutableState<Boolean>,
 )
 {
 	val value = state.value
@@ -376,7 +383,8 @@ fun SharedTransitionScope.ShowDetails(
 						fromNotification = fromNotification,
 						updatePicture = updatePicture,
 						scope = scope,
-						wasDeletedCalled = wasCalledDelete
+						wasDeletedCalled = wasCalledDelete,
+						disposable = disposable
 					)
 				}
 				if(isSharedImage && !wasCalledDelete.value)
@@ -409,7 +417,8 @@ fun SharedTransitionScope.ShowDetails(
 										state = state,
 										animationIsRunning = animationIsRunning,
 										isExit = isExit,
-										scope = scope
+										scope = scope,
+										disposable = disposable
 									)
 								},
 								border = BorderStroke(3.dp, Color.Red),
@@ -437,7 +446,8 @@ fun SharedTransitionScope.ShowDetails(
 													animationIsRunning = animationIsRunning,
 													isExit = isExit,
 													wasDeleted = wasDeleted,
-													scope = scope
+													scope = scope,
+													disposable = disposable
 												)
 											}
 											addPicture(url)
@@ -461,16 +471,17 @@ fun SharedTransitionScope.ShowDetails(
 					Row(
 						modifier = Modifier
 							.height(80.dp)
-							.padding(0.dp, 0.dp, 0.dp, 0.dp)
 							.align(Alignment.BottomCenter)
 					) {
 						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-						AnimatedVisibility(visible = (!animationIsRunning.value || fromNotification.value) && value.barsAreVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
+						AnimatedVisibility(visible = (!animationIsRunning.value && disposable.value || fromNotification.value) && value.barsAreVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
 							CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 								Button(
 									modifier = Modifier
 										.align(Alignment.CenterVertically)
-										.size(130.dp, 60.dp),
+										.size(130.dp, 60.dp)
+										.renderInSharedTransitionScopeOverlay(renderInOverlay = { false })
+										.zIndex(1f),
 									onClick = {
 										openDialog.value = true
 									},
@@ -500,7 +511,8 @@ fun SharedTransitionScope.ShowDetails(
 										animationIsRunning = animationIsRunning,
 										isExit = isExit,
 										wasDeleted = wasDeleted,
-										scope = scope
+										scope = scope,
+										disposable = disposable
 									)
 									openDialog.value = false
 									deleteCurrentPicture(url)
@@ -541,6 +553,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 	updatePicture: MutableState<Boolean>,
 	scope: CoroutineScope,
 	wasDeletedCalled: MutableState<Boolean>,
+	disposable: MutableState<Boolean>,
 )
 {
 	val zoom = rememberZoomState(5f, Size.Zero)
@@ -634,7 +647,8 @@ fun SharedTransitionScope.ShowAsynchImage(
 									wasDeleted = wasDeleted,
 									animationIsRunning = animationIsRunning,
 									isExit = isExit,
-									scope = scope
+									scope = scope,
+									disposable = disposable
 								)
 							}
 						}
@@ -831,6 +845,7 @@ fun AppBar(
 	changeAnimation: MutableState<Boolean>,
 	wasCalledDelete: MutableState<Boolean>,
 	setImageSharedState: (Boolean) -> Unit,
+	disposable: MutableState<Boolean>,
 )
 {
 	val value = state.value
@@ -842,7 +857,7 @@ fun AppBar(
 	val navBack = remember { mutableStateOf(false) }
 	Log.d("shared pic url", currentPicture)
 	val sharedImgCase = value.isSharedImage
-	AnimatedVisibility(visible = (isVisible && !animationIsRunning.value) || fromNotification.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+	AnimatedVisibility(visible = (isVisible && !animationIsRunning.value && disposable.value) || fromNotification.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(modifier = Modifier
 			.background(MaterialTheme.colorScheme.background)
 			.height(
@@ -950,7 +965,8 @@ fun AppBar(
 			state = state,
 			animationIsRunning = animationIsRunning,
 			isExit = isExit,
-			scope = scope
+			scope = scope,
+			disposable = disposable
 		)
 	}
 }
@@ -965,23 +981,28 @@ fun navigateToHome(
 	animationIsRunning: MutableState<Boolean>,
 	isExit: MutableState<Boolean>,
 	scope: CoroutineScope,
+	disposable: MutableState<Boolean>,
 )
 {
 	scope.launch {
-		if(!animationIsRunning.value)
+		if(!animationIsRunning.value && disposable.value)
 		{
 			isExit.value = true
-			delay(100)
+
 			if(state.value.isSharedImage)
 			{
 				wasDeleted.value = true
 			}
 			Log.d("activated", "activated")
 			animationIsRunning.value = true
-			navController.navigate(Screen.Home.route)
+			delay(100)
+			navController.navigate(Screen.Home.route) {
+				this.launchSingleTop = true
+			}
+			navController.clearBackStack(Screen.Details.route)
 			changeBarsVisability(true)
 			postUrl(null, null)
-			delay(500)
+			delay(300)
 			setImageSharedStateToFalse(false)
 		}
 	}

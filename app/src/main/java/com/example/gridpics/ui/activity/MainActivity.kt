@@ -176,6 +176,7 @@ class MainActivity: AppCompatActivity()
 		Log.d("casecase", "isShared = $isSharedImage")
 		val fromNotification = fromNotification
 		val changeAnimation = remember { mutableStateOf(false) }
+		val animationIsRunning = remember { mutableStateOf(false) }
 		//logic to avoid showing animation when the picture is shared
 		val enterTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
 		{
@@ -183,7 +184,7 @@ class MainActivity: AppCompatActivity()
 		}
 		else
 		{
-			fadeIn(initialAlpha = 0f, animationSpec = tween(700))
+			EnterTransition.None
 		}
 		val popEnterTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
 		{
@@ -191,7 +192,7 @@ class MainActivity: AppCompatActivity()
 		}
 		else
 		{
-			fadeIn(initialAlpha = 0f, animationSpec = tween(100))
+			EnterTransition.None
 		}
 		val exitTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
 		{
@@ -199,7 +200,7 @@ class MainActivity: AppCompatActivity()
 		}
 		else
 		{
-			fadeOut(targetAlpha = 1f, animationSpec = tween(700))
+			ExitTransition.None
 		}
 		val popExitTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
 		{
@@ -207,11 +208,11 @@ class MainActivity: AppCompatActivity()
 		}
 		else
 		{
-			fadeOut(targetAlpha = 1f, animationSpec = tween(100))
+			ExitTransition.None
 		}
 		var text by remember { mutableStateOf("foo") }
-		val animationIsRunning = remember { mutableStateOf(false) }
 		val listState = remember(LocalConfiguration.current.orientation) { LazyGridState() }
+		val dispose = remember { mutableStateOf(false) }
 		SharedTransitionLayout {
 			NavHost(
 				navController = navController,
@@ -311,7 +312,8 @@ class MainActivity: AppCompatActivity()
 								text = Math.random().toString()
 								Toast.makeText(this@MainActivity, getString(R.string.you_canceled_pick), Toast.LENGTH_SHORT).show()
 							},
-							getPrevClickedItem = { detailsState.value.currentPicture }
+							getPrevClickedItem = { detailsState.value.currentPicture },
+							dispose = dispose
 						)
 					}
 				}
@@ -338,6 +340,9 @@ class MainActivity: AppCompatActivity()
 				composable(
 					route = Screen.Details.route,
 					exitTransition = { exitTransition },
+					popExitTransition = {ExitTransition.None},
+					enterTransition =  {EnterTransition.None},
+					popEnterTransition = {EnterTransition.None},
 				) {
 					DetailsScreen(
 						navController = navController,
@@ -374,7 +379,8 @@ class MainActivity: AppCompatActivity()
 						animatedVisibilityScope = this@composable,
 						fromNotification = fromNotification,
 						animationIsRunning = animationIsRunning,
-						changeAnimation = changeAnimation
+						changeAnimation = changeAnimation,
+						disposable = dispose
 					)
 				}
 			}

@@ -65,6 +65,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
@@ -131,8 +132,15 @@ fun SharedTransitionScope.PicturesScreen(
 	listState: LazyGridState,
 	cancelAllCheckedPics: () -> Unit,
 	getPrevClickedItem: () -> String,
+	dispose: MutableState<Boolean>,
 )
 {
+	DisposableEffect(Unit) {
+		dispose.value = false
+		onDispose {
+			dispose.value = true
+		}
+	}
 	LaunchedEffect(Unit) {
 		postVisibleBarsState()
 	}
@@ -220,6 +228,8 @@ fun SharedTransitionScope.PicturesScreen(
 				modifier = Modifier
 					.fillMaxWidth()
 					.wrapContentHeight()
+					.renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)
+					.alpha(animatedAlpha)
 					.padding(windowInsets.asPaddingValues())
 			) {
 				val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia(), onResult = { uri ->
@@ -294,8 +304,9 @@ fun SharedTransitionScope.PicturesScreen(
 		},
 		bottomBar = {
 			Box(modifier = Modifier
+				.renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)
 				.alpha(animatedAlpha)
-				.renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)) {
+			) {
 				BottomNavigationBar(navController, state)
 			}
 		},
@@ -404,9 +415,35 @@ fun SharedTransitionScope.ItemsCard(
 	}
 	Log.d("recompose", "picture $item")
 	val imageIsSelected = remember(item) { mutableStateOf(selectedList.contains(item)) }
-	val mod = if(isClicked.value && item == getPrevClickedItem() && item != currentClickedItem.value)
+	val prevClickedItem = getPrevClickedItem()
+	Log.d("0", prevClickedItem)
+	//логика настройки модификатора у картинки, чтобы можно было отменять анимацию по клику на другую картинку или ту же самую и
+	//запускать другую анимацию
+	val mod = if(item != currentClickedItem.value)
 	{
-		Modifier.padding(8.dp)
+		Modifier
+			.padding(8.dp)
+			.sharedElement(
+				state = rememberSharedContentState(
+					key = list.indexOf(item)
+				),
+				animatedVisibilityScope = animatedVisibilityScope,
+				renderInOverlayDuringTransition = true,
+				zIndexInOverlay = 0f
+			)
+	}
+	else if(prevClickedItem == item)
+	{
+		Modifier
+			.padding(8.dp)
+			.sharedElement(
+				state = rememberSharedContentState(
+					key = list.indexOf(item)
+				),
+				animatedVisibilityScope = animatedVisibilityScope,
+				renderInOverlayDuringTransition = true,
+				zIndexInOverlay = 1f
+			)
 	}
 	else
 	{
