@@ -133,7 +133,7 @@ fun SharedTransitionScope.PicturesScreen(
 	cancelAllCheckedPics: () -> Unit,
 	getPrevClickedItem: () -> String,
 	dispose: MutableState<Boolean>,
-	getGridNum: () -> Int
+	getGridNum: () -> Int,
 )
 {
 	DisposableEffect(Unit) {
@@ -438,72 +438,69 @@ fun SharedTransitionScope.ItemsCard(
 					animatedVisibilityScope = animatedVisibilityScope
 				)
 				.combinedClickable(
+					enabled = !animationIsRunning.value || prevClickedItem != item,
 					onClick = {
-						if(!animationIsRunning.value || prevClickedItem != item)
+						if(selectedCounter.intValue == 0)
 						{
-							if(selectedCounter.intValue == 0)
+							if(!isClicked.value)
 							{
-								if(!isClicked.value)
+								if(isError)
 								{
-									if(isError)
+									openAlertDialog.value = true
+								}
+								else
+								{
+									currentClickedItem.value = item
+									isClicked.value = true
+									Log.d("current", item)
+									//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
+									val firstVisibleIndex = lazyState.firstVisibleItemIndex
+									val offsetOfList = lazyState.firstVisibleItemScrollOffset
+									val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
+									val gridNum = getGridNum()
+									if(isMultiWindowed)
 									{
-										openAlertDialog.value = true
+										currentPicture(item, list.indexOf(item), 0)
+									}
+									else if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
+									{
+										Log.d("check listScroll", "firstVisibleIndex")
+										currentPicture(item, firstVisibleIndex, 0)
+									}
+									else if(
+										(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
+											&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
+										&& (lazyState.layoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
+									{
+										Log.d("check listScroll", "firstVisible +gridnum")
+										currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
 									}
 									else
 									{
-										currentClickedItem.value = item
-										isClicked.value = true
-										Log.d("current", item)
-										//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
-										val firstVisibleIndex = lazyState.firstVisibleItemIndex
-										val offsetOfList = lazyState.firstVisibleItemScrollOffset
-										val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
-										val gridNum = getGridNum()
-										if(isMultiWindowed)
-										{
-											currentPicture(item, list.indexOf(item), 0)
-										}
-										else if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
-										{
-											Log.d("check listScroll", "firstVisibleIndex")
-											currentPicture(item, firstVisibleIndex, 0)
-										}
-										else if(
-											(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
-												&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
-											&& (lazyState.layoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
-										{
-											Log.d("check listScroll", "firstVisible +gridnum")
-											currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
-										}
-										else
-										{
-											Log.d("check listScroll", "just click $firstVisibleIndex, $offsetOfList")
-											currentPicture(item, firstVisibleIndex, offsetOfList)
-										}
-										openAlertDialog.value = false
+										Log.d("check listScroll", "just click $firstVisibleIndex, $offsetOfList")
+										currentPicture(item, firstVisibleIndex, offsetOfList)
 									}
+									openAlertDialog.value = false
 								}
 							}
-							else
-							{
-								onLongPictureClick(
-									imageIsSelected = imageIsSelected,
-									selectedCounter = selectedCounter,
-									selectedList = selectedList,
-									item = item
-								)
-							}
 						}
-					},
-					onLongClick = {
-						if(!animationIsRunning.value || prevClickedItem != item)
+						else
+						{
 							onLongPictureClick(
 								imageIsSelected = imageIsSelected,
 								selectedCounter = selectedCounter,
 								selectedList = selectedList,
 								item = item
 							)
+						}
+					},
+					onLongClick = {
+						onLongPictureClick(
+							imageIsSelected = imageIsSelected,
+							selectedCounter = selectedCounter,
+							selectedList = selectedList,
+							item = item
+						)
 					}
 				)
 				.clip(RoundedCornerShape(8.dp))
@@ -593,7 +590,7 @@ fun SharedTransitionScope.ShowList(
 	cancelAllCheckedPics: () -> Unit,
 	getPrevClickedItem: () -> String,
 	isClicked: MutableState<Boolean>,
-	getGridNum: () -> Int
+	getGridNum: () -> Int,
 )
 {
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")

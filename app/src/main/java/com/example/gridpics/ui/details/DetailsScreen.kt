@@ -610,8 +610,11 @@ fun SharedTransitionScope.ShowAsynchImage(
 			enableOneFingerZoom = false,
 			onTap =
 			{
-				val visibility = state.value.barsAreVisible
-				changeBarsVisability(!visibility)
+				if(!animationIsRunning.value)
+				{
+					val visibility = state.value.barsAreVisible
+					changeBarsVisability(!visibility)
+				}
 			}
 		)
 		.pointerInput(Unit) {
