@@ -1,7 +1,6 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
@@ -35,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -46,7 +46,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil3.imageLoader
 import com.example.gridpics.R
-import com.example.gridpics.R.bool.is_sw600dp
 import com.example.gridpics.domain.model.PicturesDataForNotification
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
@@ -150,8 +149,6 @@ class MainActivity: AppCompatActivity()
 				}
 			}
 		}
-
-		picVM.updateGridSpan(calculateGridSpan())
 		setContent {
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
@@ -211,8 +208,23 @@ class MainActivity: AppCompatActivity()
 			ExitTransition.None
 		}
 		var text by remember { mutableStateOf("foo") }
-		val listState = remember(LocalConfiguration.current.orientation) { LazyGridState() }
+		val configuration = LocalConfiguration.current
+		val listState = remember(configuration.orientation) { LazyGridState() }
 		val dispose = remember { mutableStateOf(false) }
+
+		picVM.postWidth(configuration.screenWidthDp)
+		picVM.postDensity(LocalDensity.current.density)
+		//считаем размер картинки
+		val isSw600dp = resources.getBoolean(R.bool.is_sw600dp)
+		if(!isSw600dp)
+		{
+			picVM.updatePictureSize(LENGTH_OF_PICTURE)
+		}
+		else
+		{
+			picVM.updatePictureSize(LENGTH_OF_PICTURE_FOR_BIG_SCREENS)
+		}
+
 		SharedTransitionLayout {
 			NavHost(
 				navController = navController,
@@ -262,7 +274,7 @@ class MainActivity: AppCompatActivity()
 							saveToSharedPrefs = { urls ->
 								saveToSharedPrefs(picVM.convertFromListToString(urls))
 							},
-							calculateGridSpan = { picVM.getGridSpan() },
+							pictureSizeInDp = { picVM.getPictureSizeInDp() },
 							postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum) },
 							animatedVisibilityScope = this@composable,
 							picWasLoadedFromMediaPicker = { uri ->
@@ -313,7 +325,8 @@ class MainActivity: AppCompatActivity()
 								Toast.makeText(this@MainActivity, getString(R.string.you_canceled_pick), Toast.LENGTH_SHORT).show()
 							},
 							getPrevClickedItem = { detailsState.value.currentPicture },
-							dispose = dispose
+							dispose = dispose,
+							getGridNum = { picVM.getGridNum() }
 						)
 					}
 				}
@@ -340,9 +353,9 @@ class MainActivity: AppCompatActivity()
 				composable(
 					route = Screen.Details.route,
 					exitTransition = { exitTransition },
-					popExitTransition = {ExitTransition.None},
-					enterTransition =  {EnterTransition.None},
-					popEnterTransition = {EnterTransition.None},
+					popExitTransition = { ExitTransition.None },
+					enterTransition = { EnterTransition.None },
+					popEnterTransition = { EnterTransition.None },
 				) {
 					DetailsScreen(
 						navController = navController,
@@ -491,7 +504,6 @@ class MainActivity: AppCompatActivity()
 		val orientation = newConfig.orientation
 		val picVM = picturesViewModel
 		val value = detailsViewModel.uiState.value
-		picVM.updateGridSpan(calculateGridSpan())
 		picVM.clickOnPicture(value.picturesUrl.indexOf(value.currentPicture), 0)
 		Log.d("was set", "${value.picturesUrl.indexOf(value.currentPicture)}")
 		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
@@ -726,41 +738,10 @@ class MainActivity: AppCompatActivity()
 		return uiModeManager.nightMode == UiModeManager.MODE_NIGHT_YES
 	}
 
-	@SuppressLint("InternalInsetResource", "DiscouragedApi")
-	private fun calculateGridSpan(): Int
-	{
-		val resources = resources
-		val displayMetrics = resources.displayMetrics
-		var width = displayMetrics.widthPixels
-		val sBar = resources.getDimensionPixelSize(resources.getIdentifier("status_bar_height", "dimen", "android"))
-		val nBar = resources.getDimensionPixelSize(resources.getIdentifier("navigation_bar_height", "dimen", "android"))
-		var height = displayMetrics.heightPixels
-		val density = displayMetrics.density
-		if(width > height)
-		{
-			width += sBar + nBar
-		}
-		else
-		{
-			height += sBar + nBar
-		}
-		val isSw600dp = resources.getBoolean(is_sw600dp)
-		val result = if(isSw600dp)
-		{
-			(width / density).toInt() / LENGTH_OF_PICTURE_FOR_BIG_SCREENS
-		}
-		else
-		{
-			(width / density).toInt() / LENGTH_OF_PICTURE
-		}
-		Log.d("check Params", "is sw600dp = $isSw600dp")
-		return result
-	}
-
 	companion object
 	{
 		const val RESULT_SUCCESS = 100
-		const val LENGTH_OF_PICTURE = 110
+		const val LENGTH_OF_PICTURE = 126
 		const val LENGTH_OF_PICTURE_FOR_BIG_SCREENS = 190
 		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337

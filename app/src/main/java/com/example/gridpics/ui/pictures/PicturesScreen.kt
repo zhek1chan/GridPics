@@ -120,7 +120,7 @@ fun SharedTransitionScope.PicturesScreen(
 	isValidUrl: (String) -> Boolean,
 	postSavedUrls: (List<String>) -> Unit,
 	saveToSharedPrefs: (List<String>) -> Unit,
-	calculateGridSpan: () -> MutableState<Int>,
+	pictureSizeInDp: () -> MutableState<Int>,
 	postMaxVisibleLinesNum: (Int) -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	picWasLoadedFromMediaPicker: (Uri) -> Unit,
@@ -133,6 +133,7 @@ fun SharedTransitionScope.PicturesScreen(
 	cancelAllCheckedPics: () -> Unit,
 	getPrevClickedItem: () -> String,
 	dispose: MutableState<Boolean>,
+	getGridNum: () -> Int
 )
 {
 	DisposableEffect(Unit) {
@@ -144,7 +145,7 @@ fun SharedTransitionScope.PicturesScreen(
 	LaunchedEffect(Unit) {
 		postVisibleBarsState()
 	}
-	val calculatedGridSpan = calculateGridSpan()
+	val calculatedGridSpan = pictureSizeInDp()
 	val sysBars = WindowInsets.systemBarsIgnoringVisibility
 	val cutouts = WindowInsets.displayCutout
 	val value = state.value
@@ -333,7 +334,7 @@ fun SharedTransitionScope.PicturesScreen(
 					saveToSharedPrefs = saveToSharedPrefs,
 					offset = offset,
 					index = index,
-					calculateGridSpan = calculatedGridSpan,
+					pictureSizeInDp = calculatedGridSpan,
 					postMaxVisibleLinesNum = postMaxVisibleLinesNum,
 					animatedVisibilityScope = animatedVisibilityScope,
 					isMultiWindowed = isMultiWindowed,
@@ -346,7 +347,8 @@ fun SharedTransitionScope.PicturesScreen(
 					postPressOnBackButton = postPressOnBackButton,
 					cancelAllCheckedPics = cancelAllCheckedPics,
 					getPrevClickedItem = getPrevClickedItem,
-					isClicked = isClicked
+					isClicked = isClicked,
+					getGridNum = getGridNum
 				)
 			}
 		}
@@ -364,7 +366,7 @@ fun SharedTransitionScope.ItemsCard(
 	addError: (String, String) -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	list: List<String>,
-	gridNum: Int,
+	getGridNum: () -> Int,
 	isMultiWindowed: Boolean,
 	selectedCounter: MutableIntState,
 	selectedList: MutableList<String>,
@@ -372,6 +374,7 @@ fun SharedTransitionScope.ItemsCard(
 	isClicked: MutableState<Boolean>,
 	currentClickedItem: MutableState<String>,
 	getPrevClickedItem: () -> String,
+	animationIsRunning: MutableState<Boolean>,
 )
 {
 	var isError by remember { mutableStateOf(false) }
@@ -421,13 +424,13 @@ fun SharedTransitionScope.ItemsCard(
 	//запускать другую анимацию
 	Box(Modifier
 		.fillMaxSize()
+		.padding(8.dp)
 		.aspectRatio(1f)) {
 		AsyncImage(
 			model = (imgRequest),
 			filterQuality = FilterQuality.Low,
 			contentDescription = item,
 			modifier = Modifier
-				.padding(8.dp)
 				.sharedElement(
 					state = rememberSharedContentState(
 						key = list.indexOf(item)
@@ -436,66 +439,71 @@ fun SharedTransitionScope.ItemsCard(
 				)
 				.combinedClickable(
 					onClick = {
-						if(selectedCounter.intValue == 0)
+						if(!animationIsRunning.value || prevClickedItem != item)
 						{
-							if(!isClicked.value)
+							if(selectedCounter.intValue == 0)
 							{
-								if(isError)
+								if(!isClicked.value)
 								{
-									openAlertDialog.value = true
-								}
-								else
-								{
-									currentClickedItem.value = item
-									isClicked.value = true
-									Log.d("current", item)
-									//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
-									val firstVisibleIndex = lazyState.firstVisibleItemIndex
-									val offsetOfList = lazyState.firstVisibleItemScrollOffset
-									val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
-									if(isMultiWindowed)
+									if(isError)
 									{
-										currentPicture(item, list.indexOf(item), 0)
-									}
-									else if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
-									{
-										Log.d("check listScroll", "firstVisibleIndex")
-										currentPicture(item, firstVisibleIndex, 0)
-									}
-									else if(
-										(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
-											&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
-										&& (lazyState.layoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
-									{
-										Log.d("check listScroll", "firstVisible +gridnum")
-										currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
+										openAlertDialog.value = true
 									}
 									else
 									{
-										Log.d("check listScroll", "just click $firstVisibleIndex, $offsetOfList")
-										currentPicture(item, firstVisibleIndex, offsetOfList)
+										currentClickedItem.value = item
+										isClicked.value = true
+										Log.d("current", item)
+										//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
+										val firstVisibleIndex = lazyState.firstVisibleItemIndex
+										val offsetOfList = lazyState.firstVisibleItemScrollOffset
+										val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
+										val gridNum = getGridNum()
+										if(isMultiWindowed)
+										{
+											currentPicture(item, list.indexOf(item), 0)
+										}
+										else if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
+										{
+											Log.d("check listScroll", "firstVisibleIndex")
+											currentPicture(item, firstVisibleIndex, 0)
+										}
+										else if(
+											(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
+												&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
+											&& (lazyState.layoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
+										{
+											Log.d("check listScroll", "firstVisible +gridnum")
+											currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
+										}
+										else
+										{
+											Log.d("check listScroll", "just click $firstVisibleIndex, $offsetOfList")
+											currentPicture(item, firstVisibleIndex, offsetOfList)
+										}
+										openAlertDialog.value = false
 									}
-									openAlertDialog.value = false
 								}
 							}
+							else
+							{
+								onLongPictureClick(
+									imageIsSelected = imageIsSelected,
+									selectedCounter = selectedCounter,
+									selectedList = selectedList,
+									item = item
+								)
+							}
 						}
-						else
-						{
+					},
+					onLongClick = {
+						if(!animationIsRunning.value || prevClickedItem != item)
 							onLongPictureClick(
 								imageIsSelected = imageIsSelected,
 								selectedCounter = selectedCounter,
 								selectedList = selectedList,
 								item = item
 							)
-						}
-					},
-					onLongClick = {
-						onLongPictureClick(
-							imageIsSelected = imageIsSelected,
-							selectedCounter = selectedCounter,
-							selectedList = selectedList,
-							item = item
-						)
 					}
 				)
 				.clip(RoundedCornerShape(8.dp))
@@ -571,7 +579,7 @@ fun SharedTransitionScope.ShowList(
 	saveToSharedPrefs: (List<String>) -> Unit,
 	offset: Int,
 	index: Int,
-	calculateGridSpan: MutableState<Int>,
+	pictureSizeInDp: MutableState<Int>,
 	postMaxVisibleLinesNum: (Int) -> Unit,
 	animatedVisibilityScope: AnimatedVisibilityScope,
 	isMultiWindowed: Boolean,
@@ -585,10 +593,24 @@ fun SharedTransitionScope.ShowList(
 	cancelAllCheckedPics: () -> Unit,
 	getPrevClickedItem: () -> String,
 	isClicked: MutableState<Boolean>,
+	getGridNum: () -> Int
 )
 {
 	Log.d("PicturesScreen", "From cache? ${!imagesUrlsSP.isNullOrEmpty()}")
+	val context = LocalContext.current
 	Log.d("We got:", "$imagesUrlsSP")
+	LaunchedEffect(Unit) {
+		if(animationIsRunning.value)
+		{
+			val animatorScale = Settings.Global.getFloat(
+				context.contentResolver,
+				Settings.Global.ANIMATOR_DURATION_SCALE,
+				1f
+			)
+			delay((animatedVisibilityScope.transition.totalDurationNanos.toFloat() * animatorScale / 1000000).toLong()) //перевод в милисекунды
+			animationIsRunning.value = false
+		}
+	}
 	val selectedCounter = remember { mutableIntStateOf(0) }
 	val currentClickedItem = remember { mutableStateOf("") }
 	if(buttonWasPressed.value)
@@ -599,7 +621,6 @@ fun SharedTransitionScope.ShowList(
 	}
 	showDeleteButton.value = selectedCounter.intValue > 0
 	showSwapButton.value = selectedCounter.intValue == 2
-	val context = LocalContext.current
 	LaunchedEffect(Unit) {
 		animationIsRunning.value = true
 		val animatorScale = Settings.Global.getFloat(
@@ -623,12 +644,13 @@ fun SharedTransitionScope.ShowList(
 						saveToSharedPrefs(list)
 					}
 					LazyVerticalGrid(
-						horizontalArrangement = Arrangement.Center,
+						horizontalArrangement = Arrangement.SpaceAround,
 						state = listState,
 						modifier = Modifier
 							.fillMaxSize(),
 						userScrollEnabled = !animationIsRunning.value,
-						columns = GridCells.Fixed(count = calculateGridSpan.value)) {
+						columns = GridCells.FixedSize(pictureSizeInDp.value.dp)) {
+						Log.d("PicturesFragment", "$imagesUrlsSP")
 						items(items = list) {
 							ItemsCard(
 								item = it,
@@ -639,14 +661,15 @@ fun SharedTransitionScope.ShowList(
 								addError = addError,
 								animatedVisibilityScope = animatedVisibilityScope,
 								list = list,
-								gridNum = calculateGridSpan.value,
+								getGridNum = getGridNum,
 								isMultiWindowed = isMultiWindowed,
 								selectedCounter = selectedCounter,
 								selectedList = selectedList,
 								removeCurrentError = removeCurrentError,
 								isClicked = isClicked,
 								currentClickedItem = currentClickedItem,
-								getPrevClickedItem = getPrevClickedItem
+								getPrevClickedItem = getPrevClickedItem,
+								animationIsRunning = animationIsRunning
 							)
 						}
 					}
@@ -678,12 +701,12 @@ fun SharedTransitionScope.ShowList(
 				postSavedUrls(imagesUrlsSP)
 			}
 			LazyVerticalGrid(
-				horizontalArrangement = Arrangement.Absolute.Center,
+				horizontalArrangement = Arrangement.SpaceAround,
 				state = listState,
 				modifier = Modifier
 					.fillMaxSize(),
 				userScrollEnabled = !animationIsRunning.value,
-				columns = GridCells.Fixed(count = calculateGridSpan.value)) {
+				columns = GridCells.FixedSize(pictureSizeInDp.value.dp)) {
 				Log.d("PicturesFragment", "$imagesUrlsSP")
 				items(items = imagesUrlsSP) {
 					ItemsCard(
@@ -695,14 +718,15 @@ fun SharedTransitionScope.ShowList(
 						addError = addError,
 						animatedVisibilityScope = animatedVisibilityScope,
 						list = imagesUrlsSP,
-						gridNum = calculateGridSpan.value,
+						getGridNum = getGridNum,
 						isMultiWindowed = isMultiWindowed,
 						selectedCounter = selectedCounter,
 						selectedList = selectedList,
 						removeCurrentError = removeCurrentError,
 						isClicked = isClicked,
 						currentClickedItem = currentClickedItem,
-						getPrevClickedItem = getPrevClickedItem
+						getPrevClickedItem = getPrevClickedItem,
+						animationIsRunning = animationIsRunning
 					)
 				}
 			}
