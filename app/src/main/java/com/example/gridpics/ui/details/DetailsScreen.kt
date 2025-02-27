@@ -96,6 +96,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.net.toUri
 import androidx.navigation.NavController
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
@@ -257,7 +258,8 @@ fun SharedTransitionScope.DetailsScreen(
 				disposable = disposable,
 				shareLocal = shareLocal,
 				mutableStateValBitmap = mutableStateValBitmap,
-				checkIfErrorExists = getErrorMessageFromErrorsList
+				checkIfErrorExists = getErrorMessageFromErrorsList,
+				addError = addError
 			)
 		},
 		content = { padding ->
@@ -894,6 +896,7 @@ fun GradientButton(
 	}
 }
 
+@SuppressLint("Recycle")
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AppBar(
@@ -917,6 +920,7 @@ fun AppBar(
 	shareLocal: (String) -> Unit,
 	mutableStateValBitmap: MutableState<Bitmap?>,
 	checkIfErrorExists: (String) -> String?,
+	addError: (String, String) -> Unit,
 )
 {
 	val value = state.value
@@ -1001,6 +1005,9 @@ fun AppBar(
 						containerColor = MaterialTheme.colorScheme.background
 					),
 					actions = {
+						val context = LocalContext.current
+						val showToast = remember { mutableStateOf(false) }
+						val problem = stringResource(R.string.lost_access_to_images)
 						AnimatedVisibility(visible = !sharedImgCase && !(currentPicture.startsWith("content://") && checkIfErrorExists(currentPicture) != null)) {
 							Box(modifier = Modifier
 								.windowInsetsPadding(sysBarsWithCutoutsInsets)
@@ -1010,7 +1017,26 @@ fun AppBar(
 									if(currentPicture.startsWith("content://"))
 									{
 										val bitmap = mutableStateValBitmap.value
-										if(bitmap != null)
+										try
+										{
+											context.contentResolver.openInputStream(currentPicture.toUri())
+										}
+										catch(e: SecurityException)
+										{
+											showToast.value = true
+										}
+										catch(e: Exception)
+										{
+											showToast.value = true
+										}
+										if(showToast.value)
+										{
+											addError(currentPicture, problem)
+											Toast.makeText(context, problem, Toast.LENGTH_SHORT).show()
+											nc.popBackStack()
+											nc.navigate(Screen.Details.route)
+										}
+										else if(bitmap != null)
 										{
 											shareLocal(currentPicture)
 										}

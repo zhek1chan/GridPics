@@ -44,4 +44,5 @@
 	<string name="you_canceled_pick">Вы отменили выбор элементов</string>
 	<string name="failed_to_share_image">Не удалось поделиться изображением</string>
 	<string name="grid_pics">GridPics</string>
+	<string name="lost_access_to_images">Нет доступа к фото из памяти</string>
 </resources>

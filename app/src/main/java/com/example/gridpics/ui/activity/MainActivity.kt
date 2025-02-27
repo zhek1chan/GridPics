@@ -408,7 +408,6 @@ class MainActivity: AppCompatActivity()
 		val nav = navigation
 		val detailsViewModel = detailsViewModel
 		val value = detailsViewModel.uiState.value
-		val url = value.currentPicture
 		val imageLoader = imageLoader
 		var isError = false
 		value.picturesUrl.forEach {
@@ -421,12 +420,12 @@ class MainActivity: AppCompatActivity()
 				}
 				catch(e: SecurityException)
 				{
-					picVM.addError(url, "SecurityException")
+					picVM.addError(it, "SecurityException")
 					isError = true
 				}
 				catch(e: Exception)
 				{
-					picVM.addError(url, "StorageException")
+					picVM.addError(it, "StorageException")
 					isError = true
 				}
 
