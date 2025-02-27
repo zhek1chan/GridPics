@@ -174,39 +174,6 @@ class MainActivity: AppCompatActivity()
 		val fromNotification = fromNotification
 		val changeAnimation = remember { mutableStateOf(false) }
 		val animationIsRunning = remember { mutableStateOf(false) }
-		//logic to avoid showing animation when the picture is shared
-		val enterTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
-		{
-			EnterTransition.None
-		}
-		else
-		{
-			EnterTransition.None
-		}
-		val popEnterTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
-		{
-			EnterTransition.None
-		}
-		else
-		{
-			EnterTransition.None
-		}
-		val exitTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
-		{
-			ExitTransition.None
-		}
-		else
-		{
-			ExitTransition.None
-		}
-		val popExitTransition = if(isSharedImage || fromNotification.value || changeAnimation.value)
-		{
-			ExitTransition.None
-		}
-		else
-		{
-			ExitTransition.None
-		}
 		var text by remember { mutableStateOf("foo") }
 		val configuration = LocalConfiguration.current
 		val listState = remember(configuration.orientation) { LazyGridState() }
@@ -233,10 +200,10 @@ class MainActivity: AppCompatActivity()
 			{
 				composable(
 					route = BottomNavItem.Home.route,
-					enterTransition = { enterTransition },
-					exitTransition = { exitTransition },
-					popEnterTransition = { popEnterTransition },
-					popExitTransition = { popExitTransition }
+					enterTransition = { EnterTransition.None },
+					exitTransition = { ExitTransition.None },
+					popEnterTransition = { EnterTransition.None },
+					popExitTransition = { ExitTransition.None }
 				) {
 					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
 					changeBarsVisability(visible = true, fromDetailsScreen = true)
@@ -352,7 +319,7 @@ class MainActivity: AppCompatActivity()
 				}
 				composable(
 					route = Screen.Details.route,
-					exitTransition = { exitTransition },
+					exitTransition = { ExitTransition.None },
 					popExitTransition = { ExitTransition.None },
 					enterTransition = { EnterTransition.None },
 					popEnterTransition = { EnterTransition.None },
