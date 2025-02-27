@@ -428,6 +428,7 @@ fun SharedTransitionScope.ItemsCard(
 			.placeholder(placeholder)
 			.error(R.drawable.error)
 			.memoryCacheKey(item)
+			.placeholderMemoryCacheKey(item)
 			.diskCacheKey(item).defaults(ImageRequest.Defaults.DEFAULT)
 			.build()
 	}
@@ -445,7 +446,7 @@ fun SharedTransitionScope.ItemsCard(
 	}
 	//логика настройки модификатора у картинки, чтобы можно было отменять анимацию по клику на другую картинку или ту же самую и
 	//запускать другую анимацию
-	Box {
+	Box(modifier = Modifier.fillMaxSize().aspectRatio(1f).padding(8.dp)) {
 		AsyncImage(
 			model = (imgRequest),
 			filterQuality = FilterQuality.Low,
@@ -459,8 +460,6 @@ fun SharedTransitionScope.ItemsCard(
 				)
 				.alpha(alpha)
 				.fillMaxSize()
-				.padding(8.dp)
-				.aspectRatio(1f)
 				.combinedClickable(
 					enabled = !animationIsRunning.value || prevClickedItem != item,
 					onClick = {

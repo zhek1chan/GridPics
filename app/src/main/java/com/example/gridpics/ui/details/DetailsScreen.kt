@@ -101,7 +101,6 @@ import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
-import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.error
 import coil3.request.placeholder
@@ -241,7 +240,6 @@ fun SharedTransitionScope.DetailsScreen(
 			AppBar(
 				isVisible = value.barsAreVisible,
 				nc = navController,
-				currentPicture = value.currentPicture,
 				postUrl = postUrl,
 				state = state,
 				changeBarsVisability = changeBarsVisability,
@@ -607,7 +605,8 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.build()
 	}
 	val placeHolderM = remember { mutableIntStateOf(R.drawable.loading) }
-	if(img.contains(".gif"))
+	val currentPicture = state.value.currentPicture
+	if(currentPicture.contains(".gif"))
 	{
 		placeHolderM.intValue = R.drawable.empty
 		LaunchedEffect(Unit) {
@@ -624,20 +623,21 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.httpHeaders(headers)
 			.error(R.drawable.error)
 			.memoryCacheKey(img)
+			.placeholderMemoryCacheKey(img)
 			.placeholder(placeHolderM.intValue)
 			.diskCacheKey(img)
 			.build()
-	if(img.startsWith("content://"))
+
+	if(currentPicture.startsWith("content://"))
 	{
 		val imgRequestLocalImage =
 			ImageRequest.Builder(context)
-				.data(img)
-				.networkCachePolicy(CachePolicy.DISABLED)
+				.data(currentPicture)
 				.error(R.drawable.error)
-				.memoryCacheKey(img)
+				.memoryCacheKey(currentPicture)
 				.target(
 					onSuccess = { result ->
-						if(img.startsWith("content://"))
+						if(currentPicture.startsWith("content://"))
 						{
 							mutableStateValBitmap.value = result.toBitmap()
 						}
@@ -795,11 +795,12 @@ fun ShowError(
 	isValidUrl: (String) -> Boolean,
 	removeError: (String) -> Unit,
 	updatePicture: MutableState<Boolean>,
-	errorMsg: String
+	errorMsg: String,
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
-	val errorMessage = if (errorMsg.isNotEmpty()) {
+	val errorMessage = if(errorMsg.isNotEmpty())
+	{
 		errorMsg
 	}
 	else if(isValidUrl(currentUrl))
@@ -898,7 +899,6 @@ fun GradientButton(
 fun AppBar(
 	isVisible: Boolean,
 	nc: NavController,
-	currentPicture: String,
 	postUrl: (String?, Bitmap?) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
 	changeBarsVisability: (Boolean) -> Unit,
@@ -920,9 +920,10 @@ fun AppBar(
 )
 {
 	val value = state.value
+	val currentPicture = value.currentPicture
 	if(value.wasSharedFromNotification && !currentPicture.startsWith("content://"))
 	{
-		share(currentPicture)
+		share(value.currentPicture)
 		postWasSharedState()
 	}
 	val navBack = remember { mutableStateOf(false) }
