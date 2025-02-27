@@ -194,7 +194,7 @@ fun SharedTransitionScope.PicturesScreen(
 								containerColor = Color.Blue,
 								disabledContainerColor = Color.Blue,
 								disabledContentColor = Color.White),
-							border = BorderStroke(3.dp, Color.LightGray),
+							border = BorderStroke(1.dp, Color.LightGray),
 							onClick = {
 								swapPictures(selectedList[0], selectedList[1])
 								buttonWasPressed.value = true
@@ -219,7 +219,7 @@ fun SharedTransitionScope.PicturesScreen(
 								containerColor = Color.Red,
 								disabledContainerColor = Color.Red,
 								disabledContentColor = Color.White),
-							border = BorderStroke(3.dp, Color.LightGray),
+							border = BorderStroke(1.dp, Color.LightGray),
 							onClick = {
 								deletePictures(selectedList)
 								buttonWasPressed.value = true
@@ -427,7 +427,6 @@ fun SharedTransitionScope.ItemsCard(
 			.httpHeaders(headers)
 			.placeholder(placeholder)
 			.error(R.drawable.error)
-			.placeholderMemoryCacheKey(data)
 			.memoryCacheKey(item)
 			.diskCacheKey(item).defaults(ImageRequest.Defaults.DEFAULT)
 			.build()
@@ -436,9 +435,12 @@ fun SharedTransitionScope.ItemsCard(
 	val imageIsSelected = remember(item) { mutableStateOf(selectedList.contains(item)) }
 	val prevClickedItem = getPrevClickedItem()
 	Log.d("0", prevClickedItem)
-	val alpha = if (imageIsSelected.value) {
+	val alpha = if(imageIsSelected.value)
+	{
 		0.6f
-	} else {
+	}
+	else
+	{
 		1f
 	}
 	//логика настройки модификатора у картинки, чтобы можно было отменять анимацию по клику на другую картинку или ту же самую и
@@ -569,7 +571,7 @@ fun SharedTransitionScope.ItemsCard(
 					Toast.makeText(context, reloadString, Toast.LENGTH_LONG).show()
 				},
 				dialogTitle = stringResource(R.string.error_ocurred_loading_img),
-				dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + stringResource(R.string.question_retry_again),
+				dialogText = stringResource(R.string.error_double_dot) + errorMessage.value + ". " + stringResource(R.string.question_retry_again),
 				icon = Icons.Default.Warning,
 				textButtonCancel = stringResource(R.string.cancel),
 				textButtonConfirm = stringResource(R.string.confirm))
@@ -582,7 +584,7 @@ fun SharedTransitionScope.ItemsCard(
 				{
 					openAlertDialog.value = false
 				},
-				dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = stringResource(R.string.link_is_not_valid), icon = Icons.Default.Warning)
+				dialogTitle = stringResource(R.string.error_ocurred_loading_img), dialogText = errorMessageFromErrorsList!!, icon = Icons.Default.Warning)
 		}
 	}
 }
@@ -652,122 +654,122 @@ fun SharedTransitionScope.ShowList(
 		delay((animatedVisibilityScope.transition.totalDurationNanos.toFloat() * animatorScale / 1000000).toLong()) //перевод в милисекунды
 		animationIsRunning.value = false
 	}
-		if(imagesUrlsSP.isNullOrEmpty())
+	if(imagesUrlsSP.isNullOrEmpty())
+	{
+		when(state)
 		{
-			when(state)
+			is PicturesState.SearchIsOk ->
 			{
-				is PicturesState.SearchIsOk ->
-				{
-					Log.d("Now state is", "Search Is Ok")
-					val list = state.data
-					LaunchedEffect(Unit) {
-						saveToSharedPrefs(list)
-					}
-					LazyVerticalGrid(
-						horizontalArrangement = Arrangement.SpaceAround,
-						state = listState,
-						modifier = Modifier
-							.fillMaxSize(),
-						userScrollEnabled = !animationIsRunning.value,
-						columns = GridCells.FixedSize(pictureSizeInDp.value.dp)) {
-						Log.d("PicturesFragment", "$imagesUrlsSP")
-						items(items = list) {
-							ItemsCard(
-								item = it,
-								getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
-								currentPicture = currentPicture,
-								isValidUrl = isValidUrl,
-								lazyState = listState,
-								addError = addError,
-								animatedVisibilityScope = animatedVisibilityScope,
-								list = list,
-								getGridNum = getGridNum,
-								isMultiWindowed = isMultiWindowed,
-								selectedCounter = selectedCounter,
-								selectedList = selectedList,
-								removeCurrentError = removeCurrentError,
-								isClicked = isClicked,
-								currentClickedItem = currentClickedItem,
-								getPrevClickedItem = getPrevClickedItem,
-								animationIsRunning = animationIsRunning
-							)
-						}
-					}
+				Log.d("Now state is", "Search Is Ok")
+				val list = state.data
+				LaunchedEffect(Unit) {
+					saveToSharedPrefs(list)
 				}
-				is PicturesState.ConnectionError ->
-				{
-					Log.d("Net", "No internet")
-					Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize()) {
-						NoInternetScreen()
-						val gradientColor = remember { listOf(Color.Green, Color.Yellow) }
-						GradientButton(
-							gradientColors = gradientColor,
-							cornerRadius = 16.dp,
-							nameButton = stringResource(R.string.try_again),
-							roundedCornerShape = RoundedCornerShape(topStart = 30.dp, bottomEnd = 30.dp),
+				LazyVerticalGrid(
+					horizontalArrangement = Arrangement.SpaceAround,
+					state = listState,
+					modifier = Modifier
+						.fillMaxSize(),
+					userScrollEnabled = !animationIsRunning.value,
+					columns = GridCells.FixedSize(pictureSizeInDp.value.dp)) {
+					Log.d("PicturesFragment", "$imagesUrlsSP")
+					items(items = list) {
+						ItemsCard(
+							item = it,
+							getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
+							currentPicture = currentPicture,
+							isValidUrl = isValidUrl,
+							lazyState = listState,
+							addError = addError,
+							animatedVisibilityScope = animatedVisibilityScope,
+							list = list,
+							getGridNum = getGridNum,
+							isMultiWindowed = isMultiWindowed,
+							selectedCounter = selectedCounter,
+							selectedList = selectedList,
 							removeCurrentError = removeCurrentError,
-							url = ""
+							isClicked = isClicked,
+							currentClickedItem = currentClickedItem,
+							getPrevClickedItem = getPrevClickedItem,
+							animationIsRunning = animationIsRunning
 						)
 					}
 				}
-				is PicturesState.NothingFound -> Unit
 			}
-		}
-		else
-		{
-			Log.d("Now state is", "Loaded from sp")
-			LaunchedEffect(Unit) {
-				saveToSharedPrefs(imagesUrlsSP)
-				postSavedUrls(imagesUrlsSP)
-			}
-			LazyVerticalGrid(
-				horizontalArrangement = Arrangement.SpaceAround,
-				state = listState,
-				modifier = Modifier
-					.fillMaxSize(),
-				userScrollEnabled = !animationIsRunning.value,
-				columns = GridCells.FixedSize(pictureSizeInDp.value.dp)) {
-				Log.d("PicturesFragment", "$imagesUrlsSP")
-				items(items = imagesUrlsSP) {
-					ItemsCard(
-						item = it,
-						getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
-						currentPicture = currentPicture,
-						isValidUrl = isValidUrl,
-						lazyState = listState,
-						addError = addError,
-						animatedVisibilityScope = animatedVisibilityScope,
-						list = imagesUrlsSP,
-						getGridNum = getGridNum,
-						isMultiWindowed = isMultiWindowed,
-						selectedCounter = selectedCounter,
-						selectedList = selectedList,
+			is PicturesState.ConnectionError ->
+			{
+				Log.d("Net", "No internet")
+				Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize()) {
+					NoInternetScreen()
+					val gradientColor = remember { listOf(Color.Green, Color.Yellow) }
+					GradientButton(
+						gradientColors = gradientColor,
+						cornerRadius = 16.dp,
+						nameButton = stringResource(R.string.try_again),
+						roundedCornerShape = RoundedCornerShape(topStart = 30.dp, bottomEnd = 30.dp),
 						removeCurrentError = removeCurrentError,
-						isClicked = isClicked,
-						currentClickedItem = currentClickedItem,
-						getPrevClickedItem = getPrevClickedItem,
-						animationIsRunning = animationIsRunning
+						url = ""
 					)
 				}
 			}
+			is PicturesState.NothingFound -> Unit
 		}
-
+	}
+	else
+	{
+		Log.d("Now state is", "Loaded from sp")
 		LaunchedEffect(Unit) {
-			postMaxVisibleLinesNum(listState.layoutInfo.visibleItemsInfo.size)
-			Log.d("check listScroll", "scrolled $index, $offset")
-			listState.scrollToItem(index, offset)
+			saveToSharedPrefs(imagesUrlsSP)
+			postSavedUrls(imagesUrlsSP)
 		}
-		BackHandler {
-			if(selectedList.size > 0)
-			{
-				buttonWasPressed.value = true
-				cancelAllCheckedPics()
-			}
-			else
-			{
-				postPressOnBackButton()
+		LazyVerticalGrid(
+			horizontalArrangement = Arrangement.SpaceAround,
+			state = listState,
+			modifier = Modifier
+				.fillMaxSize(),
+			userScrollEnabled = !animationIsRunning.value,
+			columns = GridCells.FixedSize(pictureSizeInDp.value.dp)) {
+			Log.d("PicturesFragment", "$imagesUrlsSP")
+			items(items = imagesUrlsSP) {
+				ItemsCard(
+					item = it,
+					getErrorMessageFromErrorsList = getErrorMessageFromErrorsList,
+					currentPicture = currentPicture,
+					isValidUrl = isValidUrl,
+					lazyState = listState,
+					addError = addError,
+					animatedVisibilityScope = animatedVisibilityScope,
+					list = imagesUrlsSP,
+					getGridNum = getGridNum,
+					isMultiWindowed = isMultiWindowed,
+					selectedCounter = selectedCounter,
+					selectedList = selectedList,
+					removeCurrentError = removeCurrentError,
+					isClicked = isClicked,
+					currentClickedItem = currentClickedItem,
+					getPrevClickedItem = getPrevClickedItem,
+					animationIsRunning = animationIsRunning
+				)
 			}
 		}
+	}
+
+	LaunchedEffect(Unit) {
+		postMaxVisibleLinesNum(listState.layoutInfo.visibleItemsInfo.size)
+		Log.d("check listScroll", "scrolled $index, $offset")
+		listState.scrollToItem(index, offset)
+	}
+	BackHandler {
+		if(selectedList.size > 0)
+		{
+			buttonWasPressed.value = true
+			cancelAllCheckedPics()
+		}
+		else
+		{
+			postPressOnBackButton()
+		}
+	}
 }
 
 @Composable
@@ -828,9 +830,9 @@ fun AlertDialogMain(
 		icon = {
 			Icon(icon, contentDescription = "Example Icon")
 		}, title = {
-			Text(text = dialogTitle)
+			Text(text = dialogTitle, textAlign = TextAlign.Center)
 		}, text = {
-			dialogText?.let { Text(text = it) }
+			Row(modifier = Modifier.fillMaxWidth()) { dialogText?.let { Text(text = it, textAlign = TextAlign.Center) } }
 		}, onDismissRequest = {
 			onDismissRequest()
 		}, confirmButton = {
@@ -863,9 +865,9 @@ fun AlertDialogSecondary(
 	AlertDialog(icon = {
 		Icon(icon, contentDescription = "Example Icon")
 	}, title = {
-		Text(text = dialogTitle)
+		Text(text = dialogTitle, textAlign = TextAlign.Center)
 	}, text = {
-		Text(text = dialogText)
+		Text(text = dialogText, textAlign = TextAlign.Center)
 	}, onDismissRequest = {
 		onDismissRequest()
 	}, confirmButton = {
@@ -881,7 +883,7 @@ fun onLongPictureClick(
 	imageIsSelected: MutableState<Boolean>,
 	selectedCounter: MutableIntState,
 	selectedList: MutableList<String>,
-	item: String
+	item: String,
 )
 {
 	imageIsSelected.value = !imageIsSelected.value

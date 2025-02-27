@@ -91,9 +91,14 @@ class PicturesViewModel(
 	fun addError(url: String, message: String)
 	{
 		val map = errorsMap
+		val msg = if (url.startsWith("content://")) {
+			"Нет доступа к просмотру изображения,\nпопробуйте удалить и заново добавить его"
+		} else {
+			message
+		}
 		if(!map.contains(url))
 		{
-			map[url] = message
+			map[url] = msg
 		}
 	}
 

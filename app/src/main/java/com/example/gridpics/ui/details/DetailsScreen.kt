@@ -258,7 +258,8 @@ fun SharedTransitionScope.DetailsScreen(
 				setImageSharedState = setImageSharedState,
 				disposable = disposable,
 				shareLocal = shareLocal,
-				mutableStateValBitmap = mutableStateValBitmap
+				mutableStateValBitmap = mutableStateValBitmap,
+				checkIfErrorExists = getErrorMessageFromErrorsList
 			)
 		},
 		content = { padding ->
@@ -369,7 +370,8 @@ fun SharedTransitionScope.ShowDetails(
 						currentUrl = url,
 						isValidUrl = isValidUrl,
 						removeError = removeSpecialError,
-						updatePicture = updatePicture
+						updatePicture = updatePicture,
+						errorMsg = errorMessage!!
 					)
 				}
 				else
@@ -622,11 +624,10 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.httpHeaders(headers)
 			.error(R.drawable.error)
 			.memoryCacheKey(img)
-			.placeholderMemoryCacheKey(img)
 			.placeholder(placeHolderM.intValue)
 			.diskCacheKey(img)
 			.build()
-	if (img.startsWith("content://"))
+	if(img.startsWith("content://"))
 	{
 		val imgRequestLocalImage =
 			ImageRequest.Builder(context)
@@ -794,10 +795,14 @@ fun ShowError(
 	isValidUrl: (String) -> Boolean,
 	removeError: (String) -> Unit,
 	updatePicture: MutableState<Boolean>,
+	errorMsg: String
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
-	val errorMessage = if(isValidUrl(currentUrl))
+	val errorMessage = if (errorMsg.isNotEmpty()) {
+		errorMsg
+	}
+	else if(isValidUrl(currentUrl))
 	{
 		HTTP_ERROR
 	}
@@ -813,14 +818,16 @@ fun ShowError(
 		Text(
 			text = stringResource(R.string.error_ocurred_loading_img),
 			modifier = Modifier.padding(5.dp),
+			textAlign = TextAlign.Center,
 			color = MaterialTheme.colorScheme.onPrimary)
 
 		Text(
 			text = errorMessage,
 			modifier = Modifier.padding(10.dp),
+			textAlign = TextAlign.Center,
 			color = MaterialTheme.colorScheme.onPrimary
 		)
-		if(errorMessage != linkIsNotValid)
+		if(errorMessage != linkIsNotValid && !errorMessage.startsWith("Нет доступа к просмотру"))
 		{
 			Log.d("TEST111", "error")
 			val color = colorResource(R.color.orange)
@@ -909,6 +916,7 @@ fun AppBar(
 	disposable: MutableState<Boolean>,
 	shareLocal: (String) -> Unit,
 	mutableStateValBitmap: MutableState<Bitmap?>,
+	checkIfErrorExists: (String) -> String?,
 )
 {
 	val value = state.value
@@ -992,7 +1000,7 @@ fun AppBar(
 						containerColor = MaterialTheme.colorScheme.background
 					),
 					actions = {
-						AnimatedVisibility(visible = !sharedImgCase) {
+						AnimatedVisibility(visible = !sharedImgCase && !(currentPicture.startsWith("content://") && checkIfErrorExists(currentPicture) != null)) {
 							Box(modifier = Modifier
 								.windowInsetsPadding(sysBarsWithCutoutsInsets)
 								.height(64.dp)

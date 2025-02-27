@@ -22,7 +22,7 @@
 	<string name="channel_for_my_notification">Channel for my notification</string>
 	<string name="synch_with_sys">Следовать системной теме</string>
 	<string name="error_double_dot">"Ошибка: "</string>
-	<string name="question_retry_again">\nПопробовать загрузить повторно?</string>
+	<string name="question_retry_again">Попробовать загрузить повторно?</string>
 	<string name="loading_has_been_started">Началась загрузка</string>
 	<string name="cancel">Отменить</string>
 	<string name="confirm">Подтвердить</string>

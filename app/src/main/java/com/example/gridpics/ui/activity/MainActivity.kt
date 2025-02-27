@@ -1,6 +1,7 @@
 package com.example.gridpics.ui.activity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
@@ -46,6 +47,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil3.imageLoader
+import coil3.memory.MemoryCache
 import com.example.gridpics.R
 import com.example.gridpics.domain.model.PicturesDataForNotification
 import com.example.gridpics.ui.details.DetailsScreen
@@ -399,10 +401,46 @@ class MainActivity: AppCompatActivity()
 		super.onStart()
 	}
 
+	@SuppressLint("Recycle")
 	override fun onResume()
 	{
-		val value = detailsViewModel.uiState.value.barsAreVisible
-		if(!value)
+		val picVM = picturesViewModel
+		val nav = navigation
+		val detailsViewModel = detailsViewModel
+		val value = detailsViewModel.uiState.value
+		val url = value.currentPicture
+		val imageLoader = imageLoader
+		var isError = false
+		value.picturesUrl.forEach {
+			if(it.startsWith("content://"))
+			{
+				val uri = it.toUri()
+				try
+				{
+					contentResolver.openInputStream(uri)
+				}
+				catch(e: SecurityException)
+				{
+					picVM.addError(url, "SecurityException")
+					isError = true
+				}
+				catch(e: Exception)
+				{
+					picVM.addError(url, "StorageException")
+					isError = true
+				}
+
+				if(isError)
+				{
+					detailsViewModel.postNewPic(null, null)
+					imageLoader.diskCache?.remove(it)
+					imageLoader.memoryCache?.remove(MemoryCache.Key(it))
+					nav?.navigate(Screen.Home.route)
+				}
+			}
+		}
+		val barsAreVisible = value.barsAreVisible
+		if(!barsAreVisible)
 		{
 			changeBarsVisability(visible = false, fromDetailsScreen = false)
 			Log.d("bars", "change visability to false")
@@ -704,6 +742,7 @@ class MainActivity: AppCompatActivity()
 		val detailsViewModel = detailsViewModel
 		val urls = detailsViewModel.deleteCurrentPicture(url)
 		saveToSharedPrefs(picVM.convertFromListToString(urls))
+		picVM.removeSpecialError(url)
 		val sharedPreferencesPictures = this.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		val stringOfUrls = sharedPreferencesPictures.getString(DELETED_LIST, "") + "\n" + url
 		val editorPictures = sharedPreferencesPictures.edit()
