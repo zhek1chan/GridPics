@@ -43,4 +43,5 @@
 	<string name="elements_were_swiped">Элементы поменялись местами</string>
 	<string name="you_canceled_pick">Вы отменили выбор элементов</string>
 	<string name="failed_to_share_image">Не удалось поделиться изображением</string>
+	<string name="grid_pics">GridPics</string>
 </resources>

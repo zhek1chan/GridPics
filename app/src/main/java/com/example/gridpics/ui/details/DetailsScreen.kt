@@ -142,7 +142,7 @@ fun SharedTransitionScope.DetailsScreen(
 	animationIsRunning: MutableState<Boolean>,
 	changeAnimation: MutableState<Boolean>,
 	disposable: MutableState<Boolean>,
-	shareLocal: (Bitmap) -> Unit,
+	shareLocal: (String) -> Unit,
 )
 {
 	changeAnimation.value = false
@@ -907,7 +907,7 @@ fun AppBar(
 	wasCalledDelete: MutableState<Boolean>,
 	setImageSharedState: (Boolean) -> Unit,
 	disposable: MutableState<Boolean>,
-	shareLocal: (Bitmap) -> Unit,
+	shareLocal: (String) -> Unit,
 	mutableStateValBitmap: MutableState<Bitmap?>,
 )
 {
@@ -1003,7 +1003,7 @@ fun AppBar(
 										val bitmap = mutableStateValBitmap.value
 										if(bitmap != null)
 										{
-											shareLocal(bitmap)
+											shareLocal(currentPicture)
 										}
 									}
 									else
