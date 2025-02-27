@@ -106,7 +106,7 @@ import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.placeholder.NoInternetScreen
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SharedTransitionScope.PicturesScreen(
 	navController: NavController,
@@ -168,7 +168,16 @@ fun SharedTransitionScope.PicturesScreen(
 			{
 				0.dp
 			}
-			val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+			val rippleConfig = remember {
+				RippleConfiguration(
+					color = Color.LightGray,
+					rippleAlpha = RippleAlpha(
+						draggedAlpha = 0.1f,
+						focusedAlpha = 0f,
+						hoveredAlpha = 0.5f,
+						pressedAlpha = 0.6f)
+				)
+			}
 			CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 				Box(modifier = Modifier
 					.wrapContentSize()
@@ -189,7 +198,8 @@ fun SharedTransitionScope.PicturesScreen(
 							onClick = {
 								swapPictures(selectedList[0], selectedList[1])
 								buttonWasPressed.value = true
-							}) {
+							}
+						) {
 							Icon(
 								modifier = Modifier.size(35.dp, 35.dp),
 								painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.compare_arrows_24)),
@@ -213,7 +223,8 @@ fun SharedTransitionScope.PicturesScreen(
 							onClick = {
 								deletePictures(selectedList)
 								buttonWasPressed.value = true
-							}) {
+							}
+						) {
 							Icon(
 								modifier = Modifier.size(25.dp, 25.dp),
 								painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.ic_delete)),
@@ -289,7 +300,8 @@ fun SharedTransitionScope.PicturesScreen(
 							painter = ic,
 							tint = Color.White,
 							contentDescription = "AddIcon",
-							modifier = Modifier.size(25.dp, 25.dp))
+							modifier = Modifier.size(25.dp, 25.dp)
+						)
 					}
 					HorizontalDivider(
 						modifier = Modifier
@@ -314,8 +326,12 @@ fun SharedTransitionScope.PicturesScreen(
 		content = { padding ->
 			Box(
 				modifier = Modifier
-					.padding(padding.calculateStartPadding(LayoutDirection.Ltr), WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding() + 55.dp, padding.calculateEndPadding(LayoutDirection.Rtl), padding
-						.calculateBottomPadding())
+					.padding(
+						start = padding.calculateStartPadding(LayoutDirection.Ltr),
+						top = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding() + 55.dp,
+						end = padding.calculateEndPadding(LayoutDirection.Rtl),
+						bottom = padding.calculateBottomPadding()
+					)
 					.fillMaxSize()
 			) {
 				val urls = value.picturesUrl
@@ -455,7 +471,8 @@ fun SharedTransitionScope.ItemsCard(
 								//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
 								val firstVisibleIndex = lazyState.firstVisibleItemIndex
 								val offsetOfList = lazyState.firstVisibleItemScrollOffset
-								val visibleItemsNum = lazyState.layoutInfo.visibleItemsInfo.size
+								val lazyLayoutInfo = lazyState.layoutInfo
+								val visibleItemsNum = lazyLayoutInfo.visibleItemsInfo.size
 								val gridNum = getGridNum()
 								if(isMultiWindowed)
 								{
@@ -469,7 +486,7 @@ fun SharedTransitionScope.ItemsCard(
 								else if(
 									(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
 										&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
-									&& (lazyState.layoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
+									&& (lazyLayoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
 								{
 									Log.d("check listScroll", "firstVisible +gridnum")
 									currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
@@ -627,7 +644,6 @@ fun SharedTransitionScope.ShowList(
 		delay((animatedVisibilityScope.transition.totalDurationNanos.toFloat() * animatorScale / 1000000).toLong()) //перевод в милисекунды
 		animationIsRunning.value = false
 	}
-	Box(modifier = Modifier.fillMaxSize()) {
 		if(imagesUrlsSP.isNullOrEmpty())
 		{
 			when(state)
@@ -744,7 +760,6 @@ fun SharedTransitionScope.ShowList(
 				postPressOnBackButton()
 			}
 		}
-	}
 }
 
 @Composable
@@ -854,7 +869,12 @@ fun AlertDialogSecondary(
 	})
 }
 
-fun onLongPictureClick(imageIsSelected: MutableState<Boolean>, selectedCounter: MutableIntState, selectedList: MutableList<String>, item: String)
+fun onLongPictureClick(
+	imageIsSelected: MutableState<Boolean>,
+	selectedCounter: MutableIntState,
+	selectedList: MutableList<String>,
+	item: String
+)
 {
 	imageIsSelected.value = !imageIsSelected.value
 	if(imageIsSelected.value)
