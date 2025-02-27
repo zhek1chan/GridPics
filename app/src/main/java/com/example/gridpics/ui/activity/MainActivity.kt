@@ -694,7 +694,7 @@ class MainActivity: AppCompatActivity()
 
 	private fun shareLocal(bitmap: Bitmap)
 	{
-		val imageUri = saveImageToGallery(bitmap, R.string.you_have_got_share_link_from_gridpics_local_pic)
+		val imageUri = saveImageToGalleryForShareLocalFun(bitmap, R.string.you_have_got_share_link_from_gridpics_local_pic)
 		imageUri?.let {
 			val shareIntent = Intent(Intent.ACTION_SEND).apply {
 				type = "image/png"
@@ -707,7 +707,7 @@ class MainActivity: AppCompatActivity()
 		}
 	}
 
-	private fun saveImageToGallery(bitmap: Bitmap, titleResId: Int): Uri?
+	private fun saveImageToGalleryForShareLocalFun(bitmap: Bitmap, titleResId: Int): Uri?
 	{
 		val title = getString(titleResId)
 		val filename = "$title-${System.currentTimeMillis()}.png"
