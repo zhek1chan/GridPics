@@ -436,72 +436,88 @@ fun SharedTransitionScope.ItemsCard(
 	val imageIsSelected = remember(item) { mutableStateOf(selectedList.contains(item)) }
 	val prevClickedItem = getPrevClickedItem()
 	Log.d("0", prevClickedItem)
+	val alpha = if (imageIsSelected.value) {
+		0.6f
+	} else {
+		1f
+	}
 	//логика настройки модификатора у картинки, чтобы можно было отменять анимацию по клику на другую картинку или ту же самую и
 	//запускать другую анимацию
-	AsyncImage(
-		model = (imgRequest),
-		filterQuality = FilterQuality.Low,
-		contentDescription = item,
-		modifier = Modifier
-			.sharedElement(
-				state = rememberSharedContentState(
-					key = list.indexOf(item)
-				),
-				animatedVisibilityScope = animatedVisibilityScope
-			)
-			.fillMaxSize()
-			.padding(8.dp)
-			.aspectRatio(1f)
-			.combinedClickable(
-				enabled = !animationIsRunning.value || prevClickedItem != item,
-				onClick = {
-					if(selectedCounter.intValue == 0)
-					{
-						if(!isClicked.value)
+	Box {
+		AsyncImage(
+			model = (imgRequest),
+			filterQuality = FilterQuality.Low,
+			contentDescription = item,
+			modifier = Modifier
+				.sharedElement(
+					state = rememberSharedContentState(
+						key = list.indexOf(item)
+					),
+					animatedVisibilityScope = animatedVisibilityScope
+				)
+				.alpha(alpha)
+				.fillMaxSize()
+				.padding(8.dp)
+				.aspectRatio(1f)
+				.combinedClickable(
+					enabled = !animationIsRunning.value || prevClickedItem != item,
+					onClick = {
+						if(selectedCounter.intValue == 0)
 						{
-							if(isError)
+							if(!isClicked.value)
 							{
-								openAlertDialog.value = true
-							}
-							else
-							{
-								currentClickedItem.value = item
-								isClicked.value = true
-								Log.d("current", item)
-								//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
-								val firstVisibleIndex = lazyState.firstVisibleItemIndex
-								val offsetOfList = lazyState.firstVisibleItemScrollOffset
-								val lazyLayoutInfo = lazyState.layoutInfo
-								val visibleItemsNum = lazyLayoutInfo.visibleItemsInfo.size
-								val gridNum = getGridNum()
-								if(isMultiWindowed)
+								if(isError)
 								{
-									currentPicture(item, list.indexOf(item), 0)
-								}
-								else if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
-								{
-									Log.d("check listScroll", "firstVisibleIndex")
-									currentPicture(item, firstVisibleIndex, 0)
-								}
-								else if(
-									(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
-										&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
-									&& (lazyLayoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
-								{
-									Log.d("check listScroll", "firstVisible +gridnum")
-									currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
+									openAlertDialog.value = true
 								}
 								else
 								{
-									Log.d("check listScroll", "just click $firstVisibleIndex, $offsetOfList")
-									currentPicture(item, firstVisibleIndex, offsetOfList)
+									currentClickedItem.value = item
+									isClicked.value = true
+									Log.d("current", item)
+									//логика для подлистывания списка, если какая-то картинка скрыта интерфейсом, но при этом была нажата
+									val firstVisibleIndex = lazyState.firstVisibleItemIndex
+									val offsetOfList = lazyState.firstVisibleItemScrollOffset
+									val lazyLayoutInfo = lazyState.layoutInfo
+									val visibleItemsNum = lazyLayoutInfo.visibleItemsInfo.size
+									val gridNum = getGridNum()
+									if(isMultiWindowed)
+									{
+										currentPicture(item, list.indexOf(item), 0)
+									}
+									else if(offsetOfList != 0 && list.indexOf(item) < firstVisibleIndex + gridNum)
+									{
+										Log.d("check listScroll", "firstVisibleIndex")
+										currentPicture(item, firstVisibleIndex, 0)
+									}
+									else if(
+										(list.indexOf(item) - firstVisibleIndex >= visibleItemsNum - gridNum
+											&& list.indexOf(item) < firstVisibleIndex + visibleItemsNum)
+										&& (lazyLayoutInfo.totalItemsCount - list.indexOf(item) > visibleItemsNum))
+									{
+										Log.d("check listScroll", "firstVisible +gridnum")
+										currentPicture(item, firstVisibleIndex + gridNum, offsetOfList)
+									}
+									else
+									{
+										Log.d("check listScroll", "just click $firstVisibleIndex, $offsetOfList")
+										currentPicture(item, firstVisibleIndex, offsetOfList)
+									}
+									openAlertDialog.value = false
 								}
-								openAlertDialog.value = false
 							}
 						}
-					}
-					else
-					{
+						else
+						{
+							onLongPictureClick(
+								imageIsSelected = imageIsSelected,
+								selectedCounter = selectedCounter,
+								selectedList = selectedList,
+								item = item
+							)
+						}
+					},
+					onLongClick = {
 						onLongPictureClick(
 							imageIsSelected = imageIsSelected,
 							selectedCounter = selectedCounter,
@@ -509,40 +525,32 @@ fun SharedTransitionScope.ItemsCard(
 							item = item
 						)
 					}
-				},
-				onLongClick = {
-					onLongPictureClick(
-						imageIsSelected = imageIsSelected,
-						selectedCounter = selectedCounter,
-						selectedList = selectedList,
-						item = item
-					)
-				}
-			)
-			.clip(RoundedCornerShape(8.dp))
-			.fillMaxSize(),
-		contentScale = ContentScale.Fit,
-		onError = {
-			isError = true
-			addError(item, it.result.throwable.message.toString())
-		},
-		onSuccess = {
-			isError = false
-		}
-	)
-	AnimatedVisibility(visible = imageIsSelected.value) {
-		Box(modifier = Modifier
-			.clip(RoundedCornerShape(30.dp))
-			.background(MaterialTheme.colorScheme.primary)) {
-			Icon(
-				modifier = Modifier
-					.size(40.dp, 40.dp)
-					.clip(RoundedCornerShape(8.dp))
-					.align(Alignment.CenterStart),
-				painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.icon_check)),
-				contentDescription = "CheckIcon",
-				tint = Color.White
-			)
+				)
+				.clip(RoundedCornerShape(8.dp))
+				.fillMaxSize(),
+			contentScale = ContentScale.Fit,
+			onError = {
+				isError = true
+				addError(item, it.result.throwable.message.toString())
+			},
+			onSuccess = {
+				isError = false
+			}
+		)
+		AnimatedVisibility(visible = imageIsSelected.value) {
+			Box(modifier = Modifier
+				.clip(RoundedCornerShape(30.dp))
+				.background(MaterialTheme.colorScheme.primary)) {
+				Icon(
+					modifier = Modifier
+						.size(40.dp, 40.dp)
+						.clip(RoundedCornerShape(8.dp))
+						.align(Alignment.CenterStart),
+					painter = rememberVectorPainter(ImageVector.vectorResource(R.drawable.icon_check)),
+					contentDescription = "CheckIcon",
+					tint = Color.White
+				)
+			}
 		}
 	}
 
