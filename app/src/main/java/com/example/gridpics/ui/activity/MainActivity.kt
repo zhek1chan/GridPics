@@ -3,14 +3,19 @@ package com.example.gridpics.ui.activity
 import android.Manifest
 import android.app.UiModeManager
 import android.content.ComponentName
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.IBinder
+import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.SystemBarStyle
@@ -61,6 +66,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
 
 class MainActivity: AppCompatActivity()
 {
@@ -360,7 +368,8 @@ class MainActivity: AppCompatActivity()
 						fromNotification = fromNotification,
 						animationIsRunning = animationIsRunning,
 						changeAnimation = changeAnimation,
-						disposable = dispose
+						disposable = dispose,
+						shareLocal = { bitmap -> shareLocal(bitmap) }
 					)
 				}
 			}
@@ -681,6 +690,60 @@ class MainActivity: AppCompatActivity()
 		intent.putExtra(Intent.EXTRA_TEXT, getString(R.string.you_have_got_share_link_from_gridpics, text))
 		val components = arrayOf(ComponentName(this, MainActivity::class.java))
 		startActivity(Intent.createChooser(intent, null).putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, components))
+	}
+
+	private fun shareLocal(bitmap: Bitmap)
+	{
+		val imageUri = saveImageToGallery(bitmap, R.string.you_have_got_share_link_from_gridpics_local_pic)
+		imageUri?.let {
+			val shareIntent = Intent(Intent.ACTION_SEND).apply {
+				type = "image/png"
+				putExtra(Intent.EXTRA_TEXT, getString(R.string.you_have_got_share_link_from_gridpics_local_pic))
+				putExtra(Intent.EXTRA_STREAM, it)
+			}
+			startActivity(Intent.createChooser(shareIntent, "Share Image"))
+		} ?: run {
+			Toast.makeText(this, getString(R.string.failed_to_share_image), Toast.LENGTH_SHORT).show()
+		}
+	}
+
+	private fun saveImageToGallery(bitmap: Bitmap, titleResId: Int): Uri?
+	{
+		val title = getString(titleResId)
+		val filename = "$title-${System.currentTimeMillis()}.png"
+		var fos: OutputStream? = null
+		var imageUri: Uri? = null
+
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+		{
+			contentResolver?.also { resolver ->
+				val contentValues = ContentValues().apply {
+					put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+					put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+					put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+				}
+
+				imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+				fos = imageUri?.let { resolver.openOutputStream(it) }
+			}
+		}
+		else
+		{
+			val imagesDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "GridPics")
+			if(!imagesDir.exists())
+			{
+				imagesDir.mkdirs()
+			}
+			val image = File(imagesDir, filename)
+			imageUri = Uri.fromFile(image)
+			fos = FileOutputStream(image)
+		}
+
+		fos?.use {
+			bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+		}
+
+		return imageUri
 	}
 
 	private fun deletePicture(url: String)

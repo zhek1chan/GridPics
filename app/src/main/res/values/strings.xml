@@ -27,7 +27,8 @@
 	<string name="cancel">Отменить</string>
 	<string name="confirm">Подтвердить</string>
 	<string name="add">Добавить</string>
-	<string name="you_have_got_share_link_from_gridpics">С вами поделились изображением %1$s из приложения GridPics</string>
+	<string name="you_have_got_share_link_from_gridpics">С вами поделились изображением\n%1$s\nиз GridPics\nСсылка на бесплатное скачивание приложения:\nhttps://github.com/zhek1chan/GridPics/releases/tag/v2</string>
+	<string name="you_have_got_share_link_from_gridpics_local_pic">С вами поделились изображением из GridPics\nСсылка на бесплатное скачивание приложения:\nhttps://github.com/zhek1chan/GridPics/releases/tag/v2</string>
 	<string name="delete_picture">Удалить</string>
 	<string name="pic_was_deleted">Картинка была удалена</string>
 	<string name="pics_were_deleted">Картинки были удалены</string>
@@ -41,4 +42,5 @@
 	<string name="pic_was_already_in_the_app">Картинка уже добавлена в GridPics</string>
 	<string name="elements_were_swiped">Элементы поменялись местами</string>
 	<string name="you_canceled_pick">Вы отменили выбор элементов</string>
+	<string name="failed_to_share_image">Не удалось поделиться изображением</string>
 </resources>

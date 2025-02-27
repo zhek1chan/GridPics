@@ -49,14 +49,7 @@ fun BottomNavigationBar(
 	val navBackStackEntry by navController.currentBackStackEntryAsState()
 	val route = navBackStackEntry?.destination?.route
 	val isPortrait = screenUiState.value.isPortraitOrientation
-	val maxHeight = if(isPortrait)
-	{
-		110.dp
-	}
-	else
-	{
-		95.dp
-	}
+	val maxHeight = 110.dp
 	AnimatedVisibility(
 		visible = bottomBarState.value, enter = EnterTransition.None, exit = ExitTransition.None
 	) {
@@ -74,8 +67,14 @@ fun BottomNavigationBar(
 		NavigationBar(mod.heightIn(max = maxHeight), windowInsets = WindowInsets.navigationBars, containerColor = MaterialTheme.colorScheme.background) {
 			items.forEach { item ->
 				NavigationBarItem(
-					colors = NavigationBarItemColors(MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary, color, MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary,
-						MaterialTheme.colorScheme.onPrimary, MaterialTheme.colorScheme.onPrimary),
+					colors = NavigationBarItemColors(
+						selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+						selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+						selectedIndicatorColor = color,
+						unselectedIconColor = MaterialTheme.colorScheme.onPrimary,
+						unselectedTextColor = MaterialTheme.colorScheme.onPrimary,
+						disabledIconColor = MaterialTheme.colorScheme.onPrimary,
+						disabledTextColor = MaterialTheme.colorScheme.onPrimary),
 					icon = {
 						Icon(
 							imageVector = item.icon,

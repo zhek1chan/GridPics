@@ -97,12 +97,15 @@ import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
+import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
+import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.error
 import coil3.request.placeholder
+import coil3.toBitmap
 import com.example.gridpics.R
 import com.example.gridpics.ui.activity.MainActivity.Companion.HTTP_ERROR
 import com.example.gridpics.ui.activity.Screen
@@ -139,6 +142,7 @@ fun SharedTransitionScope.DetailsScreen(
 	animationIsRunning: MutableState<Boolean>,
 	changeAnimation: MutableState<Boolean>,
 	disposable: MutableState<Boolean>,
+	shareLocal: (Bitmap) -> Unit,
 )
 {
 	changeAnimation.value = false
@@ -202,6 +206,7 @@ fun SharedTransitionScope.DetailsScreen(
 			disposable = disposable
 		)
 	}
+	val mutableStateValBitmap = remember { mutableStateOf(errorPicture?.let { Bitmap.createBitmap(it) }) }
 	val updatePicture = remember { mutableStateOf(false) }
 	LaunchedEffect(updatePicture.value) {
 		snapshotFlow { pagerState.currentPage }.collect { page ->
@@ -251,7 +256,9 @@ fun SharedTransitionScope.DetailsScreen(
 				wasCalledDelete = wasCalledDelete,
 				changeAnimation = changeAnimation,
 				setImageSharedState = setImageSharedState,
-				disposable = disposable
+				disposable = disposable,
+				shareLocal = shareLocal,
+				mutableStateValBitmap = mutableStateValBitmap
 			)
 		},
 		content = { padding ->
@@ -281,7 +288,8 @@ fun SharedTransitionScope.DetailsScreen(
 				scope = scope,
 				changeAnimation = changeAnimation,
 				wasCalledDelete = wasCalledDelete,
-				disposable = disposable
+				disposable = disposable,
+				mutableStateValBitmap = mutableStateValBitmap
 			)
 		}
 	)
@@ -316,6 +324,7 @@ fun SharedTransitionScope.ShowDetails(
 	changeAnimation: MutableState<Boolean>,
 	wasCalledDelete: MutableState<Boolean>,
 	disposable: MutableState<Boolean>,
+	mutableStateValBitmap: MutableState<Bitmap?>,
 )
 {
 	val value = state.value
@@ -384,7 +393,8 @@ fun SharedTransitionScope.ShowDetails(
 						updatePicture = updatePicture,
 						scope = scope,
 						wasDeletedCalled = wasCalledDelete,
-						disposable = disposable
+						disposable = disposable,
+						mutableStateValBitmap = mutableStateValBitmap
 					)
 				}
 				if(isSharedImage && !wasCalledDelete.value)
@@ -484,14 +494,16 @@ fun SharedTransitionScope.ShowDetails(
 							.height(80.dp)
 							.align(Alignment.BottomCenter)
 					) {
-						val rippleConfig = remember { RippleConfiguration(
-							color = Color.LightGray,
-							rippleAlpha = RippleAlpha(
-								draggedAlpha = 0.1f,
-								focusedAlpha = 0f,
-								hoveredAlpha = 0.5f,
-								pressedAlpha = 0.6f)
-						) }
+						val rippleConfig = remember {
+							RippleConfiguration(
+								color = Color.LightGray,
+								rippleAlpha = RippleAlpha(
+									draggedAlpha = 0.1f,
+									focusedAlpha = 0f,
+									hoveredAlpha = 0.5f,
+									pressedAlpha = 0.6f)
+							)
+						}
 						AnimatedVisibility(
 							visible = (!animationIsRunning.value && disposable.value || fromNotification.value) && value.barsAreVisible,
 							enter = EnterTransition.None,
@@ -576,6 +588,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 	scope: CoroutineScope,
 	wasDeletedCalled: MutableState<Boolean>,
 	disposable: MutableState<Boolean>,
+	mutableStateValBitmap: MutableState<Bitmap?>,
 )
 {
 	val zoom = rememberZoomState(5f, Size.Zero)
@@ -613,6 +626,29 @@ fun SharedTransitionScope.ShowAsynchImage(
 			.placeholder(placeHolderM.intValue)
 			.diskCacheKey(img)
 			.build()
+	if (img.startsWith("content://"))
+	{
+		val imgRequestLocalImage =
+			ImageRequest.Builder(context)
+				.data(img)
+				.networkCachePolicy(CachePolicy.DISABLED)
+				.error(R.drawable.error)
+				.memoryCacheKey(img)
+				.target(
+					onSuccess = { result ->
+						if(img.startsWith("content://"))
+						{
+							mutableStateValBitmap.value = result.toBitmap()
+						}
+					}
+				)
+				.placeholderMemoryCacheKey(img)
+				.placeholder(placeHolderM.intValue)
+				.diskCacheKey(img)
+				.build()
+		val imageLoader = ImageLoader(context).newBuilder().build()
+		imageLoader.enqueue(imgRequestLocalImage)
+	}
 	//setting up the size of zoomable space on screen to avoid zooming in empty places
 	var imageSize by remember { mutableStateOf(Size.Zero) }
 	LaunchedEffect(imageSize) {
@@ -871,6 +907,8 @@ fun AppBar(
 	wasCalledDelete: MutableState<Boolean>,
 	setImageSharedState: (Boolean) -> Unit,
 	disposable: MutableState<Boolean>,
+	shareLocal: (Bitmap) -> Unit,
+	mutableStateValBitmap: MutableState<Bitmap?>,
 )
 {
 	val value = state.value
@@ -954,13 +992,24 @@ fun AppBar(
 						containerColor = MaterialTheme.colorScheme.background
 					),
 					actions = {
-						AnimatedVisibility(visible = !sharedImgCase && !currentPicture.startsWith("content://")) {
+						AnimatedVisibility(visible = !sharedImgCase) {
 							Box(modifier = Modifier
 								.windowInsetsPadding(sysBarsWithCutoutsInsets)
 								.height(64.dp)
 								.width(50.dp)
 								.clickable {
-									share(currentPicture)
+									if(currentPicture.startsWith("content://"))
+									{
+										val bitmap = mutableStateValBitmap.value
+										if(bitmap != null)
+										{
+											shareLocal(bitmap)
+										}
+									}
+									else
+									{
+										share(currentPicture)
+									}
 								}
 							) {
 								Icon(
