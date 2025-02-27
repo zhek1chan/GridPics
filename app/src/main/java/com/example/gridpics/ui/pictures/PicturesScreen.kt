@@ -446,12 +446,17 @@ fun SharedTransitionScope.ItemsCard(
 	}
 	//логика настройки модификатора у картинки, чтобы можно было отменять анимацию по клику на другую картинку или ту же самую и
 	//запускать другую анимацию
-	Box(modifier = Modifier.fillMaxSize().aspectRatio(1f).padding(8.dp)) {
+	Box(
+		modifier = Modifier
+			.fillMaxSize()
+			.aspectRatio(1f)
+	) {
 		AsyncImage(
 			model = (imgRequest),
 			filterQuality = FilterQuality.Low,
 			contentDescription = item,
 			modifier = Modifier
+				.padding(8.dp)
 				.sharedElement(
 					state = rememberSharedContentState(
 						key = list.indexOf(item)
