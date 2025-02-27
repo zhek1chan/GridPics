@@ -455,10 +455,21 @@ fun SharedTransitionScope.ShowDetails(
 											setImageSharedState(false)
 										}
 									},
-									border = BorderStroke(3.dp, MaterialTheme.colorScheme.primary),
-									colors = ButtonColors(MaterialTheme.colorScheme.background, Color.Black, Color.Black, Color.White)
+									border = BorderStroke(
+										width = 3.dp,
+										color = MaterialTheme.colorScheme.primary
+									),
+									colors = ButtonColors(
+										containerColor = MaterialTheme.colorScheme.background,
+										contentColor = Color.Black,
+										disabledContainerColor = Color.Black,
+										disabledContentColor = Color.White
+									)
 								) {
-									Text(text = addString, color = MaterialTheme.colorScheme.primary)
+									Text(
+										text = addString,
+										color = MaterialTheme.colorScheme.primary
+									)
 								}
 							}
 						}
@@ -466,15 +477,26 @@ fun SharedTransitionScope.ShowDetails(
 				}
 				else
 				{
-					val openDialog = remember { mutableStateOf(state.value.wasDeletedFromNotification) }
+					val openDialog = remember { mutableStateOf(value.wasDeletedFromNotification) }
 					val cancelString = stringResource(R.string.delete_picture)
 					Row(
 						modifier = Modifier
 							.height(80.dp)
 							.align(Alignment.BottomCenter)
 					) {
-						val rippleConfig = remember { RippleConfiguration(color = Color.LightGray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
-						AnimatedVisibility(visible = (!animationIsRunning.value && disposable.value || fromNotification.value) && value.barsAreVisible, enter = EnterTransition.None, exit = ExitTransition.None) {
+						val rippleConfig = remember { RippleConfiguration(
+							color = Color.LightGray,
+							rippleAlpha = RippleAlpha(
+								draggedAlpha = 0.1f,
+								focusedAlpha = 0f,
+								hoveredAlpha = 0.5f,
+								pressedAlpha = 0.6f)
+						) }
+						AnimatedVisibility(
+							visible = (!animationIsRunning.value && disposable.value || fromNotification.value) && value.barsAreVisible,
+							enter = EnterTransition.None,
+							exit = ExitTransition.None
+						) {
 							CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 								Button(
 									modifier = Modifier
@@ -494,7 +516,7 @@ fun SharedTransitionScope.ShowDetails(
 						}
 					}
 
-					AnimatedVisibility(openDialog.value) {
+					AnimatedVisibility(visible = openDialog.value) {
 						AlertDialogMain(
 							dialogText = null,
 							dialogTitle = stringResource(R.string.do_you_really_want_to_delete_it),
@@ -860,28 +882,40 @@ fun AppBar(
 	val navBack = remember { mutableStateOf(false) }
 	Log.d("shared pic url", currentPicture)
 	val sharedImgCase = value.isSharedImage
+	val sysBarsInsets = WindowInsets.systemBarsIgnoringVisibility
+	val sysBarsWithCutoutsInsets = sysBarsInsets.union(WindowInsets.displayCutout)
 	AnimatedVisibility(visible = (isVisible && !animationIsRunning.value && disposable.value) || fromNotification.value, enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(modifier = Modifier
 			.background(MaterialTheme.colorScheme.background)
 			.height(
-				WindowInsets.systemBarsIgnoringVisibility
+				sysBarsInsets
 					.asPaddingValues()
 					.calculateTopPadding() + 64.dp
 			)
 			.fillMaxWidth())
-		val rippleConfig = remember { RippleConfiguration(color = Color.Gray, rippleAlpha = RippleAlpha(0.1f, 0f, 0.5f, 0.6f)) }
+		val rippleConfig = remember {
+			RippleConfiguration(
+				color = Color.Gray,
+				rippleAlpha = RippleAlpha(
+					draggedAlpha = 0.1f,
+					focusedAlpha = 0f,
+					hoveredAlpha = 0.5f,
+					pressedAlpha = 0.6f
+				)
+			)
+		}
 		CompositionLocalProvider(LocalRippleConfiguration provides rippleConfig) {
 			Box(modifier = Modifier
 				.wrapContentSize()
-				.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))) {
+				.windowInsetsPadding(sysBarsWithCutoutsInsets)) {
 				TopAppBar(
 					modifier = Modifier
 						.align(Alignment.Center)
-						.windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+						.windowInsetsPadding(sysBarsWithCutoutsInsets)
 						.wrapContentSize(),
 					title = {
 						Box(modifier = Modifier
-							.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+							.windowInsetsPadding(sysBarsWithCutoutsInsets)
 							.height(64.dp)
 							.fillMaxWidth()
 							.clickable {
@@ -899,7 +933,7 @@ fun AppBar(
 					},
 					navigationIcon = {
 						Box(modifier = Modifier
-							.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+							.windowInsetsPadding(sysBarsWithCutoutsInsets)
 							.height(64.dp)
 							.width(50.dp)
 							.clickable {
@@ -920,9 +954,9 @@ fun AppBar(
 						containerColor = MaterialTheme.colorScheme.background
 					),
 					actions = {
-						AnimatedVisibility(!sharedImgCase && !currentPicture.startsWith("content://")) {
+						AnimatedVisibility(visible = !sharedImgCase && !currentPicture.startsWith("content://")) {
 							Box(modifier = Modifier
-								.windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility.union(WindowInsets.displayCutout))
+								.windowInsetsPadding(sysBarsWithCutoutsInsets)
 								.height(64.dp)
 								.width(50.dp)
 								.clickable {
