@@ -7,13 +7,12 @@ plugins {
 
 android {
     namespace = "com.example.gridpics"
-    compileSdk = 36
-
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.gridpics"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 2
         versionName = "2.0"
 
@@ -45,15 +44,6 @@ android {
 
     composeOptions {
         kotlinCompilerExtensionVersion = "2.0.0"
-    }
-}
-
-buildscript {
-    //...
-    dependencies {
-        classpath(libs.gradle)
-
-        // ...
     }
 }
 

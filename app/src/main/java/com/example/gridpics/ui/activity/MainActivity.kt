@@ -434,7 +434,10 @@ class MainActivity: AppCompatActivity()
 					detailsViewModel.postNewPic(null, null)
 					imageLoader.diskCache?.remove(it)
 					imageLoader.memoryCache?.remove(MemoryCache.Key(it))
-					nav?.navigate(Screen.Home.route)
+					if(!value.isSharedImage)
+					{
+						nav?.navigate(Screen.Home.route)
+					}
 				}
 			}
 		}
