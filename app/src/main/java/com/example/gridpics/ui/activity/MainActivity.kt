@@ -258,11 +258,11 @@ class MainActivity: AppCompatActivity()
 							isMultiWindowed = detailsState.value.isMultiWindowed,
 							animationIsRunning = animationIsRunning,
 							picWasLoadedButAlreadyWasInTheApp = { uri ->
-								detVM.isSharedImage(false)
-								Toast.makeText(this@MainActivity, getString(R.string.pic_was_already_in_the_app), Toast.LENGTH_LONG).show()
-								picVM.clickOnPicture(0, 0)
+								detVM.isSharedImage(true)
 								detVM.postCurrentPicture(uri.toString())
-								navController.navigate(Screen.Details.route)
+								detVM.postCorrectList()
+								picVM.clickOnPicture(0, 0)
+								navAfterNewIntent(navController)
 							},
 							swapPictures = { fPic, sPic ->
 								picVM.clickOnPicture(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
@@ -656,22 +656,11 @@ class MainActivity: AppCompatActivity()
 				{
 					detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
 				}
-				if(picUrls[0] == sharedValue)
-				{
-					detVM.isSharedImage(false)
-					Toast.makeText(this@MainActivity, getString(R.string.pic_was_already_in_the_app), Toast.LENGTH_SHORT).show()
-					picVM.clickOnPicture(0, 0)
-					detVM.postCurrentPicture(sharedValue)
-					navAfterNewIntent(nav)
-				}
-				else
-				{
-					detVM.isSharedImage(true)
-					detVM.postCurrentPicture(sharedValue)
-					detVM.postCorrectList()
-					picVM.clickOnPicture(0, 0)
-					navAfterNewIntent(nav)
-				}
+				detVM.isSharedImage(true)
+				detVM.postCurrentPicture(sharedValue)
+				detVM.postCorrectList()
+				picVM.clickOnPicture(0, 0)
+				navAfterNewIntent(nav)
 			}
 		}
 	}

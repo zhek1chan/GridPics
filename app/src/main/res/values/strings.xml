@@ -39,7 +39,6 @@
 	<string name="something_went_wrong">Что-то пошло не так</string>
 	<string name="no_needed_app">У вас нет нужного приложения</string>
 	<string name="error_was_catched">Произошла ошибка: %1$s</string>
-	<string name="pic_was_already_in_the_app">Картинка уже добавлена в GridPics</string>
 	<string name="elements_were_swiped">Элементы поменялись местами</string>
 	<string name="you_canceled_pick">Вы отменили выбор элементов</string>
 	<string name="failed_to_share_image">Не удалось поделиться изображением</string>
