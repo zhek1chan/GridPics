@@ -9,10 +9,11 @@ android {
     namespace = "com.example.gridpics"
     compileSdk = 35
 
+
     defaultConfig {
         applicationId = "com.example.gridpics"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 2
         versionName = "2.0"
 
@@ -44,6 +45,15 @@ android {
 
     composeOptions {
         kotlinCompilerExtensionVersion = "2.0.0"
+    }
+}
+
+buildscript {
+    //...
+    dependencies {
+        classpath(libs.gradle)
+
+        // ...
     }
 }
 

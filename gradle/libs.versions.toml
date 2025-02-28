@@ -1,10 +1,11 @@
 [versions]
 activityKtx = "1.10.0"
 activityKtxVersion = "1.10.0"
-agp = "8.6.1"
+agp = "8.8.2"
 coilCompose = "3.1.0"
 coilGif = "3.1.0"
 coreSplashscreen = "1.0.1"
+gradle = "8.8.2"
 gson = "2.11.0"
 koinAndroidxCompose = "3.5.3"
 kotlin = "2.0.21"
@@ -48,6 +49,7 @@ coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCo
 coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coilGif" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofitVersion" }
+gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koinAndroidxCompose" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
