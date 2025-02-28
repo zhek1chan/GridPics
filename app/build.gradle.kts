@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.gridpics"
-    compileSdk = 35
+    compileSdk = 36
 
 
     defaultConfig {
