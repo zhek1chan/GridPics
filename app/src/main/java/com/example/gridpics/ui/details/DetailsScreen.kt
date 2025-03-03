@@ -14,9 +14,12 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,7 +121,7 @@ import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
 @SuppressLint("RestrictedApi")
-@OptIn(ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun SharedTransitionScope.DetailsScreen(
 	navController: NavController,
@@ -128,7 +131,7 @@ fun SharedTransitionScope.DetailsScreen(
 	removeError: (String) -> Unit,
 	postUrl: (String?, Bitmap?) -> Unit,
 	isValidUrl: (String) -> Boolean,
-	changeBarsVisability: (Boolean) -> Unit,
+	changeBarsVisability: (Boolean, Boolean) -> Unit,
 	postNewBitmap: (String, String) -> Unit,
 	addPicture: (String) -> Unit,
 	setImageSharedState: (Boolean) -> Unit,
@@ -234,66 +237,78 @@ fun SharedTransitionScope.DetailsScreen(
 			}
 		}
 	}
-	Scaffold(
-		modifier = Modifier.wrapContentSize(),
-		contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
-		topBar = {
-			AppBar(
-				isVisible = value.barsAreVisible,
-				nc = navController,
-				postUrl = postUrl,
-				state = state,
-				changeBarsVisability = changeBarsVisability,
-				setImageSharedStateToFalse = setImageSharedState,
-				share = share,
-				postWasSharedState = postWasSharedState,
-				animationIsRunning = animationIsRunning,
-				isExit = isExit,
-				wasDeleted = wasDeleted,
-				fromNotification = fromNotification,
-				scope = scope,
-				wasCalledDelete = wasCalledDelete,
-				changeAnimation = changeAnimation,
-				setImageSharedState = setImageSharedState,
-				disposable = disposable,
-				shareLocal = shareLocal,
-				mutableStateValBitmap = mutableStateValBitmap,
-				checkIfErrorExists = getErrorMessageFromErrorsList,
-				addError = addError
-			)
-		},
-		content = { padding ->
-			ShowDetails(
-				navController = navController,
-				context = context,
-				checkOnErrorExists = getErrorMessageFromErrorsList,
-				addError = addError,
-				removeSpecialError = removeError,
-				state = state,
-				isValidUrl = isValidUrl,
-				padding = padding,
-				changeBarsVisability = changeBarsVisability,
-				postUrl = postUrl,
-				addPicture = addPicture,
-				setImageSharedState = setImageSharedState,
-				pagerState = pagerState,
-				list = list.toMutableList(),
-				deleteCurrentPicture = deleteCurrentPicture,
-				setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
-				animationIsRunning = animationIsRunning,
-				animatedVisibilityScope = animatedVisibilityScope,
-				isExit = isExit,
-				wasDeleted = wasDeleted,
-				fromNotification = fromNotification,
-				updatePicture = updatePicture,
-				scope = scope,
-				changeAnimation = changeAnimation,
-				wasCalledDelete = wasCalledDelete,
-				disposable = disposable,
-				mutableStateValBitmap = mutableStateValBitmap
-			)
-		}
-	)
+	Box(
+		Modifier
+			.zIndex(0f)
+			.fillMaxSize()
+			.combinedClickable(
+				interactionSource = remember { MutableInteractionSource() },
+				indication = null,
+				onClick = {
+					changeBarsVisability(!state.value.barsAreVisible, true)
+				}
+			),
+	) {
+		Scaffold(
+			modifier = Modifier.wrapContentSize(),
+			contentWindowInsets = WindowInsets.systemBarsIgnoringVisibility,
+			topBar = {
+				AppBar(
+					isVisible = value.barsAreVisible,
+					nc = navController,
+					postUrl = postUrl,
+					state = state,
+					changeBarsVisability = changeBarsVisability,
+					setImageSharedStateToFalse = setImageSharedState,
+					share = share,
+					postWasSharedState = postWasSharedState,
+					animationIsRunning = animationIsRunning,
+					isExit = isExit,
+					wasDeleted = wasDeleted,
+					scope = scope,
+					wasCalledDelete = wasCalledDelete,
+					changeAnimation = changeAnimation,
+					setImageSharedState = setImageSharedState,
+					disposable = disposable,
+					shareLocal = shareLocal,
+					mutableStateValBitmap = mutableStateValBitmap,
+					checkIfErrorExists = getErrorMessageFromErrorsList,
+					addError = addError
+				)
+			},
+			content = { padding ->
+				ShowDetails(
+					navController = navController,
+					context = context,
+					checkOnErrorExists = getErrorMessageFromErrorsList,
+					addError = addError,
+					removeSpecialError = removeError,
+					state = state,
+					isValidUrl = isValidUrl,
+					padding = padding,
+					changeBarsVisability = changeBarsVisability,
+					postUrl = postUrl,
+					addPicture = addPicture,
+					setImageSharedState = setImageSharedState,
+					pagerState = pagerState,
+					list = list.toMutableList(),
+					deleteCurrentPicture = deleteCurrentPicture,
+					setFalseToWasDeletedFromNotification = setFalseToWasDeletedFromNotification,
+					animationIsRunning = animationIsRunning,
+					animatedVisibilityScope = animatedVisibilityScope,
+					isExit = isExit,
+					wasDeleted = wasDeleted,
+					fromNotification = fromNotification,
+					updatePicture = updatePicture,
+					scope = scope,
+					changeAnimation = changeAnimation,
+					wasCalledDelete = wasCalledDelete,
+					disposable = disposable,
+					mutableStateValBitmap = mutableStateValBitmap,
+				)
+			}
+		)
+	}
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -307,7 +322,7 @@ fun SharedTransitionScope.ShowDetails(
 	state: MutableState<DetailsScreenUiState>,
 	isValidUrl: (String) -> Boolean,
 	padding: PaddingValues,
-	changeBarsVisability: (Boolean) -> Unit,
+	changeBarsVisability: (Boolean, Boolean) -> Unit,
 	postUrl: (String?, Bitmap?) -> Unit,
 	addPicture: (String) -> Unit,
 	setImageSharedState: (Boolean) -> Unit,
@@ -371,7 +386,9 @@ fun SharedTransitionScope.ShowDetails(
 						isValidUrl = isValidUrl,
 						removeError = removeSpecialError,
 						updatePicture = updatePicture,
-						errorMsg = errorMessage!!
+						errorMsg = errorMessage!!,
+						changeBarsVisability = changeBarsVisability,
+						state = state
 					)
 				}
 				else
@@ -576,7 +593,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 	removeSpecialError: (String) -> Unit,
 	navController: NavController,
 	state: MutableState<DetailsScreenUiState>,
-	changeBarsVisability: (Boolean) -> Unit,
+	changeBarsVisability: (Boolean, Boolean) -> Unit,
 	postUrl: (String?, Bitmap?) -> Unit,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	animationIsRunning: MutableState<Boolean>,
@@ -674,7 +691,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 				if(!animationIsRunning.value)
 				{
 					val visibility = state.value.barsAreVisible
-					changeBarsVisability(!visibility)
+					changeBarsVisability(!visibility, true)
 				}
 			}
 		)
@@ -790,6 +807,7 @@ fun SharedTransitionScope.ShowAsynchImage(
 	}
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ShowError(
 	context: Context,
@@ -798,6 +816,8 @@ fun ShowError(
 	removeError: (String) -> Unit,
 	updatePicture: MutableState<Boolean>,
 	errorMsg: String,
+	changeBarsVisability: (Boolean, Boolean) -> Unit,
+	state: MutableState<DetailsScreenUiState>,
 )
 {
 	val linkIsNotValid = stringResource(R.string.link_is_not_valid)
@@ -814,7 +834,15 @@ fun ShowError(
 		linkIsNotValid
 	}
 	Column(
-		modifier = Modifier.fillMaxSize(),
+		modifier = Modifier
+			.fillMaxSize()
+			.combinedClickable(
+				interactionSource = remember { MutableInteractionSource() },
+				indication = null,
+				onClick = {
+					changeBarsVisability(!state.value.barsAreVisible, true)
+				}
+			),
 		verticalArrangement = Arrangement.Center,
 		horizontalAlignment = Alignment.CenterHorizontally
 	) {
@@ -904,14 +932,13 @@ fun AppBar(
 	nc: NavController,
 	postUrl: (String?, Bitmap?) -> Unit,
 	state: MutableState<DetailsScreenUiState>,
-	changeBarsVisability: (Boolean) -> Unit,
+	changeBarsVisability: (Boolean, Boolean) -> Unit,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
 	share: (String) -> Unit,
 	postWasSharedState: () -> Unit,
 	animationIsRunning: MutableState<Boolean>,
 	isExit: MutableState<Boolean>,
 	wasDeleted: MutableState<Boolean>,
-	fromNotification: MutableState<Boolean>,
 	scope: CoroutineScope,
 	changeAnimation: MutableState<Boolean>,
 	wasCalledDelete: MutableState<Boolean>,
@@ -935,7 +962,7 @@ fun AppBar(
 	val sharedImgCase = value.isSharedImage
 	val sysBarsInsets = WindowInsets.systemBarsIgnoringVisibility
 	val sysBarsWithCutoutsInsets = sysBarsInsets.union(WindowInsets.displayCutout)
-	AnimatedVisibility(visible = (isVisible && !animationIsRunning.value && disposable.value) || fromNotification.value, enter = EnterTransition.None, exit = ExitTransition.None) {
+	AnimatedVisibility(visible = (isVisible && !animationIsRunning.value && disposable.value), enter = EnterTransition.None, exit = ExitTransition.None) {
 		Box(modifier = Modifier
 			.background(MaterialTheme.colorScheme.background)
 			.height(
@@ -1093,7 +1120,7 @@ fun AppBar(
 }
 
 fun navigateToHome(
-	changeBarsVisability: (Boolean) -> Unit,
+	changeBarsVisability: (Boolean, Boolean) -> Unit,
 	postUrl: (String?, Bitmap?) -> Unit,
 	navController: NavController,
 	setImageSharedStateToFalse: (Boolean) -> Unit,
@@ -1121,7 +1148,7 @@ fun navigateToHome(
 				this.launchSingleTop = true
 			}
 			navController.clearBackStack(Screen.Details.route)
-			changeBarsVisability(true)
+			changeBarsVisability(true, false)
 			postUrl(null, null)
 			delay(300)
 			setImageSharedStateToFalse(false)

@@ -209,7 +209,7 @@ class MainActivity: AppCompatActivity()
 					popExitTransition = { ExitTransition.None }
 				) {
 					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
-					changeBarsVisability(visible = true, fromDetailsScreen = true)
+					changeBarsVisability(visible = true, fromDetailsScreenAndIsNotAnError = true)
 					fromNotification.value = false
 					key(text) {
 						PicturesScreen(
@@ -337,7 +337,7 @@ class MainActivity: AppCompatActivity()
 						},
 						postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
 						isValidUrl = { url -> picVM.isValidUrl(url) },
-						changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
+						changeBarsVisability = { visability, isNotError -> changeBarsVisability(visability, isNotError) },
 						postNewBitmap = { url, strLoadingFromResources -> detVM.postImageBitmap(url, strLoadingFromResources) },
 						addPicture = { url ->
 							picVM.addPictureToUrls(url)
@@ -444,7 +444,7 @@ class MainActivity: AppCompatActivity()
 		val barsAreVisible = value.barsAreVisible
 		if(!barsAreVisible)
 		{
-			changeBarsVisability(visible = false, fromDetailsScreen = false)
+			changeBarsVisability(visible = false, fromDetailsScreenAndIsNotAnError = false)
 			Log.d("bars", "change visability to false")
 		}
 		Log.d("lifecycle", "onResume()")
@@ -487,7 +487,7 @@ class MainActivity: AppCompatActivity()
 		super.onDestroy()
 	}
 
-	private fun changeBarsVisability(visible: Boolean, fromDetailsScreen: Boolean)
+	private fun changeBarsVisability(visible: Boolean, fromDetailsScreenAndIsNotAnError: Boolean)
 	{
 		val detVM = detailsViewModel
 		val window = window
@@ -500,7 +500,7 @@ class MainActivity: AppCompatActivity()
 		{
 			controller.hide(WindowInsetsCompat.Type.systemBars())
 		}
-		if(fromDetailsScreen)
+		if(fromDetailsScreenAndIsNotAnError)
 		{
 			detVM.changeVisabilityState(visible)
 		}
@@ -649,6 +649,7 @@ class MainActivity: AppCompatActivity()
 						nav?.popBackStack()
 						picVM.clickOnPicture(0, 0)
 					}
+					detVM.changeVisabilityState(true)
 					detVM.postCurrentPicture(oldString)
 					navAfterNewIntent(nav)
 				}
