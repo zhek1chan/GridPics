@@ -15,7 +15,6 @@ android {
         targetSdk = 35
         versionCode = 2
         versionName = "2.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -49,11 +48,8 @@ android {
 dependencies {
     implementation(libs.androidx.work.runtime.ktx.v2100)
     implementation(libs.material)
-    //coil
-    implementation(libs.coil)
     //retrofit
     implementation(libs.retrofit)
-    implementation(libs.retrofit.v230)
     //okhttp
     implementation(libs.okhttp)
     //gson
@@ -81,9 +77,7 @@ dependencies {
     //zoomable && compose
     implementation(libs.zoomable)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.ui.v100)
     implementation(libs.androidx.material)
-    implementation(libs.androidx.navigation.compose.v240alpha01)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.koin.androidx.compose)
     implementation(libs.androidx.paging.compose)
@@ -95,6 +89,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     //For PickVisualMedia contract
     implementation(libs.androidx.activity.ktx)
-    implementation(libs.androidx.activity.ktx.v171)
     implementation(libs.play.services.base)
+    //gif coil
+    implementation(libs.coil.gif)
 }

@@ -11,7 +11,7 @@
 	<string name="error_ocurred_loading_img">Произошла ошибка при загрузке:</string>
 	<string name="link_is_not_valid">Ссылка оказалась нерабочей</string>
 	<string name="update_loading">Обновить картинку</string>
-	<string name="okey">Okey</string>
+	<string name="okey">Ок</string>
 	<string name="reload">Обновляем данные…</string>
 	<string name="reload_pic">Обновляем картинку…</string>
 	<string name="clear_cache">Очистить кэш изображений</string>
@@ -22,18 +22,26 @@
 	<string name="channel_for_my_notification">Channel for my notification</string>
 	<string name="synch_with_sys">Следовать системной теме</string>
 	<string name="error_double_dot">"Ошибка: "</string>
-	<string name="question_retry_again">\nПопробовать загрузить повторно?</string>
+	<string name="question_retry_again">Попробовать загрузить повторно?</string>
 	<string name="loading_has_been_started">Началась загрузка</string>
 	<string name="cancel">Отменить</string>
 	<string name="confirm">Подтвердить</string>
 	<string name="add">Добавить</string>
-	<string name="you_have_got_share_link_from_gridpics">С вами поделились изображением %1$s из приложения GridPics</string>
+	<string name="you_have_got_share_link_from_gridpics">С вами поделились изображением\n%1$s\nиз GridPics</string>
+	<string name="you_have_got_share_link_from_gridpics_local_pic">С вами поделились изображением из GridPics\nСсылка на бесплатное скачивание приложения:\nhttps://github.com/zhek1chan/GridPics/releases/tag/v2</string>
 	<string name="delete_picture">Удалить</string>
 	<string name="pic_was_deleted">Картинка была удалена</string>
+	<string name="pics_were_deleted">Картинки были удалены</string>
 	<string name="share">Поделиться</string>
 	<string name="please_wait_the_pic_is_loading">Картинка ещё грузится, пожалуйста подождите</string>
 	<string name="do_you_really_want_to_delete_it">Вы уверены, что хотите\nудалить изображение?</string>
 	<string name="this_feature_is_not_available">Данная функция недоступна</string>
 	<string name="something_went_wrong">Что-то пошло не так</string>
 	<string name="no_needed_app">У вас нет нужного приложения</string>
+	<string name="error_was_catched">Произошла ошибка: %1$s</string>
+	<string name="elements_were_swiped">Элементы поменялись местами</string>
+	<string name="you_canceled_pick">Вы отменили выбор элементов</string>
+	<string name="failed_to_share_image">Не удалось поделиться изображением</string>
+	<string name="grid_pics">GridPics</string>
+	<string name="lost_access_to_images">Нет доступа к фото из памяти</string>
 </resources>

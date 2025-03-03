@@ -13,6 +13,7 @@ import com.example.gridpics.ui.pictures.state.PicturesState
 import com.example.gridpics.ui.settings.ThemePick
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.ceil
 
 class PicturesViewModel(
 	private val interactor: ImagesInteractor,
@@ -21,8 +22,9 @@ class PicturesViewModel(
 	val picturesUiState = mutableStateOf(PicturesScreenUiState(PicturesState.SearchIsOk(mutableListOf()), mutableListOf(), 0, 0, true, ThemePick.FOLLOW_SYSTEM, emptyList()))
 	private val errorsMap: MutableMap<String, String> = mutableMapOf()
 	var mutableIsThemeBlackState = mutableStateOf(false)
-	private var isOrientationPortrait = false
-	private var gridQuantity = mutableIntStateOf(0)
+	private var pictureSizeInDp = mutableIntStateOf(0)
+	private var screenWidth = 0
+	private var density = 0f
 	private var maxVisibleLinesNum = 0
 
 	init
@@ -89,9 +91,14 @@ class PicturesViewModel(
 	fun addError(url: String, message: String)
 	{
 		val map = errorsMap
+		val msg = if (url.startsWith("content://")) {
+			"Нет доступа к просмотру изображения,\nпопробуйте удалить и заново добавить его"
+		} else {
+			message
+		}
 		if(!map.contains(url))
 		{
-			map[url] = message
+			map[url] = msg
 		}
 	}
 
@@ -133,13 +140,20 @@ class PicturesViewModel(
 		{
 			0
 		}
+		val nOffset = if(index >= 0)
+		{
+			offset
+		}
+		else
+		{
+			0
+		}
 		Log.d("checkIndex", "$nIndex")
-		state.value = state.value.copy(index = nIndex, offset = offset)
+		state.value = state.value.copy(index = nIndex, offset = nOffset)
 	}
 
 	fun changeOrientation(isPortrait: Boolean)
 	{
-		isOrientationPortrait = isPortrait
 		val state = picturesUiState
 		state.value = state.value.copy(isPortraitOrientation = isPortrait)
 	}
@@ -195,15 +209,15 @@ class PicturesViewModel(
 		return list1.filterNot { it in list2 } // Фильтруем первый список, оставляя только элементы, которых нет во втором
 	}
 
-	fun updateGridSpan(newSpan: Int)
+	fun updatePictureSize(newSpan: Int)
 	{
 		Log.d("calculator1", "updated grid num")
-		gridQuantity.intValue = newSpan
+		pictureSizeInDp.intValue = newSpan
 	}
 
-	fun getGridSpan(): MutableState<Int>
+	fun getPictureSizeInDp(): MutableState<Int>
 	{
-		return gridQuantity
+		return pictureSizeInDp
 	}
 
 	fun postMaxVisibleLinesNum(num: Int)
@@ -217,10 +231,39 @@ class PicturesViewModel(
 		val urls = value.picturesUrl
 		val index = value.index
 		val indexOfCurrentPic = urls.indexOf(url)
-		Log.d("proverka", "index = $index, indexOfCurrentPic = $indexOfCurrentPic, maxVisibleLinesNum = $maxVisibleLinesNum")
-		if(abs(indexOfCurrentPic - index) >= (maxVisibleLinesNum - gridQuantity.intValue) || (index > indexOfCurrentPic))
+		Log.d("proverka", "${(getGridNum())} $density")
+		if(abs(indexOfCurrentPic - index) >= (maxVisibleLinesNum - getGridNum()) || (index > indexOfCurrentPic))
 		{
+			Log.d("check listScroll", "to 0 offset")
 			clickOnPicture(indexOfCurrentPic, 0)
 		}
+	}
+
+	fun swapPictures(fPic: String, sPic: String)
+	{
+		val state = picturesUiState
+		val value = state.value
+		val list = value.picturesUrl.toMutableList()
+		val fIndex = list.indexOf(fPic)
+		val sIndex = list.indexOf(sPic)
+		val temp = list[fIndex]
+		list[fIndex] = list[sIndex]
+		list[sIndex] = temp
+		state.value = value.copy(picturesUrl = list)
+	}
+
+	fun postWidth(width: Int)
+	{
+		screenWidth = width
+	}
+
+	fun postDensity(dens: Float)
+	{
+		density = dens
+	}
+
+	fun getGridNum(): Int
+	{
+		return ceil(screenWidth.toFloat() / density / pictureSizeInDp.intValue).toInt()+1
 	}
 }

@@ -26,9 +26,18 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -38,8 +47,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil3.imageLoader
+import coil3.memory.MemoryCache
 import com.example.gridpics.R
-import com.example.gridpics.R.bool.is_sw600dp
 import com.example.gridpics.domain.model.PicturesDataForNotification
 import com.example.gridpics.ui.details.DetailsScreen
 import com.example.gridpics.ui.details.DetailsViewModel
@@ -64,6 +73,7 @@ class MainActivity: AppCompatActivity()
 	private var navigation: NavHostController? = null
 	private var themePick: Int = 2
 	private var job: Job? = null
+	private var fromNotification = mutableStateOf(false)
 	private val connection = object: ServiceConnection
 	{
 		override fun onServiceConnected(className: ComponentName, service: IBinder)
@@ -136,12 +146,12 @@ class MainActivity: AppCompatActivity()
 					if(it.bitmap != null)
 					{
 						mainNotificationService?.putValues(it)
+						delay(500)
+						mainNotificationService?.putValues(it)
 					}
 				}
 			}
 		}
-
-		picVM.updateGridSpan(calculateGridSpan())
 		setContent {
 			val navController = rememberNavController()
 			LaunchedEffect(Unit) {
@@ -164,39 +174,27 @@ class MainActivity: AppCompatActivity()
 		val detailsState = detVM.uiState
 		val isSharedImage = detailsState.value.isSharedImage
 		Log.d("casecase", "isShared = $isSharedImage")
-		//logic to avoid showing animation when the picture is shared
-		val enterTransition = if(isSharedImage)
+		val fromNotification = fromNotification
+		val changeAnimation = remember { mutableStateOf(false) }
+		val animationIsRunning = remember { mutableStateOf(false) }
+		var text by remember { mutableStateOf("foo") }
+		val configuration = LocalConfiguration.current
+		val listState = remember(configuration.orientation) { LazyGridState() }
+		val dispose = remember { mutableStateOf(false) }
+
+		picVM.postWidth(configuration.screenWidthDp)
+		picVM.postDensity(LocalDensity.current.density)
+		//считаем размер картинки
+		val isSw600dp = resources.getBoolean(R.bool.is_sw600dp)
+		if(!isSw600dp)
 		{
-			EnterTransition.None
+			picVM.updatePictureSize(LENGTH_OF_PICTURE)
 		}
 		else
 		{
-			fadeIn(initialAlpha = 0f, animationSpec = tween(700))
+			picVM.updatePictureSize(LENGTH_OF_PICTURE_FOR_BIG_SCREENS)
 		}
-		val popEnterTransition = if(isSharedImage)
-		{
-			EnterTransition.None
-		}
-		else
-		{
-			fadeIn(initialAlpha = 0f, animationSpec = tween(100))
-		}
-		val exitTransition = if(isSharedImage)
-		{
-			ExitTransition.None
-		}
-		else
-		{
-			fadeOut(targetAlpha = 1f, animationSpec = tween(700))
-		}
-		val popExitTransition = if(isSharedImage)
-		{
-			ExitTransition.None
-		}
-		else
-		{
-			fadeOut(targetAlpha = 1f, animationSpec = tween(100))
-		}
+
 		SharedTransitionLayout {
 			NavHost(
 				navController = navController,
@@ -205,47 +203,102 @@ class MainActivity: AppCompatActivity()
 			{
 				composable(
 					route = BottomNavItem.Home.route,
-					enterTransition = { enterTransition },
-					exitTransition = { exitTransition },
-					popEnterTransition = { popEnterTransition },
-					popExitTransition = { popExitTransition }
+					enterTransition = { EnterTransition.None },
+					exitTransition = { ExitTransition.None },
+					popEnterTransition = { EnterTransition.None },
+					popExitTransition = { ExitTransition.None }
 				) {
 					mainNotificationService?.putValues(PicturesDataForNotification(null, null, false))
 					changeBarsVisability(visible = true, fromDetailsScreen = true)
-					PicturesScreen(
-						navController = navController,
-						postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
-						getErrorMessageFromErrorsList = { str -> picVM.checkOnErrorExists(str) },
-						addError = { url, message -> picVM.addError(url, message) },
-						state = picState,
-						clearErrors = { picVM.clearErrors() },
-						postVisibleBarsState = { detVM.changeVisabilityState(true) },
-						currentPicture = { url, index, offset ->
-							picVM.clickOnPicture(index, offset)
-							detVM.postCurrentPicture(url)
-							navController.navigate(Screen.Details.route)
-						},
-						isValidUrl = { url -> picVM.isValidUrl(url) },
-						postSavedUrls = { urls ->
-							picVM.postSavedUrls(urls = urls)
-							detVM.firstSetOfListState(urls)
-						},
-						saveToSharedPrefs = { urls ->
-							saveToSharedPrefs(picVM.convertFromListToString(urls))
-						},
-						calculateGridSpan = { picVM.getGridSpan() },
-						postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum) },
-						animatedVisibilityScope = this@composable,
-						picWasLoadedFromMediaPicker = { uri ->
-							detVM.isSharedImage(true)
-							detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
-							detVM.isSharedImage(true)
-							detVM.postCurrentPicture(uri.toString())
-							detVM.postCorrectList()
-							picVM.clickOnPicture(0, 0)
-							navAfterNewIntent(navController)
-						}
-					)
+					fromNotification.value = false
+					key(text) {
+						PicturesScreen(
+							navController = navController,
+							postPressOnBackButton = { handleBackButtonPressFromPicturesScreen() },
+							getErrorMessageFromErrorsList = { str -> picVM.checkOnErrorExists(str) },
+							addError = { url, message -> picVM.addError(url, message) },
+							state = picState,
+							removeCurrentError = { url ->
+								if(url == "")
+								{
+									picVM.clearErrors()
+								}
+								else
+								{
+									picVM.removeSpecialError(url)
+								}
+								picVM.clickOnPicture(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+								text = Math.random().toString()
+							},
+							postVisibleBarsState = { detVM.changeVisabilityState(true) },
+							currentPicture = { url, index, offset ->
+								picVM.clickOnPicture(index, offset)
+								detVM.postCurrentPicture(url)
+								navController.navigate(Screen.Details.route)
+							},
+							isValidUrl = { url -> picVM.isValidUrl(url) },
+							postSavedUrls = { urls ->
+								picVM.postSavedUrls(urls = urls)
+								detVM.firstSetOfListState(urls)
+							},
+							saveToSharedPrefs = { urls ->
+								saveToSharedPrefs(picVM.convertFromListToString(urls))
+							},
+							pictureSizeInDp = { picVM.getPictureSizeInDp() },
+							postMaxVisibleLinesNum = { maxVisibleLinesNum -> picVM.postMaxVisibleLinesNum(maxVisibleLinesNum) },
+							animatedVisibilityScope = this@composable,
+							picWasLoadedFromMediaPicker = { uri ->
+								detVM.firstSetOfListState(picVM.picturesUiState.value.picturesUrl)
+								detVM.isSharedImage(true)
+								detVM.postCurrentPicture(uri.toString())
+								detVM.postCorrectList()
+								picVM.clickOnPicture(0, 0)
+								navAfterNewIntent(navController)
+							},
+							isMultiWindowed = detailsState.value.isMultiWindowed,
+							animationIsRunning = animationIsRunning,
+							picWasLoadedButAlreadyWasInTheApp = { uri ->
+								detVM.isSharedImage(true)
+								detVM.postCurrentPicture(uri.toString())
+								detVM.postCorrectList()
+								picVM.clickOnPicture(0, 0)
+								navAfterNewIntent(navController)
+							},
+							swapPictures = { fPic, sPic ->
+								picVM.clickOnPicture(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+								picVM.swapPictures(fPic, sPic)
+								saveToSharedPrefs(picVM.returnStringOfList())
+								text = Math.random().toString()
+								Toast.makeText(this@MainActivity, getString(R.string.elements_were_swiped), Toast.LENGTH_SHORT).show()
+							},
+							deletePictures = { list ->
+								picVM.clickOnPicture(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+								for(element in list)
+								{
+									deletePicture(element)
+								}
+								val strForToast = if(list.size == 1)
+								{
+									getString(R.string.pic_was_deleted)
+								}
+								else
+								{
+									getString(R.string.pics_were_deleted)
+								}
+								text = Math.random().toString()
+								Toast.makeText(this@MainActivity, strForToast, Toast.LENGTH_SHORT).show()
+							},
+							listState = listState,
+							cancelAllCheckedPics = {
+								picVM.clickOnPicture(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+								text = Math.random().toString()
+								Toast.makeText(this@MainActivity, getString(R.string.you_canceled_pick), Toast.LENGTH_SHORT).show()
+							},
+							getPrevClickedItem = { detailsState.value.currentPicture },
+							dispose = dispose,
+							getGridNum = { picVM.getGridNum() }
+						)
+					}
 				}
 				composable(
 					route = BottomNavItem.Settings.route,
@@ -258,7 +311,6 @@ class MainActivity: AppCompatActivity()
 						navController = navController,
 						option = picState,
 						changeTheme = { int -> changeTheme(int) },
-						isScreenInPortraitState = picState,
 						clearImageCache = {
 							val imageLoader = this@MainActivity.imageLoader
 							imageLoader.diskCache?.clear()
@@ -270,14 +322,19 @@ class MainActivity: AppCompatActivity()
 				}
 				composable(
 					route = Screen.Details.route,
-					exitTransition = { exitTransition },
+					exitTransition = { ExitTransition.None },
+					popExitTransition = { ExitTransition.None },
+					enterTransition = { EnterTransition.None },
+					popEnterTransition = { EnterTransition.None },
 				) {
 					DetailsScreen(
 						navController = navController,
 						getErrorMessageFromErrorsList = { url -> picVM.checkOnErrorExists(url) },
 						addError = { url, message -> picVM.addError(url, message) },
 						state = detailsState,
-						removeError = { str -> picVM.removeSpecialError(str) },
+						removeError = { str ->
+							picVM.removeSpecialError(str)
+						},
 						postUrl = { url, bitmap -> detVM.postNewPic(url, bitmap) },
 						isValidUrl = { url -> picVM.isValidUrl(url) },
 						changeBarsVisability = { visability -> changeBarsVisability(visability, true) },
@@ -298,10 +355,16 @@ class MainActivity: AppCompatActivity()
 						deleteCurrentPicture = { url ->
 							deletePicture(url)
 							detVM.postNewPic(null, null)
+							Toast.makeText(this@MainActivity, getString(R.string.pic_was_deleted), Toast.LENGTH_SHORT).show()
 						},
 						postWasSharedState = { detVM.setWasSharedFromNotification(false) },
 						setFalseToWasDeletedFromNotification = { detVM.setWasDeletedFromNotification(false) },
-						animatedVisibilityScope = this@composable
+						animatedVisibilityScope = this@composable,
+						fromNotification = fromNotification,
+						animationIsRunning = animationIsRunning,
+						changeAnimation = changeAnimation,
+						disposable = dispose,
+						shareLocal = { img -> shareLocal(img) }
 					)
 				}
 			}
@@ -338,10 +401,48 @@ class MainActivity: AppCompatActivity()
 		super.onStart()
 	}
 
+	@SuppressLint("Recycle")
 	override fun onResume()
 	{
-		val value = detailsViewModel.uiState.value.barsAreVisible
-		if(!value)
+		val picVM = picturesViewModel
+		val nav = navigation
+		val detailsViewModel = detailsViewModel
+		val value = detailsViewModel.uiState.value
+		val imageLoader = imageLoader
+		var isError = false
+		value.picturesUrl.forEach {
+			if(it.startsWith("content://"))
+			{
+				val uri = it.toUri()
+				try
+				{
+					contentResolver.openInputStream(uri)
+				}
+				catch(e: SecurityException)
+				{
+					picVM.addError(it, "SecurityException")
+					isError = true
+				}
+				catch(e: Exception)
+				{
+					picVM.addError(it, "StorageException")
+					isError = true
+				}
+
+				if(isError)
+				{
+					detailsViewModel.postNewPic(null, null)
+					imageLoader.diskCache?.remove(it)
+					imageLoader.memoryCache?.remove(MemoryCache.Key(it))
+					if(!value.isSharedImage)
+					{
+						nav?.navigate(Screen.Home.route)
+					}
+				}
+			}
+		}
+		val barsAreVisible = value.barsAreVisible
+		if(!barsAreVisible)
 		{
 			changeBarsVisability(visible = false, fromDetailsScreen = false)
 			Log.d("bars", "change visability to false")
@@ -413,8 +514,8 @@ class MainActivity: AppCompatActivity()
 		val picVM = picturesViewModel
 		val value = detailsViewModel.uiState.value
 		picVM.clickOnPicture(value.picturesUrl.indexOf(value.currentPicture), 0)
+		Log.d("was set", "${value.picturesUrl.indexOf(value.currentPicture)}")
 		picVM.changeOrientation(orientation == Configuration.ORIENTATION_PORTRAIT)
-		picVM.updateGridSpan(calculateGridSpan())
 		val followSysTheme = ThemePick.FOLLOW_SYSTEM.intValue
 		if(themePick == followSysTheme)
 		{
@@ -528,6 +629,7 @@ class MainActivity: AppCompatActivity()
 				val oldString = intent.getStringExtra(SAVED_URL_FROM_SCREEN_DETAILS)
 				if(!oldString.isNullOrEmpty() && picUrls.contains(oldString))
 				{
+					fromNotification.value = true
 					val needsToBeShared = intent.getBooleanExtra(SHOULD_WE_SHARE_THIS, false)
 					if(needsToBeShared)
 					{
@@ -612,12 +714,26 @@ class MainActivity: AppCompatActivity()
 		startActivity(Intent.createChooser(intent, null).putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, components))
 	}
 
+	private fun shareLocal(img: String)
+	{
+		val imageUri = img.toUri()
+		imageUri.let {
+			val shareIntent = Intent(Intent.ACTION_SEND).apply {
+				type = "image/png"
+				putExtra(Intent.EXTRA_TEXT, getString(R.string.you_have_got_share_link_from_gridpics_local_pic))
+				putExtra(Intent.EXTRA_STREAM, it)
+			}
+			startActivity(Intent.createChooser(shareIntent, "Share Image"))
+		}
+	}
+
 	private fun deletePicture(url: String)
 	{
 		val picVM = picturesViewModel
 		val detailsViewModel = detailsViewModel
 		val urls = detailsViewModel.deleteCurrentPicture(url)
 		saveToSharedPrefs(picVM.convertFromListToString(urls))
+		picVM.removeSpecialError(url)
 		val sharedPreferencesPictures = this.getSharedPreferences(SHARED_PREFERENCE_GRIDPICS, MODE_PRIVATE)
 		val stringOfUrls = sharedPreferencesPictures.getString(DELETED_LIST, "") + "\n" + url
 		val editorPictures = sharedPreferencesPictures.edit()
@@ -626,7 +742,6 @@ class MainActivity: AppCompatActivity()
 		picVM.postSavedUrls(urls)
 		detailsViewModel.setWasDeletedFromNotification(false)
 		imageLoader.diskCache?.remove(url)
-		Toast.makeText(this@MainActivity, getString(R.string.pic_was_deleted), Toast.LENGTH_SHORT).show()
 	}
 
 	private fun isDarkThemeAfterSystemChangedTheme(): Boolean
@@ -635,41 +750,10 @@ class MainActivity: AppCompatActivity()
 		return uiModeManager.nightMode == UiModeManager.MODE_NIGHT_YES
 	}
 
-	@SuppressLint("InternalInsetResource", "DiscouragedApi")
-	private fun calculateGridSpan(): Int
-	{
-		val resources = resources
-		val displayMetrics = resources.displayMetrics
-		var width = displayMetrics.widthPixels
-		val sBar = resources.getDimensionPixelSize(resources.getIdentifier("status_bar_height", "dimen", "android"))
-		val nBar = resources.getDimensionPixelSize(resources.getIdentifier("navigation_bar_height", "dimen", "android"))
-		var height = displayMetrics.heightPixels
-		val density = displayMetrics.density
-		if(width > height)
-		{
-			width += sBar + nBar
-		}
-		else
-		{
-			height += sBar + nBar
-		}
-		val isSw600dp = resources.getBoolean(is_sw600dp)
-		val result = if(isSw600dp)
-		{
-			(width / density).toInt() / LENGTH_OF_PICTURE_FOR_BIG_SCREENS
-		}
-		else
-		{
-			(width / density).toInt() / LENGTH_OF_PICTURE
-		}
-		Log.d("check Params", "is sw600dp = $isSw600dp")
-		return result
-	}
-
 	companion object
 	{
 		const val RESULT_SUCCESS = 100
-		const val LENGTH_OF_PICTURE = 110
+		const val LENGTH_OF_PICTURE = 126
 		const val LENGTH_OF_PICTURE_FOR_BIG_SCREENS = 190
 		const val TEXT_PLAIN = "text/plain"
 		const val NOTIFICATION_ID = 1337
