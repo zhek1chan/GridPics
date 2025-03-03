@@ -121,7 +121,7 @@ import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
 @SuppressLint("RestrictedApi")
-@OptIn(ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun SharedTransitionScope.DetailsScreen(
 	navController: NavController,
@@ -239,10 +239,15 @@ fun SharedTransitionScope.DetailsScreen(
 	}
 	Box(
 		Modifier
-			.background(Color.Red)
 			.zIndex(0f)
 			.fillMaxSize()
-			.clickable { changeBarsVisability(!value.barsAreVisible, true) }
+			.combinedClickable(
+				interactionSource = remember { MutableInteractionSource() },
+				indication = null,
+				onClick = {
+					changeBarsVisability(!state.value.barsAreVisible, true)
+				}
+			),
 	) {
 		Scaffold(
 			modifier = Modifier.wrapContentSize(),
